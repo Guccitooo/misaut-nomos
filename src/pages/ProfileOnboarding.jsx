@@ -184,15 +184,15 @@ Equipo milautonomos`,
     },
     {
       title: "Actividad",
-      fields: ["categories", "descripcion_corta", "description"]
+      fields: ["categories", "descripcion_corta"]
     },
     {
       title: "Zona y disponibilidad",
-      fields: ["service_area", "radio_servicio_km", "opening_hours"]
+      fields: ["service_area", "radio_servicio_km"]
     },
     {
       title: "Precios y forma de trabajo",
-      fields: ["tarifa_base", "facturacion", "formas_pago"]
+      fields: ["tarifa_base", "formas_pago"]
     },
     {
       title: "Portfolio (fotos)",
@@ -223,69 +223,97 @@ Equipo milautonomos`,
     for (const field of fieldsToValidate) {
       const value = formData[field];
 
-      if (field === "business_name" && (!value || value.trim().length < 2)) {
-        setError("El nombre profesional debe tener al menos 2 caracteres");
-        return false;
+      if (field === "business_name") {
+        if (!value || value.trim().length < 2) {
+          setError("El nombre profesional debe tener al menos 2 caracteres");
+          return false;
+        }
       }
 
-      if (field === "cif_nif" && (!value || value.length < 9)) {
-        setError("NIF/CIF inválido");
-        return false;
+      if (field === "cif_nif") {
+        const cleanValue = value.trim();
+        if (!cleanValue || cleanValue.length < 8) {
+          setError("NIF/CIF debe tener al menos 8 caracteres");
+          return false;
+        }
       }
 
-      if (field === "email_contacto" && (!value || !value.includes('@'))) {
-        setError("Email inválido");
-        return false;
+      if (field === "email_contacto") {
+        if (!value || !value.includes('@')) {
+          setError("Email inválido");
+          return false;
+        }
       }
 
-      if (field === "telefono_contacto" && (!value || value.length < 9)) {
-        setError("Teléfono inválido (mínimo 9 dígitos)");
-        return false;
+      if (field === "telefono_contacto") {
+        const cleanPhone = value.replace(/\s/g, '');
+        if (!cleanPhone || cleanPhone.length < 9) {
+          setError("Teléfono debe tener al menos 9 dígitos");
+          return false;
+        }
       }
 
-      if (field === "categories" && (!value || value.length === 0)) {
-        setError("Selecciona al menos una categoría");
-        return false;
+      if (field === "categories") {
+        if (!value || value.length === 0) {
+          setError("Selecciona al menos una categoría");
+          return false;
+        }
       }
 
-      if (field === "descripcion_corta" && (!value || value.length < 20)) {
-        setError("La descripción corta debe tener al menos 20 caracteres");
-        return false;
+      if (field === "descripcion_corta") {
+        if (!value || value.length < 20) {
+          setError("La descripción corta debe tener al menos 20 caracteres");
+          return false;
+        }
       }
 
-      if (field === "service_area" && (!value || value.trim().length < 3)) {
-        setError("Indica tu ubicación");
-        return false;
+      if (field === "service_area") {
+        if (!value || value.trim().length < 3) {
+          setError("Indica tu ubicación");
+          return false;
+        }
       }
 
-      if (field === "tarifa_base" && (!value || value <= 0)) {
-        setError("La tarifa debe ser mayor a 0");
-        return false;
+      if (field === "tarifa_base") {
+        if (!value || parseFloat(value) <= 0) {
+          setError("La tarifa debe ser mayor a 0");
+          return false;
+        }
       }
 
-      if (field === "formas_pago" && (!value || value.length === 0)) {
-        setError("Selecciona al menos una forma de pago");
-        return false;
+      if (field === "formas_pago") {
+        if (!value || value.length === 0) {
+          setError("Selecciona al menos una forma de pago");
+          return false;
+        }
       }
 
-      if (field === "photos" && (!value || value.length === 0)) {
-        setError("Sube al menos 1 foto de tus trabajos");
-        return false;
+      if (field === "photos") {
+        if (!value || value.length === 0) {
+          setError("Sube al menos 1 foto de tus trabajos");
+          return false;
+        }
       }
 
-      if (field === "acepta_terminos" && !value) {
-        setError("Debes aceptar los términos y condiciones");
-        return false;
+      if (field === "acepta_terminos") {
+        if (!value) {
+          setError("Debes aceptar los términos y condiciones");
+          return false;
+        }
       }
 
-      if (field === "acepta_politica_privacidad" && !value) {
-        setError("Debes aceptar la política de privacidad");
-        return false;
+      if (field === "acepta_politica_privacidad") {
+        if (!value) {
+          setError("Debes aceptar la política de privacidad");
+          return false;
+        }
       }
 
-      if (field === "consiente_contacto_clientes" && !value) {
-        setError("Debes dar consentimiento para que los clientes te contacten");
-        return false;
+      if (field === "consiente_contacto_clientes") {
+        if (!value) {
+          setError("Debes dar consentimiento para que los clientes te contacten");
+          return false;
+        }
       }
     }
 
@@ -295,15 +323,26 @@ Equipo milautonomos`,
   const handleNext = async () => {
     setError(null);
 
+    console.log("Validating step:", currentStep);
+    console.log("Form data:", formData);
+
     if (!validateStep(currentStep)) {
       return;
     }
 
     // Autosave
-    await saveProfileMutation.mutateAsync(formData);
+    try {
+      await saveProfileMutation.mutateAsync(formData);
+      toast.success("Guardado correctamente");
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast.error("Error al guardar. Inténtalo de nuevo.");
+      return;
+    }
 
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0);
     }
   };
 
@@ -311,6 +350,7 @@ Equipo milautonomos`,
     setError(null);
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      window.scrollTo(0, 0);
     }
   };
 
@@ -338,6 +378,7 @@ Equipo milautonomos`,
         ...formData,
         photos: [...formData.photos, file_url]
       });
+      toast.success("Foto subida correctamente");
     } catch (error) {
       console.error("Error uploading photo:", error);
       toast.error("Error al subir la foto");
@@ -463,17 +504,25 @@ Equipo milautonomos`,
                     onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                     placeholder="Ej: Juan Pérez - Electricista"
                     maxLength={100}
+                    className="h-12"
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formData.business_name.length}/100 caracteres
+                  </p>
                 </div>
 
                 <div>
-                  <Label>NIF *</Label>
+                  <Label>NIF / CIF *</Label>
                   <Input
                     value={formData.cif_nif}
                     onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
-                    placeholder="12345678A"
+                    placeholder="12345678A o B12345678"
                     maxLength={9}
+                    className="h-12"
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formData.cif_nif.length}/9 caracteres
+                  </p>
                 </div>
 
                 <div>
@@ -483,6 +532,7 @@ Equipo milautonomos`,
                     value={formData.email_contacto}
                     onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
                     placeholder="tu@email.com"
+                    className="h-12"
                   />
                 </div>
 
@@ -492,9 +542,13 @@ Equipo milautonomos`,
                     type="tel"
                     value={formData.telefono_contacto}
                     onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value.replace(/[^\d+]/g, '') })}
-                    placeholder="612345678"
+                    placeholder="612345678 o +34612345678"
                     maxLength={15}
+                    className="h-12"
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formData.telefono_contacto.replace(/\s/g, '').length} dígitos (mínimo 9)
+                  </p>
                 </div>
               </div>
             )}
@@ -519,6 +573,9 @@ Equipo milautonomos`,
                       </div>
                     ))}
                   </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.categories.length} seleccionadas
+                  </p>
                 </div>
 
                 <div>
@@ -530,7 +587,7 @@ Equipo milautonomos`,
                     className="h-24"
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    {formData.descripcion_corta.length}/220 caracteres
+                    {formData.descripcion_corta.length}/220 caracteres (mínimo 20)
                   </p>
                 </div>
 
@@ -555,6 +612,7 @@ Equipo milautonomos`,
                     value={formData.service_area}
                     onChange={(e) => setFormData({ ...formData, service_area: e.target.value })}
                     placeholder="Ej: Madrid, Barcelona..."
+                    className="h-12"
                   />
                 </div>
 
@@ -564,7 +622,7 @@ Equipo milautonomos`,
                     value={formData.radio_servicio_km.toString()}
                     onValueChange={(value) => setFormData({ ...formData, radio_servicio_km: parseInt(value) })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -578,11 +636,12 @@ Equipo milautonomos`,
                 </div>
 
                 <div>
-                  <Label>Horarios</Label>
+                  <Label>Horarios (opcional)</Label>
                   <Input
                     value={formData.opening_hours}
                     onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
                     placeholder="Ej: Lun-Vie 9h-18h"
+                    className="h-12"
                   />
                 </div>
               </div>
@@ -596,9 +655,11 @@ Equipo milautonomos`,
                   <Input
                     type="number"
                     value={formData.tarifa_base}
-                    onChange={(e) => setFormData({ ...formData, tarifa_base: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
                     placeholder="Ej: 35"
                     min="0"
+                    step="0.01"
+                    className="h-12"
                   />
                 </div>
 
@@ -608,7 +669,7 @@ Equipo milautonomos`,
                     value={formData.facturacion}
                     onValueChange={(value) => setFormData({ ...formData, facturacion: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -623,15 +684,20 @@ Equipo milautonomos`,
                   <Label>Formas de pago aceptadas * (selecciona al menos una)</Label>
                   <div className="space-y-2 mt-2">
                     {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                      <div key={forma} className="flex items-center gap-2">
+                      <div key={forma} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                         <Checkbox
                           checked={formData.formas_pago.includes(forma)}
                           onCheckedChange={() => toggleFormaPago(forma)}
                         />
-                        <label className="text-sm">{forma}</label>
+                        <label className="text-sm font-medium cursor-pointer flex-1" onClick={() => toggleFormaPago(forma)}>
+                          {forma}
+                        </label>
                       </div>
                     ))}
                   </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.formas_pago.length} seleccionadas
+                  </p>
                 </div>
               </div>
             )}
@@ -685,6 +751,9 @@ Equipo milautonomos`,
                       </div>
                     ))}
                   </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.photos.length} foto(s) subida(s)
+                  </p>
                 </div>
               </div>
             )}
@@ -697,7 +766,7 @@ Equipo milautonomos`,
                     checked={formData.acepta_terminos}
                     onCheckedChange={(checked) => setFormData({ ...formData, acepta_terminos: checked })}
                   />
-                  <label className="text-sm">
+                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}>
                     <strong>Acepto los términos y condiciones *</strong>
                     <p className="text-gray-600 mt-1">
                       He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
@@ -710,7 +779,7 @@ Equipo milautonomos`,
                     checked={formData.acepta_politica_privacidad}
                     onCheckedChange={(checked) => setFormData({ ...formData, acepta_politica_privacidad: checked })}
                   />
-                  <label className="text-sm">
+                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}>
                     <strong>Acepto la política de privacidad *</strong>
                     <p className="text-gray-600 mt-1">
                       He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
@@ -723,7 +792,7 @@ Equipo milautonomos`,
                     checked={formData.consiente_contacto_clientes}
                     onCheckedChange={(checked) => setFormData({ ...formData, consiente_contacto_clientes: checked })}
                   />
-                  <label className="text-sm">
+                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}>
                     <strong>Consiento el contacto de clientes *</strong>
                     <p className="text-gray-600 mt-1">
                       Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
@@ -797,7 +866,7 @@ Equipo milautonomos`,
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  className="flex-1"
+                  className="flex-1 h-12"
                   disabled={saveProfileMutation.isPending}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -808,7 +877,7 @@ Equipo milautonomos`,
               {currentStep < steps.length - 1 ? (
                 <Button
                   onClick={handleNext}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
                   disabled={saveProfileMutation.isPending}
                 >
                   {saveProfileMutation.isPending ? (
@@ -826,7 +895,7 @@ Equipo milautonomos`,
               ) : (
                 <Button
                   onClick={handlePublish}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 h-12 bg-green-600 hover:bg-green-700"
                   disabled={publishProfileMutation.isPending}
                 >
                   {publishProfileMutation.isPending ? (
