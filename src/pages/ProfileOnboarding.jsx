@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -110,11 +111,21 @@ export default function ProfileOnboardingPage() {
 
   const saveProfileMutation = useMutation({
     mutationFn: async (data) => {
+      // Only send non-empty fields
+      const cleanData = {};
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        if (value !== null && value !== undefined && value !== "" &&
+            !(Array.isArray(value) && value.length === 0)) {
+          cleanData[key] = value;
+        }
+      });
+
       if (profile) {
-        return base44.entities.ProfessionalProfile.update(profile.id, data);
+        return base44.entities.ProfessionalProfile.update(profile.id, cleanData);
       } else {
         return base44.entities.ProfessionalProfile.create({
-          ...data,
+          ...cleanData,
           user_id: user.id,
           estado_perfil: "pendiente",
           visible_en_busqueda: false,
@@ -128,13 +139,17 @@ export default function ProfileOnboardingPage() {
       }
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
     },
+    onError: (error) => {
+      console.error("Error saving profile:", error);
+      toast.error("Error al guardar: " + error.message);
+    }
   });
 
   const publishProfileMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
-      
+
       return base44.entities.ProfessionalProfile.update(profile.id, {
         ...formData,
         imagen_principal: formData.photos[0] || "",
@@ -323,24 +338,32 @@ Equipo milautonomos`,
   const handleNext = async () => {
     setError(null);
 
-    console.log("Validating step:", currentStep);
+    console.log("=== VALIDATING STEP ===");
+    console.log("Current step:", currentStep);
     console.log("Form data:", formData);
+    console.log("Profile exists:", !!profile);
 
     if (!validateStep(currentStep)) {
+      console.log("Validation failed");
       return;
     }
 
-    // Autosave
+    console.log("Validation passed, saving...");
+
+    // Autosave - but don't block if it fails
     try {
-      await saveProfileMutation.mutateAsync(formData);
+      const savedProfile = await saveProfileMutation.mutateAsync(formData);
+      console.log("Save successful:", savedProfile);
       toast.success("Guardado correctamente");
     } catch (error) {
       console.error("Error saving:", error);
-      toast.error("Error al guardar. Inténtalo de nuevo.");
-      return;
+      // Don't block advancing if save fails
+      toast.error("No se pudo guardar, pero puedes continuar");
     }
 
+    // Always advance to next step
     if (currentStep < steps.length - 1) {
+      console.log("Advancing to step:", currentStep + 1);
       setCurrentStep(currentStep + 1);
       window.scrollTo(0, 0);
     }
@@ -873,7 +896,7 @@ Equipo milautonomos`,
                   Atrás
                 </Button>
               )}
-              
+
               {currentStep < steps.length - 1 ? (
                 <Button
                   onClick={handleNext}
