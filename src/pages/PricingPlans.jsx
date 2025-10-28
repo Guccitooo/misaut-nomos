@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift } from "lucide-react";
+import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
@@ -34,12 +34,22 @@ export default function PricingPlansPage() {
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
-      // Filter to show only the 3 active plans
-      return allPlans.filter(p => 
+      // Filter to show only the 3 active plans and remove duplicates
+      const uniquePlans = allPlans.filter(p => 
         p.plan_id === 'plan_monthly_trial' || 
         p.plan_id === 'plan_quarterly' || 
         p.plan_id === 'plan_annual'
-      ).sort((a, b) => a.precio - b.precio); // Sort by price
+      );
+      
+      // Remove duplicates by plan_id, keeping the most recent
+      const planMap = new Map();
+      uniquePlans.forEach(p => {
+        if (!planMap.has(p.plan_id) || new Date(p.updated_date) > new Date(planMap.get(p.plan_id).updated_date)) {
+          planMap.set(p.plan_id, p);
+        }
+      });
+      
+      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
   });
@@ -139,6 +149,43 @@ export default function PricingPlansPage() {
     }
   };
 
+  const getPlanFeatures = (planId) => {
+    const commonFeatures = [
+      "Aparece en búsquedas",
+      "Perfil profesional completo",
+      "Chat directo con clientes",
+      "Recibe valoraciones",
+      "Galería de fotos ilimitada",
+      "Renovación automática"
+    ];
+
+    switch (planId) {
+      case "plan_monthly_trial":
+        return [
+          "7 días gratis sin tarjeta",
+          ...commonFeatures.slice(0, 5),
+          "Soporte estándar"
+        ];
+      case "plan_quarterly":
+        return [
+          ...commonFeatures.slice(0, 5),
+          "⭐ Perfil destacado 2 semanas",
+          "Ahorro de 27€",
+          "Renovación automática"
+        ];
+      case "plan_annual":
+        return [
+          ...commonFeatures.slice(0, 5),
+          "⭐ Perfil destacado 1 mes completo",
+          "Ahorro de 138€",
+          "Soporte prioritario",
+          "Renovación automática"
+        ];
+      default:
+        return commonFeatures;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -170,7 +217,7 @@ export default function PricingPlansPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
           {plans.map((plan) => (
             <Card 
-              key={plan.plan_id}
+              key={plan.id}
               className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 ${
                 plan.plan_id === "plan_quarterly" ? "ring-4 ring-green-500" : ""
               }`}
@@ -221,43 +268,26 @@ export default function PricingPlansPage() {
               </CardHeader>
 
               <CardContent className="p-8">
-                <p className="text-gray-600 mb-6 min-h-[80px]">
+                <p className="text-gray-600 mb-6 min-h-[60px] text-sm leading-relaxed">
                   {plan.descripcion}
                 </p>
 
                 <ul className="space-y-3 mb-8">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Aparece en búsquedas</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Perfil profesional completo</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Chat directo con clientes</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Recibe valoraciones</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Galería de fotos ilimitada</span>
-                  </li>
-                  {plan.renovacion_automatica && (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">Renovación automática</span>
+                  {getPlanFeatures(plan.plan_id).map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      {feature.includes("⭐") ? (
+                        <>
+                          <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" />
+                          <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700">{feature}</span>
+                        </>
+                      )}
                     </li>
-                  )}
-                  {plan.plan_id === "plan_annual" && (
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">Soporte prioritario</span>
-                    </li>
-                  )}
+                  ))}
                 </ul>
 
                 <Button
@@ -324,6 +354,22 @@ export default function PricingPlansPage() {
                     <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
                     <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
                   </tr>
+                  <tr className="bg-amber-50">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">Perfil destacado</td>
+                    <td className="px-6 py-4 text-center text-gray-500">-</td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center">
+                        <Star className="w-5 h-5 text-amber-500 mb-1 fill-amber-500" />
+                        <span className="text-xs font-semibold text-amber-700">2 semanas</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center">
+                        <Star className="w-5 h-5 text-amber-500 mb-1 fill-amber-500" />
+                        <span className="text-xs font-semibold text-amber-700">1 mes completo</span>
+                      </div>
+                    </td>
+                  </tr>
                   <tr>
                     <td className="px-6 py-4 text-sm text-gray-700">Ahorro vs mensual</td>
                     <td className="px-6 py-4 text-center">-</td>
@@ -348,9 +394,28 @@ export default function PricingPlansPage() {
           <div className="space-y-4">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">¿Qué significa "perfil destacado"?</h3>
+                <p className="text-gray-600">
+                  Los perfiles destacados aparecen en las primeras posiciones de las búsquedas, con un badge especial que aumenta tu visibilidad y probabilidad de recibir contactos.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
                 <h3 className="font-semibold mb-2">¿Qué pasa después de los 7 días de prueba?</h3>
                 <p className="text-gray-600">
                   Si no cancelas antes de que termine tu prueba gratuita, tu plan se convertirá automáticamente en el plan mensual de 49€/mes.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">¿Cuándo se destaca mi perfil en los planes trimestral y anual?</h3>
+                <p className="text-gray-600">
+                  <strong>Plan Trimestral:</strong> Tu perfil se destaca las primeras 2 semanas al inicio de cada trimestre.<br/>
+                  <strong>Plan Anual:</strong> Tu perfil se destaca durante el primer mes completo del año.
                 </p>
               </CardContent>
             </Card>
@@ -369,15 +434,6 @@ export default function PricingPlansPage() {
                 <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral o anual?</h3>
                 <p className="text-gray-600">
                   Con el plan trimestral ahorras 27€ (120€ vs 147€). Con el plan anual ahorras 138€ (450€ vs 588€).
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-2">¿Qué incluyen todos los planes?</h3>
-                <p className="text-gray-600">
-                  Todos los planes incluyen: perfil profesional completo, aparición en búsquedas, chat directo con clientes, galería de fotos ilimitada y recepción de valoraciones.
                 </p>
               </CardContent>
             </Card>
