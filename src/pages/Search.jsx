@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -164,16 +163,16 @@ export default function SearchPage() {
         <Card className="mb-8 shadow-lg border-0">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-5 h-5 text-blue-900" />
-              <h2 className="font-semibold text-lg text-gray-900">Filtres</h2>
+              <Filter className="w-5 h-5 text-red-700" />
+              <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Catégorie" />
+                  <SelectValue placeholder="Categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.name}>
                       {cat.name}
@@ -184,10 +183,10 @@ export default function SearchPage() {
 
               <Select value={selectedCity} onValueChange={setSelectedCity}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Ville" />
+                  <SelectValue placeholder="Ciudad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les villes</SelectItem>
+                  <SelectItem value="all">Todas las ciudades</SelectItem>
                   {cities.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
@@ -198,23 +197,23 @@ export default function SearchPage() {
 
               <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Prix" />
+                  <SelectValue placeholder="Precio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les prix</SelectItem>
-                  <SelectItem value="€">€ - Économique</SelectItem>
-                  <SelectItem value="€€">€€ - Moyen</SelectItem>
+                  <SelectItem value="all">Todos los precios</SelectItem>
+                  <SelectItem value="€">€ - Económico</SelectItem>
+                  <SelectItem value="€€">€€ - Medio</SelectItem>
                   <SelectItem value="€€€">€€€ - Premium</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Trier par" />
+                  <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rating">Meilleures notes</SelectItem>
-                  <SelectItem value="recent">Plus récent</SelectItem>
+                  <SelectItem value="rating">Mejores valorados</SelectItem>
+                  <SelectItem value="recent">Más recientes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -252,7 +251,7 @@ export default function SearchPage() {
                 className="overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-0 bg-white"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
               >
-                <div className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden">
+                <div className="relative h-48 bg-gradient-to-br from-red-100 to-red-50 overflow-hidden">
                   {profile.photos?.[0] ? (
                     <img 
                       src={profile.photos[0]} 
@@ -261,7 +260,7 @@ export default function SearchPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <TrendingUp className="w-16 h-16 text-blue-900/20" />
+                      <TrendingUp className="w-16 h-16 text-red-700/20" />
                     </div>
                   )}
                   <Button
@@ -304,7 +303,7 @@ export default function SearchPage() {
                         ))}
                       </div>
                       <span className="text-sm text-gray-600 font-medium">
-                        {profile.average_rating.toFixed(1)} ({profile.total_reviews} avis)
+                        {profile.average_rating.toFixed(1)} ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
                       </span>
                     </div>
                   )}
@@ -337,10 +336,10 @@ export default function SearchPage() {
           <Card className="p-12 text-center border-0 shadow-lg">
             <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Aucun résultat trouvé
+              No se encontraron resultados
             </h3>
             <p className="text-gray-600">
-              Essayez de modifier vos critères de recherche
+              Intenta modificar tus criterios de búsqueda
             </p>
           </Card>
         )}
