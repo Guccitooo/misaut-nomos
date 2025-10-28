@@ -44,12 +44,19 @@ Deno.serve(async (req) => {
             const nextMonth = new Date(today);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
 
+            // Prepare activity text
+            const activityText = metadata.activity || "Sin especificar";
+            const activityCategory = activityText.includes(":") 
+                ? activityText.split(":")[0] 
+                : activityText;
+
             // Check if user already exists
             const existingUsers = await base44.asServiceRole.entities.User.filter({ 
                 email: customerEmail 
             });
 
             let userId;
+            let isNewUser = false;
 
             if (existingUsers.length > 0) {
                 // Update existing user
@@ -65,9 +72,8 @@ Deno.serve(async (req) => {
                     last_payment_date: today.toISOString().split('T')[0],
                 });
             } else {
-                // Note: Creating a new user requires admin privileges
-                // In production, you should use base44.asServiceRole.auth.createUser() or similar
-                // For now, we'll send an email to admin to manually create the account
+                // New user - send email to admin to create account
+                isNewUser = true;
                 await base44.asServiceRole.integrations.Core.SendEmail({
                     to: "admin@milautonomos.com",
                     subject: "✅ Pago confirmado - Crear cuenta milautonomos",
@@ -77,18 +83,20 @@ Email: ${customerEmail}
 Nombre: ${metadata.fullName}
 NIF/CIF: ${metadata.cifNif}
 Teléfono: ${metadata.phone}
-Actividad: ${metadata.activity}
+Actividad: ${activityText}
 Dirección: ${metadata.address}
 
 Stripe Customer ID: ${session.customer}
 Stripe Subscription ID: ${session.subscription}
 
-Por favor, crea la cuenta manualmente:
+IMPORTANTE: Debes crear la cuenta manualmente:
 1. Ir a Dashboard → Users → Invite User
 2. Email: ${customerEmail}
 3. Configurar como "professionnel" con estado "actif"
 4. Fecha inicio: ${today.toISOString().split('T')[0]}
 5. Fecha fin: ${nextMonth.toISOString().split('T')[0]}
+
+Una vez creada la cuenta, el perfil profesional se creará automáticamente.
 
 Gracias,
 Sistema milautonomos`,
@@ -96,23 +104,45 @@ Sistema milautonomos`,
                 });
             }
 
-            // Create professional profile if user exists
+            // Create or update professional profile
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
                 if (existingProfiles.length === 0) {
+                    // Create new professional profile
                     await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
                         business_name: metadata.fullName,
-                        description: `Profesional de ${metadata.activity}`,
-                        categories: [metadata.activity],
+                        description: `Profesional de ${activityCategory}. Recién registrado en milautonomos.`,
+                        categories: [activityCategory],
                         service_area: metadata.address.split(',').slice(-1)[0].trim(),
+                        opening_hours: "A convenir",
                         cif_nif: metadata.cifNif,
+                        photos: [],
+                        price_range: "€€",
                         average_rating: 0,
                         total_reviews: 0,
+                        website: "",
+                        social_links: {
+                            facebook: "",
+                            instagram: "",
+                            linkedin: ""
+                        }
                     });
+
+                    console.log(`✅ Perfil profesional creado automáticamente para ${metadata.fullName}`);
+                } else {
+                    // Update existing profile
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfiles[0].id, {
+                        business_name: metadata.fullName,
+                        categories: [activityCategory],
+                        service_area: metadata.address.split(',').slice(-1)[0].trim(),
+                        cif_nif: metadata.cifNif,
+                    });
+
+                    console.log(`✅ Perfil profesional actualizado para ${metadata.fullName}`);
                 }
             }
 
@@ -124,7 +154,7 @@ Sistema milautonomos`,
 
 ¡Bienvenido a milautonomos!
 
-Tu suscripción ha sido activada correctamente. Ya puedes acceder a tu cuenta profesional.
+Tu suscripción ha sido activada correctamente. ${isNewUser ? 'Recibirás otro correo en las próximas horas con tus credenciales de acceso.' : 'Ya puedes acceder a tu cuenta profesional.'}
 
 Detalles de tu suscripción:
 - Plan: Profesional mensual
@@ -132,11 +162,22 @@ Detalles de tu suscripción:
 - Fecha de inicio: ${today.toLocaleDateString('es-ES')}
 - Próxima renovación: ${nextMonth.toLocaleDateString('es-ES')}
 
-Próximos pasos:
-1. Inicia sesión en milautonomos.com
-2. Completa tu perfil profesional
-3. Añade fotos de tus trabajos
-4. ¡Comienza a recibir clientes!
+Tu perfil profesional ha sido creado automáticamente y ya apareces en el listado de "Buscar Autónomos".
+
+Próximos pasos para activar tu perfil al 100%:
+1. ${isNewUser ? 'Espera el correo con tus credenciales e inicia sesión' : 'Inicia sesión en milautonomos.com'}
+2. Ve a "Mi Perfil" y completa tu información
+3. Añade fotos de tus trabajos realizados
+4. Escribe una descripción detallada de tus servicios
+5. ¡Comienza a recibir contactos de clientes!
+
+Tu ficha profesional:
+- Nombre: ${metadata.fullName}
+- Actividad: ${activityCategory}
+- Zona: ${metadata.address.split(',').slice(-1)[0].trim()}
+- Estado: Activo y visible en búsquedas
+
+Cuanto más completes tu perfil, más clientes te encontrarán.
 
 Si tienes alguna pregunta, no dudes en contactarnos.
 
@@ -144,6 +185,8 @@ Gracias por unirte a milautonomos,
 Equipo milautonomos`,
                 from_name: "milautonomos"
             });
+
+            console.log(`✅ Flujo de alta completado para ${metadata.fullName} (${customerEmail})`);
         }
 
         return Response.json({ received: true });

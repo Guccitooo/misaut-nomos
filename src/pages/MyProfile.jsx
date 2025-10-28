@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2 } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -162,6 +161,15 @@ export default function MyProfilePage() {
     });
   };
 
+  // Check if profile is complete
+  const isProfileComplete = () => {
+    return profileData.business_name &&
+           profileData.description &&
+           profileData.categories?.length > 0 &&
+           profileData.photos?.length > 0 &&
+           profileData.service_area;
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -203,8 +211,34 @@ export default function MyProfilePage() {
 
         {success && (
           <Alert className="mb-6 bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               ¡Perfil actualizado correctamente!
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Profile completion status */}
+        {user.user_type === "professionnel" && !isProfileComplete() && (
+          <Alert className="mb-6 bg-orange-50 border-orange-200">
+            <AlertDescription className="text-orange-800">
+              <strong>¡Completa tu perfil para aparecer en las búsquedas!</strong>
+              <ul className="text-sm mt-2 space-y-1">
+                {!profileData.business_name && <li>• Añade tu nombre comercial</li>}
+                {!profileData.description && <li>• Escribe una descripción de tus servicios</li>}
+                {!profileData.categories?.length && <li>• Añade al menos una categoría</li>}
+                {!profileData.photos?.length && <li>• Sube al menos una foto de tus trabajos</li>}
+                {!profileData.service_area && <li>• Especifica tu zona de trabajo</li>}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {user.user_type === "professionnel" && isProfileComplete() && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ¡Tu perfil está completo y visible en "Buscar Autónomos"! Los clientes ya pueden encontrarte y contactarte.
             </AlertDescription>
           </Alert>
         )}
@@ -300,7 +334,7 @@ export default function MyProfilePage() {
               </div>
 
               <div>
-                <Label>Descripción de servicios</Label>
+                <Label>Descripción de servicios *</Label>
                 <Textarea
                   value={profileData.description}
                   onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
@@ -311,7 +345,7 @@ export default function MyProfilePage() {
               </div>
 
               <div>
-                <Label>Categorías de servicios</Label>
+                <Label>Categorías de servicios *</Label>
                 {isEditing && (
                   <div className="flex gap-2 mb-3">
                     <Input
@@ -351,7 +385,7 @@ export default function MyProfilePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Zona de trabajo</Label>
+                  <Label>Zona de trabajo *</Label>
                   <Input
                     value={profileData.service_area}
                     onChange={(e) => setProfileData({ ...profileData, service_area: e.target.value })}
@@ -447,7 +481,7 @@ export default function MyProfilePage() {
               <Separator />
 
               <div>
-                <Label className="mb-3 block">Fotos de trabajos realizados</Label>
+                <Label className="mb-3 block">Fotos de trabajos realizados * (mínimo 1)</Label>
                 {isEditing && (
                   <div className="mb-4">
                     <label className="cursor-pointer">
@@ -482,7 +516,7 @@ export default function MyProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removePhoto(idx)}
-                          className="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -490,6 +524,11 @@ export default function MyProfilePage() {
                     </div>
                   ))}
                 </div>
+                {(!profileData.photos || profileData.photos.length === 0) && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Añade fotos de tus trabajos para que los clientes vean tu experiencia
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
