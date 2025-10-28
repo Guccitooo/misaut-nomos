@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -123,16 +124,16 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white py-16 px-4 shadow-xl">
+      <div className="bg-gradient-to-r from-red-800 via-red-700 to-red-900 text-white py-16 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-              Trouvez le professionnel parfait
+              Encuentra el autónomo perfecto
             </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Des experts qualifiés et vérifiés à votre service
+            <p className="text-xl text-red-100 max-w-2xl mx-auto">
+              Profesionales cualificados y verificados en toda España
             </p>
           </div>
 
@@ -142,15 +143,15 @@ export default function SearchPage() {
                 <div className="flex-1 relative">
                   <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    placeholder="Rechercher un service, une entreprise..."
+                    placeholder="Buscar servicio, empresa..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-12 h-14 text-lg bg-white border-0 shadow-lg"
                   />
                 </div>
-                <Button className="h-14 px-8 bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg">
+                <Button className="h-14 px-8 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold shadow-lg">
                   <SearchIcon className="w-5 h-5 mr-2" />
-                  Rechercher
+                  Buscar
                 </Button>
               </div>
             </div>
@@ -223,10 +224,10 @@ export default function SearchPage() {
         {/* Results */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {filteredProfiles.length} professionnels disponibles
+            {filteredProfiles.length} autónomos disponibles
           </h2>
           <p className="text-gray-600">
-            Des experts vérifiés et prêts à vous aider
+            Profesionales verificados y listos para ayudarte
           </p>
         </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -61,39 +62,39 @@ export default function FavoritesPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-700" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mes Favoris</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Favoritos</h1>
           <p className="text-gray-600">
-            Retrouvez vos professionnels préférés
+            Encuentra tus autónomos favoritos
           </p>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
+            <Loader2 className="w-8 h-8 animate-spin text-red-700" />
           </div>
         ) : favorites.length === 0 ? (
           <Card className="p-12 text-center border-0 shadow-lg">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Aucun favori
+              Sin favoritos
             </h3>
             <p className="text-gray-600 mb-6">
-              Ajoutez des professionnels à vos favoris pour les retrouver facilement
+              Añade autónomos a tus favoritos para encontrarlos fácilmente
             </p>
             <Button
               onClick={() => navigate(createPageUrl("Search"))}
-              className="bg-blue-900 hover:bg-blue-800"
+              className="bg-red-700 hover:bg-red-800"
             >
-              Découvrir des professionnels
+              Descubrir autónomos
             </Button>
           </Card>
         ) : (
@@ -104,7 +105,7 @@ export default function FavoritesPage() {
                 className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 bg-white"
               >
                 <div 
-                  className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden cursor-pointer"
+                  className="relative h-48 bg-gradient-to-br from-red-100 to-red-50 overflow-hidden cursor-pointer"
                   onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
                 >
                   {profile.photos?.[0] ? (
@@ -115,7 +116,7 @@ export default function FavoritesPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <TrendingUp className="w-16 h-16 text-blue-900/20" />
+                      <TrendingUp className="w-16 h-16 text-red-700/20" />
                     </div>
                   )}
                   <Button
@@ -133,7 +134,7 @@ export default function FavoritesPage() {
 
                 <CardContent className="p-6">
                   <h3 
-                    className="font-bold text-xl text-gray-900 mb-3 cursor-pointer hover:text-blue-900 transition-colors"
+                    className="font-bold text-xl text-gray-900 mb-3 cursor-pointer hover:text-red-700 transition-colors"
                     onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
                   >
                     {profile.business_name}
@@ -144,11 +145,11 @@ export default function FavoritesPage() {
                   </p>
 
                   <Button
-                    className="w-full bg-blue-900 hover:bg-blue-800"
+                    className="w-full bg-red-700 hover:bg-red-800"
                     onClick={() => handleContact(profile.user_id)}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    Contacter
+                    Contactar
                   </Button>
                 </CardContent>
               </Card>

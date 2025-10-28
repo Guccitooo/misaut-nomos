@@ -9,7 +9,7 @@ import {
   Heart,
   Menu,
   LogOut,
-  Settings,
+  Briefcase,
   LayoutDashboard
 } from "lucide-react";
 import {
@@ -66,23 +66,23 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
     {
-      title: "Rechercher",
+      title: "Buscar Autónomos",
       url: createPageUrl("Search"),
       icon: Search,
     },
     {
-      title: "Messages",
+      title: "Mensajes",
       url: createPageUrl("Messages"),
       icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : null
     },
     {
-      title: "Favoris",
+      title: "Favoritos",
       url: createPageUrl("Favorites"),
       icon: Heart,
     },
     {
-      title: "Mon Profil",
+      title: "Mi Perfil",
       url: createPageUrl("MyProfile"),
       icon: User,
     },
@@ -90,7 +90,7 @@ export default function Layout({ children, currentPageName }) {
 
   if (user?.role === "admin") {
     navigationItems.push({
-      title: "Administration",
+      title: "Administración",
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
@@ -101,25 +101,25 @@ export default function Layout({ children, currentPageName }) {
       <style>
         {`
           :root {
-            --primary: #1e3a8a;
-            --primary-light: #3b82f6;
-            --accent: #f59e0b;
-            --accent-light: #fbbf24;
+            --primary: #c62828;
+            --primary-light: #ef5350;
+            --accent: #fbc02d;
+            --accent-light: #fdd835;
             --background: #f8fafc;
             --card: #ffffff;
           }
         `}
       </style>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-red-50">
         <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
           <SidebarHeader className="border-b border-gray-100 p-6">
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <Settings className="w-6 h-6 text-amber-400" />
+              <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 rounded-xl flex items-center justify-center shadow-lg">
+                <Briefcase className="w-6 h-6 text-yellow-400" />
               </div>
               <div>
-                <h2 className="font-bold text-xl text-gray-900">ProConnect</h2>
-                <p className="text-xs text-gray-500">Trouvez votre expert</p>
+                <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
+                <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
               </div>
             </Link>
           </SidebarHeader>
@@ -132,15 +132,15 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative ${
-                          location.pathname === item.url ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-md' : ''
+                        className={`hover:bg-red-50 hover:text-red-900 transition-all duration-200 rounded-xl mb-1 relative ${
+                          location.pathname === item.url ? 'bg-gradient-to-r from-red-700 to-red-900 text-white shadow-md' : ''
                         }`}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                           <item.icon className="w-5 h-5" />
                           <span className="font-medium">{item.title}</span>
                           {item.badge && (
-                            <span className="ml-auto bg-amber-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                            <span className="ml-auto bg-yellow-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                               {item.badge}
                             </span>
                           )}
@@ -157,8 +157,8 @@ export default function Layout({ children, currentPageName }) {
             {user && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 px-2">
-                  <Avatar className="w-10 h-10 border-2 border-blue-900">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-900 to-blue-700 text-white font-semibold">
+                  <Avatar className="w-10 h-10 border-2 border-red-700">
+                    <AvatarFallback className="bg-gradient-to-br from-red-700 to-red-900 text-white font-semibold">
                       {user.full_name?.charAt(0) || user.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -167,7 +167,7 @@ export default function Layout({ children, currentPageName }) {
                       {user.full_name || user.email}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {user.user_type === "professionnel" ? "Professionnel" : "Client"}
+                      {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
                     </p>
                   </div>
                 </div>
@@ -177,7 +177,7 @@ export default function Layout({ children, currentPageName }) {
                   onClick={handleLogout}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Déconnexion
+                  Cerrar sesión
                 </Button>
               </div>
             )}
@@ -190,7 +190,7 @@ export default function Layout({ children, currentPageName }) {
               <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors">
                 <Menu className="w-6 h-6" />
               </SidebarTrigger>
-              <h1 className="text-lg font-bold text-gray-900">ProConnect</h1>
+              <h1 className="text-lg font-bold text-gray-900">milautonomos</h1>
               <div className="w-10" />
             </div>
           </header>

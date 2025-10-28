@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -164,37 +165,37 @@ export default function MyProfilePage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
+        <Loader2 className="w-8 h-8 animate-spin text-red-700" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mon Profil</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
-              {user.user_type === "professionnel" ? "Gérez votre profil professionnel" : "Gérez vos informations"}
+              {user.user_type === "professionnel" ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
           </div>
           {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="bg-blue-900 hover:bg-blue-800">
-              Modifier
+            <Button onClick={() => setIsEditing(true)} className="bg-red-700 hover:bg-red-800">
+              Editar
             </Button>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Annuler
+                Cancelar
               </Button>
               <Button 
                 onClick={handleSave}
                 disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
-                className="bg-blue-900 hover:bg-blue-800"
+                className="bg-red-700 hover:bg-red-800"
               >
                 <Save className="w-4 h-4 mr-2" />
-                Enregistrer
+                Guardar
               </Button>
             </div>
           )}
@@ -203,7 +204,7 @@ export default function MyProfilePage() {
         {success && (
           <Alert className="mb-6 bg-green-50 border-green-200">
             <AlertDescription className="text-green-800">
-              Profil mis à jour avec succès !
+              ¡Perfil actualizado correctamente!
             </AlertDescription>
           </Alert>
         )}
@@ -212,8 +213,8 @@ export default function MyProfilePage() {
         <Card className="mb-6 shadow-lg border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-900" />
-              Informations personnelles
+              <User className="w-5 h-5 text-red-700" />
+              Información personal
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -223,7 +224,7 @@ export default function MyProfilePage() {
             </div>
 
             <div>
-              <Label>Nom complet</Label>
+              <Label>Nombre completo</Label>
               <Input
                 value={userData.full_name}
                 onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
@@ -233,16 +234,16 @@ export default function MyProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Téléphone</Label>
+                <Label>Teléfono</Label>
                 <Input
                   value={userData.phone}
                   onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
                   disabled={!isEditing}
-                  placeholder="+34 123 456 789"
+                  placeholder="+34 612 345 678"
                 />
               </div>
               <div>
-                <Label>Ville</Label>
+                <Label>Ciudad</Label>
                 <Input
                   value={userData.city}
                   onChange={(e) => setUserData({ ...userData, city: e.target.value })}
@@ -253,15 +254,15 @@ export default function MyProfilePage() {
             </div>
 
             <div>
-              <Label>Type de compte</Label>
-              <Badge className="bg-blue-100 text-blue-900">
-                {user.user_type === "professionnel" ? "Professionnel" : "Client"}
+              <Label>Tipo de cuenta</Label>
+              <Badge className="bg-red-100 text-red-900">
+                {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
               </Badge>
             </div>
 
             {user.user_type === "professionnel" && user.subscription_status && (
               <div>
-                <Label>Statut d'abonnement</Label>
+                <Label>Estado de suscripción</Label>
                 <Badge 
                   className={
                     user.subscription_status === "actif" ? "bg-green-100 text-green-800" :
@@ -269,7 +270,9 @@ export default function MyProfilePage() {
                     "bg-red-100 text-red-800"
                   }
                 >
-                  {user.subscription_status}
+                  {user.subscription_status === "actif" ? "Activo" :
+                   user.subscription_status === "en_attente" ? "Pendiente" :
+                   user.subscription_status === "suspendu" ? "Suspendido" : "Cancelado"}
                 </Badge>
               </div>
             )}
@@ -281,40 +284,40 @@ export default function MyProfilePage() {
           <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-900" />
-                Profil professionnel
+                <Building2 className="w-5 h-5 text-red-700" />
+                Perfil profesional
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label>Nom commercial *</Label>
+                <Label>Nombre comercial *</Label>
                 <Input
                   value={profileData.business_name}
                   onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
                   disabled={!isEditing}
-                  placeholder="Mon Entreprise"
+                  placeholder="Mi Empresa"
                 />
               </div>
 
               <div>
-                <Label>Description des services</Label>
+                <Label>Descripción de servicios</Label>
                 <Textarea
                   value={profileData.description}
                   onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
                   disabled={!isEditing}
                   className="h-32"
-                  placeholder="Décrivez vos services..."
+                  placeholder="Describe tus servicios..."
                 />
               </div>
 
               <div>
-                <Label>Catégories de services</Label>
+                <Label>Categorías de servicios</Label>
                 {isEditing && (
                   <div className="flex gap-2 mb-3">
                     <Input
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="Ex: Plomberie, Électricité..."
+                      placeholder="Ej: Fontanería, Electricidad..."
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -329,7 +332,7 @@ export default function MyProfilePage() {
                 )}
                 <div className="flex flex-wrap gap-2">
                   {profileData.categories?.map((cat, idx) => (
-                    <Badge key={idx} className="bg-blue-100 text-blue-900">
+                    <Badge key={idx} className="bg-red-100 text-red-900">
                       {cat}
                       {isEditing && (
                         <button
@@ -348,33 +351,33 @@ export default function MyProfilePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Zone d'intervention</Label>
+                  <Label>Zona de trabajo</Label>
                   <Input
                     value={profileData.service_area}
                     onChange={(e) => setProfileData({ ...profileData, service_area: e.target.value })}
                     disabled={!isEditing}
-                    placeholder="Madrid et alentours"
+                    placeholder="Madrid y alrededores"
                   />
                 </div>
                 <div>
-                  <Label>Horaires</Label>
+                  <Label>Horario</Label>
                   <Input
                     value={profileData.opening_hours}
                     onChange={(e) => setProfileData({ ...profileData, opening_hours: e.target.value })}
                     disabled={!isEditing}
-                    placeholder="Lun-Ven 9h-18h"
+                    placeholder="Lun-Vie 9h-18h"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Site web</Label>
+                  <Label>Sitio web</Label>
                   <Input
                     value={profileData.website}
                     onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                     disabled={!isEditing}
-                    placeholder="https://monsite.com"
+                    placeholder="https://misitio.com"
                   />
                 </div>
                 <div>
@@ -389,7 +392,7 @@ export default function MyProfilePage() {
               </div>
 
               <div>
-                <Label>Gamme de prix</Label>
+                <Label>Rango de precios</Label>
                 <Select
                   value={profileData.price_range}
                   onValueChange={(value) => setProfileData({ ...profileData, price_range: value })}
@@ -399,8 +402,8 @@ export default function MyProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="€">€ - Économique</SelectItem>
-                    <SelectItem value="€€">€€ - Moyen</SelectItem>
+                    <SelectItem value="€">€ - Económico</SelectItem>
+                    <SelectItem value="€€">€€ - Medio</SelectItem>
                     <SelectItem value="€€€">€€€ - Premium</SelectItem>
                   </SelectContent>
                 </Select>
@@ -409,7 +412,7 @@ export default function MyProfilePage() {
               <Separator />
 
               <div>
-                <Label>Réseaux sociaux</Label>
+                <Label>Redes sociales</Label>
                 <div className="space-y-3 mt-2">
                   <Input
                     value={profileData.social_links?.facebook || ""}
@@ -418,7 +421,7 @@ export default function MyProfilePage() {
                       social_links: { ...profileData.social_links, facebook: e.target.value }
                     })}
                     disabled={!isEditing}
-                    placeholder="Facebook URL"
+                    placeholder="URL de Facebook"
                   />
                   <Input
                     value={profileData.social_links?.instagram || ""}
@@ -427,7 +430,7 @@ export default function MyProfilePage() {
                       social_links: { ...profileData.social_links, instagram: e.target.value }
                     })}
                     disabled={!isEditing}
-                    placeholder="Instagram URL"
+                    placeholder="URL de Instagram"
                   />
                   <Input
                     value={profileData.social_links?.linkedin || ""}
@@ -436,7 +439,7 @@ export default function MyProfilePage() {
                       social_links: { ...profileData.social_links, linkedin: e.target.value }
                     })}
                     disabled={!isEditing}
-                    placeholder="LinkedIn URL"
+                    placeholder="URL de LinkedIn"
                   />
                 </div>
               </div>
@@ -444,17 +447,17 @@ export default function MyProfilePage() {
               <Separator />
 
               <div>
-                <Label className="mb-3 block">Photos de réalisations</Label>
+                <Label className="mb-3 block">Fotos de trabajos realizados</Label>
                 {isEditing && (
                   <div className="mb-4">
                     <label className="cursor-pointer">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-red-500 transition-colors">
                         {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-900" />
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-red-700" />
                         ) : (
                           <>
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Cliquez pour ajouter une photo</p>
+                            <p className="text-sm text-gray-600">Haz clic para añadir una foto</p>
                           </>
                         )}
                       </div>

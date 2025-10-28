@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       });
 
       if (messages.length === 0) {
-        throw new Error("Vous devez d'abord contacter ce professionnel avant de laisser un avis");
+        throw new Error("Debes contactar primero con este autónomo antes de dejar una opinión");
       }
 
       // Check if user already reviewed
@@ -37,7 +38,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       });
 
       if (existingReviews.length > 0) {
-        throw new Error("Vous avez déjà laissé un avis pour ce professionnel");
+        throw new Error("Ya has dejado una opinión para este autónomo");
       }
 
       return base44.entities.Review.create(reviewData);
@@ -93,17 +94,17 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-900" />
-            Avis clients ({reviews.length})
+            <MessageSquare className="w-5 h-5 text-red-700" />
+            Opiniones ({reviews.length})
           </CardTitle>
           {currentUser && currentUser.user_type === "client" && (
             <Button
               variant="outline"
               onClick={() => setShowForm(!showForm)}
-              className="border-blue-900 text-blue-900 hover:bg-blue-50"
+              className="border-red-700 text-red-700 hover:bg-red-50"
             >
               <Star className="w-4 h-4 mr-2" />
-              Laisser un avis
+              Dejar opinión
             </Button>
           )}
         </div>
@@ -117,10 +118,10 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="p-6 bg-blue-50 rounded-xl space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 bg-red-50 rounded-xl space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Votre note
+                Tu valoración
               </label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -144,12 +145,12 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Votre commentaire
+                Tu comentario
               </label>
               <Textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Partagez votre expérience..."
+                placeholder="Comparte tu experiencia..."
                 className="h-32"
                 required
               />
@@ -164,14 +165,14 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
                   setError(null);
                 }}
               >
-                Annuler
+                Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={createReviewMutation.isPending}
-                className="bg-blue-900 hover:bg-blue-800"
+                className="bg-red-700 hover:bg-red-800"
               >
-                {createReviewMutation.isPending ? "Envoi..." : "Publier l'avis"}
+                {createReviewMutation.isPending ? "Enviando..." : "Publicar opinión"}
               </Button>
             </div>
           </form>
@@ -221,8 +222,8 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
           {reviews.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-medium">Aucun avis pour le moment</p>
-              <p className="text-sm">Soyez le premier à laisser un avis</p>
+              <p className="font-medium">Sin opiniones por ahora</p>
+              <p className="text-sm">Sé el primero en dejar una opinión</p>
             </div>
           )}
         </div>

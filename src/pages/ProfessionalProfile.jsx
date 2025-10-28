@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -131,7 +132,7 @@ export default function ProfessionalProfilePage() {
 
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 p-4">
         <div className="max-w-6xl mx-auto">
           <Skeleton className="h-64 w-full mb-6" />
           <Skeleton className="h-96 w-full" />
@@ -142,18 +143,18 @@ export default function ProfessionalProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 p-4">
         <div className="max-w-6xl mx-auto text-center py-16">
-          <h2 className="text-2xl font-bold text-gray-900">Profil non trouvé</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Perfil no encontrado</h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50">
       {/* Header with Cover */}
-      <div className="relative h-64 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900">
+      <div className="relative h-64 bg-gradient-to-r from-red-800 via-red-700 to-red-900">
         {profile.photos?.[0] && (
           <img 
             src={profile.photos[0]} 
@@ -161,7 +162,7 @@ export default function ProfessionalProfilePage() {
             className="w-full h-full object-cover opacity-30"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 to-transparent" />
         
         <div className="absolute top-6 left-6">
           <Button
@@ -181,7 +182,7 @@ export default function ProfessionalProfilePage() {
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
-                <AvatarFallback className="bg-gradient-to-br from-blue-900 to-blue-700 text-white text-3xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-red-700 to-red-900 text-white text-3xl font-bold">
                   {profile.business_name?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
@@ -210,7 +211,7 @@ export default function ProfessionalProfilePage() {
                           {profile.average_rating.toFixed(1)}
                         </span>
                         <span className="text-gray-500">
-                          ({profile.total_reviews} avis)
+                          ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
                         </span>
                       </div>
                     )}
@@ -226,18 +227,18 @@ export default function ProfessionalProfilePage() {
                       <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
                     </Button>
                     <Button 
-                      className="bg-blue-900 hover:bg-blue-800"
+                      className="bg-red-700 hover:bg-red-800"
                       onClick={handleStartChat}
                     >
                       <MessageSquare className="w-5 h-5 mr-2" />
-                      Contacter
+                      Contactar
                     </Button>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {profile.categories?.map((cat, idx) => (
-                    <Badge key={idx} className="bg-blue-100 text-blue-900">
+                    <Badge key={idx} className="bg-red-100 text-red-900">
                       {cat}
                     </Badge>
                   ))}
@@ -273,8 +274,8 @@ export default function ProfessionalProfilePage() {
             <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-900" />
-                  Informations
+                  <FileText className="w-5 h-5 text-red-700" />
+                  Información
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -282,7 +283,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">Zone d'intervention</p>
+                      <p className="text-sm text-gray-500">Zona de trabajo</p>
                       <p className="font-medium text-gray-900">{profile.service_area}</p>
                     </div>
                   </div>
@@ -292,7 +293,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">Horaires</p>
+                      <p className="text-sm text-gray-500">Horario</p>
                       <p className="font-medium text-gray-900">{profile.opening_hours}</p>
                     </div>
                   </div>
@@ -312,7 +313,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">Téléphone</p>
+                      <p className="text-sm text-gray-500">Teléfono</p>
                       <p className="font-medium text-gray-900">{professionalUser.phone}</p>
                     </div>
                   </div>
@@ -325,10 +326,10 @@ export default function ProfessionalProfilePage() {
                     href={profile.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-900 hover:text-blue-700 transition-colors"
+                    className="flex items-center gap-2 text-red-700 hover:text-red-900 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
-                    <span className="font-medium">Visiter le site web</span>
+                    <span className="font-medium">Visitar sitio web</span>
                   </a>
                 )}
 

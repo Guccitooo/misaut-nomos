@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -16,8 +17,8 @@ export default function PhotoGallery({ photos }) {
       <Card className="shadow-lg border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Image className="w-5 h-5 text-blue-900" />
-            Galerie photo ({photos.length})
+            <Image className="w-5 h-5 text-red-700" />
+            Galería de fotos ({photos.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
