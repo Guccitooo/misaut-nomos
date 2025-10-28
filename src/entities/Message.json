@@ -1,0 +1,41 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "ID unique de la conversation (combinaison des deux user_ids)"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "ID de l'exp\u00e9diteur"
+    },
+    "recipient_id": {
+      "type": "string",
+      "description": "ID du destinataire"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Message lu ou non"
+    },
+    "professional_name": {
+      "type": "string",
+      "description": "Nom du professionnel (pour affichage)"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nom du client (pour affichage)"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "sender_id",
+    "recipient_id",
+    "content"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "client",
+        "professionnel"
+      ],
+      "description": "Type de compte utilisateur"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Num\u00e9ro de t\u00e9l\u00e9phone"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ville"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "actif",
+        "en_attente",
+        "suspendu",
+        "annule"
+      ],
+      "description": "Statut de l'abonnement (pour professionnels uniquement)"
+    },
+    "subscription_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de d\u00e9but d'abonnement"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de fin d'abonnement"
+    },
+    "last_payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du dernier paiement"
+    }
+  }
+}

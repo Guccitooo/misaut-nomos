@@ -1,0 +1,21 @@
+{
+  "name": "ServiceCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom de la cat\u00e9gorie"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description de la cat\u00e9gorie"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Ic\u00f4ne pour la cat\u00e9gorie"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

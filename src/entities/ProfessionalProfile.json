@@ -1,0 +1,84 @@
+{
+  "name": "ProfessionalProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur professionnel"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Nom commercial"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description des services"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Cat\u00e9gories de services"
+    },
+    "service_area": {
+      "type": "string",
+      "description": "Zone d'intervention"
+    },
+    "opening_hours": {
+      "type": "string",
+      "description": "Horaires d'ouverture"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs des photos de r\u00e9alisations"
+    },
+    "website": {
+      "type": "string",
+      "description": "Site web"
+    },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "facebook": {
+          "type": "string"
+        },
+        "instagram": {
+          "type": "string"
+        },
+        "linkedin": {
+          "type": "string"
+        }
+      },
+      "description": "Liens r\u00e9seaux sociaux"
+    },
+    "cif_nif": {
+      "type": "string",
+      "description": "CIF / NIF"
+    },
+    "price_range": {
+      "type": "string",
+      "enum": [
+        "\u20ac",
+        "\u20ac\u20ac",
+        "\u20ac\u20ac\u20ac"
+      ],
+      "description": "Gamme de prix"
+    },
+    "average_rating": {
+      "type": "number",
+      "description": "Note moyenne"
+    },
+    "total_reviews": {
+      "type": "number",
+      "description": "Nombre total d'avis"
+    }
+  },
+  "required": [
+    "user_id",
+    "business_name"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID du professionnel \u00e9valu\u00e9"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID du client qui laisse l'avis"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nom du client"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Note de 1 \u00e0 5 \u00e9toiles"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Commentaire"
+    },
+    "is_verified": {
+      "type": "boolean",
+      "default": true,
+      "description": "Avis v\u00e9rifi\u00e9 (client ayant eu un chat)"
+    },
+    "is_reported": {
+      "type": "boolean",
+      "default": false,
+      "description": "Avis signal\u00e9"
+    }
+  },
+  "required": [
+    "professional_id",
+    "client_id",
+    "rating"
+  ]
+}

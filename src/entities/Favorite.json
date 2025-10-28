@@ -1,0 +1,22 @@
+{
+  "name": "Favorite",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "ID du client"
+    },
+    "professional_id": {
+      "type": "string",
+      "description": "ID du professionnel"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Nom du professionnel (pour affichage)"
+    }
+  },
+  "required": [
+    "client_id",
+    "professional_id"
+  ]
+}
