@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +29,7 @@ export default function ProfileOnboardingPage() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -60,7 +60,6 @@ export default function ProfileOnboardingPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
-      // Load existing profile
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: currentUser.id
       });
@@ -69,13 +68,11 @@ export default function ProfileOnboardingPage() {
         const existingProfile = profiles[0];
         setProfile(existingProfile);
 
-        // If profile is already active, redirect to dashboard
         if (existingProfile.onboarding_completed && existingProfile.visible_en_busqueda) {
           navigate(createPageUrl("MyProfile"));
           return;
         }
 
-        // Pre-fill form with existing data
         setFormData({
           business_name: existingProfile.business_name || "",
           cif_nif: existingProfile.cif_nif || "",
@@ -96,7 +93,6 @@ export default function ProfileOnboardingPage() {
           consiente_contacto_clientes: existingProfile.consiente_contacto_clientes || false,
         });
       } else {
-        // Pre-fill with user data
         setFormData(prev => ({
           ...prev,
           email_contacto: currentUser.email,
@@ -109,62 +105,11 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const saveProfileMutation = useMutation({
-    mutationFn: async (data) => {
-      console.log("💾 Attempting to save profile data:", data);
-      console.log("📍 Profile exists?", !!profile);
-      console.log("🆔 User ID:", user?.id);
-
-      // Only send non-empty fields
-      const cleanData = {};
-      Object.keys(data).forEach(key => {
-        const value = data[key];
-        if (value !== null && value !== undefined && value !== "" &&
-            !(Array.isArray(value) && value.length === 0)) {
-          cleanData[key] = value;
-        }
-      });
-
-      try {
-        let result;
-        if (profile) {
-          console.log("🔄 Updating existing profile:", profile.id);
-          result = await base44.entities.ProfessionalProfile.update(profile.id, cleanData);
-        } else {
-          console.log("✨ Creating new profile");
-          result = await base44.entities.ProfessionalProfile.create({
-            ...cleanData,
-            user_id: user.id,
-            estado_perfil: "pendiente",
-            visible_en_busqueda: false,
-            onboarding_completed: false
-          });
-        }
-        console.log("✅ Save successful:", result);
-        return result;
-      } catch (error) {
-        console.error("❌ Save failed:", error);
-        throw error;
-      }
-    },
-    onSuccess: (newProfile) => {
-      console.log("🎉 onSuccess called with:", newProfile);
-      if (!profile) {
-        setProfile(newProfile);
-      }
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-    },
-    onError: (error) => {
-      console.error("💥 onError called:", error);
-      toast.error("Error al guardar: " + (error.message || "Error desconocido"));
-    }
-  });
-
   const publishProfileMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
-
+      
       return base44.entities.ProfessionalProfile.update(profile.id, {
         ...formData,
         imagen_principal: formData.photos[0] || "",
@@ -176,7 +121,6 @@ export default function ProfileOnboardingPage() {
       });
     },
     onSuccess: async () => {
-      // Send confirmation email
       await base44.integrations.Core.SendEmail({
         to: user.email,
         subject: "✅ Tu perfil ya está publicado en milautonomos",
@@ -194,8 +138,6 @@ Próximos pasos para maximizar tu visibilidad:
 2. Completa tu descripción con palabras clave
 3. Responde rápido a los mensajes de clientes
 4. Pide valoraciones a tus clientes satisfechos
-
-Ver mi perfil público: [URL de tu perfil]
 
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,
@@ -351,66 +293,57 @@ Equipo milautonomos`,
   };
 
   const handleNext = async () => {
-    console.log("\n========================================");
-    console.log("🚀 BUTTON CLICKED - NEXT");
-    console.log("========================================");
+    console.log("🔴 BOTÓN CLICKEADO - handleNext ejecutándose");
+    console.log("Paso actual:", currentStep);
     
     setError(null);
 
-    console.log("📊 Current step:", currentStep);
-    console.log("📝 Form data:", JSON.stringify(formData, null, 2));
-    console.log("👤 User:", user?.email);
-    console.log("📄 Profile:", profile?.id);
-
-    console.log("\n🔍 Starting validation...");
-    const isValid = validateStep(currentStep);
-    console.log("✓ Validation result:", isValid);
-
-    if (!isValid) {
-      console.log("❌ Validation failed, stopping here");
-      console.log("Error message:", error);
+    // Validar
+    if (!validateStep(currentStep)) {
+      console.log("❌ Validación falló");
       return;
     }
 
-    console.log("\n💾 Attempting to save...");
-    console.log("Mutation pending:", saveProfileMutation.isPending);
+    console.log("✅ Validación pasó");
 
+    // Guardar en background
+    setIsSaving(true);
     try {
-      const savedProfile = await saveProfileMutation.mutateAsync(formData);
-      console.log("✅ Save completed successfully:", savedProfile);
-      toast.success("Guardado correctamente");
-    } catch (err) {
-      console.error("⚠️ Save failed but continuing:", err);
-      toast.error("No se pudo guardar, pero puedes continuar");
+      if (profile) {
+        await base44.entities.ProfessionalProfile.update(profile.id, formData);
+      } else {
+        const newProfile = await base44.entities.ProfessionalProfile.create({
+          ...formData,
+          user_id: user.id,
+          estado_perfil: "pendiente",
+          visible_en_busqueda: false,
+          onboarding_completed: false
+        });
+        setProfile(newProfile);
+      }
+      console.log("💾 Guardado exitoso");
+    } catch (error) {
+      console.error("⚠️ Error guardando:", error);
     }
+    setIsSaving(false);
 
-    console.log("\n➡️ Advancing to next step");
-    console.log("Current step before:", currentStep);
-    console.log("Total steps:", steps.length);
-    
-    if (currentStep < steps.length - 1) {
-      const nextStep = currentStep + 1;
-      console.log("Moving to step:", nextStep);
-      setCurrentStep(nextStep);
-      window.scrollTo(0, 0);
-      console.log("✅ Step advanced successfully");
-    } else {
-      console.log("⚠️ Already at last step");
-    }
-    
-    console.log("========================================\n");
+    // SIEMPRE avanzar
+    console.log("➡️ Avanzando al siguiente paso");
+    const nextStep = currentStep + 1;
+    setCurrentStep(nextStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    console.log("✅ Paso cambiado a:", nextStep);
   };
 
   const handleBack = () => {
     setError(null);
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePublish = async () => {
-    // Validate all steps
     for (let i = 0; i < steps.length - 1; i++) {
       if (!validateStep(i)) {
         toast.error(`Completa el paso ${i + 1}: ${steps[i].title}`);
@@ -526,7 +459,6 @@ Equipo milautonomos`,
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
             <h1 className="text-2xl font-bold text-gray-900">Completa tu perfil profesional</h1>
@@ -923,20 +855,25 @@ Equipo milautonomos`,
                   variant="outline"
                   onClick={handleBack}
                   className="flex-1 h-12"
-                  disabled={saveProfileMutation.isPending}
+                  disabled={isSaving}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Atrás
                 </Button>
               )}
-
+              
               {currentStep < steps.length - 1 ? (
                 <Button
-                  onClick={handleNext}
+                  type="button"
+                  onClick={(e) => {
+                    console.log("🔴 CLICK DETECTADO EN BOTÓN");
+                    e.preventDefault();
+                    handleNext();
+                  }}
                   className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
-                  disabled={saveProfileMutation.isPending}
+                  disabled={isSaving}
                 >
-                  {saveProfileMutation.isPending ? (
+                  {isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Guardando...
