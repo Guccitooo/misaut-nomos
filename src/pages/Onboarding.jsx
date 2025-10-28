@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -32,8 +32,21 @@ export default function OnboardingPage() {
     activity: "",
     activityOther: "",
     address: "",
-    paymentMethod: "",
+    paymentMethod: "stripe",
   });
+
+  // Check for success/cancel from Stripe redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+
+    if (success === 'true') {
+      setCurrentStep(steps.length); // Show success screen
+    } else if (canceled === 'true') {
+      setError('El pago fue cancelado. Puedes intentarlo nuevamente.');
+    }
+  }, []);
 
   const steps = [
     {
@@ -98,16 +111,6 @@ export default function OnboardingPage() {
       field: "address",
       type: "text",
       placeholder: "Calle, número, código postal, ciudad"
-    },
-    {
-      question: "Método de pago preferido",
-      field: "paymentMethod",
-      type: "select",
-      options: [
-        { value: "stripe", label: "Tarjeta de crédito (Stripe)" },
-        { value: "paypal", label: "PayPal" },
-        { value: "transferencia", label: "Transferencia bancaria" }
-      ]
     }
   ];
 
@@ -176,7 +179,6 @@ export default function OnboardingPage() {
       phone: "Teléfono",
       activity: "Actividad profesional",
       address: "Dirección fiscal",
-      paymentMethod: "Método de pago"
     };
 
     for (const [field, label] of Object.entries(requiredFields)) {
@@ -205,60 +207,40 @@ export default function OnboardingPage() {
         return;
       }
 
-      // 2. Prepare activity text
-      const activityText = formData.activity === "Otro tipo de servicio profesional" 
-        ? `${formData.activity}: ${formData.activityOther}` 
-        : formData.activity;
-
-      // 3. Get today's date for subscription
-      const today = new Date();
-      const nextMonth = new Date(today);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      // 4. Send notification to admin with all data
+      // 2. Create Stripe checkout session
       try {
-        await base44.integrations.Core.SendEmail({
-          to: "admin@milautonomos.com", // Replace with actual admin email
-          subject: "Nueva solicitud de suscripción - milautonomos",
-          body: `Nueva solicitud de suscripción recibida:
-
-Tipo: ${formData.userType === "autonomo" ? "Autónomo" : "Empresa"}
-Nombre: ${formData.fullName}
-NIF/CIF: ${formData.cifNif}
-Email: ${formData.email}
-Teléfono: ${formData.phone}
-Actividad: ${activityText}
-Dirección: ${formData.address}
-Método de pago: ${formData.paymentMethod}
-
-Fecha de inicio: ${today.toISOString().split('T')[0]}
-Fecha de fin: ${nextMonth.toISOString().split('T')[0]}
-
-Por favor, procesa esta solicitud:
-1. Crear cuenta de usuario con el email: ${formData.email}
-2. Configurar método de pago: ${formData.paymentMethod}
-3. Activar suscripción
-
-Gracias,
-Sistema milautonomos`,
-          from_name: "milautonomos"
+        const response = await base44.functions.invoke('createCheckoutSession', {
+          email: formData.email,
+          fullName: formData.fullName,
+          userType: formData.userType,
+          cifNif: formData.cifNif,
+          phone: formData.phone,
+          activity: formData.activity,
+          activityOther: formData.activityOther,
+          address: formData.address,
+          paymentMethod: formData.paymentMethod,
         });
 
-        // Simulate processing time for better UX
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
 
-        // Show success screen
-        setCurrentStep(steps.length);
-      } catch (emailError) {
-        console.error("Error sending notification:", emailError);
-        setError("Ha habido un problema temporal al procesar tu solicitud. Por favor, inténtalo de nuevo en unos segundos.");
+        // 3. Redirect to Stripe Checkout
+        if (response.data.url) {
+          window.location.href = response.data.url;
+        } else {
+          throw new Error('No checkout URL received');
+        }
+      } catch (stripeError) {
+        console.error("Error creating checkout session:", stripeError);
+        setError("Ha habido un problema temporal al conectar con el sistema de pago. Por favor, inténtalo de nuevo en unos segundos.");
         setIsProcessing(false);
         return;
       }
 
     } catch (error) {
       console.error("Error creating subscription:", error);
-      setError("Ha habido un problema temporal al conectar con el sistema. Por favor, inténtalo de nuevo en unos segundos.");
+      setError("Ha habido un problema temporal al procesar tu solicitud. Por favor, inténtalo de nuevo en unos segundos.");
       setIsProcessing(false);
     }
   };
@@ -273,30 +255,34 @@ Sistema milautonomos`,
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              ✅ Tu suscripción ha sido procesada correctamente
+              ✅ Tu suscripción ha sido activada correctamente
             </h1>
             <p className="text-lg text-gray-600 mb-2">
-              Recibirás un correo electrónico en las próximas 24 horas con los detalles de acceso a tu cuenta.
+              Redirigiéndote a tu panel profesional...
             </p>
             <p className="text-lg text-gray-600 mb-8">
-              Nuestro equipo está procesando tu solicitud de pago y activará tu cuenta de forma inmediata.
+              Recibirás un correo de confirmación en {formData.email}
             </p>
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
               <p className="text-sm text-gray-700">
                 <strong>Próximos pasos:</strong>
               </p>
               <ul className="text-sm text-gray-600 mt-2 text-left space-y-1">
-                <li>✓ Revisa tu correo ({formData.email})</li>
-                <li>✓ Confirma tu método de pago</li>
+                <li>✓ Revisa tu correo para confirmar tu cuenta</li>
                 <li>✓ Completa tu perfil profesional</li>
+                <li>✓ Añade fotos de tus trabajos</li>
+                <li>✓ ¡Comienza a recibir clientes!</li>
               </ul>
             </div>
             <Button
               size="lg"
               className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate(createPageUrl("Search"))}
+              onClick={() => {
+                // Try to login with the email
+                base44.auth.redirectToLogin(createPageUrl("MyProfile"));
+              }}
             >
-              Volver a inicio
+              Ir a mi panel
             </Button>
           </CardContent>
         </Card>
@@ -465,6 +451,19 @@ Sistema milautonomos`,
               )}
             </div>
 
+            {/* Payment info for last step */}
+            {currentStep === steps.length - 1 && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-gray-700 mb-2">
+                  <strong>Plan seleccionado:</strong> Profesional mensual
+                </p>
+                <p className="text-2xl font-bold text-blue-900 mb-2">29€/mes</p>
+                <p className="text-xs text-gray-600">
+                  Serás redirigido a Stripe para completar el pago de forma segura.
+                </p>
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex gap-4 mt-8">
               {currentStep > 0 && (
@@ -492,7 +491,7 @@ Sistema milautonomos`,
                   </>
                 ) : currentStep === steps.length - 1 ? (
                   <>
-                    Finalizar suscripción
+                    Continuar al pago
                     <CheckCircle className="w-5 h-5 ml-2" />
                   </>
                 ) : (
