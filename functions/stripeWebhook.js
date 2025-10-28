@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
-        // Handle the event
+        // Handle checkout.session.completed
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             
@@ -187,6 +187,113 @@ Equipo milautonomos`,
             });
 
             console.log(`✅ Flujo de alta completado para ${metadata.fullName} (${customerEmail})`);
+        }
+
+        // Handle invoice.payment_succeeded (monthly renewals)
+        if (event.type === 'invoice.payment_succeeded') {
+            const invoice = event.data.object;
+            const customerEmail = invoice.customer_email;
+
+            if (customerEmail) {
+                const users = await base44.asServiceRole.entities.User.filter({ 
+                    email: customerEmail 
+                });
+
+                if (users.length > 0) {
+                    const today = new Date();
+                    const nextMonth = new Date(today);
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+                    await base44.asServiceRole.entities.User.update(users[0].id, {
+                        subscription_status: "actif",
+                        subscription_end_date: nextMonth.toISOString().split('T')[0],
+                        last_payment_date: today.toISOString().split('T')[0],
+                    });
+
+                    console.log(`✅ Suscripción renovada para ${customerEmail}`);
+                }
+            }
+        }
+
+        // Handle subscription.deleted (cancellations)
+        if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object;
+            const customer = await stripe.customers.retrieve(subscription.customer);
+            const customerEmail = customer.email;
+
+            if (customerEmail) {
+                const users = await base44.asServiceRole.entities.User.filter({ 
+                    email: customerEmail 
+                });
+
+                if (users.length > 0) {
+                    await base44.asServiceRole.entities.User.update(users[0].id, {
+                        subscription_status: "annule",
+                    });
+
+                    // Send cancellation email
+                    await base44.asServiceRole.integrations.Core.SendEmail({
+                        to: customerEmail,
+                        subject: "Tu suscripción ha sido cancelada - milautonomos",
+                        body: `Hola,
+
+Tu suscripción a milautonomos ha sido cancelada.
+
+Tu perfil ya no será visible en el listado de "Buscar Autónomos".
+
+Si deseas reactivar tu suscripción, puedes hacerlo en cualquier momento desde tu panel de usuario.
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Gracias,
+Equipo milautonomos`,
+                        from_name: "milautonomos"
+                    });
+
+                    console.log(`❌ Suscripción cancelada para ${customerEmail}`);
+                }
+            }
+        }
+
+        // Handle payment_failed
+        if (event.type === 'invoice.payment_failed') {
+            const invoice = event.data.object;
+            const customerEmail = invoice.customer_email;
+
+            if (customerEmail) {
+                const users = await base44.asServiceRole.entities.User.filter({ 
+                    email: customerEmail 
+                });
+
+                if (users.length > 0) {
+                    await base44.asServiceRole.entities.User.update(users[0].id, {
+                        subscription_status: "suspendu",
+                    });
+
+                    // Send payment failed email
+                    await base44.asServiceRole.integrations.Core.SendEmail({
+                        to: customerEmail,
+                        subject: "⚠️ Problema con tu pago - milautonomos",
+                        body: `Hola,
+
+Hemos tenido un problema al procesar tu pago mensual de milautonomos.
+
+Tu suscripción ha sido suspendida temporalmente. Por favor, actualiza tu método de pago para reactivarla.
+
+Si no actualizas tu método de pago en los próximos 7 días, tu perfil dejará de ser visible en las búsquedas.
+
+Puedes actualizar tu método de pago desde tu panel de Stripe.
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Gracias,
+Equipo milautonomos`,
+                        from_name: "milautonomos"
+                    });
+
+                    console.log(`⚠️ Pago fallido para ${customerEmail}`);
+                }
+            }
         }
 
         return Response.json({ received: true });

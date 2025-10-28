@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +41,8 @@ import {
   XCircle,
   Edit,
   MessageSquare,
-  Star
+  Star,
+  Flag
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
@@ -115,6 +117,28 @@ export default function AdminDashboard() {
     },
   });
 
+  const deleteReviewMutation = useMutation({
+    mutationFn: async (reviewId) => {
+      await base44.entities.Review.delete(reviewId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      setSuccess("Opinión eliminada correctamente");
+      setTimeout(() => setSuccess(null), 3000);
+    },
+  });
+
+  const unreportReviewMutation = useMutation({
+    mutationFn: async (reviewId) => {
+      await base44.entities.Review.update(reviewId, { is_reported: false });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      setSuccess("Opinión marcada como válida");
+      setTimeout(() => setSuccess(null), 3000);
+    },
+  });
+
   const sendNotificationMutation = useMutation({
     mutationFn: async ({ email, subject, body }) => {
       return base44.integrations.Core.SendEmail({
@@ -132,6 +156,7 @@ export default function AdminDashboard() {
   const activeProfessionals = professionals.filter(u => u.subscription_status === "actif");
   const pendingProfessionals = professionals.filter(u => u.subscription_status === "en_attente");
   const suspendedProfessionals = professionals.filter(u => u.subscription_status === "suspendu");
+  const reportedReviews = allReviews.filter(r => r.is_reported);
 
   // This month stats
   const thisMonth = new Date().getMonth();
@@ -142,7 +167,7 @@ export default function AdminDashboard() {
   }).length;
 
   const recentMessages = allMessages.slice(0, 10);
-  const recentReviews = allReviews.slice(0, 10);
+  // const recentReviews = allReviews.slice(0, 10); // This was removed as reportedReviews are now shown in a dedicated tab
 
   const filteredUsers = allUsers.filter(u => 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,12 +286,12 @@ export default function AdminDashboard() {
           <Card className="border-0 shadow-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                Actividad Reciente
+                <Flag className="w-4 h-4" />
+                Opiniones reportadas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{allMessages.length}</div>
+              <div className="text-3xl font-bold text-red-600">{reportedReviews.length}</div>
               <p className="text-sm text-gray-500 mt-1">
                 {allReviews.length} opiniones totales
               </p>
@@ -279,6 +304,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-white border border-gray-200">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="subscriptions">Suscripciones</TabsTrigger>
+            <TabsTrigger value="reviews">Opiniones reportadas</TabsTrigger>
             <TabsTrigger value="activity">Actividad</TabsTrigger>
           </TabsList>
 
@@ -438,9 +464,77 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Reported Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-4">
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Flag className="w-5 h-5 text-red-500" />
+                  Opiniones Reportadas ({reportedReviews.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reportedReviews.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-300" />
+                    <p className="font-medium">No hay opiniones reportadas</p>
+                    <p className="text-sm">Todas las opiniones están en orden</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reportedReviews.map((review) => (
+                      <div key={review.id} className="p-4 bg-red-50 rounded-lg border border-red-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-semibold text-gray-900">{review.client_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {format(new Date(review.created_date), "d MMM yyyy", { locale: es })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  star <= review.rating
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-3">{review.comment}</p>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unreportReviewMutation.mutate(review.id)}
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Marcar como válida
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteReviewMutation.mutate(review.id)}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Eliminar opinión
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6"> {/* Changed from 2 cols to 1 as reviews are now in their own tab */}
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -459,35 +553,6 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         <p className="text-sm text-gray-600 line-clamp-2">{msg.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="w-5 h-5 text-amber-500" />
-                    Opiniones Recientes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {recentReviews.map((review) => (
-                      <div key={review.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium text-sm">{review.client_name}</p>
-                          <div className="flex items-center gap-1">
-                            {[...Array(review.rating)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">{review.comment}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {format(new Date(review.created_date), "dd MMM yyyy", { locale: es })}
-                        </p>
                       </div>
                     ))}
                   </div>
