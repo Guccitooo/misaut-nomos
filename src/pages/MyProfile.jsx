@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function MyProfilePage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -52,7 +55,6 @@ export default function MyProfilePage() {
     horario_cierre: "18:00",
     opening_hours: "",
     website: "",
-    cif_nif: "",
     price_range: "€€",
     tarifa_base: 0,
     facturacion: "autonomo",
@@ -129,13 +131,20 @@ export default function MyProfilePage() {
     }
   };
 
-  const { data: profile } = useQuery({
+  // ✅ CAMBIO CRÍTICO: Cargar perfil SIEMPRE que haya usuario, independiente de user_type
+  const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['myProfile', user?.id],
     queryFn: async () => {
+      console.log("🔍 Buscando perfil para user_id:", user.id);
+      
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: user.id
       });
+      
+      console.log("📦 Perfiles encontrados:", profiles.length);
+      
       if (profiles[0]) {
+        console.log("✅ Perfil encontrado:", profiles[0]);
         setProfileData({
           business_name: profiles[0].business_name || "",
           cif_nif: profiles[0].cif_nif || "",
@@ -165,10 +174,12 @@ export default function MyProfilePage() {
             linkedin: ""
           }
         });
+      } else {
+        console.log("❌ No se encontró perfil profesional");
       }
       return profiles[0];
     },
-    enabled: !!user && user.user_type === "professionnel",
+    enabled: !!user, // ✅ Solo requiere que haya usuario
   });
 
   const updateUserMutation = useMutation({
@@ -182,22 +193,31 @@ export default function MyProfilePage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
+      console.log("💾 Guardando perfil...");
+      console.log("📝 Datos a guardar:", data);
+      
       if (profile) {
-        // IMPORTANTE: Mantener estado activo y visible
-        return base44.entities.ProfessionalProfile.update(profile.id, {
+        console.log("🔄 Actualizando perfil existente ID:", profile.id);
+        // ✅ IMPORTANTE: Mantener estado activo y visible
+        const result = await base44.entities.ProfessionalProfile.update(profile.id, {
           ...data,
           estado_perfil: "activo",
           visible_en_busqueda: true,
           onboarding_completed: true
         });
+        console.log("✅ Perfil actualizado correctamente");
+        return result;
       } else {
-        return base44.entities.ProfessionalProfile.create({
+        console.log("➕ Creando nuevo perfil");
+        const result = await base44.entities.ProfessionalProfile.create({
           ...data,
           user_id: user.id,
           estado_perfil: "activo",
           visible_en_busqueda: true,
           onboarding_completed: true
         });
+        console.log("✅ Perfil creado correctamente");
+        return result;
       }
     },
     onSuccess: () => {
@@ -209,9 +229,12 @@ export default function MyProfilePage() {
   });
 
   const handleSave = () => {
+    console.log("💾 Iniciando guardado...");
     updateUserMutation.mutate(userData);
     
-    if (user.user_type === "professionnel") {
+    // ✅ Guardar perfil SIEMPRE si existe algún dato profesional
+    if (profile || profileData.business_name) {
+      console.log("💼 Guardando perfil profesional");
       updateProfileMutation.mutate(profileData);
     }
   };
@@ -286,13 +309,16 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user) {
+  if (!user || loadingProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
       </div>
     );
   }
+
+  // ✅ Detectar si es profesional por tener perfil O por user_type
+  const isProfessional = profile || user.user_type === "professionnel";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
@@ -301,16 +327,34 @@ export default function MyProfilePage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
-              {user.user_type === "professionnel" ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
+              {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
+            {profile && (
+              <div className="mt-2">
+                <Badge className={profile.visible_en_busqueda ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                  {profile.visible_en_busqueda ? "✓ Visible en búsquedas" : "⚠ Oculto"}
+                </Badge>
+              </div>
+            )}
           </div>
           {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-              Editar
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
+                Editar
+              </Button>
+              {!profile && (
+                <Button onClick={() => navigate(createPageUrl("ProfileOnboarding"))} className="bg-orange-500 hover:bg-orange-600">
+                  Completar Perfil Profesional
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsEditing(false);
+                // Recargar datos originales
+                queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+              }}>
                 Cancelar
               </Button>
               <Button 
@@ -318,8 +362,17 @@ export default function MyProfilePage() {
                 disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                <Save className="w-4 h-4 mr-2" />
-                Guardar
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar
+                  </>
+                )}
               </Button>
             </div>
           )}
@@ -381,11 +434,11 @@ export default function MyProfilePage() {
             <div>
               <Label>Tipo de cuenta</Label>
               <Badge className="bg-blue-100 text-blue-900">
-                {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                {isProfessional ? "Autónomo" : "Cliente"}
               </Badge>
             </div>
 
-            {user.user_type === "professionnel" && user.subscription_status && (
+            {user.subscription_status && (
               <div>
                 <Label>Estado de suscripción</Label>
                 <Badge 
@@ -405,7 +458,7 @@ export default function MyProfilePage() {
         </Card>
 
         {/* Professional Profile */}
-        {user.user_type === "professionnel" && (
+        {isProfessional && (
           <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
