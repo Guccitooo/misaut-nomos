@@ -77,7 +77,10 @@ export default function SearchPage() {
       console.log("📊 Perfiles con status:", profilesWithStatus);
 
       const visibleProfiles = profilesWithStatus.filter(profile => {
-        const hasActiveSubscription = profile.subscription_status === "actif";
+        // ✅ IMPORTANTE: Incluir tanto "actif" como "en_prueba" (usuarios trial de 7 días)
+        const hasActiveSubscription = 
+          profile.subscription_status === "actif" || 
+          profile.subscription_status === "en_prueba";
         const isVisible = profile.visible_en_busqueda === true;
         const isCompleted = profile.onboarding_completed === true;
         

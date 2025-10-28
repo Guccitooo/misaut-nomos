@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        // ✅ IMPORTANTE: Actualizar usuario con subscription_status
+        // ✅ IMPORTANTE: SIEMPRE usar "actif" incluso para trial (no "en_prueba")
+        // Los usuarios de prueba deben aparecer en búsquedas desde el día 1
         await base44.asServiceRole.entities.User.update(userId, {
             subscription_status: "actif",
             user_type: "professionnel",
