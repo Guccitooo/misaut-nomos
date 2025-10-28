@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, Link } from "react-router-dom"; // Added Link import
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ import {
   Heart,
   Filter,
   TrendingUp,
-  Briefcase // Added Briefcase icon import
+  Briefcase
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
