@@ -122,11 +122,7 @@ export default function OnboardingPage() {
     const value = formData[currentField];
 
     if (!value || (typeof value === 'string' && value.trim() === '')) {
-      if (currentField === "activity") {
-        setError("Selecciona una de las actividades antes de continuar.");
-      } else {
-        setError("Por favor completa este campo para continuar");
-      }
+      setError("Por favor completa este campo para continuar");
       return false;
     }
 
@@ -169,29 +165,9 @@ export default function OnboardingPage() {
     }
   };
 
-  const validateAllFields = () => {
-    const requiredFields = {
-      userType: "Tipo de usuario",
-      fullName: "Nombre completo",
-      cifNif: "NIF/CIF",
-      email: "Correo electrónico",
-      password: "Contraseña",
-      phone: "Teléfono",
-      activity: "Actividad profesional",
-      address: "Dirección fiscal",
-    };
-
-    for (const [field, label] of Object.entries(requiredFields)) {
-      if (!formData[field] || formData[field].trim() === '') {
-        return { valid: false, message: `Falta completar: ${label}` };
-      }
-    }
-
-    if (formData.activity === "Otro tipo de servicio profesional" && !formData.activityOther.trim()) {
-      return { valid: false, message: "Falta especificar tu actividad profesional" };
-    }
-
-    return { valid: true };
+  const handleFieldChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    setError(null); // Clear error when user types
   };
 
   const handleSubmit = async () => {
@@ -199,48 +175,49 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // 1. Validate all fields
-      const validation = validateAllFields();
-      if (!validation.valid) {
-        setError(`Por favor, completa todos los datos antes de continuar con el pago. ${validation.message}`);
+      // Validate all fields before proceeding
+      const requiredFields = ['userType', 'fullName', 'cifNif', 'email', 'password', 'phone', 'activity', 'address'];
+      const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim() === '');
+
+      if (missingFields.length > 0) {
+        setError("Por favor, completa todos los campos antes de continuar");
         setIsProcessing(false);
         return;
       }
 
-      // 2. Create Stripe checkout session
-      try {
-        const response = await base44.functions.invoke('createCheckoutSession', {
-          email: formData.email,
-          fullName: formData.fullName,
-          userType: formData.userType,
-          cifNif: formData.cifNif,
-          phone: formData.phone,
-          activity: formData.activity,
-          activityOther: formData.activityOther,
-          address: formData.address,
-          paymentMethod: formData.paymentMethod,
-        });
-
-        if (response.data.error) {
-          throw new Error(response.data.error);
-        }
-
-        // 3. Redirect to Stripe Checkout
-        if (response.data.url) {
-          window.location.href = response.data.url;
-        } else {
-          throw new Error('No checkout URL received');
-        }
-      } catch (stripeError) {
-        console.error("Error creating checkout session:", stripeError);
-        setError("Ha habido un problema temporal al conectar con el sistema de pago. Por favor, inténtalo de nuevo en unos segundos.");
+      if (formData.activity === "Otro tipo de servicio profesional" && !formData.activityOther.trim()) {
+        setError("Por favor especifica tu actividad profesional");
         setIsProcessing(false);
         return;
+      }
+
+      // Create Stripe checkout session
+      const response = await base44.functions.invoke('createCheckoutSession', {
+        email: formData.email,
+        fullName: formData.fullName,
+        userType: formData.userType,
+        cifNif: formData.cifNif,
+        phone: formData.phone,
+        activity: formData.activity,
+        activityOther: formData.activityOther,
+        address: formData.address,
+        paymentMethod: formData.paymentMethod,
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+
+      // Redirect to Stripe Checkout
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No se pudo crear la sesión de pago');
       }
 
     } catch (error) {
-      console.error("Error creating subscription:", error);
-      setError("Ha habido un problema temporal al procesar tu solicitud. Por favor, inténtalo de nuevo en unos segundos.");
+      console.error("Error:", error);
+      setError("Ha habido un problema temporal. Por favor, inténtalo de nuevo en unos segundos.");
       setIsProcessing(false);
     }
   };
@@ -251,38 +228,50 @@ export default function OnboardingPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
         <Card className="max-w-2xl w-full border-0 shadow-2xl">
           <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              ✅ Tu suscripción ha sido activada correctamente
+              ✅ ¡Pago completado con éxito!
             </h1>
             <p className="text-lg text-gray-600 mb-2">
-              Redirigiéndote a tu panel profesional...
+              Tu suscripción ha sido activada correctamente.
             </p>
             <p className="text-lg text-gray-600 mb-8">
               Recibirás un correo de confirmación en {formData.email}
             </p>
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <p className="text-sm text-gray-700">
-                <strong>Próximos pasos:</strong>
+            <div className="bg-blue-50 p-6 rounded-xl mb-6 text-left">
+              <p className="text-sm font-semibold text-gray-900 mb-3">
+                ✨ Próximos pasos:
               </p>
-              <ul className="text-sm text-gray-600 mt-2 text-left space-y-1">
-                <li>✓ Revisa tu correo para confirmar tu cuenta</li>
-                <li>✓ Completa tu perfil profesional</li>
-                <li>✓ Añade fotos de tus trabajos</li>
-                <li>✓ ¡Comienza a recibir clientes!</li>
+              <ul className="text-sm text-gray-700 space-y-2">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Revisa tu correo para confirmar tu cuenta</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Completa tu perfil profesional</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Añade fotos de tus trabajos</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>¡Comienza a recibir clientes!</span>
+                </li>
               </ul>
             </div>
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 px-8"
               onClick={() => {
-                // Try to login with the email
                 base44.auth.redirectToLogin(createPageUrl("MyProfile"));
               }}
             >
               Ir a mi panel
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </CardContent>
         </Card>
@@ -295,19 +284,19 @@ export default function OnboardingPage() {
       <div className="max-w-2xl w-full">
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-3">
             <span className="text-white text-sm font-medium">
               Paso {currentStep + 1} de {steps.length}
             </span>
             <span className="text-white text-sm font-medium">
-              {Math.round(progress)}%
+              {Math.round(progress)}% completado
             </span>
           </div>
-          <Progress value={progress} className="h-2 bg-blue-900" />
+          <Progress value={progress} className="h-3 bg-blue-900 rounded-full" />
         </div>
 
         {/* Question Card */}
-        <Card className="border-0 shadow-2xl">
+        <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden">
           <CardContent className="p-8 md:p-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">
               {currentStepData.question}
@@ -326,22 +315,25 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {currentStepData.options.map((option) => {
                     const Icon = option.icon;
+                    const isSelected = formData[currentStepData.field] === option.value;
                     return (
                       <button
                         key={option.value}
                         onClick={() => {
-                          setFormData({ ...formData, [currentStepData.field]: option.value });
-                          setError(null);
-                          setTimeout(() => handleNext(), 300);
+                          handleFieldChange(currentStepData.field, option.value);
                         }}
-                        className={`p-6 border-2 rounded-xl transition-all hover:scale-105 ${
-                          formData[currentStepData.field] === option.value
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300"
+                        className={`p-8 border-2 rounded-2xl transition-all duration-300 ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50 shadow-lg scale-105"
+                            : "border-gray-200 hover:border-blue-300 hover:shadow-md"
                         }`}
                       >
-                        <Icon className="w-12 h-12 mx-auto mb-3 text-blue-600" />
-                        <p className="text-lg font-semibold text-gray-900">{option.label}</p>
+                        <Icon className={`w-16 h-16 mx-auto mb-4 transition-colors ${
+                          isSelected ? "text-blue-600" : "text-gray-400"
+                        }`} />
+                        <p className={`text-lg font-semibold transition-colors ${
+                          isSelected ? "text-blue-900" : "text-gray-700"
+                        }`}>{option.label}</p>
                       </button>
                     );
                   })}
@@ -349,76 +341,72 @@ export default function OnboardingPage() {
               )}
 
               {currentStepData.type === "text" && (
-                <Input
-                  type="text"
-                  value={formData[currentStepData.field]}
-                  onChange={(e) => {
-                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
-                    setError(null);
-                  }}
-                  placeholder={currentStepData.placeholder}
-                  className="h-14 text-lg"
-                  autoFocus
-                />
+                <div>
+                  <Input
+                    type="text"
+                    value={formData[currentStepData.field]}
+                    onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
+                    placeholder={currentStepData.placeholder}
+                    className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    autoFocus
+                  />
+                </div>
               )}
 
               {currentStepData.type === "email" && (
-                <Input
-                  type="email"
-                  value={formData[currentStepData.field]}
-                  onChange={(e) => {
-                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
-                    setError(null);
-                  }}
-                  placeholder={currentStepData.placeholder}
-                  className="h-14 text-lg"
-                  autoFocus
-                />
+                <div>
+                  <Input
+                    type="email"
+                    value={formData[currentStepData.field]}
+                    onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
+                    placeholder={currentStepData.placeholder}
+                    className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    autoFocus
+                  />
+                </div>
               )}
 
               {currentStepData.type === "password" && (
-                <Input
-                  type="password"
-                  value={formData[currentStepData.field]}
-                  onChange={(e) => {
-                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
-                    setError(null);
-                  }}
-                  placeholder={currentStepData.placeholder}
-                  className="h-14 text-lg"
-                  autoFocus
-                />
+                <div>
+                  <Input
+                    type="password"
+                    value={formData[currentStepData.field]}
+                    onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
+                    placeholder={currentStepData.placeholder}
+                    className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    autoFocus
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Usa letras, números y símbolos para mayor seguridad
+                  </p>
+                </div>
               )}
 
               {currentStepData.type === "tel" && (
-                <Input
-                  type="tel"
-                  value={formData[currentStepData.field]}
-                  onChange={(e) => {
-                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
-                    setError(null);
-                  }}
-                  placeholder={currentStepData.placeholder}
-                  className="h-14 text-lg"
-                  autoFocus
-                />
+                <div>
+                  <Input
+                    type="tel"
+                    value={formData[currentStepData.field]}
+                    onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
+                    placeholder={currentStepData.placeholder}
+                    className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    autoFocus
+                  />
+                </div>
               )}
 
               {currentStepData.type === "select" && (
                 <>
                   <Select
                     value={formData[currentStepData.field]}
-                    onValueChange={(value) => {
-                      setFormData({ ...formData, [currentStepData.field]: value });
-                      setError(null);
-                    }}
+                    onValueChange={(value) => handleFieldChange(currentStepData.field, value)}
                   >
-                    <SelectTrigger className="h-14 text-lg">
+                    <SelectTrigger className="h-14 text-lg border-2 rounded-xl focus:border-blue-600">
                       <SelectValue placeholder="Selecciona una opción" />
                     </SelectTrigger>
                     <SelectContent>
                       {currentStepData.options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem key={option.value} value={option.value} className="text-lg py-3">
                           {option.label}
                         </SelectItem>
                       ))}
@@ -427,22 +415,19 @@ export default function OnboardingPage() {
 
                   {/* Show additional field if "Otro tipo de servicio profesional" is selected */}
                   {currentStepData.field === "activity" && formData.activity === "Otro tipo de servicio profesional" && (
-                    <div className="mt-4">
-                      <Label className="text-gray-700 mb-2 block">
-                        Especifica brevemente tu actividad
+                    <div className="mt-4 p-4 bg-blue-50 rounded-xl">
+                      <Label className="text-gray-900 mb-2 block font-medium">
+                        Especifica tu actividad
                       </Label>
                       <Input
                         type="text"
                         value={formData.activityOther}
-                        onChange={(e) => {
-                          setFormData({ ...formData, activityOther: e.target.value.slice(0, 50) });
-                          setError(null);
-                        }}
-                        placeholder="Máx. 50 caracteres"
+                        onChange={(e) => handleFieldChange('activityOther', e.target.value.slice(0, 50))}
+                        placeholder="Ej: Diseñador gráfico, Consultor IT..."
                         maxLength={50}
-                        className="h-14 text-lg"
+                        className="h-12 text-base border-2 rounded-xl"
                       />
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-600 mt-2">
                         {formData.activityOther.length}/50 caracteres
                       </p>
                     </div>
@@ -453,14 +438,38 @@ export default function OnboardingPage() {
 
             {/* Payment info for last step */}
             {currentStep === steps.length - 1 && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-700 mb-2">
-                  <strong>Plan seleccionado:</strong> Profesional mensual
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-700">
+                    Plan seleccionado:
+                  </p>
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                    Más Popular
+                  </Badge>
+                </div>
+                <p className="text-3xl font-bold text-blue-900 mb-2">29€/mes</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Acceso completo a la plataforma profesional
                 </p>
-                <p className="text-2xl font-bold text-blue-900 mb-2">29€/mes</p>
-                <p className="text-xs text-gray-600">
-                  Serás redirigido a Stripe para completar el pago de forma segura.
-                </p>
+                <ul className="text-sm text-gray-700 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span>Aparece en todas las búsquedas</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span>Perfil profesional completo con fotos</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span>Mensajes ilimitados con clientes</span>
+                  </li>
+                </ul>
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <p className="text-xs text-gray-600">
+                    🔒 Pago seguro procesado por Stripe
+                  </p>
+                </div>
               </div>
             )}
 
@@ -471,7 +480,7 @@ export default function OnboardingPage() {
                   variant="outline"
                   size="lg"
                   onClick={handleBack}
-                  className="flex-1"
+                  className="flex-1 h-14 border-2 rounded-xl hover:bg-gray-50"
                   disabled={isProcessing}
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
@@ -481,8 +490,14 @@ export default function OnboardingPage() {
               <Button
                 size="lg"
                 onClick={handleNext}
-                disabled={isProcessing}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={isProcessing || !formData[currentStepData.field]}
+                className={`h-14 rounded-xl font-semibold text-base shadow-lg transition-all ${
+                  currentStep > 0 ? 'flex-1' : 'w-full'
+                } ${
+                  !formData[currentStepData.field] 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+                }`}
               >
                 {isProcessing ? (
                   <>
@@ -492,7 +507,7 @@ export default function OnboardingPage() {
                 ) : currentStep === steps.length - 1 ? (
                   <>
                     Continuar al pago
-                    <CheckCircle className="w-5 h-5 ml-2" />
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 ) : (
                   <>
@@ -506,8 +521,8 @@ export default function OnboardingPage() {
         </Card>
 
         {/* Help text */}
-        <p className="text-center text-white text-sm mt-6 opacity-80">
-          Tus datos están seguros y protegidos. Puedes cancelar en cualquier momento.
+        <p className="text-center text-white text-sm mt-6 opacity-90">
+          🔒 Tus datos están seguros y protegidos • Puedes cancelar en cualquier momento
         </p>
       </div>
     </div>
