@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function MyProfilePage() {
   const queryClient = useQueryClient();
@@ -35,13 +36,27 @@ export default function MyProfilePage() {
   // Professional profile data
   const [profileData, setProfileData] = useState({
     business_name: "",
+    cif_nif: "",
+    email_contacto: "",
+    telefono_contacto: "",
     description: "",
+    descripcion_corta: "",
     categories: [],
+    provincia: "",
+    ciudad: "",
+    municipio: "",
     service_area: "",
+    radio_servicio_km: 10,
+    horario_dias: [],
+    horario_apertura: "09:00",
+    horario_cierre: "18:00",
     opening_hours: "",
     website: "",
     cif_nif: "",
     price_range: "€€",
+    tarifa_base: 0,
+    facturacion: "autonomo",
+    formas_pago: [],
     photos: [],
     social_links: {
       facebook: "",
@@ -52,9 +67,52 @@ export default function MyProfilePage() {
 
   const [newCategory, setNewCategory] = useState("");
 
+  // Provincias y ciudades
+  const provincias = [
+    "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
+    "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
+    "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Gerona", "Granada",
+    "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares",
+    "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lérida",
+    "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia",
+    "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla",
+    "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
+    "Vizcaya", "Zamora", "Zaragoza"
+  ].sort();
+
+  const ciudadesPorProvincia = {
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
+    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí"],
+    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella"],
+    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera"],
+    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera"],
+    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena"],
+    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja"],
+    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco"]
+  };
+
+  const diasSemana = [
+    { value: "lunes", label: "Lunes" },
+    { value: "martes", label: "Martes" },
+    { value: "miercoles", label: "Miércoles" },
+    { value: "jueves", label: "Jueves" },
+    { value: "viernes", label: "Viernes" },
+    { value: "sabado", label: "Sábado" },
+    { value: "domingo", label: "Domingo" }
+  ];
+
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (profileData.provincia && profileData.ciudad) {
+      const area = profileData.municipio 
+        ? `${profileData.municipio}, ${profileData.ciudad}, ${profileData.provincia}`
+        : `${profileData.ciudad}, ${profileData.provincia}`;
+      setProfileData(prev => ({ ...prev, service_area: area }));
+    }
+  }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
   const loadUser = async () => {
     try {
@@ -78,7 +136,35 @@ export default function MyProfilePage() {
         user_id: user.id
       });
       if (profiles[0]) {
-        setProfileData(profiles[0]);
+        setProfileData({
+          business_name: profiles[0].business_name || "",
+          cif_nif: profiles[0].cif_nif || "",
+          email_contacto: profiles[0].email_contacto || user.email,
+          telefono_contacto: profiles[0].telefono_contacto || user.phone || "",
+          description: profiles[0].description || "",
+          descripcion_corta: profiles[0].descripcion_corta || "",
+          categories: profiles[0].categories || [],
+          provincia: profiles[0].provincia || "",
+          ciudad: profiles[0].ciudad || "",
+          municipio: profiles[0].municipio || "",
+          service_area: profiles[0].service_area || "",
+          radio_servicio_km: profiles[0].radio_servicio_km || 10,
+          horario_dias: profiles[0].horario_dias || [],
+          horario_apertura: profiles[0].horario_apertura || "09:00",
+          horario_cierre: profiles[0].horario_cierre || "18:00",
+          opening_hours: profiles[0].opening_hours || "",
+          website: profiles[0].website || "",
+          price_range: profiles[0].price_range || "€€",
+          tarifa_base: profiles[0].tarifa_base || 0,
+          facturacion: profiles[0].facturacion || "autonomo",
+          formas_pago: profiles[0].formas_pago || [],
+          photos: profiles[0].photos || [],
+          social_links: profiles[0].social_links || {
+            facebook: "",
+            instagram: "",
+            linkedin: ""
+          }
+        });
       }
       return profiles[0];
     },
@@ -97,11 +183,20 @@ export default function MyProfilePage() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       if (profile) {
-        return base44.entities.ProfessionalProfile.update(profile.id, data);
+        // IMPORTANTE: Mantener estado activo y visible
+        return base44.entities.ProfessionalProfile.update(profile.id, {
+          ...data,
+          estado_perfil: "activo",
+          visible_en_busqueda: true,
+          onboarding_completed: true
+        });
       } else {
         return base44.entities.ProfessionalProfile.create({
           ...data,
-          user_id: user.id
+          user_id: user.id,
+          estado_perfil: "activo",
+          visible_en_busqueda: true,
+          onboarding_completed: true
         });
       }
     },
@@ -161,13 +256,34 @@ export default function MyProfilePage() {
     });
   };
 
-  // Check if profile is complete
-  const isProfileComplete = () => {
-    return profileData.business_name &&
-           profileData.description &&
-           profileData.categories?.length > 0 &&
-           profileData.photos?.length > 0 &&
-           profileData.service_area;
+  const toggleDia = (dia) => {
+    const dias = profileData.horario_dias;
+    if (dias.includes(dia)) {
+      setProfileData({
+        ...profileData,
+        horario_dias: dias.filter(d => d !== dia)
+      });
+    } else {
+      setProfileData({
+        ...profileData,
+        horario_dias: [...dias, dia]
+      });
+    }
+  };
+
+  const toggleFormaPago = (forma) => {
+    const formas = profileData.formas_pago;
+    if (formas.includes(forma)) {
+      setProfileData({
+        ...profileData,
+        formas_pago: formas.filter(f => f !== forma)
+      });
+    } else {
+      setProfileData({
+        ...profileData,
+        formas_pago: [...formas, forma]
+      });
+    }
   };
 
   if (!user) {
@@ -213,32 +329,7 @@ export default function MyProfilePage() {
           <Alert className="mb-6 bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              ¡Perfil actualizado correctamente!
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Profile completion status */}
-        {user.user_type === "professionnel" && !isProfileComplete() && (
-          <Alert className="mb-6 bg-orange-50 border-orange-200">
-            <AlertDescription className="text-orange-800">
-              <strong>¡Completa tu perfil para aparecer en las búsquedas!</strong>
-              <ul className="text-sm mt-2 space-y-1">
-                {!profileData.business_name && <li>• Añade tu nombre comercial</li>}
-                {!profileData.description && <li>• Escribe una descripción de tus servicios</li>}
-                {!profileData.categories?.length && <li>• Añade al menos una categoría</li>}
-                {!profileData.photos?.length && <li>• Sube al menos una foto de tus trabajos</li>}
-                {!profileData.service_area && <li>• Especifica tu zona de trabajo</li>}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {user.user_type === "professionnel" && isProfileComplete() && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              ¡Tu perfil está completo y visible en "Buscar Autónomos"! Los clientes ya pueden encontrarte y contactarte.
+              ✅ Tu perfil se ha actualizado correctamente. Los cambios ya son visibles en las búsquedas.
             </AlertDescription>
           </Alert>
         )}
@@ -323,165 +414,341 @@ export default function MyProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Identidad */}
               <div>
-                <Label>Nombre comercial *</Label>
-                <Input
-                  value={profileData.business_name}
-                  onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="Mi Empresa"
-                />
-              </div>
-
-              <div>
-                <Label>Descripción de servicios *</Label>
-                <Textarea
-                  value={profileData.description}
-                  onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
-                  disabled={!isEditing}
-                  className="h-32"
-                  placeholder="Describe tus servicios..."
-                />
-              </div>
-
-              <div>
-                <Label>Categorías de servicios *</Label>
-                {isEditing && (
-                  <div className="flex gap-2 mb-3">
+                <h3 className="font-semibold text-lg mb-4">Identidad</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Nombre profesional</Label>
                     <Input
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="Ej: Fontanería, Electricidad..."
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addCategory();
-                        }
-                      }}
+                      value={profileData.business_name}
+                      onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="Mi Empresa"
                     />
-                    <Button type="button" onClick={addCategory} size="icon">
-                      <Plus className="w-4 h-4" />
-                    </Button>
                   </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {profileData.categories?.map((cat, idx) => (
-                    <Badge key={idx} className="bg-blue-100 text-blue-900">
-                      {cat}
-                      {isEditing && (
-                        <button
-                          onClick={() => removeCategory(cat)}
-                          className="ml-2 hover:text-blue-600"
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>NIF / CIF</Label>
+                      <Input
+                        value={profileData.cif_nif}
+                        onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="A12345678"
+                      />
+                    </div>
+                    <div>
+                      <Label>Email de contacto</Label>
+                      <Input
+                        value={profileData.email_contacto}
+                        onChange={(e) => setProfileData({ ...profileData, email_contacto: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="contacto@empresa.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Teléfono de contacto</Label>
+                    <Input
+                      value={profileData.telefono_contacto}
+                      onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="+34 612 345 678"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Actividad */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4">Actividad</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Categorías de servicios</Label>
+                    {isEditing && (
+                      <div className="flex gap-2 mb-3">
+                        <Input
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          placeholder="Ej: Fontanería, Electricidad..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addCategory();
+                            }
+                          }}
+                        />
+                        <Button type="button" onClick={addCategory} size="icon">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {profileData.categories?.map((cat, idx) => (
+                        <Badge key={idx} className="bg-blue-100 text-blue-900">
+                          {cat}
+                          {isEditing && (
+                            <button
+                              onClick={() => removeCategory(cat)}
+                              className="ml-2 hover:text-blue-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Descripción corta (220 caracteres)</Label>
+                    <Textarea
+                      value={profileData.descripcion_corta}
+                      onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
+                      disabled={!isEditing}
+                      className="h-24"
+                      placeholder="Describe brevemente tus servicios..."
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      {profileData.descripcion_corta?.length || 0}/220 caracteres
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label>Descripción completa</Label>
+                    <Textarea
+                      value={profileData.description}
+                      onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
+                      disabled={!isEditing}
+                      className="h-32"
+                      placeholder="Describe tus servicios..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Ubicación */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4">Ubicación y zona de trabajo</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Provincia</Label>
+                      <Select
+                        value={profileData.provincia}
+                        onValueChange={(value) => setProfileData({ 
+                          ...profileData, 
+                          provincia: value,
+                          ciudad: "",
+                          municipio: ""
+                        })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {provincias.map((prov) => (
+                            <SelectItem key={prov} value={prov}>
+                              {prov}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Ciudad</Label>
+                      <Select
+                        value={profileData.ciudad}
+                        onValueChange={(value) => setProfileData({ 
+                          ...profileData, 
+                          ciudad: value,
+                          municipio: ""
+                        })}
+                        disabled={!isEditing || !profileData.provincia}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ciudadesPorProvincia[profileData.provincia]?.map((ciudad) => (
+                            <SelectItem key={ciudad} value={ciudad}>
+                              {ciudad}
+                            </SelectItem>
+                          )) || (
+                            <SelectItem value={profileData.provincia || ""}>
+                              {profileData.provincia}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Municipio/Barrio</Label>
+                      <Input
+                        value={profileData.municipio}
+                        onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="Centro, Chamartín..."
+                      />
+                    </div>
+                  </div>
+
+                  {profileData.service_area && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">Ubicación completa:</p>
+                      <p className="font-semibold text-gray-900">{profileData.service_area}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label>Radio de servicio</Label>
+                    <Select
+                      value={profileData.radio_servicio_km?.toString()}
+                      onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 km</SelectItem>
+                        <SelectItem value="10">10 km</SelectItem>
+                        <SelectItem value="25">25 km</SelectItem>
+                        <SelectItem value="50">50 km</SelectItem>
+                        <SelectItem value="100">100+ km</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Horarios */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4">Horarios</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Días de disponibilidad</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                      {diasSemana.map((dia) => (
+                        <div
+                          key={dia.value}
+                          onClick={() => isEditing && toggleDia(dia.value)}
+                          className={`p-2 border-2 rounded-lg text-center transition-all ${
+                            isEditing ? 'cursor-pointer' : 'cursor-default'
+                          } ${
+                            profileData.horario_dias?.includes(dia.value)
+                              ? "border-blue-600 bg-blue-50"
+                              : "border-gray-200"
+                          }`}
                         >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </Badge>
-                  ))}
+                          <p className="text-sm font-medium">{dia.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Hora apertura</Label>
+                      <Input
+                        type="time"
+                        value={profileData.horario_apertura}
+                        onChange={(e) => setProfileData({ ...profileData, horario_apertura: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <Label>Hora cierre</Label>
+                      <Input
+                        type="time"
+                        value={profileData.horario_cierre}
+                        onChange={(e) => setProfileData({ ...profileData, horario_cierre: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Zona de trabajo *</Label>
-                  <Input
-                    value={profileData.service_area}
-                    onChange={(e) => setProfileData({ ...profileData, service_area: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="Madrid y alrededores"
-                  />
-                </div>
-                <div>
-                  <Label>Horario</Label>
-                  <Input
-                    value={profileData.opening_hours}
-                    onChange={(e) => setProfileData({ ...profileData, opening_hours: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="Lun-Vie 9h-18h"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Sitio web</Label>
-                  <Input
-                    value={profileData.website}
-                    onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="https://misitio.com"
-                  />
-                </div>
-                <div>
-                  <Label>CIF / NIF</Label>
-                  <Input
-                    value={profileData.cif_nif}
-                    onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value })}
-                    disabled={!isEditing}
-                    placeholder="A12345678"
-                  />
-                </div>
-              </div>
-
+              {/* Precios */}
               <div>
-                <Label>Rango de precios</Label>
-                <Select
-                  value={profileData.price_range}
-                  onValueChange={(value) => setProfileData({ ...profileData, price_range: value })}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="€">€ - Económico</SelectItem>
-                    <SelectItem value="€€">€€ - Medio</SelectItem>
-                    <SelectItem value="€€€">€€€ - Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <h3 className="font-semibold text-lg mb-4">Precios y forma de trabajo</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tarifa base (€/hora)</Label>
+                      <Input
+                        type="number"
+                        value={profileData.tarifa_base}
+                        onChange={(e) => setProfileData({ ...profileData, tarifa_base: parseFloat(e.target.value) })}
+                        disabled={!isEditing}
+                        placeholder="35"
+                      />
+                    </div>
+                    <div>
+                      <Label>Tipo de facturación</Label>
+                      <Select
+                        value={profileData.facturacion}
+                        onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="autonomo">Autónomo</SelectItem>
+                          <SelectItem value="sociedad">Sociedad</SelectItem>
+                          <SelectItem value="otros">Otros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-              <Separator />
-
-              <div>
-                <Label>Redes sociales</Label>
-                <div className="space-y-3 mt-2">
-                  <Input
-                    value={profileData.social_links?.facebook || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, facebook: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de Facebook"
-                  />
-                  <Input
-                    value={profileData.social_links?.instagram || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, instagram: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de Instagram"
-                  />
-                  <Input
-                    value={profileData.social_links?.linkedin || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, linkedin: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de LinkedIn"
-                  />
+                  <div>
+                    <Label>Formas de pago aceptadas</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
+                        <div
+                          key={forma}
+                          onClick={() => isEditing && toggleFormaPago(forma)}
+                          className={`flex items-center gap-2 p-2 rounded-lg border-2 transition-all ${
+                            isEditing ? 'cursor-pointer' : 'cursor-default'
+                          } ${
+                            profileData.formas_pago?.includes(forma)
+                              ? "border-blue-600 bg-blue-50"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={profileData.formas_pago?.includes(forma)}
+                            disabled={!isEditing}
+                          />
+                          <span className="text-sm">{forma}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <Separator />
 
+              {/* Photos */}
               <div>
-                <Label className="mb-3 block">Fotos de trabajos realizados * (mínimo 1)</Label>
+                <h3 className="font-semibold text-lg mb-4">Fotos de trabajos</h3>
                 {isEditing && (
                   <div className="mb-4">
                     <label className="cursor-pointer">
@@ -524,11 +791,42 @@ export default function MyProfilePage() {
                     </div>
                   ))}
                 </div>
-                {(!profileData.photos || profileData.photos.length === 0) && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Añade fotos de tus trabajos para que los clientes vean tu experiencia
-                  </p>
-                )}
+              </div>
+
+              <Separator />
+
+              {/* Social Links */}
+              <div>
+                <h3 className="font-semibold text-lg mb-4">Redes sociales</h3>
+                <div className="space-y-3">
+                  <Input
+                    value={profileData.social_links?.facebook || ""}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      social_links: { ...profileData.social_links, facebook: e.target.value }
+                    })}
+                    disabled={!isEditing}
+                    placeholder="URL de Facebook"
+                  />
+                  <Input
+                    value={profileData.social_links?.instagram || ""}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      social_links: { ...profileData.social_links, instagram: e.target.value }
+                    })}
+                    disabled={!isEditing}
+                    placeholder="URL de Instagram"
+                  />
+                  <Input
+                    value={profileData.social_links?.linkedin || ""}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      social_links: { ...profileData.social_links, linkedin: e.target.value }
+                    })}
+                    disabled={!isEditing}
+                    placeholder="URL de LinkedIn"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
