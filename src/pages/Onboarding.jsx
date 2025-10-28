@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,12 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, ArrowRight, ArrowLeft, Briefcase, Building2, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle, ArrowRight, ArrowLeft, Briefcase, Building2, Loader2, AlertCircle } from "lucide-react";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     userType: "",
     fullName: "",
@@ -113,32 +114,41 @@ export default function OnboardingPage() {
   const progress = ((currentStep + 1) / steps.length) * 100;
   const currentStepData = steps[currentStep];
 
-  const handleNext = () => {
+  const validateCurrentStep = () => {
     const currentField = currentStepData.field;
     const value = formData[currentField];
 
     if (!value || (typeof value === 'string' && value.trim() === '')) {
       if (currentField === "activity") {
-        alert("Selecciona una de las actividades antes de continuar.");
+        setError("Selecciona una de las actividades antes de continuar.");
       } else {
-        alert("Por favor completa este campo para continuar");
+        setError("Por favor completa este campo para continuar");
       }
-      return;
+      return false;
     }
 
     if (currentField === "email" && !value.includes('@')) {
-      alert("Por favor introduce un email válido");
-      return;
+      setError("Por favor introduce un email válido");
+      return false;
     }
 
     if (currentField === "password" && value.length < 8) {
-      alert("La contraseña debe tener al menos 8 caracteres");
-      return;
+      setError("La contraseña debe tener al menos 8 caracteres");
+      return false;
     }
 
-    // If activity is "Otro tipo de servicio profesional" and activityOther is empty, show alert
     if (currentField === "activity" && value === "Otro tipo de servicio profesional" && !formData.activityOther.trim()) {
-      alert("Por favor especifica tu actividad profesional");
+      setError("Por favor especifica tu actividad profesional");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    setError(null);
+
+    if (!validateCurrentStep()) {
       return;
     }
 
@@ -150,54 +160,67 @@ export default function OnboardingPage() {
   };
 
   const handleBack = () => {
+    setError(null);
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
+  const validateAllFields = () => {
+    const requiredFields = {
+      userType: "Tipo de usuario",
+      fullName: "Nombre completo",
+      cifNif: "NIF/CIF",
+      email: "Correo electrónico",
+      password: "Contraseña",
+      phone: "Teléfono",
+      activity: "Actividad profesional",
+      address: "Dirección fiscal",
+      paymentMethod: "Método de pago"
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field] || formData[field].trim() === '') {
+        return { valid: false, message: `Falta completar: ${label}` };
+      }
+    }
+
+    if (formData.activity === "Otro tipo de servicio profesional" && !formData.activityOther.trim()) {
+      return { valid: false, message: "Falta especificar tu actividad profesional" };
+    }
+
+    return { valid: true };
+  };
+
   const handleSubmit = async () => {
     setIsProcessing(true);
+    setError(null);
 
     try {
-      // 1. Create user account (this would need to be done via backend functions in production)
-      // For now, we'll simulate the account creation
-      
-      // 2. Get today's date for subscription
-      const today = new Date();
-      const nextMonth = new Date(today);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      // 1. Validate all fields
+      const validation = validateAllFields();
+      if (!validation.valid) {
+        setError(`Por favor, completa todos los datos antes de continuar con el pago. ${validation.message}`);
+        setIsProcessing(false);
+        return;
+      }
 
-      // 3. Prepare activity text
+      // 2. Prepare activity text
       const activityText = formData.activity === "Otro tipo de servicio profesional" 
         ? `${formData.activity}: ${formData.activityOther}` 
         : formData.activity;
 
-      // 4. Create user with subscription data
-      const userData = {
-        email: formData.email,
-        full_name: formData.fullName,
-        user_type: "professionnel",
-        phone: formData.phone,
-        city: formData.address.split(',').slice(-1)[0].trim(),
-        subscription_status: "actif",
-        subscription_start_date: today.toISOString().split('T')[0],
-        subscription_end_date: nextMonth.toISOString().split('T')[0],
-        last_payment_date: today.toISOString().split('T')[0],
-      };
+      // 3. Get today's date for subscription
+      const today = new Date();
+      const nextMonth = new Date(today);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-      // Note: In a real implementation, you would need backend functions to:
-      // 1. Create the auth user via base44.auth
-      // 2. Set up payment with Stripe/PayPal
-      // 3. Create the user record
-      
-      // For demo purposes, we'll show success and redirect to login
-      // The admin would need to manually create the account
-      
-      // Send notification to admin
-      await base44.integrations.Core.SendEmail({
-        to: "admin@milautonomos.com", // Replace with actual admin email
-        subject: "Nueva solicitud de suscripción - milautonomos",
-        body: `Nueva solicitud de suscripción recibida:
+      // 4. Send notification to admin with all data
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: "admin@milautonomos.com", // Replace with actual admin email
+          subject: "Nueva solicitud de suscripción - milautonomos",
+          body: `Nueva solicitud de suscripción recibida:
 
 Tipo: ${formData.userType === "autonomo" ? "Autónomo" : "Empresa"}
 Nombre: ${formData.fullName}
@@ -208,16 +231,34 @@ Actividad: ${activityText}
 Dirección: ${formData.address}
 Método de pago: ${formData.paymentMethod}
 
-Por favor, procesa esta solicitud manualmente.`,
-        from_name: "milautonomos"
-      });
+Fecha de inicio: ${today.toISOString().split('T')[0]}
+Fecha de fin: ${nextMonth.toISOString().split('T')[0]}
 
-      // Show success message
-      setCurrentStep(steps.length); // Go to success screen
+Por favor, procesa esta solicitud:
+1. Crear cuenta de usuario con el email: ${formData.email}
+2. Configurar método de pago: ${formData.paymentMethod}
+3. Activar suscripción
+
+Gracias,
+Sistema milautonomos`,
+          from_name: "milautonomos"
+        });
+
+        // Simulate processing time for better UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Show success screen
+        setCurrentStep(steps.length);
+      } catch (emailError) {
+        console.error("Error sending notification:", emailError);
+        setError("Ha habido un problema temporal al procesar tu solicitud. Por favor, inténtalo de nuevo en unos segundos.");
+        setIsProcessing(false);
+        return;
+      }
+
     } catch (error) {
       console.error("Error creating subscription:", error);
-      alert("Hubo un error al procesar tu solicitud. Por favor, contacta con soporte.");
-    } finally {
+      setError("Ha habido un problema temporal al conectar con el sistema. Por favor, inténtalo de nuevo en unos segundos.");
       setIsProcessing(false);
     }
   };
@@ -232,20 +273,30 @@ Por favor, procesa esta solicitud manualmente.`,
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              ¡Tu cuenta ha sido creada correctamente!
+              ✅ Tu suscripción ha sido procesada correctamente
             </h1>
             <p className="text-lg text-gray-600 mb-2">
-              Tu suscripción está activa.
+              Recibirás un correo electrónico en las próximas 24 horas con los detalles de acceso a tu cuenta.
             </p>
             <p className="text-lg text-gray-600 mb-8">
-              En unos segundos accederás a tu panel profesional.
+              Nuestro equipo está procesando tu solicitud de pago y activará tu cuenta de forma inmediata.
             </p>
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-gray-700">
+                <strong>Próximos pasos:</strong>
+              </p>
+              <ul className="text-sm text-gray-600 mt-2 text-left space-y-1">
+                <li>✓ Revisa tu correo ({formData.email})</li>
+                <li>✓ Confirma tu método de pago</li>
+                <li>✓ Completa tu perfil profesional</li>
+              </ul>
+            </div>
             <Button
               size="lg"
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => navigate(createPageUrl("Search"))}
             >
-              Ir a mi panel
+              Volver a inicio
             </Button>
           </CardContent>
         </Card>
@@ -276,6 +327,14 @@ Por favor, procesa esta solicitud manualmente.`,
               {currentStepData.question}
             </h2>
 
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-6">
               {currentStepData.type === "choice" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,6 +345,7 @@ Por favor, procesa esta solicitud manualmente.`,
                         key={option.value}
                         onClick={() => {
                           setFormData({ ...formData, [currentStepData.field]: option.value });
+                          setError(null);
                           setTimeout(() => handleNext(), 300);
                         }}
                         className={`p-6 border-2 rounded-xl transition-all hover:scale-105 ${
@@ -306,7 +366,10 @@ Por favor, procesa esta solicitud manualmente.`,
                 <Input
                   type="text"
                   value={formData[currentStepData.field]}
-                  onChange={(e) => setFormData({ ...formData, [currentStepData.field]: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
+                    setError(null);
+                  }}
                   placeholder={currentStepData.placeholder}
                   className="h-14 text-lg"
                   autoFocus
@@ -317,7 +380,10 @@ Por favor, procesa esta solicitud manualmente.`,
                 <Input
                   type="email"
                   value={formData[currentStepData.field]}
-                  onChange={(e) => setFormData({ ...formData, [currentStepData.field]: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
+                    setError(null);
+                  }}
                   placeholder={currentStepData.placeholder}
                   className="h-14 text-lg"
                   autoFocus
@@ -328,7 +394,10 @@ Por favor, procesa esta solicitud manualmente.`,
                 <Input
                   type="password"
                   value={formData[currentStepData.field]}
-                  onChange={(e) => setFormData({ ...formData, [currentStepData.field]: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
+                    setError(null);
+                  }}
                   placeholder={currentStepData.placeholder}
                   className="h-14 text-lg"
                   autoFocus
@@ -339,7 +408,10 @@ Por favor, procesa esta solicitud manualmente.`,
                 <Input
                   type="tel"
                   value={formData[currentStepData.field]}
-                  onChange={(e) => setFormData({ ...formData, [currentStepData.field]: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, [currentStepData.field]: e.target.value });
+                    setError(null);
+                  }}
                   placeholder={currentStepData.placeholder}
                   className="h-14 text-lg"
                   autoFocus
@@ -350,7 +422,10 @@ Por favor, procesa esta solicitud manualmente.`,
                 <>
                   <Select
                     value={formData[currentStepData.field]}
-                    onValueChange={(value) => setFormData({ ...formData, [currentStepData.field]: value })}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, [currentStepData.field]: value });
+                      setError(null);
+                    }}
                   >
                     <SelectTrigger className="h-14 text-lg">
                       <SelectValue placeholder="Selecciona una opción" />
@@ -373,7 +448,10 @@ Por favor, procesa esta solicitud manualmente.`,
                       <Input
                         type="text"
                         value={formData.activityOther}
-                        onChange={(e) => setFormData({ ...formData, activityOther: e.target.value.slice(0, 50) })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, activityOther: e.target.value.slice(0, 50) });
+                          setError(null);
+                        }}
                         placeholder="Máx. 50 caracteres"
                         maxLength={50}
                         className="h-14 text-lg"
@@ -395,6 +473,7 @@ Por favor, procesa esta solicitud manualmente.`,
                   size="lg"
                   onClick={handleBack}
                   className="flex-1"
+                  disabled={isProcessing}
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Atrás
@@ -413,7 +492,7 @@ Por favor, procesa esta solicitud manualmente.`,
                   </>
                 ) : currentStep === steps.length - 1 ? (
                   <>
-                    Finalizar
+                    Finalizar suscripción
                     <CheckCircle className="w-5 h-5 ml-2" />
                   </>
                 ) : (
