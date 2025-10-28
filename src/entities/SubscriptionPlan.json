@@ -1,0 +1,57 @@
+{
+  "name": "SubscriptionPlan",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "ID \u00fanico del plan (plan_trial, plan_monthly, plan_quarterly)"
+    },
+    "nombre": {
+      "type": "string",
+      "description": "Nombre del plan"
+    },
+    "precio": {
+      "type": "number",
+      "description": "Precio del plan en euros"
+    },
+    "duracion_dias": {
+      "type": "number",
+      "description": "Duraci\u00f3n en d\u00edas"
+    },
+    "renovacion_automatica": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si se renueva autom\u00e1ticamente"
+    },
+    "requiere_tarjeta": {
+      "type": "boolean",
+      "description": "Si requiere tarjeta de cr\u00e9dito"
+    },
+    "plan_siguiente": {
+      "type": "string",
+      "description": "Plan al que se convierte al finalizar"
+    },
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n del plan"
+    },
+    "mensaje_activacion": {
+      "type": "string",
+      "description": "Mensaje al activar el plan"
+    },
+    "ahorro": {
+      "type": "number",
+      "description": "Ahorro en euros respecto al plan mensual"
+    },
+    "stripe_price_id": {
+      "type": "string",
+      "description": "ID del precio en Stripe"
+    }
+  },
+  "required": [
+    "plan_id",
+    "nombre",
+    "precio",
+    "duracion_dias"
+  ]
+}

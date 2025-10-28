@@ -5,6 +5,7 @@ import Favorites from './pages/Favorites';
 import MyProfile from './pages/MyProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import Onboarding from './pages/Onboarding';
+import PricingPlans from './pages/PricingPlans';
 import Layout from './Layout.jsx';
 
 
@@ -16,6 +17,7 @@ export const PAGES = {
     "MyProfile": MyProfile,
     "AdminDashboard": AdminDashboard,
     "Onboarding": Onboarding,
+    "PricingPlans": PricingPlans,
 }
 
 export const pagesConfig = {

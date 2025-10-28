@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -11,7 +10,8 @@ import {
   Menu,
   LogOut,
   Briefcase,
-  LayoutDashboard
+  LayoutDashboard,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,7 +45,6 @@ export default function Layout({ children, currentPageName }) {
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
-      // Clear user state if there's an error, e.g., session expired
       setUser(null);
     }
   };
@@ -70,8 +69,8 @@ export default function Layout({ children, currentPageName }) {
 
   const handleLogout = () => {
     base44.auth.logout();
-    setUser(null); // Clear user state on logout
-    setUnreadCount(0); // Clear unread count on logout
+    setUser(null);
+    setUnreadCount(0);
   };
 
   const navigationItems = [
@@ -165,10 +164,10 @@ export default function Layout({ children, currentPageName }) {
             {/* Hazte Autónomo Button */}
             {(!user || user.user_type !== "professionnel") && (
               <div className="mt-auto p-3">
-                <Link to={createPageUrl("Onboarding")}>
+                <Link to={createPageUrl("PricingPlans")}>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Hazte Autónomo
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Ver Planes
                   </Button>
                 </Link>
               </div>

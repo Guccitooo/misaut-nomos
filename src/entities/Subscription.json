@@ -1,0 +1,77 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "ID del plan (plan_trial, plan_monthly, plan_quarterly)"
+    },
+    "plan_nombre": {
+      "type": "string",
+      "description": "Nombre del plan"
+    },
+    "plan_precio": {
+      "type": "number",
+      "description": "Precio del plan"
+    },
+    "fecha_inicio": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de inicio de la suscripci\u00f3n"
+    },
+    "fecha_expiracion": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de expiraci\u00f3n"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "activo",
+        "expirado",
+        "cancelado",
+        "en_prueba",
+        "suspendu"
+      ],
+      "description": "Estado de la suscripci\u00f3n"
+    },
+    "renovacion_automatica": {
+      "type": "boolean",
+      "default": true,
+      "description": "Renovaci\u00f3n autom\u00e1tica activada"
+    },
+    "metodo_pago": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "paypal",
+        "manual"
+      ],
+      "description": "M\u00e9todo de pago"
+    },
+    "fecha_ultima_renovacion": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima renovaci\u00f3n"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "ID de suscripci\u00f3n en Stripe"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "ID de cliente en Stripe"
+    }
+  },
+  "required": [
+    "user_id",
+    "plan_id",
+    "fecha_inicio",
+    "fecha_expiracion",
+    "estado"
+  ]
+}
