@@ -29,6 +29,7 @@ export default function OnboardingPage() {
     password: "",
     phone: "",
     activity: "",
+    activityOther: "",
     address: "",
     paymentMethod: "",
   });
@@ -76,8 +77,20 @@ export default function OnboardingPage() {
     {
       question: "¿A qué te dedicas?",
       field: "activity",
-      type: "textarea",
-      placeholder: "Ej: Fontanería, electricidad, reformas integrales..."
+      type: "select",
+      options: [
+        { value: "Electricista", label: "Electricista" },
+        { value: "Fontanero", label: "Fontanero" },
+        { value: "Carpintero", label: "Carpintero" },
+        { value: "Albañil / Reformas", label: "Albañil / Reformas" },
+        { value: "Jardinero", label: "Jardinero" },
+        { value: "Pintor", label: "Pintor" },
+        { value: "Transportista", label: "Transportista" },
+        { value: "Autónomo de limpieza", label: "Autónomo de limpieza" },
+        { value: "Asesoría o gestoría", label: "Asesoría o gestoría" },
+        { value: "Empresa multiservicios", label: "Empresa multiservicios" },
+        { value: "Otro tipo de servicio profesional", label: "Otro tipo de servicio profesional" }
+      ]
     },
     {
       question: "Dirección fiscal",
@@ -105,7 +118,11 @@ export default function OnboardingPage() {
     const value = formData[currentField];
 
     if (!value || (typeof value === 'string' && value.trim() === '')) {
-      alert("Por favor completa este campo para continuar");
+      if (currentField === "activity") {
+        alert("Selecciona una de las actividades antes de continuar.");
+      } else {
+        alert("Por favor completa este campo para continuar");
+      }
       return;
     }
 
@@ -116,6 +133,12 @@ export default function OnboardingPage() {
 
     if (currentField === "password" && value.length < 8) {
       alert("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
+
+    // If activity is "Otro tipo de servicio profesional" and activityOther is empty, show alert
+    if (currentField === "activity" && value === "Otro tipo de servicio profesional" && !formData.activityOther.trim()) {
+      alert("Por favor especifica tu actividad profesional");
       return;
     }
 
@@ -144,7 +167,12 @@ export default function OnboardingPage() {
       const nextMonth = new Date(today);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-      // 3. Create user with subscription data
+      // 3. Prepare activity text
+      const activityText = formData.activity === "Otro tipo de servicio profesional" 
+        ? `${formData.activity}: ${formData.activityOther}` 
+        : formData.activity;
+
+      // 4. Create user with subscription data
       const userData = {
         email: formData.email,
         full_name: formData.fullName,
@@ -176,7 +204,7 @@ Nombre: ${formData.fullName}
 NIF/CIF: ${formData.cifNif}
 Email: ${formData.email}
 Teléfono: ${formData.phone}
-Actividad: ${formData.activity}
+Actividad: ${activityText}
 Dirección: ${formData.address}
 Método de pago: ${formData.paymentMethod}
 
@@ -204,17 +232,20 @@ Por favor, procesa esta solicitud manualmente.`,
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              ¡Solicitud recibida correctamente!
+              ¡Tu cuenta ha sido creada correctamente!
             </h1>
+            <p className="text-lg text-gray-600 mb-2">
+              Tu suscripción está activa.
+            </p>
             <p className="text-lg text-gray-600 mb-8">
-              Tu solicitud de suscripción está siendo procesada. Recibirás un email en las próximas 24 horas con los detalles para activar tu cuenta.
+              En unos segundos accederás a tu panel profesional.
             </p>
             <Button
               size="lg"
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => navigate(createPageUrl("Search"))}
             >
-              Volver a inicio
+              Ir a mi panel
             </Button>
           </CardContent>
         </Card>
@@ -315,32 +346,44 @@ Por favor, procesa esta solicitud manualmente.`,
                 />
               )}
 
-              {currentStepData.type === "textarea" && (
-                <Textarea
-                  value={formData[currentStepData.field]}
-                  onChange={(e) => setFormData({ ...formData, [currentStepData.field]: e.target.value })}
-                  placeholder={currentStepData.placeholder}
-                  className="h-32 text-lg"
-                  autoFocus
-                />
-              )}
-
               {currentStepData.type === "select" && (
-                <Select
-                  value={formData[currentStepData.field]}
-                  onValueChange={(value) => setFormData({ ...formData, [currentStepData.field]: value })}
-                >
-                  <SelectTrigger className="h-14 text-lg">
-                    <SelectValue placeholder="Selecciona una opción" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currentStepData.options.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <>
+                  <Select
+                    value={formData[currentStepData.field]}
+                    onValueChange={(value) => setFormData({ ...formData, [currentStepData.field]: value })}
+                  >
+                    <SelectTrigger className="h-14 text-lg">
+                      <SelectValue placeholder="Selecciona una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentStepData.options.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Show additional field if "Otro tipo de servicio profesional" is selected */}
+                  {currentStepData.field === "activity" && formData.activity === "Otro tipo de servicio profesional" && (
+                    <div className="mt-4">
+                      <Label className="text-gray-700 mb-2 block">
+                        Especifica brevemente tu actividad
+                      </Label>
+                      <Input
+                        type="text"
+                        value={formData.activityOther}
+                        onChange={(e) => setFormData({ ...formData, activityOther: e.target.value.slice(0, 50) })}
+                        placeholder="Máx. 50 caracteres"
+                        maxLength={50}
+                        className="h-14 text-lg"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        {formData.activityOther.length}/50 caracteres
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
