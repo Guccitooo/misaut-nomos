@@ -66,33 +66,6 @@ export default function ProfessionalProfilePage() {
     }
   };
 
-  const { data: profile, isLoading: loadingProfile } = useQuery({
-    queryKey: ['profile', professionalId],
-    queryFn: async () => {
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: professionalId
-      });
-      return profiles[0];
-    },
-    enabled: !!professionalId,
-  });
-
-  const { data: professionalUser } = useQuery({
-    queryKey: ['professionalUser', professionalId],
-    queryFn: async () => {
-      const users = await base44.entities.User.filter({ id: professionalId });
-      return users[0];
-    },
-    enabled: !!professionalId,
-  });
-
-  const { data: reviews = [] } = useQuery({
-    queryKey: ['reviews', professionalId],
-    queryFn: () => base44.entities.Review.filter({ professional_id: professionalId }, '-created_date'),
-    enabled: !!professionalId,
-    initialData: [],
-  });
-
   const handleToggleFavorite = async () => {
     if (!user) {
       base44.auth.redirectToLogin();
@@ -129,8 +102,76 @@ export default function ProfessionalProfilePage() {
     }
 
     const conversationId = [user.id, professionalId].sort().join('_');
+    
+    // Check if conversation exists
+    const existingMessages = await base44.entities.Message.filter({
+      conversation_id: conversationId
+    });
+
+    // If no messages, create initial message
+    if (existingMessages.length === 0) {
+      await base44.entities.Message.create({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        recipient_id: professionalId,
+        content: "Hola, estoy interesado en tus servicios.",
+        professional_name: profile.business_name,
+        client_name: user.full_name || user.email,
+        is_read: false
+      });
+    }
+
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
+
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    // Remove all non-numeric characters except +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    // Add +34 if no prefix exists
+    if (!cleaned.startsWith('+') && cleaned.length === 9) { // Added length check to avoid adding +34 to already international numbers
+      cleaned = '+34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return null;
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+    // Add 34 if no prefix exists
+    if (!cleaned.startsWith('34') && cleaned.length === 9) {
+      cleaned = '34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['profile', professionalId],
+    queryFn: async () => {
+      const profiles = await base44.entities.ProfessionalProfile.filter({
+        user_id: professionalId
+      });
+      return profiles[0];
+    },
+    enabled: !!professionalId,
+  });
+
+  const { data: professionalUser } = useQuery({
+    queryKey: ['professionalUser', professionalId],
+    queryFn: async () => {
+      const users = await base44.entities.User.filter({ id: professionalId });
+      return users[0];
+    },
+    enabled: !!professionalId,
+  });
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', professionalId],
+    queryFn: () => base44.entities.Review.filter({ professional_id: professionalId }, '-created_date'),
+    enabled: !!professionalId,
+    initialData: [],
+  });
 
   if (loadingProfile) {
     return (
@@ -219,7 +260,7 @@ export default function ProfessionalProfilePage() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="icon"
@@ -230,14 +271,14 @@ export default function ProfessionalProfilePage() {
                     </Button>
                     {profile.telefono_contacto && (
                       <>
-                        <a href={`tel:${profile.telefono_contacto}`}>
+                        <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
                           <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
                             <Phone className="w-5 h-5 mr-2" />
                             Llamar
                           </Button>
                         </a>
                         <a
-                          href={`https://wa.me/${profile.telefono_contacto.replace(/\D/g, '')}`}
+                          href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -253,7 +294,7 @@ export default function ProfessionalProfilePage() {
                       onClick={handleStartChat}
                     >
                       <MessageSquare className="w-5 h-5 mr-2" />
-                      Mensaje
+                      Chat directo
                     </Button>
                   </div>
                 </div>
