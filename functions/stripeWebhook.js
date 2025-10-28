@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
             let isNewUser = false;
 
             if (existingUsers.length > 0) {
-                // Update existing user
+                // ✅ Update existing user with ACTIVE subscription
                 userId = existingUsers[0].id;
                 await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
                     full_name: metadata.fullName,
@@ -72,6 +71,7 @@ Deno.serve(async (req) => {
                     subscription_end_date: nextMonth.toISOString().split('T')[0],
                     last_payment_date: today.toISOString().split('T')[0],
                 });
+                console.log(`✅ Usuario existente actualizado con suscripción activa: ${customerEmail}`);
             } else {
                 // New user - send email to admin to create account
                 isNewUser = true;
@@ -139,6 +139,16 @@ Sistema milautonomos`,
                     });
 
                     console.log(`✅ Perfil profesional creado en estado PENDIENTE para ${metadata.fullName}`);
+                } else {
+                    // Update existing profile to ensure it stays active if already completed
+                    const profile = existingProfiles[0];
+                    if (profile.onboarding_completed) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                            estado_perfil: "activo",
+                            visible_en_busqueda: true
+                        });
+                        console.log(`✅ Perfil profesional actualizado a activo para ${metadata.fullName}`);
+                    }
                 }
             }
 

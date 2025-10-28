@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -54,6 +53,14 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
+        // ✅ IMPORTANTE: Actualizar usuario con subscription_status
+        await base44.asServiceRole.entities.User.update(userId, {
+            subscription_status: "actif",
+            user_type: "professionnel",
+            subscription_start_date: new Date().toISOString().split('T')[0],
+            subscription_end_date: new Date(Date.now() + plan.duracion_dias * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        });
+
         // Check if subscription already exists (idempotency)
         const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
             user_id: userId
@@ -91,9 +98,14 @@ Deno.serve(async (req) => {
 
         let profile;
         if (existingProfiles.length > 0) {
-            // Profile already exists, return existing one
+            // Profile already exists, update to ensure it's active
             profile = existingProfiles[0];
-            console.log(`✅ Perfil profesional ya existía para usuario ${userId}`);
+            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                estado_perfil: "activo",
+                visible_en_busqueda: true,
+                onboarding_completed: false
+            });
+            console.log(`✅ Perfil profesional actualizado para usuario ${userId}`);
         } else {
             // Create new professional profile in PENDING state (not visible yet)
             const fullName = userData?.fullName || user.full_name || "Nuevo autónomo";

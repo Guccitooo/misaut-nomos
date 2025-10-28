@@ -195,6 +195,7 @@ export default function ProfileOnboardingPage() {
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
       
+      // ✅ IMPORTANTE: Guardar perfil como ACTIVO y VISIBLE
       return base44.entities.ProfessionalProfile.update(profile.id, {
         ...formData,
         imagen_principal: formData.photos[0] || "",
@@ -206,6 +207,15 @@ export default function ProfileOnboardingPage() {
       });
     },
     onSuccess: async () => {
+      // ✅ IMPORTANTE: Actualizar también el usuario para asegurar subscription_status
+      try {
+        await base44.auth.updateMe({
+          user_type: "professionnel"
+        });
+      } catch (error) {
+        console.error("Error updating user type:", error);
+      }
+
       await base44.integrations.Core.SendEmail({
         to: user.email,
         subject: "✅ Tu perfil ya está publicado en milautonomos",
@@ -413,7 +423,13 @@ Equipo milautonomos`,
     setIsSaving(true);
     try {
       if (profile) {
-        await base44.entities.ProfessionalProfile.update(profile.id, formData);
+        // ✅ IMPORTANTE: Mantener estado activo al guardar pasos intermedios
+        await base44.entities.ProfessionalProfile.update(profile.id, {
+          ...formData,
+          estado_perfil: profile.estado_perfil || "pendiente",
+          visible_en_busqueda: profile.visible_en_busqueda || false,
+          onboarding_completed: profile.onboarding_completed || false
+        });
       } else {
         const newProfile = await base44.entities.ProfessionalProfile.create({
           ...formData,
