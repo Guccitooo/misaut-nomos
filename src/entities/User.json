@@ -44,15 +44,6 @@
       "description": "Date du dernier paiement"
     }
   },
-  "required": [
-    "user_type",
-    "phone",
-    "city",
-    "subscription_status",
-    "subscription_start_date",
-    "subscription_end_date",
-    "last_payment_date"
-  ],
   "security": {
     "read": {
       "rule": "public"
