@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -34,22 +35,28 @@ export default function PricingPlansPage() {
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
-      // Filter to show only the 3 active plans and remove duplicates
-      const uniquePlans = allPlans.filter(p => 
-        p.plan_id === 'plan_monthly_trial' || 
-        p.plan_id === 'plan_quarterly' || 
-        p.plan_id === 'plan_annual'
-      );
       
-      // Remove duplicates by plan_id, keeping the most recent
+      // Create a Map to store only ONE plan per plan_id (the most recent one)
       const planMap = new Map();
-      uniquePlans.forEach(p => {
-        if (!planMap.has(p.plan_id) || new Date(p.updated_date) > new Date(planMap.get(p.plan_id).updated_date)) {
-          planMap.set(p.plan_id, p);
+      
+      allPlans.forEach(plan => {
+        // Only process the 3 active plans we want
+        if (plan.plan_id === 'plan_monthly_trial' || 
+            plan.plan_id === 'plan_quarterly' || 
+            plan.plan_id === 'plan_annual') {
+          
+          const existingPlan = planMap.get(plan.plan_id);
+          
+          // If plan_id doesn't exist in map, or this one is newer, add/update it
+          if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
+            planMap.set(plan.plan_id, plan);
+          }
         }
       });
       
-      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
+      // Convert Map to Array and sort by price
+      const uniquePlans = Array.from(planMap.values());
+      return uniquePlans.sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
   });
@@ -217,7 +224,7 @@ export default function PricingPlansPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
           {plans.map((plan) => (
             <Card 
-              key={plan.id}
+              key={plan.plan_id}
               className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 ${
                 plan.plan_id === "plan_quarterly" ? "ring-4 ring-green-500" : ""
               }`}
