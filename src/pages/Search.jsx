@@ -21,7 +21,8 @@ import {
   Heart,
   Filter,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Image as ImageIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -137,7 +138,7 @@ export default function SearchPage() {
             </p>
             
             {/* CTA Button for professionals */}
-            <Link to={createPageUrl("Onboarding")}>
+            <Link to={createPageUrl("PricingPlans")}>
               <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
                 <Briefcase className="w-5 h-5 mr-2" />
                 ¿Eres autónomo? Únete ahora
@@ -261,15 +262,16 @@ export default function SearchPage() {
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
               >
                 <div className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden">
-                  {profile.photos?.[0] ? (
+                  {profile.photos && profile.photos.length > 0 ? (
                     <img 
                       src={profile.photos[0]} 
                       alt={profile.business_name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <TrendingUp className="w-16 h-16 text-blue-700/20" />
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      <ImageIcon className="w-16 h-16 text-blue-300 mb-2" />
+                      <p className="text-sm text-blue-700 font-medium">Sin fotos aún</p>
                     </div>
                   )}
                   <Button
@@ -322,7 +324,7 @@ export default function SearchPage() {
                   </p>
 
                   {profile.service_area && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                       <MapPin className="w-4 h-4" />
                       <span>{profile.service_area}</span>
                     </div>

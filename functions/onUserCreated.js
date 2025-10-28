@@ -8,9 +8,33 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const { userId, selectedPlan, userData } = body;
 
+        // Validation: userId is required
         if (!userId) {
             return Response.json({
-                error: 'User ID is required'
+                ok: false,
+                step: "validation",
+                message: 'El ID de usuario es obligatorio'
+            }, { status: 400 });
+        }
+
+        // Check if user exists
+        const users = await base44.asServiceRole.entities.User.filter({ id: userId });
+        const user = users[0];
+
+        if (!user) {
+            return Response.json({
+                ok: false,
+                step: "validation",
+                message: 'Usuario no encontrado. Por favor, contacta con soporte.'
+            }, { status: 404 });
+        }
+
+        // Validation: email is required
+        if (!user.email) {
+            return Response.json({
+                ok: false,
+                step: "validation",
+                message: 'El email del usuario es obligatorio'
             }, { status: 400 });
         }
 
@@ -23,46 +47,64 @@ Deno.serve(async (req) => {
         const plan = plans[0];
         if (!plan) {
             return Response.json({
-                error: 'Plan not found'
+                ok: false,
+                step: "plan",
+                message: 'Plan de suscripción no encontrado'
             }, { status: 404 });
         }
 
-        // Calculate expiration date
-        const now = new Date();
-        const expiration = new Date(now.getTime() + plan.duracion_dias * 24 * 60 * 60 * 1000);
-
-        // Create subscription
-        const subscription = await base44.asServiceRole.entities.Subscription.create({
-            user_id: userId,
-            plan_id: plan.plan_id,
-            plan_nombre: plan.nombre,
-            plan_precio: plan.precio,
-            fecha_inicio: now.toISOString(),
-            fecha_expiracion: expiration.toISOString(),
-            estado: plan.plan_id === "plan_trial" ? "en_prueba" : "activo",
-            renovacion_automatica: plan.renovacion_automatica,
-            metodo_pago: "stripe",
-            fecha_ultima_renovacion: now.toISOString()
+        // Check if subscription already exists (idempotency)
+        const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
+            user_id: userId
         });
 
-        // Get user info
-        const users = await base44.asServiceRole.entities.User.filter({ id: userId });
-        const user = users[0];
+        let subscription;
+        if (existingSubscriptions.length > 0) {
+            // Subscription already exists, return existing one
+            subscription = existingSubscriptions[0];
+            console.log(`✅ Suscripción ya existía para usuario ${userId}`);
+        } else {
+            // Create new subscription
+            const now = new Date();
+            const expiration = new Date(now.getTime() + plan.duracion_dias * 24 * 60 * 60 * 1000);
 
-        // Check if professional profile already exists
+            subscription = await base44.asServiceRole.entities.Subscription.create({
+                user_id: userId,
+                plan_id: plan.plan_id,
+                plan_nombre: plan.nombre,
+                plan_precio: plan.precio,
+                fecha_inicio: now.toISOString(),
+                fecha_expiracion: expiration.toISOString(),
+                estado: plan.plan_id === "plan_trial" ? "en_prueba" : "activo",
+                renovacion_automatica: plan.renovacion_automatica,
+                metodo_pago: "stripe",
+                fecha_ultima_renovacion: now.toISOString()
+            });
+            console.log(`✅ Nueva suscripción creada para usuario ${userId}`);
+        }
+
+        // Check if professional profile already exists (idempotency)
         const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
             user_id: userId
         });
 
         let profile;
-        if (existingProfiles.length === 0) {
-            // Create professional profile
+        if (existingProfiles.length > 0) {
+            // Profile already exists, return existing one
+            profile = existingProfiles[0];
+            console.log(`✅ Perfil profesional ya existía para usuario ${userId}`);
+        } else {
+            // Create new professional profile with safe defaults
+            const fullName = userData?.fullName || user.full_name || "Nuevo autónomo";
+            const activity = userData?.activity || "Sin especificar";
+            const city = userData?.city || user.city || "Por definir";
+
             profile = await base44.asServiceRole.entities.ProfessionalProfile.create({
                 user_id: userId,
-                business_name: userData?.fullName || user?.full_name || "Nuevo autónomo",
+                business_name: fullName,
                 description: `Profesional recién registrado en milautonomos. ${plan.descripcion}`,
-                categories: userData?.activity ? [userData.activity] : [],
-                service_area: userData?.city || user?.city || "Por definir",
+                categories: activity !== "Sin especificar" ? [activity] : [],
+                service_area: city,
                 opening_hours: "A convenir",
                 cif_nif: userData?.cifNif || "",
                 photos: [],
@@ -76,16 +118,16 @@ Deno.serve(async (req) => {
                     linkedin: ""
                 }
             });
-        } else {
-            profile = existingProfiles[0];
+            console.log(`✅ Nuevo perfil profesional creado para usuario ${userId}`);
         }
 
-        // Send welcome email
-        if (user) {
-            await base44.asServiceRole.integrations.Core.SendEmail({
-                to: user.email,
-                subject: `✅ ${plan.mensaje_activacion}`,
-                body: `Hola ${user.full_name || user.email},
+        // Send welcome email only if it's a new subscription
+        if (existingSubscriptions.length === 0) {
+            try {
+                await base44.asServiceRole.integrations.Core.SendEmail({
+                    to: user.email,
+                    subject: `✅ ${plan.mensaje_activacion}`,
+                    body: `Hola ${user.full_name || user.email},
 
 ${plan.mensaje_activacion}
 
@@ -93,8 +135,8 @@ Detalles de tu plan:
 - Plan: ${plan.nombre}
 - Precio: ${plan.precio}€
 - Duración: ${plan.duracion_dias} días
-- Fecha de inicio: ${now.toLocaleDateString('es-ES')}
-- Fecha de expiración: ${expiration.toLocaleDateString('es-ES')}
+- Fecha de inicio: ${new Date().toLocaleDateString('es-ES')}
+- Fecha de expiración: ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
 
 ${plan.plan_id === "plan_trial" ? 
 `⚠️ IMPORTANTE: Al finalizar tu prueba gratuita, tu plan se convertirá automáticamente en ${plan.plan_siguiente} (49€/mes) si no lo cancelas antes.` : 
@@ -108,24 +150,41 @@ Próximos pasos:
 
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,
-                from_name: "milautonomos"
-            });
+                    from_name: "milautonomos"
+                });
+                console.log(`✅ Email de bienvenida enviado a ${user.email}`);
+            } catch (emailError) {
+                console.error('Error sending welcome email:', emailError);
+                // Don't fail the whole operation if email fails
+            }
         }
 
-        console.log(`✅ Suscripción y perfil creados para usuario ${userId}`);
-
+        // Return success with profile data
         return Response.json({
-            success: true,
-            message: `Suscripción y perfil creados correctamente`,
-            subscription,
-            profile
+            ok: true,
+            message: 'Suscripción y perfil creados correctamente',
+            data: {
+                subscription: {
+                    id: subscription.id,
+                    plan_id: subscription.plan_id,
+                    estado: subscription.estado,
+                    fecha_expiracion: subscription.fecha_expiracion
+                },
+                profile: {
+                    id: profile.id,
+                    business_name: profile.business_name,
+                    user_id: profile.user_id
+                }
+            }
         });
 
     } catch (error) {
         console.error('Error in onUserCreated:', error);
         return Response.json({
-            error: 'Failed to create subscription and profile',
-            details: error.message
+            ok: false,
+            step: "error",
+            message: error.message || 'Error al crear la suscripción y perfil',
+            details: error.toString()
         }, { status: 500 });
     }
 });

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Zap, TrendingUp, Crown, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
@@ -47,8 +48,11 @@ export default function PricingPlansPage() {
 
     try {
       if (plan.plan_id === "plan_trial") {
+        // Show loading toast
+        const loadingToast = toast.loading("Creando tu cuenta gratuita...");
+
         // Create trial subscription directly
-        await base44.functions.invoke('onUserCreated', {
+        const response = await base44.functions.invoke('onUserCreated', {
           userId: user.id,
           selectedPlan: plan.plan_id,
           userData: {
@@ -58,7 +62,26 @@ export default function PricingPlansPage() {
           }
         });
 
-        navigate(createPageUrl("MyProfile"));
+        // Dismiss loading toast
+        toast.dismiss(loadingToast);
+
+        if (response.data.ok === false) {
+          // Show error toast
+          toast.error(`No pudimos completar el registro: ${response.data.message}. Inténtalo de nuevo.`);
+          setError(response.data.message);
+          setIsProcessing(false);
+          setSelectedPlan(null);
+          return;
+        }
+
+        // Success - show success toast
+        toast.success("¡Cuenta creada exitosamente! Redirigiendo...");
+        
+        // Wait a bit for toast to be visible
+        setTimeout(() => {
+          navigate(createPageUrl("MyProfile"));
+        }, 1000);
+
       } else {
         // Redirect to Stripe for paid plans
         const response = await base44.functions.invoke('createCheckoutSession', {
@@ -81,11 +104,15 @@ export default function PricingPlansPage() {
 
         if (response.data.url) {
           window.location.href = response.data.url;
+        } else {
+          throw new Error('No se pudo crear la sesión de pago');
         }
       }
     } catch (err) {
       console.error("Error selecting plan:", err);
-      setError("Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.");
+      const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
     }
