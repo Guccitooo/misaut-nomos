@@ -111,6 +111,10 @@ export default function ProfileOnboardingPage() {
 
   const saveProfileMutation = useMutation({
     mutationFn: async (data) => {
+      console.log("💾 Attempting to save profile data:", data);
+      console.log("📍 Profile exists?", !!profile);
+      console.log("🆔 User ID:", user?.id);
+
       // Only send non-empty fields
       const cleanData = {};
       Object.keys(data).forEach(key => {
@@ -121,27 +125,38 @@ export default function ProfileOnboardingPage() {
         }
       });
 
-      if (profile) {
-        return base44.entities.ProfessionalProfile.update(profile.id, cleanData);
-      } else {
-        return base44.entities.ProfessionalProfile.create({
-          ...cleanData,
-          user_id: user.id,
-          estado_perfil: "pendiente",
-          visible_en_busqueda: false,
-          onboarding_completed: false
-        });
+      try {
+        let result;
+        if (profile) {
+          console.log("🔄 Updating existing profile:", profile.id);
+          result = await base44.entities.ProfessionalProfile.update(profile.id, cleanData);
+        } else {
+          console.log("✨ Creating new profile");
+          result = await base44.entities.ProfessionalProfile.create({
+            ...cleanData,
+            user_id: user.id,
+            estado_perfil: "pendiente",
+            visible_en_busqueda: false,
+            onboarding_completed: false
+          });
+        }
+        console.log("✅ Save successful:", result);
+        return result;
+      } catch (error) {
+        console.error("❌ Save failed:", error);
+        throw error;
       }
     },
     onSuccess: (newProfile) => {
+      console.log("🎉 onSuccess called with:", newProfile);
       if (!profile) {
         setProfile(newProfile);
       }
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
     },
     onError: (error) => {
-      console.error("Error saving profile:", error);
-      toast.error("Error al guardar: " + error.message);
+      console.error("💥 onError called:", error);
+      toast.error("Error al guardar: " + (error.message || "Error desconocido"));
     }
   });
 
@@ -336,37 +351,54 @@ Equipo milautonomos`,
   };
 
   const handleNext = async () => {
+    console.log("\n========================================");
+    console.log("🚀 BUTTON CLICKED - NEXT");
+    console.log("========================================");
+    
     setError(null);
 
-    console.log("=== VALIDATING STEP ===");
-    console.log("Current step:", currentStep);
-    console.log("Form data:", formData);
-    console.log("Profile exists:", !!profile);
+    console.log("📊 Current step:", currentStep);
+    console.log("📝 Form data:", JSON.stringify(formData, null, 2));
+    console.log("👤 User:", user?.email);
+    console.log("📄 Profile:", profile?.id);
 
-    if (!validateStep(currentStep)) {
-      console.log("Validation failed");
+    console.log("\n🔍 Starting validation...");
+    const isValid = validateStep(currentStep);
+    console.log("✓ Validation result:", isValid);
+
+    if (!isValid) {
+      console.log("❌ Validation failed, stopping here");
+      console.log("Error message:", error);
       return;
     }
 
-    console.log("Validation passed, saving...");
+    console.log("\n💾 Attempting to save...");
+    console.log("Mutation pending:", saveProfileMutation.isPending);
 
-    // Autosave - but don't block if it fails
     try {
       const savedProfile = await saveProfileMutation.mutateAsync(formData);
-      console.log("Save successful:", savedProfile);
+      console.log("✅ Save completed successfully:", savedProfile);
       toast.success("Guardado correctamente");
-    } catch (error) {
-      console.error("Error saving:", error);
-      // Don't block advancing if save fails
+    } catch (err) {
+      console.error("⚠️ Save failed but continuing:", err);
       toast.error("No se pudo guardar, pero puedes continuar");
     }
 
-    // Always advance to next step
+    console.log("\n➡️ Advancing to next step");
+    console.log("Current step before:", currentStep);
+    console.log("Total steps:", steps.length);
+    
     if (currentStep < steps.length - 1) {
-      console.log("Advancing to step:", currentStep + 1);
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      console.log("Moving to step:", nextStep);
+      setCurrentStep(nextStep);
       window.scrollTo(0, 0);
+      console.log("✅ Step advanced successfully");
+    } else {
+      console.log("⚠️ Already at last step");
     }
+    
+    console.log("========================================\n");
   };
 
   const handleBack = () => {
@@ -449,6 +481,7 @@ Equipo milautonomos`,
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+        <p className="ml-3 text-gray-600">Cargando...</p>
       </div>
     );
   }

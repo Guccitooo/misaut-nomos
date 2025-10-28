@@ -10,47 +10,91 @@
       "type": "string",
       "description": "Nombre comercial"
     },
-    "description": {
+    "cif_nif": {
       "type": "string",
-      "description": "Descripci\u00f3n de los servicios"
+      "description": "CIF / NIF"
     },
-    "descripcion_corta": {
+    "email_contacto": {
       "type": "string",
-      "description": "Descripci\u00f3n corta (m\u00e1x 220 caracteres)"
+      "description": "Email de contacto"
+    },
+    "telefono_contacto": {
+      "type": "string",
+      "description": "Tel\u00e9fono de contacto"
     },
     "categories": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Categor\u00edas de servicios"
+      "description": "Categor\u00edas de servicios",
+      "default": []
+    },
+    "descripcion_corta": {
+      "type": "string",
+      "description": "Descripci\u00f3n corta (m\u00e1x 220 caracteres)",
+      "default": ""
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada de los servicios",
+      "default": ""
     },
     "service_area": {
       "type": "string",
-      "description": "Zona de intervenci\u00f3n"
+      "description": "Zona de intervenci\u00f3n",
+      "default": ""
     },
     "radio_servicio_km": {
       "type": "number",
-      "description": "Radio de servicio en kil\u00f3metros"
+      "description": "Radio de servicio en kil\u00f3metros",
+      "default": 10
     },
     "opening_hours": {
       "type": "string",
-      "description": "Horarios de apertura"
+      "description": "Horarios de apertura",
+      "default": ""
+    },
+    "tarifa_base": {
+      "type": "number",
+      "description": "Tarifa base por hora/servicio",
+      "default": 0
+    },
+    "facturacion": {
+      "type": "string",
+      "enum": [
+        "autonomo",
+        "sociedad",
+        "otros"
+      ],
+      "description": "Tipo de facturaci\u00f3n",
+      "default": "autonomo"
+    },
+    "formas_pago": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Formas de pago aceptadas",
+      "default": []
     },
     "photos": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "URLs de las fotos de realizaciones"
+      "description": "URLs de las fotos de realizaciones",
+      "default": []
     },
     "imagen_principal": {
       "type": "string",
-      "description": "URL de la imagen principal"
+      "description": "URL de la imagen principal",
+      "default": ""
     },
     "website": {
       "type": "string",
-      "description": "Sitio web"
+      "description": "Sitio web",
+      "default": ""
     },
     "social_links": {
       "type": "object",
@@ -65,19 +109,8 @@
           "type": "string"
         }
       },
-      "description": "Enlaces de redes sociales"
-    },
-    "cif_nif": {
-      "type": "string",
-      "description": "CIF / NIF"
-    },
-    "telefono_contacto": {
-      "type": "string",
-      "description": "Tel\u00e9fono de contacto"
-    },
-    "email_contacto": {
-      "type": "string",
-      "description": "Email de contacto"
+      "description": "Enlaces de redes sociales",
+      "default": {}
     },
     "price_range": {
       "type": "string",
@@ -86,35 +119,18 @@
         "\u20ac\u20ac",
         "\u20ac\u20ac\u20ac"
       ],
-      "description": "Gama de precios"
-    },
-    "tarifa_base": {
-      "type": "number",
-      "description": "Tarifa base por hora/servicio"
-    },
-    "facturacion": {
-      "type": "string",
-      "enum": [
-        "autonomo",
-        "sociedad",
-        "otros"
-      ],
-      "description": "Tipo de facturaci\u00f3n"
-    },
-    "formas_pago": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Formas de pago aceptadas"
+      "description": "Gama de precios",
+      "default": "\u20ac\u20ac"
     },
     "average_rating": {
       "type": "number",
-      "description": "Nota media"
+      "description": "Nota media",
+      "default": 0
     },
     "total_reviews": {
       "type": "number",
-      "description": "N\u00famero total de opiniones"
+      "description": "N\u00famero total de opiniones",
+      "default": 0
     },
     "estado_perfil": {
       "type": "string",
@@ -144,15 +160,18 @@
     },
     "acepta_terminos": {
       "type": "boolean",
-      "description": "Acepta t\u00e9rminos y condiciones"
+      "description": "Acepta t\u00e9rminos y condiciones",
+      "default": false
     },
     "acepta_politica_privacidad": {
       "type": "boolean",
-      "description": "Acepta pol\u00edtica de privacidad"
+      "description": "Acepta pol\u00edtica de privacidad",
+      "default": false
     },
     "consiente_contacto_clientes": {
       "type": "boolean",
-      "description": "Consiente contacto de clientes"
+      "description": "Consiente contacto de clientes",
+      "default": false
     },
     "slug_publico": {
       "type": "string",
