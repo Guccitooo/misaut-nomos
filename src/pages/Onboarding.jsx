@@ -24,7 +24,8 @@ export default function OnboardingPage() {
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     userType: "",
-    fullName: "",
+    firstName: "",
+    lastName: "",
     cifNif: "",
     email: "",
     password: "",
@@ -59,34 +60,47 @@ export default function OnboardingPage() {
       ]
     },
     {
-      question: formData.userType === "empresa" ? "Razón social" : "¿Cuál es tu nombre completo?",
-      field: "fullName",
+      question: formData.userType === "empresa" ? "Razón social" : "¿Cuál es tu nombre?",
+      field: "firstName",
       type: "text",
-      placeholder: formData.userType === "empresa" ? "Ej: Mi Empresa S.L." : "Ej: Juan Pérez García"
+      placeholder: formData.userType === "empresa" ? "Ej: Mi Empresa S.L." : "Ej: Juan",
+      maxLength: 50
     },
     {
-      question: "NIF / CIF",
-      field: "cifNif",
+      question: "¿Y tus apellidos?",
+      field: "lastName",
       type: "text",
-      placeholder: "Ej: 12345678A"
+      placeholder: "Ej: Pérez García",
+      maxLength: 100,
+      skipIfEmpresa: true
+    },
+    {
+      question: formData.userType === "empresa" ? "CIF de la empresa" : "Tu NIF",
+      field: "cifNif",
+      type: "nif",
+      placeholder: formData.userType === "empresa" ? "Ej: B12345678" : "Ej: 12345678A",
+      maxLength: 9
     },
     {
       question: "¿Cuál es tu correo electrónico?",
       field: "email",
       type: "email",
-      placeholder: "tu@email.com"
+      placeholder: "tu@email.com",
+      maxLength: 100
     },
     {
       question: "Crea una contraseña segura",
       field: "password",
       type: "password",
-      placeholder: "Mínimo 8 caracteres"
+      placeholder: "Mínimo 8 caracteres",
+      maxLength: 50
     },
     {
       question: "Teléfono de contacto",
       field: "phone",
       type: "tel",
-      placeholder: "+34 612 345 678"
+      placeholder: "612345678 o +34612345678",
+      maxLength: 15
     },
     {
       question: "¿A qué te dedicas?",
@@ -110,12 +124,61 @@ export default function OnboardingPage() {
       question: "Dirección fiscal",
       field: "address",
       type: "text",
-      placeholder: "Calle, número, código postal, ciudad"
+      placeholder: "Calle, número, código postal, ciudad",
+      maxLength: 200
     }
   ];
 
+  // Skip lastName for companies
+  const currentStepIndex = currentStep;
+  const currentStepData = steps[currentStepIndex];
+  const shouldSkipStep = currentStepData?.skipIfEmpresa && formData.userType === "empresa";
+
   const progress = ((currentStep + 1) / steps.length) * 100;
-  const currentStepData = steps[currentStep];
+
+  // Validation functions
+  const validateNIF = (value) => {
+    // NIF: 8 números + 1 letra (ej: 12345678A)
+    const nifRegex = /^[0-9]{8}[A-Z]$/i;
+    return nifRegex.test(value.toUpperCase());
+  };
+
+  const validateCIF = (value) => {
+    // CIF: 1 letra + 7 números + 1 letra/número (ej: B12345678)
+    const cifRegex = /^[ABCDEFGHJNPQRSUVW][0-9]{7}[0-9A-J]$/i;
+    return cifRegex.test(value.toUpperCase());
+  };
+
+  const validateNIFCIF = (value) => {
+    const cleaned = value.trim().toUpperCase();
+    if (formData.userType === "empresa") {
+      return validateCIF(cleaned);
+    } else {
+      return validateNIF(cleaned);
+    }
+  };
+
+  const validatePhone = (value) => {
+    // Acepta: 612345678, +34612345678, 912345678
+    const cleaned = value.replace(/\s/g, '');
+    const phoneRegex = /^(\+34)?[6789][0-9]{8}$/;
+    return phoneRegex.test(cleaned);
+  };
+
+  const validateEmail = (value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
+  };
+
+  const validatePassword = (value) => {
+    return value.length >= 8;
+  };
+
+  const validateName = (value) => {
+    // Solo letras, espacios, guiones y tildes
+    const nameRegex = /^[a-záéíóúñü\s-]+$/i;
+    return value.length >= 2 && value.length <= 50 && nameRegex.test(value);
+  };
 
   const validateCurrentStep = () => {
     const currentField = currentStepData.field;
@@ -126,13 +189,44 @@ export default function OnboardingPage() {
       return false;
     }
 
-    if (currentField === "email" && !value.includes('@')) {
+    // Specific validations
+    if (currentField === "firstName") {
+      if (!validateName(value)) {
+        setError(formData.userType === "empresa" 
+          ? "La razón social debe tener entre 2 y 50 caracteres" 
+          : "El nombre debe tener entre 2 y 50 caracteres y solo contener letras");
+        return false;
+      }
+    }
+
+    if (currentField === "lastName") {
+      if (!validateName(value)) {
+        setError("Los apellidos deben tener entre 2 y 100 caracteres y solo contener letras");
+        return false;
+      }
+    }
+
+    if (currentField === "cifNif") {
+      if (!validateNIFCIF(value)) {
+        setError(formData.userType === "empresa"
+          ? "CIF inválido. Formato: B12345678"
+          : "NIF inválido. Formato: 12345678A");
+        return false;
+      }
+    }
+
+    if (currentField === "email" && !validateEmail(value)) {
       setError("Por favor introduce un email válido");
       return false;
     }
 
-    if (currentField === "password" && value.length < 8) {
+    if (currentField === "password" && !validatePassword(value)) {
       setError("La contraseña debe tener al menos 8 caracteres");
+      return false;
+    }
+
+    if (currentField === "phone" && !validatePhone(value)) {
+      setError("Teléfono inválido. Formato: 612345678 o +34612345678");
       return false;
     }
 
@@ -141,11 +235,24 @@ export default function OnboardingPage() {
       return false;
     }
 
+    if (currentField === "address" && value.length < 10) {
+      setError("Por favor introduce una dirección completa (mínimo 10 caracteres)");
+      return false;
+    }
+
     return true;
   };
 
   const handleNext = () => {
     setError(null);
+
+    if (shouldSkipStep) {
+      // Skip this step for companies
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+      return;
+    }
 
     if (!validateCurrentStep()) {
       return;
@@ -161,13 +268,34 @@ export default function OnboardingPage() {
   const handleBack = () => {
     setError(null);
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      let prevStep = currentStep - 1;
+      // Skip lastName for companies when going back
+      if (steps[prevStep].skipIfEmpresa && formData.userType === "empresa") {
+        prevStep--;
+      }
+      setCurrentStep(prevStep);
     }
   };
 
   const handleFieldChange = (field, value) => {
+    // Apply max length for text inputs
+    const currentStep = steps.find(s => s.field === field);
+    if (currentStep?.maxLength && value.length > currentStep.maxLength) {
+      return;
+    }
+
+    // Format phone number (remove non-numeric except +)
+    if (field === "phone") {
+      value = value.replace(/[^\d+]/g, '');
+    }
+
+    // Format NIF/CIF to uppercase
+    if (field === "cifNif") {
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
     setFormData({ ...formData, [field]: value });
-    setError(null); // Clear error when user types
+    setError(null);
   };
 
   const handleSubmit = async () => {
@@ -175,11 +303,13 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Validate all fields before proceeding
-      const requiredFields = ['userType', 'fullName', 'cifNif', 'email', 'password', 'phone', 'activity', 'address'];
-      const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim() === '');
+      // Build full name
+      const fullName = formData.userType === "empresa" 
+        ? formData.firstName 
+        : `${formData.firstName} ${formData.lastName}`.trim();
 
-      if (missingFields.length > 0) {
+      // Validate all fields
+      if (!fullName || !formData.cifNif || !formData.email || !formData.password || !formData.phone || !formData.activity || !formData.address) {
         setError("Por favor, completa todos los campos antes de continuar");
         setIsProcessing(false);
         return;
@@ -191,10 +321,47 @@ export default function OnboardingPage() {
         return;
       }
 
+      // Final validations
+      if (formData.userType !== "empresa" && !validateName(formData.firstName)) {
+        setError("El nombre contiene caracteres no válidos");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (formData.userType !== "empresa" && !validateName(formData.lastName)) {
+        setError("Los apellidos contienen caracteres no válidos");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!validateNIFCIF(formData.cifNif)) {
+        setError("NIF/CIF inválido");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!validateEmail(formData.email)) {
+        setError("Email inválido");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!validatePassword(formData.password)) {
+        setError("La contraseña debe tener al menos 8 caracteres");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!validatePhone(formData.phone)) {
+        setError("Teléfono inválido");
+        setIsProcessing(false);
+        return;
+      }
+
       // Create Stripe checkout session
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: formData.email,
-        fullName: formData.fullName,
+        fullName: fullName,
         userType: formData.userType,
         cifNif: formData.cifNif,
         phone: formData.phone,
@@ -220,6 +387,12 @@ export default function OnboardingPage() {
       setError("Ha habido un problema temporal. Por favor, inténtalo de nuevo en unos segundos.");
       setIsProcessing(false);
     }
+  };
+
+  const getCharacterCount = (field) => {
+    const value = formData[field] || "";
+    const maxLength = steps.find(s => s.field === field)?.maxLength || 0;
+    return { current: value.length, max: maxLength };
   };
 
   // Success screen
@@ -277,6 +450,11 @@ export default function OnboardingPage() {
         </Card>
       </div>
     );
+  }
+
+  // Skip step if needed
+  if (shouldSkipStep) {
+    return null;
   }
 
   return (
@@ -340,7 +518,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {currentStepData.type === "text" && (
+              {(currentStepData.type === "text" || currentStepData.type === "nif") && (
                 <div>
                   <Input
                     type="text"
@@ -348,8 +526,19 @@ export default function OnboardingPage() {
                     onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
                     placeholder={currentStepData.placeholder}
                     className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    maxLength={currentStepData.maxLength}
                     autoFocus
                   />
+                  {currentStepData.maxLength && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {getCharacterCount(currentStepData.field).current}/{currentStepData.maxLength} caracteres
+                    </p>
+                  )}
+                  {currentStepData.type === "nif" && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {formData.userType === "empresa" ? "Formato: B12345678" : "Formato: 12345678A"}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -361,8 +550,14 @@ export default function OnboardingPage() {
                     onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
                     placeholder={currentStepData.placeholder}
                     className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    maxLength={currentStepData.maxLength}
                     autoFocus
                   />
+                  {currentStepData.maxLength && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {getCharacterCount(currentStepData.field).current}/{currentStepData.maxLength} caracteres
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -374,11 +569,14 @@ export default function OnboardingPage() {
                     onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
                     placeholder={currentStepData.placeholder}
                     className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    maxLength={currentStepData.maxLength}
                     autoFocus
                   />
-                  <p className="text-sm text-gray-500 mt-2">
-                    Usa letras, números y símbolos para mayor seguridad
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className={`text-sm ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                      {formData.password.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -390,8 +588,12 @@ export default function OnboardingPage() {
                     onChange={(e) => handleFieldChange(currentStepData.field, e.target.value)}
                     placeholder={currentStepData.placeholder}
                     className="h-14 text-lg border-2 rounded-xl focus:border-blue-600"
+                    maxLength={currentStepData.maxLength}
                     autoFocus
                   />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Formatos válidos: 612345678 o +34612345678
+                  </p>
                 </div>
               )}
 
@@ -413,7 +615,6 @@ export default function OnboardingPage() {
                     </SelectContent>
                   </Select>
 
-                  {/* Show additional field if "Otro tipo de servicio profesional" is selected */}
                   {currentStepData.field === "activity" && formData.activity === "Otro tipo de servicio profesional" && (
                     <div className="mt-4 p-4 bg-blue-50 rounded-xl">
                       <Label className="text-gray-900 mb-2 block font-medium">
