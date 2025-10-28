@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -24,9 +23,9 @@ import {
   TrendingUp,
   Briefcase,
   Image as ImageIcon,
-  Phone, // Added Phone icon
-  MessageCircle, // Added MessageCircle icon
-  MessageSquare // Added MessageSquare icon for direct chat
+  Phone,
+  MessageCircle,
+  MessageSquare
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -61,60 +60,70 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      console.log("🔍 Cargando perfiles...");
-      
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      console.log("📦 Total perfiles en DB:", allProfiles.length);
-      console.log("📋 Perfiles completos:", allProfiles);
-      
-      const users = await base44.entities.User.list();
-      console.log("👥 Total usuarios:", users.length);
-      
-      const profilesWithStatus = allProfiles.map(profile => {
-        const user = users.find(u => u.id === profile.user_id);
-        const profileData = {
-          ...profile,
-          subscription_status: user?.subscription_status,
-        };
+      try {
+        console.log("🔍 Iniciando carga de perfiles...");
         
-        // Debug cada perfil
-        console.log(`\n📊 Perfil: ${profile.business_name}`);
-        console.log(`   user_id: ${profile.user_id}`);
-        console.log(`   usuario encontrado: ${user ? 'SÍ' : 'NO'}`);
-        console.log(`   subscription_status: ${user?.subscription_status}`);
-        console.log(`   visible_en_busqueda: ${profile.visible_en_busqueda}`);
-        console.log(`   onboarding_completed: ${profile.onboarding_completed}`);
-        console.log(`   estado_perfil: ${profile.estado_perfil}`);
+        // Intentar cargar TODOS los perfiles sin filtros primero
+        const allProfiles = await base44.entities.ProfessionalProfile.list();
+        console.log("📦 TOTAL perfiles en DB:", allProfiles.length);
+        console.log("📋 Perfiles completos:", JSON.stringify(allProfiles, null, 2));
         
-        return profileData;
-      });
+        if (allProfiles.length === 0) {
+          console.error("❌ No se pudieron cargar perfiles - puede ser un problema de permisos");
+          return [];
+        }
 
-      console.log("📊 Perfiles con status:", profilesWithStatus);
-
-      const visibleProfiles = profilesWithStatus.filter(profile => {
-        const hasActiveSubscription = 
-          profile.subscription_status === "actif" || 
-          profile.subscription_status === "en_prueba";
-        const isVisible = profile.visible_en_busqueda === true;
-        const isCompleted = profile.onboarding_completed === true;
+        // Intentar cargar usuarios
+        let users = [];
+        try {
+          users = await base44.entities.User.list();
+          console.log("👥 Total usuarios:", users.length);
+        } catch (userError) {
+          console.error("⚠️ No se pudieron cargar usuarios:", userError);
+          // Continuar sin usuarios si falla
+        }
         
-        const passes = hasActiveSubscription && isVisible && isCompleted;
+        const profilesWithStatus = allProfiles.map(profile => {
+          const user = users.find(u => u.id === profile.user_id);
+          return {
+            ...profile,
+            subscription_status: user?.subscription_status || "actif", // Asumir activo si no hay usuario
+          };
+        });
+
+        console.log("📊 Perfiles con status:", profilesWithStatus);
+
+        // Filtrar solo perfiles visibles
+        const visibleProfiles = profilesWithStatus.filter(profile => {
+          const hasActiveSubscription = 
+            profile.subscription_status === "actif" || 
+            profile.subscription_status === "en_prueba";
+          const isVisible = profile.visible_en_busqueda === true;
+          const isActive = profile.estado_perfil === "activo";
+          
+          const passes = hasActiveSubscription && isVisible && isActive;
+          
+          console.log(`\n🔎 Filtro para ${profile.business_name}:`);
+          console.log(`   ✓ Suscripción: ${profile.subscription_status} → ${hasActiveSubscription}`);
+          console.log(`   ✓ Visible: ${profile.visible_en_busqueda} → ${isVisible}`);
+          console.log(`   ✓ Estado: ${profile.estado_perfil} → ${isActive}`);
+          console.log(`   ➡️ PASA: ${passes ? '✅ SÍ' : '❌ NO'}`);
+
+          return passes;
+        });
+
+        console.log("✅ Perfiles FINALES visibles:", visibleProfiles.length);
+        console.log("📋 Lista final:", visibleProfiles);
         
-        console.log(`\n🔎 Filtro para ${profile.business_name}:`);
-        console.log(`   ✓ Suscripción activa: ${hasActiveSubscription} (${profile.subscription_status})`);
-        console.log(`   ✓ Visible: ${isVisible}`);
-        console.log(`   ✓ Onboarding completado: ${isCompleted}`);
-        console.log(`   ➡️ PASA FILTRO: ${passes ? '✅ SÍ' : '❌ NO'}`);
-
-        return passes;
-      });
-
-      console.log("✅ Perfiles que pasan filtro:", visibleProfiles.length);
-      console.log("📋 Perfiles visibles finales:", visibleProfiles);
-      
-      return visibleProfiles;
+        return visibleProfiles;
+      } catch (error) {
+        console.error("❌ ERROR al cargar perfiles:", error);
+        console.error("Detalles del error:", error.message);
+        return [];
+      }
     },
     initialData: [],
+    retry: false, // No reintentar para ver el error claramente
   });
 
   const filteredProfiles = profiles.filter(profile => {
@@ -136,9 +145,6 @@ export default function SearchPage() {
     if (sortBy === "rating") {
       return (b.average_rating || 0) - (a.average_rating || 0);
     }
-    // Implement other sort options if needed
-    // For "recent" you might need a `created_at` or `updated_at` field
-    // For now, if not rating, no specific sort is applied
     return 0;
   });
 
@@ -179,12 +185,10 @@ export default function SearchPage() {
 
     const conversationId = [user.id, professionalId].sort().join('_');
     
-    // Check if conversation exists
     const existingMessages = await base44.entities.Message.filter({
       conversation_id: conversationId
     });
 
-    // If no messages, create initial message
     if (existingMessages.length === 0) {
       await base44.entities.Message.create({
         conversation_id: conversationId,
@@ -202,9 +206,7 @@ export default function SearchPage() {
 
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
-    // Remove all non-numeric characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
-    // Add +34 if no prefix exists and it looks like a local number
     if (!cleaned.startsWith('+')) {
       cleaned = '+34' + cleaned;
     }
@@ -213,9 +215,7 @@ export default function SearchPage() {
 
   const formatPhoneForWhatsApp = (phone) => {
     if (!phone) return null;
-    // Remove all non-numeric characters
     let cleaned = phone.replace(/\D/g, '');
-    // Add 34 if no prefix exists and it's a typical Spanish 9-digit number
     if (!cleaned.startsWith('34') && cleaned.length === 9) {
       cleaned = '34' + cleaned;
     }
@@ -235,7 +235,6 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* CTA Button for professionals */}
             <Link to={createPageUrl("PricingPlans")}>
               <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
                 <Briefcase className="w-5 h-5 mr-2" />
@@ -444,6 +443,7 @@ export default function SearchPage() {
                       <a
                         href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
                         onClick={(e) => e.stopPropagation()}
+                        className="flex-1"
                       >
                         <Button 
                           variant="outline" 
@@ -458,6 +458,7 @@ export default function SearchPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
+                        className="flex-1"
                       >
                         <Button 
                           className="w-full bg-green-600 hover:bg-green-700"
