@@ -58,22 +58,40 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const users = await base44.entities.User.list();
+      console.log("🔍 Cargando perfiles...");
       
-      return allProfiles
-        .map(profile => {
-          const user = users.find(u => u.id === profile.user_id);
-          return {
-            ...profile,
-            subscription_status: user?.subscription_status
-          };
-        })
-        .filter(profile => 
-          profile.subscription_status === "actif" && 
-          profile.visible_en_busqueda === true &&
-          profile.onboarding_completed === true
-        );
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      console.log("📦 Total perfiles:", allProfiles.length);
+      
+      const users = await base44.entities.User.list();
+      console.log("👥 Total usuarios:", users.length);
+      
+      const profilesWithStatus = allProfiles.map(profile => {
+        const user = users.find(u => u.id === profile.user_id);
+        return {
+          ...profile,
+          subscription_status: user?.subscription_status
+        };
+      });
+
+      console.log("📊 Perfiles con status:", profilesWithStatus);
+
+      const visibleProfiles = profilesWithStatus.filter(profile => {
+        const hasActiveSubscription = profile.subscription_status === "actif";
+        const isVisible = profile.visible_en_busqueda === true;
+        const isCompleted = profile.onboarding_completed === true;
+        
+        console.log(`\n🔎 Perfil: ${profile.business_name}`);
+        console.log(`  - subscription_status: ${profile.subscription_status}`);
+        console.log(`  - visible_en_busqueda: ${profile.visible_en_busqueda}`);
+        console.log(`  - onboarding_completed: ${profile.onboarding_completed}`);
+        console.log(`  - ¿Pasa filtro?: ${hasActiveSubscription && isVisible && isCompleted}`);
+
+        return hasActiveSubscription && isVisible && isCompleted;
+      });
+
+      console.log("✅ Perfiles visibles:", visibleProfiles.length);
+      return visibleProfiles;
     },
     initialData: [],
   });
@@ -97,6 +115,9 @@ export default function SearchPage() {
     if (sortBy === "rating") {
       return (b.average_rating || 0) - (a.average_rating || 0);
     }
+    // Implement other sort options if needed
+    // For "recent" you might need a `created_at` or `updated_at` field
+    // For now, if not rating, no specific sort is applied
     return 0;
   });
 
@@ -243,6 +264,11 @@ export default function SearchPage() {
           <p className="text-gray-600">
             Profesionales verificados y listos para ayudarte
           </p>
+          
+          {/* Debug info */}
+          <div className="mt-2 text-xs text-gray-500">
+            <p>Total en DB: {profiles.length} perfiles cargados</p>
+          </div>
         </div>
 
         {loadingProfiles ? (
