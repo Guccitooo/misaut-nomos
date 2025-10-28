@@ -214,5 +214,19 @@
   "required": [
     "user_id",
     "business_name"
-  ]
+  ],
+  "security": {
+    "read": {
+      "rule": "public"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  }
 }
