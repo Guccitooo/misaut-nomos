@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -631,15 +632,17 @@ export default function MyProfilePage() {
                           <SelectValue placeholder="Selecciona" />
                         </SelectTrigger>
                         <SelectContent>
-                          {ciudadesPorProvincia[profileData.provincia]?.map((ciudad) => (
-                            <SelectItem key={ciudad} value={ciudad}>
-                              {ciudad}
-                            </SelectItem>
-                          )) || (
-                            <SelectItem value={profileData.provincia || ""}>
+                          {ciudadesPorProvincia[profileData.provincia]?.length > 0 ? (
+                            ciudadesPorProvincia[profileData.provincia].map((ciudad) => (
+                              <SelectItem key={ciudad} value={ciudad}>
+                                {ciudad}
+                              </SelectItem>
+                            ))
+                          ) : profileData.provincia ? (
+                            <SelectItem value={profileData.provincia}>
                               {profileData.provincia}
                             </SelectItem>
-                          )}
+                          ) : null}
                         </SelectContent>
                       </Select>
                     </div>
