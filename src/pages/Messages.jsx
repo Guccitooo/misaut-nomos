@@ -94,7 +94,22 @@ export default function MessagesPage() {
     mutationFn: async (messageData) => {
       return base44.entities.Message.create(messageData);
     },
-    onSuccess: () => {
+    onSuccess: async (newMessage) => {
+      // Send email notification to recipient
+      try {
+        const recipient = await base44.entities.User.filter({ id: newMessage.recipient_id });
+        if (recipient[0]) {
+          await base44.integrations.Core.SendEmail({
+            to: recipient[0].email,
+            subject: "Nuevo mensaje en milautonomos",
+            body: `Hola,\n\nHas recibido un nuevo mensaje en milautonomos.\n\nDe: ${newMessage.professional_name || newMessage.client_name}\nMensaje: ${newMessage.content}\n\nInicia sesión en milautonomos para responder.\n\nGracias,\nEquipo milautonomos`,
+            from_name: "milautonomos"
+          });
+        }
+      } catch (error) {
+        console.error("Error sending notification:", error);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       setNewMessage("");
       setTimeout(scrollToBottom, 100);

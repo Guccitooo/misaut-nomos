@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +9,7 @@ import { Star, MessageSquare, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { es } from "date-fns/locale";
 
 export default function ReviewSection({ reviews, professionalId, currentUser }) {
   const [showForm, setShowForm] = useState(false);
@@ -58,6 +57,17 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
         await base44.entities.ProfessionalProfile.update(profiles[0].id, {
           average_rating: avgRating,
           total_reviews: allReviews.length
+        });
+      }
+
+      // Send notification to professional
+      const professionalUser = await base44.entities.User.filter({ id: professionalId });
+      if (professionalUser[0]) {
+        await base44.integrations.Core.SendEmail({
+          to: professionalUser[0].email,
+          subject: "Nueva opinión en tu perfil - milautonomos",
+          body: `Hola,\n\nHas recibido una nueva opinión en tu perfil de milautonomos.\n\nCalificación: ${rating} estrellas\nComentario: ${comment}\n\nGracias,\nEquipo milautonomos`,
+          from_name: "milautonomos"
         });
       }
 
@@ -192,7 +202,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
                     <div>
                       <p className="font-semibold text-gray-900">{review.client_name}</p>
                       <p className="text-xs text-gray-500">
-                        {format(new Date(review.created_date), "d MMMM yyyy", { locale: fr })}
+                        {format(new Date(review.created_date), "d MMMM yyyy", { locale: es })}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -211,7 +221,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
                   <p className="text-gray-700 leading-relaxed">{review.comment}</p>
                   {review.is_verified && (
                     <Badge variant="outline" className="mt-2 text-xs bg-green-50 text-green-700 border-green-200">
-                      Avis vérifié
+                      Opinión verificada
                     </Badge>
                   )}
                 </div>
