@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Added Link import
 import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import {
   Star,
   Heart,
   Filter,
-  TrendingUp
+  TrendingUp,
+  Briefcase // Added Briefcase icon import
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -132,9 +133,17 @@ export default function SearchPage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
               Encuentra el autónomo perfecto
             </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-6">
               Profesionales cualificados y verificados en toda España
             </p>
+            
+            {/* CTA Button for professionals */}
+            <Link to={createPageUrl("Onboarding")}>
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
+                <Briefcase className="w-5 h-5 mr-2" />
+                ¿Eres autónomo? Únete ahora
+              </Button>
+            </Link>
           </div>
 
           <div className="max-w-3xl mx-auto">

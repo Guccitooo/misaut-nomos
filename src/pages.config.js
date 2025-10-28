@@ -4,6 +4,7 @@ import Messages from './pages/Messages';
 import Favorites from './pages/Favorites';
 import MyProfile from './pages/MyProfile';
 import AdminDashboard from './pages/AdminDashboard';
+import Onboarding from './pages/Onboarding';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +15,7 @@ export const PAGES = {
     "Favorites": Favorites,
     "MyProfile": MyProfile,
     "AdminDashboard": AdminDashboard,
+    "Onboarding": Onboarding,
 }
 
 export const pagesConfig = {

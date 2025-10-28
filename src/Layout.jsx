@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -44,24 +45,33 @@ export default function Layout({ children, currentPageName }) {
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
+      // Clear user state if there's an error, e.g., session expired
+      setUser(null);
     }
   };
 
   const loadUnreadCount = async () => {
     try {
       const currentUser = await base44.auth.me();
-      const messages = await base44.entities.Message.filter({
-        recipient_id: currentUser.id,
-        is_read: false
-      });
-      setUnreadCount(messages.length);
+      if (currentUser) {
+        const messages = await base44.entities.Message.filter({
+          recipient_id: currentUser.id,
+          is_read: false
+        });
+        setUnreadCount(messages.length);
+      } else {
+        setUnreadCount(0);
+      }
     } catch (error) {
       console.error("Error loading unread count:", error);
+      setUnreadCount(0);
     }
   };
 
   const handleLogout = () => {
     base44.auth.logout();
+    setUser(null); // Clear user state on logout
+    setUnreadCount(0); // Clear unread count on logout
   };
 
   const navigationItems = [
@@ -151,6 +161,18 @@ export default function Layout({ children, currentPageName }) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            {/* Hazte Autónomo Button */}
+            {(!user || user.user_type !== "professionnel") && (
+              <div className="mt-auto p-3">
+                <Link to={createPageUrl("Onboarding")}>
+                  <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Hazte Autónomo
+                  </Button>
+                </Link>
+              </div>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="border-t border-gray-100 p-4">
