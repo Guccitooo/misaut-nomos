@@ -206,7 +206,7 @@ export default function ProfileOnboardingPage() {
         slug_publico: slug
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       // ✅ IMPORTANTE: Actualizar también el usuario para asegurar subscription_status
       try {
         await base44.auth.updateMe({
@@ -216,6 +216,7 @@ export default function ProfileOnboardingPage() {
         console.error("Error updating user type:", error);
       }
 
+      // ✅ Email de confirmación con notificación de activación
       await base44.integrations.Core.SendEmail({
         to: user.email,
         subject: "✅ Tu perfil ya está publicado en milautonomos",
@@ -223,10 +224,18 @@ export default function ProfileOnboardingPage() {
 
 ¡Enhorabuena! Tu perfil profesional ya está activo y visible en milautonomos.
 
+🎉 PERFIL ACTIVADO EXITOSAMENTE
+
 Los clientes pueden encontrarte buscando por:
 - Tu nombre: ${formData.business_name}
 - Tu actividad: ${formData.categories.join(', ')}
 - Tu zona: ${formData.service_area}
+
+📊 Estado de tu perfil:
+✅ Visible en búsquedas: SÍ
+✅ Onboarding completado: SÍ
+✅ Fotos subidas: ${formData.photos.length}
+✅ Categorías: ${formData.categories.length}
 
 Próximos pasos para maximizar tu visibilidad:
 1. Añade más fotos de tus trabajos
@@ -234,12 +243,14 @@ Próximos pasos para maximizar tu visibilidad:
 3. Responde rápido a los mensajes de clientes
 4. Pide valoraciones a tus clientes satisfechos
 
+Ver mi perfil público: https://milautonomos.com/perfil/${data.slug_publico}
+
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,
         from_name: "milautonomos"
       });
 
-      toast.success("¡Perfil publicado con éxito!");
+      toast.success("🎉 ¡Perfil publicado! Los clientes ya pueden encontrarte");
       setCurrentStep(steps.length);
     },
   });
