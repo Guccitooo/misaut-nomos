@@ -20,7 +20,9 @@ import {
   Star,
   MessageSquare,
   Heart,
-  FileText
+  FileText,
+  Phone, // Added Phone icon
+  MessageCircle // Added MessageCircle icon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
@@ -226,12 +228,32 @@ export default function ProfessionalProfilePage() {
                     >
                       <Heart className={`w-5 h-5 ${isFavorite ? "fill-orange-500 text-orange-500" : ""}`} />
                     </Button>
+                    {profile.telefono_contacto && (
+                      <>
+                        <a href={`tel:${profile.telefono_contacto}`}>
+                          <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
+                            <Phone className="w-5 h-5 mr-2" />
+                            Llamar
+                          </Button>
+                        </a>
+                        <a
+                          href={`https://wa.me/${profile.telefono_contacto.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button className="bg-green-600 hover:bg-green-700">
+                            <MessageCircle className="w-5 h-5 mr-2" />
+                            WhatsApp
+                          </Button>
+                        </a>
+                      </>
+                    )}
                     <Button 
                       className="bg-blue-600 hover:bg-blue-700"
                       onClick={handleStartChat}
                     >
                       <MessageSquare className="w-5 h-5 mr-2" />
-                      Contactar
+                      Mensaje
                     </Button>
                   </div>
                 </div>
