@@ -52,5 +52,19 @@
     "subscription_start_date",
     "subscription_end_date",
     "last_payment_date"
-  ]
+  ],
+  "security": {
+    "read": {
+      "rule": "public"
+    },
+    "create": {
+      "rule": "auth.role == 'admin'"
+    },
+    "update": {
+      "rule": "resource.id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  }
 }
