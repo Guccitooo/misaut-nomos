@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -104,22 +105,24 @@ Sistema milautonomos`,
                 });
             }
 
-            // Create or update professional profile
+            // Create or update professional profile (in PENDING state)
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
                 if (existingProfiles.length === 0) {
-                    // Create new professional profile
+                    // Create new professional profile in PENDING state
                     await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
                         business_name: metadata.fullName,
-                        description: `Profesional de ${activityCategory}. Recién registrado en milautonomos.`,
+                        description: `Profesional de ${activityCategory}. Completa tu perfil para aparecer en búsquedas.`,
                         categories: [activityCategory],
                         service_area: metadata.address.split(',').slice(-1)[0].trim(),
                         opening_hours: "A convenir",
                         cif_nif: metadata.cifNif,
+                        telefono_contacto: metadata.phone,
+                        email_contacto: customerEmail,
                         photos: [],
                         price_range: "€€",
                         average_rating: 0,
@@ -129,32 +132,25 @@ Sistema milautonomos`,
                             facebook: "",
                             instagram: "",
                             linkedin: ""
-                        }
+                        },
+                        estado_perfil: "pendiente",
+                        visible_en_busqueda: false,
+                        onboarding_completed: false
                     });
 
-                    console.log(`✅ Perfil profesional creado automáticamente para ${metadata.fullName}`);
-                } else {
-                    // Update existing profile
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfiles[0].id, {
-                        business_name: metadata.fullName,
-                        categories: [activityCategory],
-                        service_area: metadata.address.split(',').slice(-1)[0].trim(),
-                        cif_nif: metadata.cifNif,
-                    });
-
-                    console.log(`✅ Perfil profesional actualizado para ${metadata.fullName}`);
+                    console.log(`✅ Perfil profesional creado en estado PENDIENTE para ${metadata.fullName}`);
                 }
             }
 
-            // Send confirmation email to customer
+            // Send confirmation email with link to complete profile
             await base44.asServiceRole.integrations.Core.SendEmail({
                 to: customerEmail,
-                subject: "✅ Bienvenido a milautonomos - Suscripción activada",
+                subject: "✅ Bienvenido a milautonomos - Completa tu perfil",
                 body: `Hola ${metadata.fullName},
 
 ¡Bienvenido a milautonomos!
 
-Tu suscripción ha sido activada correctamente. ${isNewUser ? 'Recibirás otro correo en las próximas horas con tus credenciales de acceso.' : 'Ya puedes acceder a tu cuenta profesional.'}
+Tu suscripción ha sido activada correctamente. ${isNewUser ? 'Recibirás otro correo en las próximas horas con tus credenciales de acceso.' : ''}
 
 Detalles de tu suscripción:
 - Plan: Profesional mensual
@@ -162,24 +158,21 @@ Detalles de tu suscripción:
 - Fecha de inicio: ${today.toLocaleDateString('es-ES')}
 - Próxima renovación: ${nextMonth.toLocaleDateString('es-ES')}
 
-Tu perfil profesional ha sido creado automáticamente y ya apareces en el listado de "Buscar Autónomos".
+⚠️ IMPORTANTE: Tu perfil aún no está visible en las búsquedas.
 
-Próximos pasos para activar tu perfil al 100%:
+Para que los clientes puedan encontrarte, debes completar tu perfil profesional con:
+- Descripción de tus servicios
+- Zona de trabajo
+- Fotos de tus trabajos realizados
+- Tarifas y formas de pago
+
+Próximos pasos:
 1. ${isNewUser ? 'Espera el correo con tus credenciales e inicia sesión' : 'Inicia sesión en milautonomos.com'}
-2. Ve a "Mi Perfil" y completa tu información
-3. Añade fotos de tus trabajos realizados
-4. Escribe una descripción detallada de tus servicios
-5. ¡Comienza a recibir contactos de clientes!
+2. Completa el quiz de perfil profesional (5 minutos)
+3. Sube fotos de tus trabajos
+4. ¡Tu perfil se publicará automáticamente!
 
-Tu ficha profesional:
-- Nombre: ${metadata.fullName}
-- Actividad: ${activityCategory}
-- Zona: ${metadata.address.split(',').slice(-1)[0].trim()}
-- Estado: Activo y visible en búsquedas
-
-Cuanto más completes tu perfil, más clientes te encontrarán.
-
-Si tienes alguna pregunta, no dudes en contactarnos.
+Una vez completado, aparecerás en "Buscar Autónomos" y empezarás a recibir contactos.
 
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,

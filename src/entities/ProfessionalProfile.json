@@ -4,41 +4,53 @@
   "properties": {
     "user_id": {
       "type": "string",
-      "description": "ID de l'utilisateur professionnel"
+      "description": "ID del usuario profesional"
     },
     "business_name": {
       "type": "string",
-      "description": "Nom commercial"
+      "description": "Nombre comercial"
     },
     "description": {
       "type": "string",
-      "description": "Description des services"
+      "description": "Descripci\u00f3n de los servicios"
+    },
+    "descripcion_corta": {
+      "type": "string",
+      "description": "Descripci\u00f3n corta (m\u00e1x 220 caracteres)"
     },
     "categories": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Cat\u00e9gories de services"
+      "description": "Categor\u00edas de servicios"
     },
     "service_area": {
       "type": "string",
-      "description": "Zone d'intervention"
+      "description": "Zona de intervenci\u00f3n"
+    },
+    "radio_servicio_km": {
+      "type": "number",
+      "description": "Radio de servicio en kil\u00f3metros"
     },
     "opening_hours": {
       "type": "string",
-      "description": "Horaires d'ouverture"
+      "description": "Horarios de apertura"
     },
     "photos": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "URLs des photos de r\u00e9alisations"
+      "description": "URLs de las fotos de realizaciones"
+    },
+    "imagen_principal": {
+      "type": "string",
+      "description": "URL de la imagen principal"
     },
     "website": {
       "type": "string",
-      "description": "Site web"
+      "description": "Sitio web"
     },
     "social_links": {
       "type": "object",
@@ -53,11 +65,19 @@
           "type": "string"
         }
       },
-      "description": "Liens r\u00e9seaux sociaux"
+      "description": "Enlaces de redes sociales"
     },
     "cif_nif": {
       "type": "string",
       "description": "CIF / NIF"
+    },
+    "telefono_contacto": {
+      "type": "string",
+      "description": "Tel\u00e9fono de contacto"
+    },
+    "email_contacto": {
+      "type": "string",
+      "description": "Email de contacto"
     },
     "price_range": {
       "type": "string",
@@ -66,15 +86,77 @@
         "\u20ac\u20ac",
         "\u20ac\u20ac\u20ac"
       ],
-      "description": "Gamme de prix"
+      "description": "Gama de precios"
+    },
+    "tarifa_base": {
+      "type": "number",
+      "description": "Tarifa base por hora/servicio"
+    },
+    "facturacion": {
+      "type": "string",
+      "enum": [
+        "autonomo",
+        "sociedad",
+        "otros"
+      ],
+      "description": "Tipo de facturaci\u00f3n"
+    },
+    "formas_pago": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Formas de pago aceptadas"
     },
     "average_rating": {
       "type": "number",
-      "description": "Note moyenne"
+      "description": "Nota media"
     },
     "total_reviews": {
       "type": "number",
-      "description": "Nombre total d'avis"
+      "description": "N\u00famero total de opiniones"
+    },
+    "estado_perfil": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "activo",
+        "inactivo",
+        "suspendido"
+      ],
+      "description": "Estado del perfil",
+      "default": "pendiente"
+    },
+    "visible_en_busqueda": {
+      "type": "boolean",
+      "description": "Visible en b\u00fasquedas p\u00fablicas",
+      "default": false
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "description": "Quiz de onboarding completado",
+      "default": false
+    },
+    "fecha_publicacion": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de publicaci\u00f3n del perfil"
+    },
+    "acepta_terminos": {
+      "type": "boolean",
+      "description": "Acepta t\u00e9rminos y condiciones"
+    },
+    "acepta_politica_privacidad": {
+      "type": "boolean",
+      "description": "Acepta pol\u00edtica de privacidad"
+    },
+    "consiente_contacto_clientes": {
+      "type": "boolean",
+      "description": "Consiente contacto de clientes"
+    },
+    "slug_publico": {
+      "type": "string",
+      "description": "Slug para URL p\u00fablica"
     }
   },
   "required": [

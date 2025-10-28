@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -74,12 +75,11 @@ export default function PricingPlansPage() {
           return;
         }
 
-        // Success - show success toast
-        toast.success("¡Cuenta creada exitosamente! Redirigiendo...");
+        // Success - redirect to profile onboarding
+        toast.success("¡Cuenta creada! Completa tu perfil ahora...");
         
-        // Wait a bit for toast to be visible
         setTimeout(() => {
-          navigate(createPageUrl("MyProfile"));
+          navigate(createPageUrl("ProfileOnboarding"));
         }, 1000);
 
       } else {

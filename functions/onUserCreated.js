@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -94,7 +95,7 @@ Deno.serve(async (req) => {
             profile = existingProfiles[0];
             console.log(`✅ Perfil profesional ya existía para usuario ${userId}`);
         } else {
-            // Create new professional profile with safe defaults
+            // Create new professional profile in PENDING state (not visible yet)
             const fullName = userData?.fullName || user.full_name || "Nuevo autónomo";
             const activity = userData?.activity || "Sin especificar";
             const city = userData?.city || user.city || "Por definir";
@@ -102,11 +103,13 @@ Deno.serve(async (req) => {
             profile = await base44.asServiceRole.entities.ProfessionalProfile.create({
                 user_id: userId,
                 business_name: fullName,
-                description: `Profesional recién registrado en milautonomos. ${plan.descripcion}`,
+                description: `Profesional recién registrado en milautonomos. Completa tu perfil para aparecer en búsquedas.`,
                 categories: activity !== "Sin especificar" ? [activity] : [],
                 service_area: city,
                 opening_hours: "A convenir",
                 cif_nif: userData?.cifNif || "",
+                telefono_contacto: userData?.phone || user.phone || "",
+                email_contacto: user.email,
                 photos: [],
                 price_range: "€€",
                 average_rating: 0,
@@ -116,9 +119,12 @@ Deno.serve(async (req) => {
                     facebook: "",
                     instagram: "",
                     linkedin: ""
-                }
+                },
+                estado_perfil: "pendiente",
+                visible_en_busqueda: false,
+                onboarding_completed: false
             });
-            console.log(`✅ Nuevo perfil profesional creado para usuario ${userId}`);
+            console.log(`✅ Nuevo perfil profesional creado en estado PENDIENTE para usuario ${userId}`);
         }
 
         // Send welcome email only if it's a new subscription
@@ -126,7 +132,7 @@ Deno.serve(async (req) => {
             try {
                 await base44.asServiceRole.integrations.Core.SendEmail({
                     to: user.email,
-                    subject: `✅ ${plan.mensaje_activacion}`,
+                    subject: `✅ ${plan.mensaje_activacion} - Completa tu perfil`,
                     body: `Hola ${user.full_name || user.email},
 
 ${plan.mensaje_activacion}
@@ -138,15 +144,18 @@ Detalles de tu plan:
 - Fecha de inicio: ${new Date().toLocaleDateString('es-ES')}
 - Fecha de expiración: ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
 
-${plan.plan_id === "plan_trial" ? 
-`⚠️ IMPORTANTE: Al finalizar tu prueba gratuita, tu plan se convertirá automáticamente en ${plan.plan_siguiente} (49€/mes) si no lo cancelas antes.` : 
-`Tu perfil profesional ya está visible en "Buscar Autónomos" y puedes empezar a recibir contactos de clientes.`}
+⚠️ IMPORTANTE: Tu perfil aún NO está visible en las búsquedas.
 
-Próximos pasos:
-1. Completa tu perfil profesional
-2. Añade fotos de tus trabajos
-3. Describe tus servicios en detalle
-4. ¡Empieza a recibir clientes!
+Para que los clientes puedan encontrarte, debes completar tu perfil profesional:
+1. Inicia sesión en milautonomos
+2. Completa el quiz de perfil (5 minutos)
+3. Sube fotos de tus trabajos realizados
+4. Añade tu descripción y tarifas
+5. ¡Tu perfil se publicará automáticamente!
+
+${plan.plan_id === "plan_trial" ? 
+`Al finalizar tu prueba gratuita, tu plan se convertirá automáticamente en ${plan.plan_siguiente} (49€/mes) si no lo cancelas antes.` : 
+`Una vez completes tu perfil, aparecerás en "Buscar Autónomos" y empezarás a recibir contactos.`}
 
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,

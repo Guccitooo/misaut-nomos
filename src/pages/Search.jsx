@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -68,7 +69,11 @@ export default function SearchPage() {
             subscription_status: user?.subscription_status
           };
         })
-        .filter(profile => profile.subscription_status === "actif");
+        .filter(profile => 
+          profile.subscription_status === "actif" && 
+          profile.visible_en_busqueda === true &&
+          profile.onboarding_completed === true
+        );
     },
     initialData: [],
   });
