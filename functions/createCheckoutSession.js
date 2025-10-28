@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
         let plan;
         let amount;
         let interval;
+        let intervalCount = 1;
         
         if (planId) {
             // Using new plan system
@@ -42,13 +43,27 @@ Deno.serve(async (req) => {
             }
             
             amount = plan.precio * 100; // Convert to cents
-            interval = plan.duracion_dias === 30 ? 'month' : 
-                      plan.duracion_dias === 90 ? 'month' : 'month';
+            
+            // Determine interval based on duration
+            if (plan.duracion_dias === 30) {
+                interval = 'month';
+                intervalCount = 1;
+            } else if (plan.duracion_dias === 90) {
+                interval = 'month';
+                intervalCount = 3;
+            } else if (plan.duracion_dias === 365) {
+                interval = 'year';
+                intervalCount = 1;
+            } else {
+                interval = 'month';
+                intervalCount = 1;
+            }
             
         } else {
             // Default to monthly plan (backward compatibility)
-            amount = 2900; // 29€
+            amount = 4900; // 49€
             interval = 'month';
+            intervalCount = 1;
         }
 
         // Validate required fields
@@ -77,7 +92,7 @@ Deno.serve(async (req) => {
                         },
                         recurring: {
                             interval: interval,
-                            interval_count: planId === 'plan_quarterly' ? 3 : 1,
+                            interval_count: intervalCount,
                         },
                         unit_amount: amount,
                     },
@@ -94,7 +109,7 @@ Deno.serve(async (req) => {
                 activity: activityText,
                 address: address || "",
                 paymentMethod: paymentMethod || "stripe",
-                planId: planId || "plan_monthly",
+                planId: planId || "plan_monthly_trial",
             },
             success_url: `${req.headers.get('origin')}/onboarding?success=true`,
             cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
