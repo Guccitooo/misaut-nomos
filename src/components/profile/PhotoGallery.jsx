@@ -17,7 +17,7 @@ export default function PhotoGallery({ photos }) {
       <Card className="shadow-lg border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Image className="w-5 h-5 text-red-700" />
+            <Image className="w-5 h-5 text-blue-700" />
             Galería de fotos ({photos.length})
           </CardTitle>
         </CardHeader>

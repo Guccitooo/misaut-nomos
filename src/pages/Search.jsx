@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -123,15 +124,15 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-800 via-red-700 to-red-900 text-white py-16 px-4 shadow-xl">
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
               Encuentra el autónomo perfecto
             </h1>
-            <p className="text-xl text-red-100 max-w-2xl mx-auto">
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
               Profesionales cualificados y verificados en toda España
             </p>
           </div>
@@ -148,7 +149,7 @@ export default function SearchPage() {
                     className="pl-12 h-14 text-lg bg-white border-0 shadow-lg"
                   />
                 </div>
-                <Button className="h-14 px-8 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold shadow-lg">
+                <Button className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg">
                   <SearchIcon className="w-5 h-5 mr-2" />
                   Buscar
                 </Button>
@@ -163,7 +164,7 @@ export default function SearchPage() {
         <Card className="mb-8 shadow-lg border-0">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-5 h-5 text-red-700" />
+              <Filter className="w-5 h-5 text-blue-700" />
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -251,7 +252,7 @@ export default function SearchPage() {
                 className="overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-0 bg-white"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
               >
-                <div className="relative h-48 bg-gradient-to-br from-red-100 to-red-50 overflow-hidden">
+                <div className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden">
                   {profile.photos?.[0] ? (
                     <img 
                       src={profile.photos[0]} 
@@ -260,7 +261,7 @@ export default function SearchPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <TrendingUp className="w-16 h-16 text-red-700/20" />
+                      <TrendingUp className="w-16 h-16 text-blue-700/20" />
                     </div>
                   )}
                   <Button
@@ -272,7 +273,7 @@ export default function SearchPage() {
                       handleToggleFavorite(profile.user_id);
                     }}
                   >
-                    <Heart className="w-4 h-4 text-red-500" />
+                    <Heart className="w-4 h-4 text-orange-500" />
                   </Button>
                 </div>
 
@@ -282,7 +283,7 @@ export default function SearchPage() {
                       {profile.business_name}
                     </h3>
                     {profile.price_range && (
-                      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                      <Badge className="bg-orange-100 text-orange-800 border-orange-200">
                         {profile.price_range}
                       </Badge>
                     )}

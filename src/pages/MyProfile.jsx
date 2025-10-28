@@ -165,13 +165,13 @@ export default function MyProfilePage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-red-700" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -181,7 +181,7 @@ export default function MyProfilePage() {
             </p>
           </div>
           {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="bg-red-700 hover:bg-red-800">
+            <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
               Editar
             </Button>
           ) : (
@@ -192,7 +192,7 @@ export default function MyProfilePage() {
               <Button 
                 onClick={handleSave}
                 disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
-                className="bg-red-700 hover:bg-red-800"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
@@ -213,7 +213,7 @@ export default function MyProfilePage() {
         <Card className="mb-6 shadow-lg border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-red-700" />
+              <User className="w-5 h-5 text-blue-700" />
               Información personal
             </CardTitle>
           </CardHeader>
@@ -255,7 +255,7 @@ export default function MyProfilePage() {
 
             <div>
               <Label>Tipo de cuenta</Label>
-              <Badge className="bg-red-100 text-red-900">
+              <Badge className="bg-blue-100 text-blue-900">
                 {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
               </Badge>
             </div>
@@ -284,7 +284,7 @@ export default function MyProfilePage() {
           <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-red-700" />
+                <Building2 className="w-5 h-5 text-blue-700" />
                 Perfil profesional
               </CardTitle>
             </CardHeader>
@@ -332,12 +332,12 @@ export default function MyProfilePage() {
                 )}
                 <div className="flex flex-wrap gap-2">
                   {profileData.categories?.map((cat, idx) => (
-                    <Badge key={idx} className="bg-red-100 text-red-900">
+                    <Badge key={idx} className="bg-blue-100 text-blue-900">
                       {cat}
                       {isEditing && (
                         <button
                           onClick={() => removeCategory(cat)}
-                          className="ml-2 hover:text-red-600"
+                          className="ml-2 hover:text-blue-600"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -451,9 +451,9 @@ export default function MyProfilePage() {
                 {isEditing && (
                   <div className="mb-4">
                     <label className="cursor-pointer">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-red-500 transition-colors">
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
                         {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-red-700" />
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
                         ) : (
                           <>
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -482,7 +482,7 @@ export default function MyProfilePage() {
                       {isEditing && (
                         <button
                           onClick={() => removePhoto(idx)}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-4 h-4" />
                         </button>

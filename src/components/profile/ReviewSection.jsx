@@ -94,14 +94,14 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-red-700" />
+            <MessageSquare className="w-5 h-5 text-blue-700" />
             Opiniones ({reviews.length})
           </CardTitle>
           {currentUser && currentUser.user_type === "client" && (
             <Button
               variant="outline"
               onClick={() => setShowForm(!showForm)}
-              className="border-red-700 text-red-700 hover:bg-red-50"
+              className="border-blue-700 text-blue-700 hover:bg-blue-50"
             >
               <Star className="w-4 h-4 mr-2" />
               Dejar opinión
@@ -118,7 +118,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
         )}
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="p-6 bg-red-50 rounded-xl space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 bg-blue-50 rounded-xl space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tu valoración
@@ -170,7 +170,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
               <Button
                 type="submit"
                 disabled={createReviewMutation.isPending}
-                className="bg-red-700 hover:bg-red-800"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {createReviewMutation.isPending ? "Enviando..." : "Publicar opinión"}
               </Button>

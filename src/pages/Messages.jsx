@@ -161,13 +161,13 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-red-700" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 to-red-50 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
         <p className="text-gray-600">Comunícate con tus contactos</p>
@@ -178,7 +178,7 @@ export default function MessagesPage() {
         <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-red-700" />
+              <MessageSquare className="w-5 h-5 text-blue-700" />
               Conversaciones
             </h2>
           </div>
@@ -186,7 +186,7 @@ export default function MessagesPage() {
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="p-4 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-red-700" />
+                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-700" />
               </div>
             ) : conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
@@ -199,13 +199,13 @@ export default function MessagesPage() {
                 <div
                   key={conv.conversationId}
                   onClick={() => handleSelectConversation(conv)}
-                  className={`p-4 cursor-pointer hover:bg-red-50 transition-colors border-b border-gray-100 ${
-                    selectedConversation === conv.conversationId ? 'bg-red-50' : ''
+                  className={`p-4 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-100 ${
+                    selectedConversation === conv.conversationId ? 'bg-blue-50' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarFallback className="bg-red-100 text-red-900">
+                      <AvatarFallback className="bg-blue-100 text-blue-900">
                         {conv.otherUserName?.charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
@@ -215,7 +215,7 @@ export default function MessagesPage() {
                           {conv.otherUserName || "Usuario"}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <span className="bg-yellow-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                          <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                             {conv.unreadCount}
                           </span>
                         )}
@@ -242,7 +242,7 @@ export default function MessagesPage() {
               <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback className="bg-red-700 text-white">
+                    <AvatarFallback className="bg-blue-700 text-white">
                       {conversations[selectedConversation]?.otherUserName?.charAt(0) || "?"}
                     </AvatarFallback>
                   </Avatar>
@@ -267,12 +267,12 @@ export default function MessagesPage() {
                       <div
                         className={`max-w-md px-4 py-3 rounded-2xl shadow-sm ${
                           isMe
-                            ? 'bg-red-700 text-white'
+                            ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-900 border border-gray-200'
                         }`}
                       >
                         <p className="leading-relaxed">{message.content}</p>
-                        <p className={`text-xs mt-1 ${isMe ? 'text-red-200' : 'text-gray-400'}`}>
+                        <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                           {format(new Date(message.created_date), "HH:mm")}
                         </p>
                       </div>
@@ -294,7 +294,7 @@ export default function MessagesPage() {
                   <Button
                     type="submit"
                     disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                    className="h-12 bg-red-700 hover:bg-red-800"
+                    className="h-12 bg-blue-600 hover:bg-blue-700"
                   >
                     <Send className="w-5 h-5" />
                   </Button>

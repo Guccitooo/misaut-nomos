@@ -101,21 +101,21 @@ export default function Layout({ children, currentPageName }) {
       <style>
         {`
           :root {
-            --primary: #c62828;
-            --primary-light: #ef5350;
-            --accent: #fbc02d;
-            --accent-light: #fdd835;
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --accent: #f97316;
+            --accent-light: #fb923c;
             --background: #f8fafc;
             --card: #ffffff;
           }
         `}
       </style>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-red-50">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
         <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
           <SidebarHeader className="border-b border-gray-100 p-6">
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 rounded-xl flex items-center justify-center shadow-lg">
-                <Briefcase className="w-6 h-6 text-yellow-400" />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                <Briefcase className="w-6 h-6 text-orange-400" />
               </div>
               <div>
                 <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
@@ -132,15 +132,15 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        className={`hover:bg-red-50 hover:text-red-900 transition-all duration-200 rounded-xl mb-1 relative ${
-                          location.pathname === item.url ? 'bg-gradient-to-r from-red-700 to-red-900 text-white shadow-md' : ''
+                        className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative ${
+                          location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
                         }`}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                           <item.icon className="w-5 h-5" />
                           <span className="font-medium">{item.title}</span>
                           {item.badge && (
-                            <span className="ml-auto bg-yellow-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                            <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                               {item.badge}
                             </span>
                           )}
@@ -157,8 +157,8 @@ export default function Layout({ children, currentPageName }) {
             {user && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 px-2">
-                  <Avatar className="w-10 h-10 border-2 border-red-700">
-                    <AvatarFallback className="bg-gradient-to-br from-red-700 to-red-900 text-white font-semibold">
+                  <Avatar className="w-10 h-10 border-2 border-blue-600">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                       {user.full_name?.charAt(0) || user.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -173,7 +173,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
                 <Button
                   variant="outline"
-                  className="w-full hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
+                  className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
                   onClick={handleLogout}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
