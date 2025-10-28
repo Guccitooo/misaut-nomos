@@ -25,7 +25,8 @@ import {
   Briefcase,
   Image as ImageIcon,
   Phone, // Added Phone icon
-  MessageCircle // Added MessageCircle icon
+  MessageCircle, // Added MessageCircle icon
+  MessageSquare // Added MessageSquare icon for direct chat
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -72,7 +73,10 @@ export default function SearchPage() {
         const user = users.find(u => u.id === profile.user_id);
         return {
           ...profile,
-          subscription_status: user?.subscription_status
+          subscription_status: user?.subscription_status,
+          // Assuming user.full_name or user.email for client_name if needed
+          // For direct chat initiation, we might need the professional's name
+          // which is already available as profile.business_name
         };
       });
 
@@ -153,6 +157,57 @@ export default function SearchPage() {
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
+  };
+
+  const handleStartChat = async (professionalId, businessName) => {
+    if (!user) {
+      base44.auth.redirectToLogin();
+      return;
+    }
+
+    const conversationId = [user.id, professionalId].sort().join('_');
+    
+    // Check if conversation exists
+    const existingMessages = await base44.entities.Message.filter({
+      conversation_id: conversationId
+    });
+
+    // If no messages, create initial message
+    if (existingMessages.length === 0) {
+      await base44.entities.Message.create({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        recipient_id: professionalId,
+        content: "Hola, estoy interesado en tus servicios.",
+        professional_name: businessName,
+        client_name: user.full_name || user.email,
+        is_read: false
+      });
+    }
+
+    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
+  };
+
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    // Remove all non-numeric characters except +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    // Add +34 if no prefix exists and it looks like a local number
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return null;
+    // Remove all non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+    // Add 34 if no prefix exists and it's a typical Spanish 9-digit number
+    if (!cleaned.startsWith('34') && cleaned.length === 9) {
+      cleaned = '34' + cleaned;
+    }
+    return cleaned;
   };
 
   return (
@@ -372,41 +427,45 @@ export default function SearchPage() {
                   </div>
 
                   {/* Contact Buttons */}
-                  <div className="flex gap-2 mt-4">
-                    {profile.telefono_contacto && (
-                      <>
-                        <a
-                          href={`tel:${profile.telefono_contacto}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex-1"
+                  {profile.telefono_contacto && (
+                    <div className="grid grid-cols-3 gap-2 mt-4">
+                      <a
+                        href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button 
+                          variant="outline" 
+                          className="w-full hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                          size="sm"
                         >
-                          <Button 
-                            variant="outline" 
-                            className="w-full hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
-                            size="sm"
-                          >
-                            <Phone className="w-4 h-4 mr-2" />
-                            Llamar
-                          </Button>
-                        </a>
-                        <a
-                          href={`https://wa.me/${profile.telefono_contacto.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex-1"
+                          <Phone className="w-4 h-4" />
+                        </Button>
+                      </a>
+                      <a
+                        href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button 
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          size="sm"
                         >
-                          <Button 
-                            className="w-full bg-green-600 hover:bg-green-700"
-                            size="sm"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
-                        </a>
-                      </>
-                    )}
-                  </div>
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </a>
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartChat(profile.user_id, profile.business_name);
+                        }}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
