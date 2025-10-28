@@ -23,7 +23,9 @@ import {
   Filter,
   TrendingUp,
   Briefcase,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Phone, // Added Phone icon
+  MessageCircle // Added MessageCircle icon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -282,10 +284,12 @@ export default function SearchPage() {
             {filteredProfiles.map((profile) => (
               <Card 
                 key={profile.id} 
-                className="overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-0 bg-white"
-                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+                className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 bg-white"
               >
-                <div className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden">
+                <div 
+                  className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden cursor-pointer"
+                  onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+                >
                   {profile.photos && profile.photos.length > 0 ? (
                     <img 
                       src={profile.photos[0]} 
@@ -312,54 +316,96 @@ export default function SearchPage() {
                 </div>
 
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-xl text-gray-900">
-                      {profile.business_name}
-                    </h3>
-                    {profile.price_range && (
-                      <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-                        {profile.price_range}
-                      </Badge>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-bold text-xl text-gray-900 hover:text-blue-700 transition-colors">
+                        {profile.business_name}
+                      </h3>
+                      {profile.price_range && (
+                        <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                          {profile.price_range}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {profile.average_rating > 0 && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= profile.average_rating
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600 font-medium">
+                          {profile.average_rating.toFixed(1)} ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
+                        </span>
+                      </div>
                     )}
+
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {profile.description}
+                    </p>
+
+                    {profile.service_area && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                        <MapPin className="w-4 h-4" />
+                        <span>{profile.service_area}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {profile.categories?.slice(0, 2).map((cat, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
 
-                  {profile.average_rating > 0 && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= profile.average_rating
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">
-                        {profile.average_rating.toFixed(1)} ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
-                      </span>
-                    </div>
-                  )}
-
-                  <p className="text-gray-600 mb-4 line-clamp-2">
-                    {profile.description}
-                  </p>
-
-                  {profile.service_area && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                      <MapPin className="w-4 h-4" />
-                      <span>{profile.service_area}</span>
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {profile.categories?.slice(0, 2).map((cat, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {cat}
-                      </Badge>
-                    ))}
+                  {/* Contact Buttons */}
+                  <div className="flex gap-2 mt-4">
+                    {profile.telefono_contacto && (
+                      <>
+                        <a
+                          href={`tel:${profile.telefono_contacto}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1"
+                        >
+                          <Button 
+                            variant="outline" 
+                            className="w-full hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                            size="sm"
+                          >
+                            <Phone className="w-4 h-4 mr-2" />
+                            Llamar
+                          </Button>
+                        </a>
+                        <a
+                          href={`https://wa.me/${profile.telefono_contacto.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1"
+                        >
+                          <Button 
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            size="sm"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            WhatsApp
+                          </Button>
+                        </a>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
