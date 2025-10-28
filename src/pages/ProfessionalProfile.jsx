@@ -22,8 +22,8 @@ import {
   FileText
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import ReviewSection from "../components/profile/ReviewSection";
-import PhotoGallery from "../components/profile/PhotoGallery";
+import ReviewSection from "../components/profile/ReviewSection.jsx";
+import PhotoGallery from "../components/profile/PhotoGallery.jsx";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
