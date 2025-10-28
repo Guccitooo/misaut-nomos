@@ -64,42 +64,54 @@ export default function SearchPage() {
       console.log("🔍 Cargando perfiles...");
       
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      console.log("📦 Total perfiles:", allProfiles.length);
+      console.log("📦 Total perfiles en DB:", allProfiles.length);
+      console.log("📋 Perfiles completos:", allProfiles);
       
       const users = await base44.entities.User.list();
       console.log("👥 Total usuarios:", users.length);
       
       const profilesWithStatus = allProfiles.map(profile => {
         const user = users.find(u => u.id === profile.user_id);
-        return {
+        const profileData = {
           ...profile,
           subscription_status: user?.subscription_status,
-          // Assuming user.full_name or user.email for client_name if needed
-          // For direct chat initiation, we might need the professional's name
-          // which is already available as profile.business_name
         };
+        
+        // Debug cada perfil
+        console.log(`\n📊 Perfil: ${profile.business_name}`);
+        console.log(`   user_id: ${profile.user_id}`);
+        console.log(`   usuario encontrado: ${user ? 'SÍ' : 'NO'}`);
+        console.log(`   subscription_status: ${user?.subscription_status}`);
+        console.log(`   visible_en_busqueda: ${profile.visible_en_busqueda}`);
+        console.log(`   onboarding_completed: ${profile.onboarding_completed}`);
+        console.log(`   estado_perfil: ${profile.estado_perfil}`);
+        
+        return profileData;
       });
 
       console.log("📊 Perfiles con status:", profilesWithStatus);
 
       const visibleProfiles = profilesWithStatus.filter(profile => {
-        // ✅ IMPORTANTE: Incluir tanto "actif" como "en_prueba" (usuarios trial de 7 días)
         const hasActiveSubscription = 
           profile.subscription_status === "actif" || 
           profile.subscription_status === "en_prueba";
         const isVisible = profile.visible_en_busqueda === true;
         const isCompleted = profile.onboarding_completed === true;
         
-        console.log(`\n🔎 Perfil: ${profile.business_name}`);
-        console.log(`  - subscription_status: ${profile.subscription_status}`);
-        console.log(`  - visible_en_busqueda: ${profile.visible_en_busqueda}`);
-        console.log(`  - onboarding_completed: ${profile.onboarding_completed}`);
-        console.log(`  - ¿Pasa filtro?: ${hasActiveSubscription && isVisible && isCompleted}`);
+        const passes = hasActiveSubscription && isVisible && isCompleted;
+        
+        console.log(`\n🔎 Filtro para ${profile.business_name}:`);
+        console.log(`   ✓ Suscripción activa: ${hasActiveSubscription} (${profile.subscription_status})`);
+        console.log(`   ✓ Visible: ${isVisible}`);
+        console.log(`   ✓ Onboarding completado: ${isCompleted}`);
+        console.log(`   ➡️ PASA FILTRO: ${passes ? '✅ SÍ' : '❌ NO'}`);
 
-        return hasActiveSubscription && isVisible && isCompleted;
+        return passes;
       });
 
-      console.log("✅ Perfiles visibles:", visibleProfiles.length);
+      console.log("✅ Perfiles que pasan filtro:", visibleProfiles.length);
+      console.log("📋 Perfiles visibles finales:", visibleProfiles);
+      
       return visibleProfiles;
     },
     initialData: [],
