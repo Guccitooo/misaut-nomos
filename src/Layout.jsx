@@ -162,13 +162,19 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Hazte Autónomo Button */}
+            {/* Hazte Autónomo Buttons */}
             {(!user || user.user_type !== "professionnel") && (
-              <div className="mt-auto p-3">
-                <Link to={createPageUrl("Onboarding")}>
+              <div className="mt-auto p-3 space-y-2">
+                <Link to={createPageUrl("ChatOnboarding")}>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
                     <Briefcase className="w-4 h-4 mr-2" />
-                    Hazte Autónomo
+                    Registro Guiado
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("Onboarding")}>
+                  <Button variant="outline" className="w-full">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Registro Rápido
                   </Button>
                 </Link>
               </div>

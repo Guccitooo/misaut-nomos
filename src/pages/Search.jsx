@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -136,13 +137,21 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* CTA Button for professionals */}
-            <Link to={createPageUrl("Onboarding")}>
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
-                <Briefcase className="w-5 h-5 mr-2" />
-                ¿Eres autónomo? Únete ahora
-              </Button>
-            </Link>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to={createPageUrl("ChatOnboarding")}>
+                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl w-full sm:w-auto">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Registro Guiado (Recomendado)
+                </Button>
+              </Link>
+              <Link to={createPageUrl("Onboarding")}>
+                <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-semibold shadow-xl w-full sm:w-auto">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Registro Rápido
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="max-w-3xl mx-auto">
