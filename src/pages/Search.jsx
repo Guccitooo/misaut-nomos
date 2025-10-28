@@ -174,26 +174,6 @@ export default function SearchPage() {
               </Button>
             </Link>
           </div>
-
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    placeholder="Buscar servicio, empresa..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-14 text-lg bg-white border-0 shadow-lg"
-                  />
-                </div>
-                <Button className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg">
-                  <SearchIcon className="w-5 h-5 mr-2" />
-                  Buscar
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -206,6 +186,16 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar servicio, empresa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-12"
+                />
+              </div>
+
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Categoría" />
