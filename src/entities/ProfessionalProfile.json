@@ -42,7 +42,22 @@
     },
     "service_area": {
       "type": "string",
-      "description": "Zona de intervenci\u00f3n",
+      "description": "Zona de intervenci\u00f3n completa",
+      "default": ""
+    },
+    "provincia": {
+      "type": "string",
+      "description": "Provincia",
+      "default": ""
+    },
+    "ciudad": {
+      "type": "string",
+      "description": "Ciudad",
+      "default": ""
+    },
+    "municipio": {
+      "type": "string",
+      "description": "Municipio / Barrio",
       "default": ""
     },
     "radio_servicio_km": {
@@ -52,8 +67,26 @@
     },
     "opening_hours": {
       "type": "string",
-      "description": "Horarios de apertura",
+      "description": "Horarios de apertura (legacy)",
       "default": ""
+    },
+    "horario_dias": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "D\u00edas de disponibilidad",
+      "default": []
+    },
+    "horario_apertura": {
+      "type": "string",
+      "description": "Hora de apertura (HH:MM)",
+      "default": "09:00"
+    },
+    "horario_cierre": {
+      "type": "string",
+      "description": "Hora de cierre (HH:MM)",
+      "default": "18:00"
     },
     "tarifa_base": {
       "type": "number",

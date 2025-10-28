@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -40,8 +41,13 @@ export default function ProfileOnboardingPage() {
     descripcion_corta: "",
     description: "",
     service_area: "",
+    provincia: "",
+    ciudad: "",
+    municipio: "",
     radio_servicio_km: 10,
-    opening_hours: "",
+    horario_dias: [],
+    horario_apertura: "09:00",
+    horario_cierre: "18:00",
     tarifa_base: "",
     facturacion: "autonomo",
     formas_pago: [],
@@ -51,9 +57,83 @@ export default function ProfileOnboardingPage() {
     consiente_contacto_clientes: false,
   });
 
+  // Provincias de España
+  const provincias = [
+    "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
+    "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
+    "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Gerona", "Granada",
+    "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares",
+    "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lérida",
+    "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia",
+    "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla",
+    "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
+    "Vizcaya", "Zamora", "Zaragoza"
+  ].sort();
+
+  // Ciudades principales por provincia (muestra)
+  const ciudadesPorProvincia = {
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
+    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí"],
+    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella"],
+    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera"],
+    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera"],
+    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena"],
+    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huelva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja"],
+    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco"]
+  };
+
+  // Días de la semana
+  const diasSemana = [
+    { value: "lunes", label: "Lunes" },
+    { value: "martes", label: "Martes" },
+    { value: "miercoles", label: "Miércoles" },
+    { value: "jueves", label: "Jueves" },
+    { value: "viernes", label: "Viernes" },
+    { value: "sabado", label: "Sábado" },
+    { value: "domingo", label: "Domingo" }
+  ];
+
+  // Horarios (cada 30 minutos)
+  const horarios = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hora = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      horarios.push(hora);
+    }
+  }
+
+  const toggleDia = (dia) => {
+    const dias = formData.horario_dias;
+    if (dias.includes(dia)) {
+      setFormData({
+        ...formData,
+        horario_dias: dias.filter(d => d !== dia)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        horario_dias: [...dias, dia]
+      });
+    }
+  };
+
   useEffect(() => {
     loadUserAndProfile();
   }, []);
+
+  // Update service_area when location changes
+  useEffect(() => {
+    if (formData.provincia && formData.ciudad) {
+      const area = formData.municipio
+        ? `${formData.municipio}, ${formData.ciudad}, ${formData.provincia}`
+        : `${formData.ciudad}, ${formData.provincia}`;
+      setFormData(prev => ({ ...prev, service_area: area }));
+    } else if (formData.provincia) {
+      setFormData(prev => ({ ...prev, service_area: formData.provincia }));
+    } else {
+      setFormData(prev => ({ ...prev, service_area: "" }));
+    }
+  }, [formData.provincia, formData.ciudad, formData.municipio]);
 
   const loadUserAndProfile = async () => {
     try {
@@ -82,8 +162,13 @@ export default function ProfileOnboardingPage() {
           descripcion_corta: existingProfile.descripcion_corta || "",
           description: existingProfile.description || "",
           service_area: existingProfile.service_area || "",
+          provincia: existingProfile.provincia || "",
+          ciudad: existingProfile.ciudad || "",
+          municipio: existingProfile.municipio || "",
           radio_servicio_km: existingProfile.radio_servicio_km || 10,
-          opening_hours: existingProfile.opening_hours || "",
+          horario_dias: existingProfile.horario_dias || [],
+          horario_apertura: existingProfile.horario_apertura || "09:00",
+          horario_cierre: existingProfile.horario_cierre || "18:00",
           tarifa_base: existingProfile.tarifa_base || "",
           facturacion: existingProfile.facturacion || "autonomo",
           formas_pago: existingProfile.formas_pago || [],
@@ -160,7 +245,7 @@ Equipo milautonomos`,
     },
     {
       title: "Zona y disponibilidad",
-      fields: ["service_area", "radio_servicio_km"]
+      fields: ["provincia", "ciudad", "radio_servicio_km", "horario_dias"]
     },
     {
       title: "Precios y forma de trabajo",
@@ -239,9 +324,27 @@ Equipo milautonomos`,
         }
       }
 
-      if (field === "service_area") {
-        if (!value || value.trim().length < 3) {
-          setError("Indica tu ubicación");
+      if (field === "provincia") {
+        if (!value || value.trim().length === 0) {
+          setError("Selecciona una provincia");
+          return false;
+        }
+      }
+
+      if (field === "ciudad") {
+        if (!value || value.trim().length === 0) {
+          setError("Selecciona una ciudad");
+          return false;
+        }
+      }
+      
+      // Removed old service_area validation as it's now derived.
+      // If `service_area` validation is still needed, it should refer to the derived field.
+      // But based on the new steps, it's covered by provincia/ciudad.
+
+      if (field === "horario_dias") {
+        if (!value || value.length === 0) {
+          setError("Selecciona al menos un día de disponibilidad");
           return false;
         }
       }
@@ -324,6 +427,9 @@ Equipo milautonomos`,
       console.log("💾 Guardado exitoso");
     } catch (error) {
       console.error("⚠️ Error guardando:", error);
+      setError("Error al guardar la información. Por favor, inténtalo de nuevo.");
+      setIsSaving(false); // Ensure saving state is reset even on error
+      return; // Prevent advancing if save failed
     }
     setIsSaving(false);
 
@@ -344,13 +450,41 @@ Equipo milautonomos`,
   };
 
   const handlePublish = async () => {
+    // Validate all steps from 0 to 5 (excluding final review)
     for (let i = 0; i < steps.length - 1; i++) {
       if (!validateStep(i)) {
-        toast.error(`Completa el paso ${i + 1}: ${steps[i].title}`);
+        toast.error(`Completa el paso ${i + 1}: ${steps[i].title} antes de publicar.`);
         setCurrentStep(i);
         return;
       }
     }
+
+    // Save final data before publishing
+    setIsSaving(true);
+    try {
+      if (profile) {
+        await base44.entities.ProfessionalProfile.update(profile.id, formData);
+        console.log("💾 Guardado final antes de publicar.");
+      } else {
+        // This case should ideally not happen if create is handled on first step.
+        // But as a fallback, if profile somehow isn't created.
+        const newProfile = await base44.entities.ProfessionalProfile.create({
+          ...formData,
+          user_id: user.id,
+          estado_perfil: "pendiente",
+          visible_en_busqueda: false,
+          onboarding_completed: false
+        });
+        setProfile(newProfile);
+        console.log("💾 Perfil creado antes de publicar.");
+      }
+    } catch (error) {
+      console.error("⚠️ Error guardando antes de publicar:", error);
+      setError("Error al guardar la información final. Por favor, inténtalo de nuevo.");
+      setIsSaving(false);
+      return;
+    }
+    setIsSaving(false); // Reset saving state before actual publish mutation
 
     await publishProfileMutation.mutateAsync();
   };
@@ -593,16 +727,94 @@ Equipo milautonomos`,
 
             {/* Step 2: Zona y disponibilidad */}
             {currentStep === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Ubicación base *</Label>
-                  <Input
-                    value={formData.service_area}
-                    onChange={(e) => setFormData({ ...formData, service_area: e.target.value })}
-                    placeholder="Ej: Madrid, Barcelona..."
-                    className="h-12"
-                  />
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-900">
+                    📍 Indica tu ubicación principal y zona de trabajo. Los clientes podrán encontrarte en estas áreas.
+                  </p>
                 </div>
+
+                <div>
+                  <Label>Provincia *</Label>
+                  <Select
+                    value={formData.provincia}
+                    onValueChange={(value) => {
+                      setFormData({ 
+                        ...formData, 
+                        provincia: value,
+                        ciudad: "",
+                        municipio: ""
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Selecciona tu provincia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provincias.map((prov) => (
+                        <SelectItem key={prov} value={prov}>
+                          {prov}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.provincia && (
+                  <div>
+                    <Label>Ciudad / Localidad *</Label>
+                    <Select
+                      value={formData.ciudad}
+                      onValueChange={(value) => {
+                        setFormData({ 
+                          ...formData, 
+                          ciudad: value,
+                          municipio: ""
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecciona tu ciudad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
+                          ciudadesPorProvincia[formData.provincia].map((ciudad) => (
+                            <SelectItem key={ciudad} value={ciudad}>
+                              {ciudad}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          // Fallback if no specific cities listed for the province
+                          <SelectItem value={formData.provincia}>
+                            {formData.provincia} (como ciudad principal)
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {formData.ciudad && (
+                  <div>
+                    <Label>Barrio / Municipio (opcional)</Label>
+                    <Input
+                      value={formData.municipio}
+                      onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
+                      placeholder="Ej: Centro, Chamartín, Eixample..."
+                      className="h-12"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Especifica un barrio o zona específica si quieres ser más preciso
+                    </p>
+                  </div>
+                )}
+
+                {formData.service_area && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Tu ubicación principal:</p>
+                    <p className="font-semibold text-gray-900">{formData.service_area}</p>
+                  </div>
+                )}
 
                 <div>
                   <Label>Radio de servicio *</Label>
@@ -614,24 +826,90 @@ Equipo milautonomos`,
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="5">5 km</SelectItem>
-                      <SelectItem value="10">10 km</SelectItem>
-                      <SelectItem value="25">25 km</SelectItem>
-                      <SelectItem value="50">50 km</SelectItem>
-                      <SelectItem value="100">100+ km</SelectItem>
+                      <SelectItem value="5">5 km - Solo mi zona</SelectItem>
+                      <SelectItem value="10">10 km - Ciudad y alrededores</SelectItem>
+                      <SelectItem value="25">25 km - Área metropolitana</SelectItem>
+                      <SelectItem value="50">50 km - Provincia</SelectItem>
+                      <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    ¿Hasta qué distancia estás dispuesto a desplazarte?
+                  </p>
                 </div>
 
                 <div>
-                  <Label>Horarios (opcional)</Label>
-                  <Input
-                    value={formData.opening_hours}
-                    onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
-                    placeholder="Ej: Lun-Vie 9h-18h"
-                    className="h-12"
-                  />
+                  <Label>Días de disponibilidad *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                    {diasSemana.map((dia) => (
+                      <div
+                        key={dia.value}
+                        onClick={() => toggleDia(dia.value)}
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all text-center ${
+                          formData.horario_dias.includes(dia.value)
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
+                        }`}
+                      >
+                        <p className="text-sm font-medium">{dia.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.horario_dias.length} día(s) seleccionado(s)
+                  </p>
                 </div>
+
+                {formData.horario_dias.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Hora de apertura</Label>
+                      <Select
+                        value={formData.horario_apertura}
+                        onValueChange={(value) => setFormData({ ...formData, horario_apertura: value })}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {horarios.filter(hora => hora < formData.horario_cierre).map((hora) => (
+                            <SelectItem key={hora} value={hora}>
+                              {hora}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Hora de cierre</Label>
+                      <Select
+                        value={formData.horario_cierre}
+                        onValueChange={(value) => setFormData({ ...formData, horario_cierre: value })}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {horarios.filter(hora => hora > formData.horario_apertura).map((hora) => (
+                            <SelectItem key={hora} value={hora}>
+                              {hora}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {formData.horario_dias.length > 0 && (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-900">
+                      ✓ Horario: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}
+                      {' '}{formData.horario_apertura} - {formData.horario_cierre}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -824,13 +1102,15 @@ Equipo milautonomos`,
                       {idx === 1 && (
                         <>
                           <p>• Categorías: {formData.categories.join(', ')}</p>
-                          <p>• Descripción: {formData.descripcion_corta.substring(0, 100)}...</p>
+                          <p>• Descripción: {formData.descripcion_corta.substring(0, Math.min(formData.descripcion_corta.length, 100))}...</p>
                         </>
                       )}
                       {idx === 2 && (
                         <>
                           <p>• Ubicación: {formData.service_area}</p>
                           <p>• Radio: {formData.radio_servicio_km} km</p>
+                          <p>• Días: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}</p>
+                          <p>• Horario: {formData.horario_apertura} - {formData.horario_cierre}</p>
                         </>
                       )}
                       {idx === 3 && (
@@ -855,7 +1135,7 @@ Equipo milautonomos`,
                   variant="outline"
                   onClick={handleBack}
                   className="flex-1 h-12"
-                  disabled={isSaving}
+                  disabled={isSaving || publishProfileMutation.isPending}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Atrás
@@ -871,7 +1151,7 @@ Equipo milautonomos`,
                     handleNext();
                   }}
                   className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
-                  disabled={isSaving}
+                  disabled={isSaving || publishProfileMutation.isPending}
                 >
                   {isSaving ? (
                     <>
@@ -889,9 +1169,9 @@ Equipo milautonomos`,
                 <Button
                   onClick={handlePublish}
                   className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                  disabled={publishProfileMutation.isPending}
+                  disabled={publishProfileMutation.isPending || isSaving}
                 >
-                  {publishProfileMutation.isPending ? (
+                  {publishProfileMutation.isPending || isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Publicando...
