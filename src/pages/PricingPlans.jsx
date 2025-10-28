@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2 } from "lucide-react";
+import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
@@ -33,7 +32,15 @@ export default function PricingPlansPage() {
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['subscriptionPlans'],
-    queryFn: () => base44.entities.SubscriptionPlan.list(),
+    queryFn: async () => {
+      const allPlans = await base44.entities.SubscriptionPlan.list();
+      // Filter to show only the 3 active plans
+      return allPlans.filter(p => 
+        p.plan_id === 'plan_monthly_trial' || 
+        p.plan_id === 'plan_quarterly' || 
+        p.plan_id === 'plan_annual'
+      ).sort((a, b) => a.precio - b.precio); // Sort by price
+    },
     initialData: [],
   });
 
@@ -48,11 +55,10 @@ export default function PricingPlansPage() {
     setError(null);
 
     try {
-      if (plan.plan_id === "plan_trial") {
-        // Show loading toast
-        const loadingToast = toast.loading("Creando tu cuenta gratuita...");
+      if (plan.plan_id === "plan_monthly_trial") {
+        // For trial plan, create subscription with 7 days free
+        const loadingToast = toast.loading("Activando tu prueba gratuita...");
 
-        // Create trial subscription directly
         const response = await base44.functions.invoke('onUserCreated', {
           userId: user.id,
           selectedPlan: plan.plan_id,
@@ -63,11 +69,9 @@ export default function PricingPlansPage() {
           }
         });
 
-        // Dismiss loading toast
         toast.dismiss(loadingToast);
 
         if (response.data.ok === false) {
-          // Show error toast
           toast.error(`No pudimos completar el registro: ${response.data.message}. Inténtalo de nuevo.`);
           setError(response.data.message);
           setIsProcessing(false);
@@ -75,15 +79,14 @@ export default function PricingPlansPage() {
           return;
         }
 
-        // Success - redirect to profile onboarding
-        toast.success("¡Cuenta creada! Completa tu perfil ahora...");
+        toast.success("¡Prueba gratuita activada! Completa tu perfil ahora...");
         
         setTimeout(() => {
           navigate(createPageUrl("ProfileOnboarding"));
         }, 1000);
 
       } else {
-        // Redirect to Stripe for paid plans
+        // For paid plans, redirect to Stripe
         const response = await base44.functions.invoke('createCheckoutSession', {
           email: user.email,
           fullName: user.full_name || user.email,
@@ -120,18 +123,18 @@ export default function PricingPlansPage() {
 
   const getPlanIcon = (planId) => {
     switch (planId) {
-      case "plan_trial": return <Zap className="w-8 h-8 text-blue-600" />;
-      case "plan_monthly": return <TrendingUp className="w-8 h-8 text-green-600" />;
-      case "plan_quarterly": return <Crown className="w-8 h-8 text-orange-600" />;
+      case "plan_monthly_trial": return <Gift className="w-8 h-8 text-blue-600" />;
+      case "plan_quarterly": return <TrendingUp className="w-8 h-8 text-green-600" />;
+      case "plan_annual": return <Crown className="w-8 h-8 text-orange-600" />;
       default: return <CheckCircle className="w-8 h-8 text-gray-600" />;
     }
   };
 
   const getPlanColor = (planId) => {
     switch (planId) {
-      case "plan_trial": return "from-blue-500 to-blue-700";
-      case "plan_monthly": return "from-green-500 to-green-700";
-      case "plan_quarterly": return "from-orange-500 to-orange-700";
+      case "plan_monthly_trial": return "from-blue-500 to-blue-700";
+      case "plan_quarterly": return "from-green-500 to-green-700";
+      case "plan_annual": return "from-orange-500 to-orange-700";
       default: return "from-gray-500 to-gray-700";
     }
   };
@@ -164,21 +167,27 @@ export default function PricingPlansPage() {
         )}
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
           {plans.map((plan) => (
             <Card 
               key={plan.plan_id}
               className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 ${
-                plan.plan_id === "plan_monthly" ? "ring-4 ring-green-500" : ""
+                plan.plan_id === "plan_quarterly" ? "ring-4 ring-green-500" : ""
               }`}
             >
-              {plan.plan_id === "plan_monthly" && (
+              {plan.plan_id === "plan_quarterly" && (
                 <Badge className="absolute top-4 right-4 bg-green-500 text-white">
                   Más Popular
                 </Badge>
               )}
 
-              {plan.ahorro > 0 && (
+              {plan.plan_id === "plan_monthly_trial" && (
+                <Badge className="absolute top-4 right-4 bg-blue-500 text-white">
+                  7 Días Gratis
+                </Badge>
+              )}
+
+              {plan.ahorro > 0 && plan.plan_id !== "plan_monthly_trial" && (
                 <Badge className="absolute top-4 right-4 bg-orange-500 text-white">
                   Ahorra {plan.ahorro}€
                 </Badge>
@@ -193,12 +202,20 @@ export default function PricingPlansPage() {
                 </CardTitle>
                 <div className="text-center mt-4">
                   <p className="text-5xl font-bold">
-                    {plan.precio === 0 ? "Gratis" : `${plan.precio}€`}
+                    {plan.plan_id === "plan_monthly_trial" ? (
+                      <>
+                        <span className="text-3xl">Gratis 7 días</span>
+                        <br />
+                        <span className="text-2xl opacity-90">luego {plan.precio}€/mes</span>
+                      </>
+                    ) : (
+                      `${plan.precio}€`
+                    )}
                   </p>
                   <p className="text-sm opacity-90 mt-2">
-                    {plan.duracion_dias === 7 ? "7 días" : 
-                     plan.duracion_dias === 30 ? "/mes" : 
-                     "/3 meses"}
+                    {plan.duracion_dias === 30 ? "/mes" : 
+                     plan.duracion_dias === 90 ? "/3 meses" : 
+                     "/año"}
                   </p>
                 </div>
               </CardHeader>
@@ -219,7 +236,7 @@ export default function PricingPlansPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Mensajes ilimitados</span>
+                    <span className="text-gray-700">Chat directo con clientes</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
@@ -227,12 +244,18 @@ export default function PricingPlansPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">Galería de fotos</span>
+                    <span className="text-gray-700">Galería de fotos ilimitada</span>
                   </li>
                   {plan.renovacion_automatica && (
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <span className="text-gray-700">Renovación automática</span>
+                    </li>
+                  )}
+                  {plan.plan_id === "plan_annual" && (
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Soporte prioritario</span>
                     </li>
                   )}
                 </ul>
@@ -248,18 +271,75 @@ export default function PricingPlansPage() {
                       Procesando...
                     </>
                   ) : (
-                    plan.precio === 0 ? "Comenzar Gratis" : "Seleccionar Plan"
+                    plan.plan_id === "plan_monthly_trial" ? "Comenzar Prueba Gratis" : "Seleccionar Plan"
                   )}
                 </Button>
 
-                {plan.plan_id === "plan_trial" && (
+                {plan.plan_id === "plan_monthly_trial" && (
                   <p className="text-xs text-gray-500 text-center mt-3">
-                    Sin tarjeta de crédito requerida
+                    Sin tarjeta de crédito requerida inicialmente
                   </p>
                 )}
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Comparison Table */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <h2 className="text-2xl font-bold text-center mb-8">Comparación de planes</h2>
+          <Card className="border-0 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Característica</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Mensual</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Trimestral</th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Anual</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Precio</td>
+                    <td className="px-6 py-4 text-sm text-center">49€/mes</td>
+                    <td className="px-6 py-4 text-sm text-center">120€/3 meses</td>
+                    <td className="px-6 py-4 text-sm text-center">450€/año</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Prueba gratuita</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center">-</td>
+                    <td className="px-6 py-4 text-center">-</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Perfil completo</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Chat con clientes</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Ahorro vs mensual</td>
+                    <td className="px-6 py-4 text-center">-</td>
+                    <td className="px-6 py-4 text-center text-green-600 font-semibold">27€</td>
+                    <td className="px-6 py-4 text-center text-green-600 font-semibold">138€</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Soporte prioritario</td>
+                    <td className="px-6 py-4 text-center">-</td>
+                    <td className="px-6 py-4 text-center">-</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
 
         {/* FAQ Section */}
@@ -270,7 +350,7 @@ export default function PricingPlansPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-2">¿Qué pasa después de los 7 días de prueba?</h3>
                 <p className="text-gray-600">
-                  Al finalizar tu prueba gratuita, si no cancelas, tu plan se convertirá automáticamente en el plan mensual de 49€/mes.
+                  Si no cancelas antes de que termine tu prueba gratuita, tu plan se convertirá automáticamente en el plan mensual de 49€/mes.
                 </p>
               </CardContent>
             </Card>
@@ -286,9 +366,18 @@ export default function PricingPlansPage() {
 
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral?</h3>
+                <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral o anual?</h3>
                 <p className="text-gray-600">
-                  Con el plan trimestral ahorras 27€ en comparación con pagar 3 meses del plan mensual (147€ vs 120€).
+                  Con el plan trimestral ahorras 27€ (120€ vs 147€). Con el plan anual ahorras 138€ (450€ vs 588€).
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">¿Qué incluyen todos los planes?</h3>
+                <p className="text-gray-600">
+                  Todos los planes incluyen: perfil profesional completo, aparición en búsquedas, chat directo con clientes, galería de fotos ilimitada y recepción de valoraciones.
                 </p>
               </CardContent>
             </Card>
