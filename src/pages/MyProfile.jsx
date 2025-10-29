@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom"; // ✅ Añadido useSearchParams
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, Calendar, TrendingUp } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, Calendar, TrendingUp, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner"; // ✅ Añadido toast
+import { toast } from "sonner";
 
 export default function MyProfilePage() {
   const navigate = useNavigate();
@@ -30,10 +30,11 @@ export default function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams(); // ✅ NUEVO
+  const [searchParams] = useSearchParams();
 
-  // ✅ NUEVO: Detectar reactivación exitosa
+  // ✅ NUEVO: Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
+  const onboardingPending = searchParams.get("onboarding");
 
   // User data
   const [userData, setUserData] = useState({
@@ -122,24 +123,34 @@ export default function MyProfilePage() {
     }
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
-  // ✅ NUEVO: Detectar reactivación exitosa
+  // ✅ NUEVO: Detectar estados de retorno y mostrar mensajes apropiados
   useEffect(() => {
     if (reactivationSuccess === "success") {
       toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
         duration: 6000
       });
       
-      // Limpiar URL
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      // Recargar datos
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (reactivationSuccess === "canceled") {
       toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (onboardingPending === "pending") {
+      // ✅ NUEVO: Usuario completó pago, necesita completar perfil
+      toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional para aparecer en búsquedas.", {
+        duration: 8000
+      });
+      
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Redirigir a ProfileOnboarding después de 2 segundos
+      setTimeout(() => {
+        navigate(createPageUrl("ProfileOnboarding"));
+      }, 2000);
     }
-  }, [reactivationSuccess, queryClient]); // Añadir queryClient a las dependencias del useEffect
+  }, [reactivationSuccess, onboardingPending, queryClient, navigate]);
 
   const loadUser = async () => {
     try {
@@ -156,7 +167,6 @@ export default function MyProfilePage() {
     }
   };
 
-  // ✅ NUEVA: Query para obtener suscripción activa
   const { data: subscription } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
@@ -168,7 +178,6 @@ export default function MyProfilePage() {
     enabled: !!user && user.user_type === "professionnel",
   });
 
-  // ✅ NUEVA: Calcular días restantes
   const getDaysLeft = () => {
     if (!subscription) return 0;
     const today = new Date();
@@ -178,7 +187,6 @@ export default function MyProfilePage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  // ✅ NUEVA: Obtener estado unificado de suscripción
   const getSubscriptionStatus = () => {
     if (!subscription) return null;
     
@@ -418,9 +426,28 @@ export default function MyProfilePage() {
   const isProfessional = profile || user.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
 
+  // ✅ NUEVO: Detectar si necesita completar onboarding
+  const needsOnboarding = isProfessional && subscription && !profile?.onboarding_completed;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
+        {/* ✅ NUEVO: Banner de onboarding pendiente */}
+        {needsOnboarding && (
+          <Alert className="mb-6 bg-orange-50 border-orange-200">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>¡Completa tu perfil profesional!</strong> Tu suscripción está activa, pero necesitas completar el quiz para aparecer en las búsquedas.
+              <Button 
+                onClick={() => navigate(createPageUrl("ProfileOnboarding"))}
+                className="mt-2 bg-orange-500 hover:bg-orange-600 w-full"
+              >
+                Completar perfil ahora
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
@@ -663,8 +690,6 @@ export default function MyProfilePage() {
                 {isProfessional ? "Autónomo" : "Cliente"}
               </Badge>
             </div>
-
-            {/* ✅ ELIMINADO: Campo "Estado de suscripción" redundante e incorrecto */}
           </CardContent>
         </Card>
 
