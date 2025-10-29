@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -20,18 +20,190 @@ import {
   Star,
   Heart,
   Filter,
-  TrendingUp,
   Briefcase,
-  Image as ImageIcon,
   Phone,
   MessageCircle,
   MessageSquare
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import OptimizedImage from "@/components/ui/OptimizedImage";
+
+// Debounce hook para optimizar búsquedas
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Componente memoizado para tarjetas de perfil
+const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate }) => {
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned.startsWith('34') && cleaned.length === 9) {
+      cleaned = '34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  return (
+    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 bg-white">
+      <div 
+        className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden cursor-pointer"
+        onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+      >
+        {profile.photos && profile.photos.length > 0 ? (
+          <OptimizedImage
+            src={profile.photos[0]}
+            alt={profile.business_name}
+            className="w-full h-full"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <Briefcase className="w-16 h-16 text-blue-300 mb-2" />
+            <p className="text-sm text-blue-700 font-medium">Sin fotos aún</p>
+          </div>
+        )}
+        <Button
+          size="icon"
+          variant="secondary"
+          className="absolute top-3 right-3 bg-white/90 hover:bg-white shadow-lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(profile.user_id);
+          }}
+        >
+          <Heart className="w-4 h-4 text-orange-500" />
+        </Button>
+      </div>
+
+      <CardContent className="p-6">
+        <div 
+          className="cursor-pointer"
+          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <h3 className="font-bold text-xl text-gray-900 hover:text-blue-700 transition-colors">
+              {profile.business_name}
+            </h3>
+            {profile.price_range && (
+              <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                {profile.price_range}
+              </Badge>
+            )}
+          </div>
+
+          {profile.average_rating > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${
+                      star <= profile.average_rating
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-600 font-medium">
+                {profile.average_rating.toFixed(1)} ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
+              </span>
+            </div>
+          )}
+
+          <p className="text-gray-600 mb-4 line-clamp-2">
+            {profile.description}
+          </p>
+
+          {profile.service_area && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+              <MapPin className="w-4 h-4" />
+              <span>{profile.service_area}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.categories?.slice(0, 2).map((cat, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs">
+                {cat}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {profile.telefono_contacto && (
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <a
+              href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1"
+            >
+              <Button 
+                variant="outline" 
+                className="w-full hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                size="sm"
+              >
+                <Phone className="w-4 h-4" />
+              </Button>
+            </a>
+            <a
+              href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1"
+            >
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+            </a>
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartChat(profile.user_id, profile.business_name);
+              }}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
+
+ProfileCard.displayName = 'ProfileCard';
 
 export default function SearchPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
@@ -54,6 +226,8 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => base44.entities.ServiceCategory.list(),
+    staleTime: 1000 * 60 * 10, // 10 minutos
+    cacheTime: 1000 * 60 * 30, // 30 minutos
     initialData: [],
   });
 
@@ -61,94 +235,70 @@ export default function SearchPage() {
     queryKey: ['profiles'],
     queryFn: async () => {
       try {
-        console.log("🔍 Iniciando carga de perfiles...");
+        // Cargar perfiles con límite optimizado
+        const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 50);
         
-        // Intentar cargar TODOS los perfiles sin filtros primero
-        const allProfiles = await base44.entities.ProfessionalProfile.list();
-        console.log("📦 TOTAL perfiles en DB:", allProfiles.length);
-        console.log("📋 Perfiles completos:", JSON.stringify(allProfiles, null, 2));
-        
-        if (allProfiles.length === 0) {
-          console.error("❌ No se pudieron cargar perfiles - puede ser un problema de permisos");
-          return [];
-        }
-
-        // Intentar cargar usuarios
-        let users = [];
-        try {
-          users = await base44.entities.User.list();
-          console.log("👥 Total usuarios:", users.length);
-        } catch (userError) {
-          console.error("⚠️ No se pudieron cargar usuarios:", userError);
-          // Continuar sin usuarios si falla
-        }
+        // Cargar usuarios en paralelo
+        const users = await base44.entities.User.list();
         
         const profilesWithStatus = allProfiles.map(profile => {
           const user = users.find(u => u.id === profile.user_id);
           return {
             ...profile,
-            subscription_status: user?.subscription_status || "actif", // Asumir activo si no hay usuario
+            subscription_status: user?.subscription_status || "actif",
           };
         });
 
-        console.log("📊 Perfiles con status:", profilesWithStatus);
-
-        // Filtrar solo perfiles visibles
-        const visibleProfiles = profilesWithStatus.filter(profile => {
+        // Filtrar solo perfiles visibles y activos
+        return profilesWithStatus.filter(profile => {
           const hasActiveSubscription = 
             profile.subscription_status === "actif" || 
             profile.subscription_status === "en_prueba";
           const isVisible = profile.visible_en_busqueda === true;
           const isActive = profile.estado_perfil === "activo";
           
-          const passes = hasActiveSubscription && isVisible && isActive;
-          
-          console.log(`\n🔎 Filtro para ${profile.business_name}:`);
-          console.log(`   ✓ Suscripción: ${profile.subscription_status} → ${hasActiveSubscription}`);
-          console.log(`   ✓ Visible: ${profile.visible_en_busqueda} → ${isVisible}`);
-          console.log(`   ✓ Estado: ${profile.estado_perfil} → ${isActive}`);
-          console.log(`   ➡️ PASA: ${passes ? '✅ SÍ' : '❌ NO'}`);
-
-          return passes;
+          return hasActiveSubscription && isVisible && isActive;
         });
-
-        console.log("✅ Perfiles FINALES visibles:", visibleProfiles.length);
-        console.log("📋 Lista final:", visibleProfiles);
-        
-        return visibleProfiles;
       } catch (error) {
-        console.error("❌ ERROR al cargar perfiles:", error);
-        console.error("Detalles del error:", error.message);
+        console.error("Error al cargar perfiles:", error);
         return [];
       }
     },
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    cacheTime: 1000 * 60 * 15, // 15 minutos
     initialData: [],
-    retry: false, // No reintentar para ver el error claramente
+    retry: 1,
   });
 
-  const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = !searchTerm || 
-      profile.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === "all" || 
-      profile.categories?.includes(selectedCategory);
-    
-    const matchesCity = selectedCity === "all" || 
-      profile.service_area?.toLowerCase().includes(selectedCity.toLowerCase());
-    
-    const matchesPriceRange = selectedPriceRange === "all" || 
-      profile.price_range === selectedPriceRange;
-    
-    return matchesSearch && matchesCategory && matchesCity && matchesPriceRange;
-  }).sort((a, b) => {
-    if (sortBy === "rating") {
-      return (b.average_rating || 0) - (a.average_rating || 0);
-    }
-    return 0;
-  });
+  // Memoizar el filtrado de perfiles para evitar recalcular en cada render
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter(profile => {
+      const matchesSearch = !debouncedSearchTerm || 
+        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      
+      const matchesCategory = selectedCategory === "all" || 
+        profile.categories?.includes(selectedCategory);
+      
+      const matchesCity = selectedCity === "all" || 
+        profile.service_area?.toLowerCase().includes(selectedCity.toLowerCase());
+      
+      const matchesPriceRange = selectedPriceRange === "all" || 
+        profile.price_range === selectedPriceRange;
+      
+      return matchesSearch && matchesCategory && matchesCity && matchesPriceRange;
+    }).sort((a, b) => {
+      if (sortBy === "rating") {
+        return (b.average_rating || 0) - (a.average_rating || 0);
+      }
+      return 0;
+    });
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, selectedPriceRange, sortBy]);
 
-  const cities = [...new Set(profiles.map(p => p.service_area).filter(Boolean))];
+  const cities = useMemo(() => 
+    [...new Set(profiles.map(p => p.service_area).filter(Boolean))],
+    [profiles]
+  );
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -202,24 +352,6 @@ export default function SearchPage() {
     }
 
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
-  };
-
-  const formatPhoneForCall = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/[^\d+]/g, '');
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+34' + cleaned;
-    }
-    return cleaned;
-  };
-
-  const formatPhoneForWhatsApp = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/\D/g, '');
-    if (!cleaned.startsWith('34') && cleaned.length === 9) {
-      cleaned = '34' + cleaned;
-    }
-    return cleaned;
   };
 
   return (
@@ -325,11 +457,6 @@ export default function SearchPage() {
           <p className="text-gray-600">
             Profesionales verificados y listos para ayudarte
           </p>
-          
-          {/* Debug info */}
-          <div className="mt-2 text-xs text-gray-500">
-            <p>Total en DB: {profiles.length} perfiles cargados</p>
-          </div>
         </div>
 
         {loadingProfiles ? (
@@ -348,139 +475,14 @@ export default function SearchPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProfiles.map((profile) => (
-              <Card 
-                key={profile.id} 
-                className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 bg-white"
-              >
-                <div 
-                  className="relative h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden cursor-pointer"
-                  onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
-                >
-                  {profile.photos && profile.photos.length > 0 ? (
-                    <img 
-                      src={profile.photos[0]} 
-                      alt={profile.business_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      <ImageIcon className="w-16 h-16 text-blue-300 mb-2" />
-                      <p className="text-sm text-blue-700 font-medium">Sin fotos aún</p>
-                    </div>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="absolute top-3 right-3 bg-white/90 hover:bg-white shadow-lg"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleFavorite(profile.user_id);
-                    }}
-                  >
-                    <Heart className="w-4 h-4 text-orange-500" />
-                  </Button>
-                </div>
-
-                <CardContent className="p-6">
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-bold text-xl text-gray-900 hover:text-blue-700 transition-colors">
-                        {profile.business_name}
-                      </h3>
-                      {profile.price_range && (
-                        <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-                          {profile.price_range}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {profile.average_rating > 0 && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-4 h-4 ${
-                                star <= profile.average_rating
-                                  ? "fill-amber-400 text-amber-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-600 font-medium">
-                          {profile.average_rating.toFixed(1)} ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
-                        </span>
-                      </div>
-                    )}
-
-                    <p className="text-gray-600 mb-4 line-clamp-2">
-                      {profile.description}
-                    </p>
-
-                    {profile.service_area && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                        <MapPin className="w-4 h-4" />
-                        <span>{profile.service_area}</span>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {profile.categories?.slice(0, 2).map((cat, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {cat}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Contact Buttons */}
-                  {profile.telefono_contacto && (
-                    <div className="grid grid-cols-3 gap-2 mt-4">
-                      <a
-                        href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1"
-                      >
-                        <Button 
-                          variant="outline" 
-                          className="w-full hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
-                          size="sm"
-                        >
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                      </a>
-                      <a
-                        href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1"
-                      >
-                        <Button 
-                          className="w-full bg-green-600 hover:bg-green-700"
-                          size="sm"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </Button>
-                      </a>
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartChat(profile.user_id, profile.business_name);
-                        }}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <ProfileCard
+                key={profile.id}
+                profile={profile}
+                user={user}
+                onToggleFavorite={handleToggleFavorite}
+                onStartChat={handleStartChat}
+                navigate={navigate}
+              />
             ))}
           </div>
         )}
