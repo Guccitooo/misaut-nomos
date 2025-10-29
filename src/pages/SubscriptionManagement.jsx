@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -204,6 +205,19 @@ export default function SubscriptionManagementPage() {
           </Alert>
         )}
 
+        {/* ✅ CAMBIO: Alerta específica para trial */}
+        {subscription?.estado === "en_prueba" && (
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>🎁 Prueba gratuita activa (7 días).</strong><br/>
+              Tu periodo de prueba finaliza el <strong>{new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}</strong>.<br/>
+              {daysLeft > 0 && `Quedan ${daysLeft} días de prueba gratuita.`}<br/>
+              <strong>⚠️ Si no cancelas antes de esa fecha, se cobrará automáticamente 49€/mes y tu plan pasará a mensual.</strong>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Current Plan Card */}
         <Card className="mb-6 shadow-lg border-0">
           <CardHeader>
@@ -224,7 +238,16 @@ export default function SubscriptionManagementPage() {
 
               <div>
                 <p className="text-sm text-gray-500 mb-1">Precio</p>
-                <p className="text-xl font-bold text-gray-900">{subscription.plan_precio}€</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {subscription.estado === "en_prueba" ? (
+                    <>
+                      <span className="text-green-600">GRATIS</span>
+                      <span className="text-sm text-gray-600"> (luego {subscription.plan_precio}€/mes)</span>
+                    </>
+                  ) : (
+                    `${subscription.plan_precio}€`
+                  )}
+                </p>
               </div>
 
               <div>
@@ -238,7 +261,9 @@ export default function SubscriptionManagementPage() {
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Fecha de expiración</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  {subscription.estado === "en_prueba" ? "Fin de prueba" : "Fecha de expiración"}
+                </p>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <p className="font-semibold text-gray-900">
@@ -249,17 +274,23 @@ export default function SubscriptionManagementPage() {
 
               {daysLeft > 0 && (
                 <div className="md:col-span-2">
-                  <p className="text-sm text-gray-500 mb-2">Tiempo restante</p>
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-2xl font-bold text-blue-900">
+                  <p className="text-sm text-gray-500 mb-2">
+                    {subscription.estado === "en_prueba" ? "Tiempo de prueba restante" : "Tiempo restante"}
+                  </p>
+                  <div className={`rounded-lg p-4 ${subscription.estado === "en_prueba" ? "bg-blue-50" : "bg-blue-50"}`}>
+                    <p className={`text-2xl font-bold ${subscription.estado === "en_prueba" ? "text-blue-900" : "text-blue-900"}`}>
                       {daysLeft} {daysLeft === 1 ? 'día' : 'días'}
                     </p>
-                    <p className="text-sm text-blue-700">hasta la próxima renovación</p>
+                    <p className={`text-sm ${subscription.estado === "en_prueba" ? "text-blue-700" : "text-blue-700"}`}>
+                      {subscription.estado === "en_prueba" 
+                        ? "de prueba gratuita (luego 49€/mes si no cancelas)" 
+                        : "hasta la próxima renovación"}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {subscription.renovacion_automatica && isActive && (
+              {subscription.renovacion_automatica && isActive && subscription.estado !== "en_prueba" && (
                 <div className="md:col-span-2">
                   <Alert className="bg-green-50 border-green-200">
                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -303,7 +334,9 @@ export default function SubscriptionManagementPage() {
                   Cancelar suscripción
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Tu perfil dejará de aparecer en las búsquedas inmediatamente, pero seguirás teniendo acceso hasta la fecha de expiración.
+                  {subscription.estado === "en_prueba" 
+                    ? "Si cancelas durante la prueba, no se te cobrará nada. Tu perfil dejará de aparecer inmediatamente."
+                    : "Tu perfil dejará de aparecer en las búsquedas inmediatamente, pero seguirás teniendo acceso hasta la fecha de expiración."}
                 </p>
                 <Button
                   variant="destructive"
@@ -349,10 +382,20 @@ export default function SubscriptionManagementPage() {
                   Si cancelas tu suscripción:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-sm">
-                  <li>Tu perfil <strong>dejará de aparecer en las búsquedas inmediatamente</strong></li>
-                  <li>No recibirás nuevos contactos de clientes</li>
-                  <li>Mantendrás acceso a tu cuenta hasta el <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
-                  <li>Podrás reactivar tu suscripción en cualquier momento</li>
+                  {subscription?.estado === "en_prueba" ? (
+                    <>
+                      <li><strong>NO se te cobrará nada</strong> (tu prueba gratuita se cancela)</li>
+                      <li>Tu perfil <strong>dejará de aparecer inmediatamente</strong></li>
+                      <li>Puedes reactivar en cualquier momento con otro plan</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Tu perfil <strong>dejará de aparecer en las búsquedas inmediatamente</strong></li>
+                      <li>No recibirás nuevos contactos de clientes</li>
+                      <li>Mantendrás acceso a tu cuenta hasta el <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
+                      <li>Podrás reactivar tu suscripción en cualquier momento</li>
+                    </>
+                  )}
                 </ul>
                 <p className="text-gray-900 font-semibold pt-2">
                   ¿Estás seguro que deseas continuar?
