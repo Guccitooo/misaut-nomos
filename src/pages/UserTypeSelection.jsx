@@ -20,11 +20,23 @@ export default function UserTypeSelectionPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      // Si ya tiene tipo de usuario definido, redirigir
+      // Si ya tiene tipo de usuario definido, redirigir según estado
       if (currentUser.user_type) {
         if (currentUser.user_type === "professionnel") {
-          navigate(createPageUrl("PricingPlans"));
+          // ✅ Si es profesional, verificar si completó onboarding
+          const profiles = await base44.entities.ProfessionalProfile.filter({
+            user_id: currentUser.id
+          });
+          
+          if (profiles[0]?.onboarding_completed && profiles[0]?.visible_en_busqueda) {
+            // Ya completó todo → ir al perfil
+            navigate(createPageUrl("MyProfile"));
+          } else {
+            // No ha completado → FORZAR quiz
+            navigate(createPageUrl("ProfileOnboarding"));
+          }
         } else {
+          // Cliente → ir a buscar
           navigate(createPageUrl("Search"));
         }
       }
@@ -44,10 +56,10 @@ export default function UserTypeSelectionPage() {
         user_type: userType
       });
 
-      // Redirigir según el tipo
+      // ✅ CAMBIO CRÍTICO: Redirigir según el tipo
       if (userType === "professionnel") {
-        // Autónomo → ir a seleccionar plan
-        navigate(createPageUrl("PricingPlans"));
+        // ✅ Autónomo → ir DIRECTAMENTE al quiz (sin pasar por planes)
+        navigate(createPageUrl("ProfileOnboarding"));
       } else {
         // Cliente → ir directamente a buscar
         navigate(createPageUrl("Search"));
@@ -121,7 +133,10 @@ export default function UserTypeSelectionPage() {
               </ul>
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
-                onClick={() => handleSelectType("professionnel")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectType("professionnel");
+                }}
               >
                 Continuar como Autónomo
               </Button>
@@ -170,7 +185,10 @@ export default function UserTypeSelectionPage() {
               </ul>
               <Button 
                 className="w-full bg-orange-600 hover:bg-orange-700 h-12 text-lg"
-                onClick={() => handleSelectType("client")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectType("client");
+                }}
               >
                 Continuar como Cliente
               </Button>
