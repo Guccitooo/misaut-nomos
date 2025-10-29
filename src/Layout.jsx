@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import {
@@ -12,7 +12,7 @@ import {
   Briefcase,
   LayoutDashboard,
   CreditCard,
-  Settings
+  AlertCircle
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,16 +29,23 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     loadUser();
     loadUnreadCount();
   }, []);
+
+  useEffect(() => {
+    checkOnboardingStatus();
+  }, [user, location.pathname]);
 
   const loadUser = async () => {
     try {
@@ -65,6 +72,47 @@ export default function Layout({ children, currentPageName }) {
     } catch (error) {
       console.error("Error loading unread count:", error);
       setUnreadCount(0);
+    }
+  };
+
+  const checkOnboardingStatus = async () => {
+    if (!user || user.user_type !== "professionnel") {
+      setNeedsOnboarding(false);
+      return;
+    }
+
+    // ✅ Lista de páginas que NO requieren redirección
+    const allowedPaths = [
+      createPageUrl("ProfileOnboarding"),
+      createPageUrl("UserTypeSelection"),
+      "/logout"
+    ];
+
+    // Si está en una página permitida, no verificar
+    if (allowedPaths.includes(location.pathname)) {
+      setNeedsOnboarding(false);
+      return;
+    }
+
+    try {
+      const profiles = await base44.entities.ProfessionalProfile.filter({
+        user_id: user.id
+      });
+
+      // ✅ FORZAR REDIRECCIÓN si no ha completado onboarding
+      if (!profiles[0] || !profiles[0].onboarding_completed || !profiles[0].visible_en_busqueda) {
+        setNeedsOnboarding(true);
+        
+        // Mostrar advertencia por 2 segundos antes de redirigir
+        setTimeout(() => {
+          navigate(createPageUrl("ProfileOnboarding"));
+        }, 2000);
+      } else {
+        setNeedsOnboarding(false);
+      }
+    } catch (error) {
+      console.error("Error checking onboarding status:", error);
+      setNeedsOnboarding(false);
     }
   };
 
@@ -113,6 +161,28 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
+  }
+
+  // ✅ Mostrar alerta si necesita completar onboarding
+  if (needsOnboarding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <Alert className="bg-yellow-50 border-yellow-200">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <strong>Completa tu perfil profesional</strong>
+              <p className="mt-2">
+                Para activar tu cuenta y aparecer en las búsquedas, primero debes completar tu perfil profesional.
+              </p>
+              <p className="mt-2 text-sm">
+                Redirigiendo al quiz en 2 segundos...
+              </p>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
   }
 
   return (
