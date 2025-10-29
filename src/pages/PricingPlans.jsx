@@ -197,10 +197,8 @@ export default function PricingPlansPage() {
     switch (planId) {
       case "plan_monthly_trial":
         return [
-          "🎁 7 días gratis (requiere tarjeta)",
           ...commonFeatures.slice(0, 5),
-          "Soporte estándar",
-          "Luego 49€/mes"
+          "Soporte estándar"
         ];
       case "plan_quarterly":
         return [
@@ -316,15 +314,13 @@ export default function PricingPlansPage() {
                   {getPlanIcon(plan.plan_id)}
                 </div>
                 <CardTitle className="text-center text-2xl font-bold">
-                  {plan.nombre}
+                  {plan.plan_id === "plan_monthly_trial" ? "Mensual — 7 días gratis" : plan.nombre}
                 </CardTitle>
                 <div className="text-center mt-4">
                   <p className="text-5xl font-bold">
                     {plan.plan_id === "plan_monthly_trial" ? (
                       <>
-                        <span className="text-3xl">Gratis 7 días</span>
-                        <br />
-                        <span className="text-2xl opacity-90">luego {plan.precio}€/mes</span>
+                        <span className="text-2xl opacity-90">Luego {plan.precio}€/mes</span>
                       </>
                     ) : (
                       `${plan.precio}€`
@@ -340,17 +336,18 @@ export default function PricingPlansPage() {
 
               <CardContent className="p-8 bg-white">
                 <p className="text-gray-600 mb-6 min-h-[60px] text-sm leading-relaxed">
-                  {plan.descripcion}
+                  {plan.plan_id === "plan_monthly_trial" 
+                    ? "Prueba 7 días gratis. Luego 49€/mes. Cancela cuando quieras."
+                    : plan.descripcion}
                 </p>
 
                 <ul className="space-y-3 mb-8">
                   {getPlanFeatures(plan.plan_id).map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      {feature.includes("⭐") || feature.includes("🎁") ? (
+                      {feature.includes("⭐") ? (
                         <>
-                          {feature.includes("⭐") && <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" />}
-                          {feature.includes("🎁") && <Gift className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />}
-                          <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "").replace("🎁 ", "")}</span>
+                          <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" />
+                          <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "")}</span>
                         </>
                       ) : (
                         <>
@@ -379,7 +376,7 @@ export default function PricingPlansPage() {
 
                 {plan.plan_id === "plan_monthly_trial" && (
                   <p className="text-xs text-green-700 text-center mt-3 bg-green-50 p-2 rounded">
-                    ✓ Activa tu prueba gratuita de 7 días. Se requiere tarjeta de crédito pero NO se realizará ningún cobro hasta que finalice el periodo. Si no cancelas, se cobrará automáticamente 49€/mes.
+                    ✓ Requiere tarjeta. Sin cobro hasta que acabe la prueba.
                   </p>
                 )}
               </CardContent>
