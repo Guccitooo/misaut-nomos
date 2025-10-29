@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase } from "lucide-react"; // Added Briefcase
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -388,7 +388,35 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
-        {/* Subscription Card - NEW */}
+        {/* ✅ NUEVO: Card de conversión para clientes */}
+        {!isProfessional && user && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">¿Quieres ofrecer tus servicios?</h3>
+                    <p className="text-sm text-gray-600">
+                      Conviértete en autónomo y aparece en las búsquedas de clientes
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate(createPageUrl("ProfileOnboarding"))}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Convertirme en Autónomo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Subscription Card - Existing */}
         {isProfessional && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="p-6">
