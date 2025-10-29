@@ -209,6 +209,7 @@ export default function SearchPage() {
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     loadUser();
@@ -221,6 +222,9 @@ export default function SearchPage() {
       console.log('👤 Usuario autenticado:', currentUser?.email);
     } catch (error) {
       console.log('👤 Usuario no autenticado (visitante)');
+      setUser(null);
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
@@ -232,7 +236,6 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  // ✅ QUERY COMPLETAMENTE SIMPLIFICADA - SIN FILTROS
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
@@ -246,14 +249,12 @@ export default function SearchPage() {
         
         console.log('✅ Respuesta recibida!');
         console.log('📦 Total perfiles en BD:', allProfiles?.length || 0);
-        console.log('📋 Perfiles completos:', JSON.stringify(allProfiles, null, 2));
         
         if (!allProfiles || allProfiles.length === 0) {
           console.warn('⚠️ NO HAY PERFILES EN LA BASE DE DATOS');
           return [];
         }
 
-        // ✅ SIN FILTROS - DEVOLVER TODO
         console.log('✅ DEVOLVIENDO TODOS LOS PERFILES SIN FILTRAR');
         console.log('📊 Total a mostrar:', allProfiles.length);
         
@@ -264,27 +265,16 @@ export default function SearchPage() {
         console.error('❌ Tipo de error:', error.constructor.name);
         console.error('❌ Mensaje:', error.message);
         console.error('❌ Stack:', error.stack);
-        console.error('❌ Error completo:', JSON.stringify(error, null, 2));
         throw error;
       }
     },
-    staleTime: 0, // ✅ Sin cache
-    cacheTime: 0, // ✅ Sin cache
+    staleTime: 0,
+    cacheTime: 0,
     initialData: [],
-    retry: false, // ✅ Sin retry para ver errores inmediatamente
+    retry: false,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
-
-  // Log cuando cambian los profiles
-  useEffect(() => {
-    console.log('🔄 ============ PROFILES ACTUALIZADOS ============');
-    console.log('📊 Cantidad:', profiles?.length || 0);
-    console.log('👀 Datos:', profiles);
-    if (profilesError) {
-      console.error('❌ Error state:', profilesError);
-    }
-  }, [profiles, profilesError]);
 
   const filteredProfiles = useMemo(() => {
     console.log('🔍 Aplicando filtros...');
@@ -387,7 +377,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section */}
+      {/* Hero Section - ✅ CAMBIO: Botón solo se renderiza si NO hay usuario */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
@@ -398,7 +388,8 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {!user && (
+            {/* ✅ CAMBIO: Renderizado condicional INMEDIATO - no esperar estado asíncrono */}
+            {!isLoadingUser && !user && (
               <Link to={createPageUrl("PricingPlans")}>
                 <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
                   <Briefcase className="w-5 h-5 mr-2" />
