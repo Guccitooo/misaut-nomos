@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -228,13 +227,13 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
-                  alt="milautonomos"
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
+                  alt="MilAutónomos"
                   className="w-full h-full object-contain"
                 />
               </div>
               <div>
-                <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
+                <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
                 <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
               </div>
             </Link>
@@ -317,7 +316,7 @@ export default function Layout({ children, currentPageName }) {
               <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors">
                 <Menu className="w-6 h-6" />
               </SidebarTrigger>
-              <h1 className="text-lg font-bold text-gray-900">milautonomos</h1>
+              <h1 className="text-lg font-bold text-gray-900">MilAutónomos</h1>
               <div className="w-10" />
             </div>
           </header>
