@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
             planId,
             planPrice,
             isTrial,
-            isReactivation  // ✅ NUEVO: Flag para indicar si es reactivación
+            isReactivation
         } = body;
 
         let plan;
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // ✅ CAMBIO CRÍTICO: URLs de redirección según si es reactivación o nuevo usuario
+        // ✅ CRÍTICO: URLs de redirección corregidas
         const origin = req.headers.get('origin');
         let successUrl, cancelUrl;
 
@@ -82,10 +82,14 @@ Deno.serve(async (req) => {
             successUrl = `${origin}/my-profile?reactivation=success`;
             cancelUrl = `${origin}/my-profile?reactivation=canceled`;
         } else {
-            // ✅ Nuevo usuario → Ir a completar perfil
-            successUrl = `${origin}/profile-onboarding?success=true`;
+            // ✅ CAMBIO: Redirigir a My Profile con parámetro para mostrar onboarding
+            // En lugar de redirigir a una página separada que puede no existir
+            successUrl = `${origin}/my-profile?onboarding=pending`;
             cancelUrl = `${origin}/pricing-plans?canceled=true`;
         }
+
+        console.log('🔗 Success URL:', successUrl);
+        console.log('🔗 Cancel URL:', cancelUrl);
 
         // ✅ Trial con tarjeta obligatoria
         if (isTrial && planId === "plan_monthly_trial") {
@@ -116,7 +120,7 @@ Deno.serve(async (req) => {
                     metadata: {
                         plan_id: planId,
                         is_trial: 'true',
-                        is_reactivation: isReactivation ? 'true' : 'false'  // ✅ NUEVO
+                        is_reactivation: isReactivation ? 'true' : 'false'
                     }
                 },
                 customer_email: email,
@@ -131,10 +135,10 @@ Deno.serve(async (req) => {
                     paymentMethod: paymentMethod || "stripe",
                     planId: planId,
                     isTrial: "true",
-                    isReactivation: isReactivation ? "true" : "false"  // ✅ NUEVO
+                    isReactivation: isReactivation ? "true" : "false"
                 },
-                success_url: successUrl,  // ✅ DINÁMICO
-                cancel_url: cancelUrl,     // ✅ DINÁMICO
+                success_url: successUrl,
+                cancel_url: cancelUrl,
             });
 
             console.log('✅ Sesión de trial creada:', session.id);
@@ -177,10 +181,10 @@ Deno.serve(async (req) => {
                     address: address || "",
                     paymentMethod: paymentMethod || "stripe",
                     planId: planId || "plan_monthly_trial",
-                    isReactivation: isReactivation ? "true" : "false"  // ✅ NUEVO
+                    isReactivation: isReactivation ? "true" : "false"
                 },
-                success_url: successUrl,  // ✅ DINÁMICO
-                cancel_url: cancelUrl,     // ✅ DINÁMICO
+                success_url: successUrl,
+                cancel_url: cancelUrl,
             });
 
             return Response.json({
