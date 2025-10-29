@@ -333,11 +333,48 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
+  // ✅ CRÍTICO: Cargar suscripciones para verificar visibilidad
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['allSubscriptions'],
+    queryFn: async () => {
+      const subs = await base44.entities.Subscription.list();
+      return subs;
+    },
+    staleTime: 1000 * 60 * 5,
+    initialData: [],
+  });
+
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-      return allProfiles || [];
+      
+      // ✅ CRÍTICO: Filtrar SOLO perfiles con onboarding completado, visibles y activos
+      const visibleProfilesStage1 = allProfiles.filter(profile => {
+        // 1. Debe tener onboarding completado
+        if (!profile.onboarding_completed) {
+          // console.log(`❌ Perfil ${profile.business_name} - Onboarding NO completado`);
+          return false;
+        }
+        
+        // 2. Debe estar marcado como visible
+        if (!profile.visible_en_busqueda) {
+          // console.log(`❌ Perfil ${profile.business_name} - NO visible_en_busqueda`);
+          return false;
+        }
+        
+        // 3. Debe estar en estado activo
+        if (profile.estado_perfil !== "activo") {
+          // console.log(`❌ Perfil ${profile.business_name} - Estado: ${profile.estado_perfil}`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // console.log(`✅ Perfiles visibles (Stage 1): ${visibleProfilesStage1.length} de ${allProfiles.length}`);
+      
+      return visibleProfilesStage1 || [];
     },
     staleTime: 0,
     initialData: [],
@@ -345,6 +382,52 @@ export default function SearchPage() {
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
+
+  // ✅ NUEVO: Verificar suscripciones activas en tiempo real
+  const profilesWithActiveSubscriptions = useMemo(() => {
+    if (!subscriptions || subscriptions.length === 0) {
+      // If subscriptions array is empty, it means there are no subscriptions in the system.
+      // Therefore, no profiles can have an active subscription, so return an empty array.
+      // console.log('⚠️ No hay suscripciones cargadas o el array de suscripciones está vacío. Se devolverán 0 perfiles con suscripción activa.');
+      return [];
+    }
+    
+    return profiles.filter(profile => {
+      // Buscar suscripción del usuario
+      const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
+      
+      if (!userSub) {
+        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Sin suscripción`);
+        return false;
+      }
+      
+      // Verificar estado de la suscripción
+      const activeStates = ["activo", "en_prueba", "trialing"];
+      const isActive = activeStates.includes(userSub.estado);
+      
+      if (!isActive) {
+        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción ${userSub.estado}`);
+        return false;
+      }
+      
+      // Verificar que no haya expirado
+      const expirationDate = new Date(userSub.fecha_expiracion);
+      const today = new Date();
+      // Set hours, minutes, seconds, milliseconds to 0 for a fair day comparison
+      today.setHours(0, 0, 0, 0);
+      expirationDate.setHours(0, 0, 0, 0);
+
+      const isExpired = expirationDate < today;
+      
+      if (isExpired) {
+        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción expirada (${userSub.fecha_expiracion})`);
+        return false;
+      }
+      
+      // console.log(`✅ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción activa (${userSub.estado})`);
+      return true;
+    });
+  }, [profiles, subscriptions]);
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -360,8 +443,9 @@ export default function SearchPage() {
     initialData: {},
   });
 
+  // ✅ CAMBIO: Usar profilesWithActiveSubscriptions en lugar de profiles
   const filteredProfiles = useMemo(() => {
-    return profiles.filter(profile => {
+    return profilesWithActiveSubscriptions.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -385,12 +469,12 @@ export default function SearchPage() {
       }
       return 0;
     });
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
+  }, [profilesWithActiveSubscriptions, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
 
   // ✅ NUEVO: Extraer solo ciudades estructuradas únicas (campo "ciudad")
   const cities = useMemo(() => {
     const citySet = new Set();
-    profiles.forEach(p => {
+    profilesWithActiveSubscriptions.forEach(p => {
       // ✅ Solo añadir si existe el campo "ciudad" (campo estructurado)
       if (p.ciudad && p.ciudad.trim() !== "") {
         citySet.add(p.ciudad);
@@ -401,7 +485,7 @@ export default function SearchPage() {
       }
     });
     return Array.from(citySet).sort();
-  }, [profiles]);
+  }, [profilesWithActiveSubscriptions]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -427,7 +511,7 @@ export default function SearchPage() {
           return newSet;
         });
       } else {
-        const profile = profiles.find(p => p.user_id === professionalId);
+        const profile = profiles.find(p => p.user_id === professionalId); // This should probably be profilesWithActiveSubscriptions
         await base44.entities.Favorite.create({
           client_id: user.id,
           professional_id: professionalId,
