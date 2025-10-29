@@ -379,54 +379,47 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - ✅ CAMBIO: DOS BOTONES DIFERENCIADOS */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
+      {/* Hero Section - ✅ VERSIÓN COMPACTA */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
               Encuentra el autónomo perfecto
             </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-6">
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Dos botones diferenciados con mensaje explicativo */}
+            {/* ✅ CAMBIO: Versión compacta sin textos explicativos */}
             {!isLoadingUser && !user && (
-              <div className="space-y-4">
-                <p className="text-base text-blue-100 max-w-xl mx-auto">
-                  <strong>Elige cómo quieres empezar:</strong>
+              <div className="space-y-3">
+                <p className="text-base text-blue-100 font-medium">
+                  Elige cómo quieres empezar:
                 </p>
-                <div className="flex flex-col md:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
-                  <Link to={createPageUrl("UserTypeSelection") + "?type=autonomo"} className="w-full md:w-auto">
+                <div className="flex flex-row gap-3 justify-center items-center">
+                  <Link to={createPageUrl("PricingPlans")} className="flex-1 max-w-xs">
                     <Button 
                       size="lg" 
-                      className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl border-2 border-orange-400 transition-all hover:scale-105"
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105"
                     >
                       <Briefcase className="w-5 h-5 mr-2" />
                       🧰 Soy autónomo
                     </Button>
                   </Link>
-                  <Link to={createPageUrl("UserTypeSelection") + "?type=cliente"} className="w-full md:w-auto">
+                  <Link to={createPageUrl("Search")} className="flex-1 max-w-xs" onClick={(e) => {
+                    if (!user) {
+                      e.preventDefault();
+                      base44.auth.redirectToLogin(window.location.href);
+                    }
+                  }}>
                     <Button 
                       size="lg" 
-                      className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl border-2 border-blue-400 transition-all hover:scale-105"
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105"
                     >
-                      <User className="w-5 h-5 mr-2" />
+                      <SearchIcon className="w-5 h-5 mr-2" />
                       👤 Soy cliente
                     </Button>
                   </Link>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mt-6 text-left">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                    <p className="text-sm text-blue-50">
-                      <strong>🧰 Si eres profesional:</strong> crea tu perfil de autónomo y aparece en las búsquedas
-                    </p>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                    <p className="text-sm text-blue-50">
-                      <strong>👤 Si buscas servicios:</strong> crea tu cuenta de cliente para contactar directamente con expertos
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
