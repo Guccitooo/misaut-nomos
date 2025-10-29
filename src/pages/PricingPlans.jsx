@@ -326,11 +326,13 @@ export default function PricingPlansPage() {
                       `${plan.precio}€`
                     )}
                   </p>
-                  <p className="text-sm opacity-90 mt-2">
-                    {plan.duracion_dias === 30 ? "/mes" : 
-                     plan.duracion_dias === 90 ? "/3 meses" : 
-                     "/año"}
-                  </p>
+                  {plan.plan_id !== "plan_monthly_trial" && (
+                    <p className="text-sm opacity-90 mt-2">
+                      {plan.duracion_dias === 30 ? "/mes" : 
+                       plan.duracion_dias === 90 ? "/3 meses" : 
+                       "/año"}
+                    </p>
+                  )}
                 </div>
               </CardHeader>
 
