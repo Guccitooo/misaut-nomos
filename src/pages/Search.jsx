@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -134,7 +133,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
 
           <p className="text-gray-600 mb-4 line-clamp-2">
-            {profile.description}
+            {profile.descripcion_corta || profile.description}
           </p>
 
           {profile.service_area && (
@@ -219,9 +218,9 @@ export default function SearchPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      console.log('👤 Usuario autenticado:', currentUser?.email);
     } catch (error) {
-      console.error("Error loading user:", error);
-      // ✅ No pasa nada si no hay usuario - continuar como visitante
+      console.log('👤 Usuario no autenticado (visitante)');
     }
   };
 
@@ -233,65 +232,69 @@ export default function SearchPage() {
     initialData: [],
   });
 
+  // ✅ QUERY COMPLETAMENTE SIMPLIFICADA - SIN FILTROS
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      console.log('🔵 Iniciando carga de perfiles...');
+      console.log('🚀 ============ INICIO CARGA PERFILES ============');
+      console.log('🔵 Usuario actual:', user?.email || 'VISITANTE SIN LOGIN');
+      
       try {
+        console.log('📞 Llamando a base44.entities.ProfessionalProfile.list()...');
+        
         const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
         
-        console.log('📦 Total perfiles cargados:', allProfiles.length);
-        console.log('📋 Perfiles raw:', allProfiles);
+        console.log('✅ Respuesta recibida!');
+        console.log('📦 Total perfiles en BD:', allProfiles?.length || 0);
+        console.log('📋 Perfiles completos:', JSON.stringify(allProfiles, null, 2));
         
-        // ✅ Filtros muy permisivos - solo campos esenciales
-        const visibleProfiles = allProfiles.filter(profile => {
-          const isVisible = profile.visible_en_busqueda === true;
-          const isActive = profile.estado_perfil === "activo";
-          const hasBusinessName = !!profile.business_name;
-          
-          console.log('🔍 Perfil:', profile.business_name, {
-            id: profile.id,
-            visible: profile.visible_en_busqueda,
-            estado: profile.estado_perfil,
-            hasName: hasBusinessName,
-            passes: isVisible && isActive && hasBusinessName
-          });
-          
-          return isVisible && isActive && hasBusinessName;
-        });
+        if (!allProfiles || allProfiles.length === 0) {
+          console.warn('⚠️ NO HAY PERFILES EN LA BASE DE DATOS');
+          return [];
+        }
 
-        console.log('✅ Perfiles visibles después de filtros:', visibleProfiles.length);
-        console.log('👀 Perfiles finales:', visibleProfiles);
+        // ✅ SIN FILTROS - DEVOLVER TODO
+        console.log('✅ DEVOLVIENDO TODOS LOS PERFILES SIN FILTRAR');
+        console.log('📊 Total a mostrar:', allProfiles.length);
         
-        return visibleProfiles;
+        return allProfiles;
+        
       } catch (error) {
-        console.error("❌ Error al cargar perfiles:", error);
-        console.error("❌ Error completo:", error.message, error.stack);
-        throw error; // Re-throw para que React Query lo capture
+        console.error('❌ ============ ERROR EN CARGA ============');
+        console.error('❌ Tipo de error:', error.constructor.name);
+        console.error('❌ Mensaje:', error.message);
+        console.error('❌ Stack:', error.stack);
+        console.error('❌ Error completo:', JSON.stringify(error, null, 2));
+        throw error;
       }
     },
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 15,
+    staleTime: 0, // ✅ Sin cache
+    cacheTime: 0, // ✅ Sin cache
     initialData: [],
-    retry: 2,
-    onError: (error) => {
-      console.error("❌ React Query error:", error);
-    }
+    retry: false, // ✅ Sin retry para ver errores inmediatamente
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Log cuando cambian los profiles
   useEffect(() => {
-    console.log('🔄 Profiles actualizados:', profiles?.length || 0);
+    console.log('🔄 ============ PROFILES ACTUALIZADOS ============');
+    console.log('📊 Cantidad:', profiles?.length || 0);
+    console.log('👀 Datos:', profiles);
     if (profilesError) {
-      console.error('❌ Error en profiles:', profilesError);
+      console.error('❌ Error state:', profilesError);
     }
   }, [profiles, profilesError]);
 
   const filteredProfiles = useMemo(() => {
-    return profiles.filter(profile => {
+    console.log('🔍 Aplicando filtros...');
+    console.log('🔍 Profiles antes de filtrar:', profiles.length);
+    
+    const filtered = profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
@@ -312,6 +315,9 @@ export default function SearchPage() {
       }
       return 0;
     });
+    
+    console.log('🔍 Profiles después de filtrar:', filtered.length);
+    return filtered;
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, selectedPriceRange, sortBy]);
 
   const cities = useMemo(() => 
@@ -373,6 +379,12 @@ export default function SearchPage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
+  console.log('🎨 ============ RENDER ============');
+  console.log('🎨 Loading:', loadingProfiles);
+  console.log('🎨 Profiles:', profiles.length);
+  console.log('🎨 Filtered:', filteredProfiles.length);
+  console.log('🎨 Error:', profilesError);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
@@ -386,7 +398,6 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Solo mostrar botón si NO está logueado */}
             {!user && (
               <Link to={createPageUrl("PricingPlans")}>
                 <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
@@ -481,8 +492,11 @@ export default function SearchPage() {
           </p>
           {profilesError && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">
+              <p className="text-red-800 text-sm font-semibold">
                 ⚠️ Error al cargar perfiles: {profilesError.message}
+              </p>
+              <p className="text-red-600 text-xs mt-2">
+                Abre la consola del navegador (F12) para ver más detalles
               </p>
             </div>
           )}
@@ -523,7 +537,9 @@ export default function SearchPage() {
               No se encontraron resultados
             </h3>
             <p className="text-gray-600">
-              Intenta modificar tus criterios de búsqueda
+              {profiles.length === 0 
+                ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
+                : 'Intenta modificar tus criterios de búsqueda'}
             </p>
           </Card>
         )}
