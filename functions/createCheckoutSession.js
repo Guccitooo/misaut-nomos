@@ -7,7 +7,6 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Get request body
         const body = await req.json();
         const { 
             email, 
@@ -20,17 +19,16 @@ Deno.serve(async (req) => {
             address,
             paymentMethod,
             planId,
-            planPrice
+            planPrice,
+            isTrial // ✅ Nuevo parámetro para indicar si es trial
         } = body;
 
-        // Get plan details
         let plan;
         let amount;
         let interval;
         let intervalCount = 1;
         
         if (planId) {
-            // Using new plan system
             const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
                 plan_id: planId
             });
@@ -42,9 +40,8 @@ Deno.serve(async (req) => {
                 }, { status: 404 });
             }
             
-            amount = plan.precio * 100; // Convert to cents
+            amount = plan.precio * 100;
             
-            // Determine interval based on duration
             if (plan.duracion_dias === 30) {
                 interval = 'month';
                 intervalCount = 1;
@@ -60,65 +57,93 @@ Deno.serve(async (req) => {
             }
             
         } else {
-            // Default to monthly plan (backward compatibility)
-            amount = 4900; // 49€
+            amount = 4900;
             interval = 'month';
             intervalCount = 1;
         }
 
-        // Validate required fields
         if (!email || !fullName) {
             return Response.json({
                 error: 'Missing required fields'
             }, { status: 400 });
         }
 
-        // Prepare activity text
         const activityText = activity === "Otro tipo de servicio profesional" 
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // Create Stripe checkout session
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            mode: 'subscription',
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'eur',
-                        product_data: {
-                            name: plan ? `Plan ${plan.nombre} - milautonomos` : 'Suscripción Profesional milautonomos',
-                            description: plan ? plan.descripcion : 'Acceso completo a la plataforma profesional',
-                        },
-                        recurring: {
-                            interval: interval,
-                            interval_count: intervalCount,
-                        },
-                        unit_amount: amount,
-                    },
-                    quantity: 1,
+        // ✅ CAMBIO CRÍTICO: Si es trial, usar mode: 'setup' para capturar tarjeta sin cobrar
+        // Después crear suscripción con trial_period_days
+        
+        if (isTrial && planId === "plan_monthly_trial") {
+            // ✅ Modo SETUP para prueba gratuita (captura tarjeta sin cobrar)
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                mode: 'setup', // ✅ Modo setup en lugar de subscription
+                customer_email: email,
+                metadata: {
+                    email,
+                    fullName,
+                    userType: userType || "autonomo",
+                    cifNif: cifNif || "",
+                    phone: phone || "",
+                    activity: activityText,
+                    address: address || "",
+                    paymentMethod: paymentMethod || "stripe",
+                    planId: planId,
+                    isTrial: "true"
                 },
-            ],
-            customer_email: email,
-            metadata: {
-                email,
-                fullName,
-                userType: userType || "autonomo",
-                cifNif: cifNif || "",
-                phone: phone || "",
-                activity: activityText,
-                address: address || "",
-                paymentMethod: paymentMethod || "stripe",
-                planId: planId || "plan_monthly_trial",
-            },
-            success_url: `${req.headers.get('origin')}/onboarding?success=true`,
-            cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
-        });
+                success_url: `${req.headers.get('origin')}/profile-onboarding?trial_setup=success`,
+                cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
+            });
 
-        return Response.json({
-            sessionId: session.id,
-            url: session.url
-        });
+            return Response.json({
+                sessionId: session.id,
+                url: session.url
+            });
+        } else {
+            // ✅ Modo normal para planes de pago
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                mode: 'subscription',
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'eur',
+                            product_data: {
+                                name: plan ? `Plan ${plan.nombre} - milautonomos` : 'Suscripción Profesional milautonomos',
+                                description: plan ? plan.descripcion : 'Acceso completo a la plataforma profesional',
+                            },
+                            recurring: {
+                                interval: interval,
+                                interval_count: intervalCount,
+                            },
+                            unit_amount: amount,
+                        },
+                        quantity: 1,
+                    },
+                ],
+                customer_email: email,
+                metadata: {
+                    email,
+                    fullName,
+                    userType: userType || "autonomo",
+                    cifNif: cifNif || "",
+                    phone: phone || "",
+                    activity: activityText,
+                    address: address || "",
+                    paymentMethod: paymentMethod || "stripe",
+                    planId: planId || "plan_monthly_trial",
+                },
+                success_url: `${req.headers.get('origin')}/profile-onboarding?success=true`,
+                cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
+            });
+
+            return Response.json({
+                sessionId: session.id,
+                url: session.url
+            });
+        }
     } catch (error) {
         console.error('Error creating checkout session:', error);
         return Response.json({
