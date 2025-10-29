@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -175,10 +174,10 @@ export default function Layout({ children, currentPageName }) {
             {/* Hazte Autónomo Button */}
             {(!user || user.user_type !== "professionnel") && (
               <div className="mt-auto p-3">
-                <Link to={createPageUrl("PricingPlans")}>
+                <Link to={createPageUrl("UserTypeSelection")}>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Ver Planes
+                    Hazte Autónomo
                   </Button>
                 </Link>
               </div>
