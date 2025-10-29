@@ -20,7 +20,8 @@ Deno.serve(async (req) => {
             paymentMethod,
             planId,
             planPrice,
-            isTrial
+            isTrial,
+            isReactivation  // ✅ NUEVO: Flag para indicar si es reactivación
         } = body;
 
         let plan;
@@ -72,14 +73,27 @@ Deno.serve(async (req) => {
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // ✅ CAMBIO CRÍTICO: Trial SIEMPRE requiere tarjeta con suscripción + trial_period_days
+        // ✅ CAMBIO CRÍTICO: URLs de redirección según si es reactivación o nuevo usuario
+        const origin = req.headers.get('origin');
+        let successUrl, cancelUrl;
+
+        if (isReactivation) {
+            // ✅ Usuario existente que reactiva → Ir a Mi Perfil con mensaje de éxito
+            successUrl = `${origin}/my-profile?reactivation=success`;
+            cancelUrl = `${origin}/my-profile?reactivation=canceled`;
+        } else {
+            // ✅ Nuevo usuario → Ir a completar perfil
+            successUrl = `${origin}/profile-onboarding?success=true`;
+            cancelUrl = `${origin}/pricing-plans?canceled=true`;
+        }
+
+        // ✅ Trial con tarjeta obligatoria
         if (isTrial && planId === "plan_monthly_trial") {
             console.log('🎁 Creando sesión de prueba gratuita CON tarjeta obligatoria');
             
-            // ✅ Usar mode: 'subscription' con trial_period_days
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
-                mode: 'subscription', // ✅ NO 'setup', sino 'subscription'
+                mode: 'subscription',
                 line_items: [
                     {
                         price_data: {
@@ -92,16 +106,17 @@ Deno.serve(async (req) => {
                                 interval: 'month',
                                 interval_count: 1,
                             },
-                            unit_amount: 4900, // 49€
+                            unit_amount: 4900,
                         },
                         quantity: 1,
                     },
                 ],
                 subscription_data: {
-                    trial_period_days: 7, // ✅ 7 días de prueba
+                    trial_period_days: 7,
                     metadata: {
                         plan_id: planId,
-                        is_trial: 'true'
+                        is_trial: 'true',
+                        is_reactivation: isReactivation ? 'true' : 'false'  // ✅ NUEVO
                     }
                 },
                 customer_email: email,
@@ -115,10 +130,11 @@ Deno.serve(async (req) => {
                     address: address || "",
                     paymentMethod: paymentMethod || "stripe",
                     planId: planId,
-                    isTrial: "true"
+                    isTrial: "true",
+                    isReactivation: isReactivation ? "true" : "false"  // ✅ NUEVO
                 },
-                success_url: `${req.headers.get('origin')}/profile-onboarding?trial_success=true`,
-                cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
+                success_url: successUrl,  // ✅ DINÁMICO
+                cancel_url: cancelUrl,     // ✅ DINÁMICO
             });
 
             console.log('✅ Sesión de trial creada:', session.id);
@@ -161,9 +177,10 @@ Deno.serve(async (req) => {
                     address: address || "",
                     paymentMethod: paymentMethod || "stripe",
                     planId: planId || "plan_monthly_trial",
+                    isReactivation: isReactivation ? "true" : "false"  // ✅ NUEVO
                 },
-                success_url: `${req.headers.get('origin')}/profile-onboarding?success=true`,
-                cancel_url: `${req.headers.get('origin')}/pricing-plans?canceled=true`,
+                success_url: successUrl,  // ✅ DINÁMICO
+                cancel_url: cancelUrl,     // ✅ DINÁMICO
             });
 
             return Response.json({
