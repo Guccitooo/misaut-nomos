@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -11,8 +12,9 @@ import {
   LogOut,
   Briefcase,
   LayoutDashboard,
-  CreditCard } from
-"lucide-react";
+  CreditCard,
+  Settings
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,8 +26,8 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
-  SidebarTrigger } from
-"@/components/ui/sidebar";
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -74,34 +76,43 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const navigationItems = [
-  {
-    title: "Buscar Autónomos",
-    url: createPageUrl("Search"),
-    icon: Search
-  },
-  {
-    title: "Mensajes",
-    url: createPageUrl("Messages"),
-    icon: MessageSquare,
-    badge: unreadCount > 0 ? unreadCount : null
-  },
-  {
-    title: "Favoritos",
-    url: createPageUrl("Favorites"),
-    icon: Heart
-  },
-  {
-    title: "Mi Perfil",
-    url: createPageUrl("MyProfile"),
-    icon: User
-  }];
+    {
+      title: "Buscar Autónomos",
+      url: createPageUrl("Search"),
+      icon: Search,
+    },
+    {
+      title: "Mensajes",
+      url: createPageUrl("Messages"),
+      icon: MessageSquare,
+      badge: unreadCount > 0 ? unreadCount : null
+    },
+    {
+      title: "Favoritos",
+      url: createPageUrl("Favorites"),
+      icon: Heart,
+    },
+    {
+      title: "Mi Perfil",
+      url: createPageUrl("MyProfile"),
+      icon: User,
+    },
+  ];
 
+  // Add subscription management for professionals
+  if (user?.user_type === "professionnel") {
+    navigationItems.push({
+      title: "Suscripción",
+      url: createPageUrl("SubscriptionManagement"),
+      icon: CreditCard,
+    });
+  }
 
   if (user?.role === "admin") {
     navigationItems.push({
       title: "Administración",
       url: createPageUrl("AdminDashboard"),
-      icon: LayoutDashboard
+      icon: LayoutDashboard,
     });
   }
 
@@ -127,7 +138,7 @@ export default function Layout({ children, currentPageName }) {
                 <Briefcase className="w-6 h-6 text-orange-400" />
               </div>
               <div>
-                <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
+                <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
                 <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
               </div>
             </Link>
@@ -137,33 +148,33 @@ export default function Layout({ children, currentPageName }) {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationItems.map((item) =>
-                  <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                      asChild
-                      className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative ${
-                      location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''}`
-                      }>
-
+                  {navigationItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative ${
+                          location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
+                        }`}
+                      >
                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                           <item.icon className="w-5 h-5" />
                           <span className="font-medium">{item.title}</span>
-                          {item.badge &&
-                        <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                          {item.badge && (
+                            <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                               {item.badge}
                             </span>
-                        }
+                          )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                  )}
+                  ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             {/* Hazte Autónomo Button */}
-            {(!user || user.user_type !== "professionnel") &&
-            <div className="mt-auto p-3">
+            {(!user || user.user_type !== "professionnel") && (
+              <div className="mt-auto p-3">
                 <Link to={createPageUrl("PricingPlans")}>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
                     <CreditCard className="w-4 h-4 mr-2" />
@@ -171,12 +182,12 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </Link>
               </div>
-            }
+            )}
           </SidebarContent>
 
           <SidebarFooter className="border-t border-gray-100 p-4">
-            {user &&
-            <div className="space-y-3">
+            {user && (
+              <div className="space-y-3">
                 <div className="flex items-center gap-3 px-2">
                   <Avatar className="w-10 h-10 border-2 border-blue-600">
                     <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -193,15 +204,15 @@ export default function Layout({ children, currentPageName }) {
                   </div>
                 </div>
                 <Button
-                variant="outline"
-                className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
-                onClick={handleLogout}>
-
+                  variant="outline"
+                  className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                  onClick={handleLogout}
+                >
                   <LogOut className="w-4 h-4 mr-2" />
                   Cerrar sesión
                 </Button>
               </div>
-            }
+            )}
           </SidebarFooter>
         </Sidebar>
 
@@ -221,6 +232,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </main>
       </div>
-    </SidebarProvider>);
-
+    </SidebarProvider>
+  );
 }
