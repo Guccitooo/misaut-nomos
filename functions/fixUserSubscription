@@ -1,0 +1,208 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.10.0';
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+
+Deno.serve(async (req) => {
+    try {
+        const base44 = createClientFromRequest(req);
+        
+        // Verificar autenticación
+        const user = await base44.auth.me();
+        if (!user) {
+            return Response.json({ error: 'No autenticado' }, { status: 401 });
+        }
+
+        const { email, forceActivate } = await req.json();
+        const targetEmail = email || user.email;
+
+        console.log('🔧 Corrigiendo suscripción para:', targetEmail);
+        console.log('🔧 forceActivate:', forceActivate);
+
+        // 1. Obtener usuario de DB
+        const users = await base44.asServiceRole.entities.User.filter({ 
+            email: targetEmail 
+        });
+
+        if (users.length === 0) {
+            return Response.json({
+                ok: false,
+                error: 'Usuario no encontrado'
+            }, { status: 404 });
+        }
+
+        const dbUser = users[0];
+        const updates = [];
+
+        // 2. Buscar en Stripe
+        const customers = await stripe.customers.list({
+            email: targetEmail,
+            limit: 1
+        });
+
+        let newStatus = null;
+        let shouldActivate = false;
+
+        if (customers.data.length > 0) {
+            const stripeCustomer = customers.data[0];
+            const subscriptions = await stripe.subscriptions.list({
+                customer: stripeCustomer.id,
+                limit: 10
+            });
+
+            if (subscriptions.data.length > 0) {
+                const subscription = subscriptions.data[0];
+                console.log('📋 Suscripción encontrada:', subscription.status);
+
+                // Mapear estado de Stripe a nuestro estado
+                switch (subscription.status) {
+                    case 'trialing':
+                        newStatus = 'en_prueba';
+                        shouldActivate = true;
+                        break;
+                    case 'active':
+                        newStatus = 'actif';
+                        shouldActivate = true;
+                        break;
+                    case 'past_due':
+                        newStatus = 'suspendu';
+                        break;
+                    case 'canceled':
+                    case 'unpaid':
+                        newStatus = 'annule';
+                        break;
+                }
+
+                // Calcular fechas
+                const startDate = new Date(subscription.created * 1000);
+                const endDate = subscription.trial_end ? 
+                    new Date(subscription.trial_end * 1000) :
+                    new Date(subscription.current_period_end * 1000);
+
+                // Actualizar usuario
+                const userUpdate = {
+                    user_type: 'professionnel',
+                    subscription_status: newStatus,
+                    subscription_start_date: startDate.toISOString().split('T')[0],
+                    subscription_end_date: endDate.toISOString().split('T')[0],
+                    last_payment_date: startDate.toISOString().split('T')[0]
+                };
+
+                await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
+                updates.push(`✅ Usuario actualizado con subscription_status: ${newStatus}`);
+                console.log('✅ Usuario actualizado:', userUpdate);
+            } else {
+                // Sin suscripción en Stripe
+                if (forceActivate) {
+                    // Activar manualmente con trial de 7 días
+                    const today = new Date();
+                    const trialEnd = new Date(today);
+                    trialEnd.setDate(trialEnd.getDate() + 7);
+
+                    const userUpdate = {
+                        user_type: 'professionnel',
+                        subscription_status: 'en_prueba',
+                        subscription_start_date: today.toISOString().split('T')[0],
+                        subscription_end_date: trialEnd.toISOString().split('T')[0]
+                    };
+
+                    await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
+                    updates.push('✅ Activación manual: trial de 7 días creado');
+                    shouldActivate = true;
+                    newStatus = 'en_prueba';
+                } else {
+                    return Response.json({
+                        ok: false,
+                        error: 'No se encontró suscripción en Stripe',
+                        suggestion: 'Usa forceActivate=true para activar manualmente'
+                    });
+                }
+            }
+        } else {
+            // Sin cliente en Stripe
+            if (forceActivate) {
+                const today = new Date();
+                const trialEnd = new Date(today);
+                trialEnd.setDate(trialEnd.getDate() + 7);
+
+                const userUpdate = {
+                    user_type: 'professionnel',
+                    subscription_status: 'en_prueba',
+                    subscription_start_date: today.toISOString().split('T')[0],
+                    subscription_end_date: trialEnd.toISOString().split('T')[0]
+                };
+
+                await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
+                updates.push('✅ Activación manual: trial de 7 días creado (sin Stripe)');
+                shouldActivate = true;
+                newStatus = 'en_prueba';
+            } else {
+                return Response.json({
+                    ok: false,
+                    error: 'Cliente no encontrado en Stripe',
+                    suggestion: 'Usa forceActivate=true para activar manualmente'
+                });
+            }
+        }
+
+        // 3. Activar perfil si corresponde
+        if (shouldActivate) {
+            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                user_id: dbUser.id
+            });
+
+            if (profiles.length > 0) {
+                const profile = profiles[0];
+                
+                // Solo activar si el onboarding está completado
+                if (profile.onboarding_completed) {
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                        estado_perfil: 'activo',
+                        visible_en_busqueda: true
+                    });
+                    updates.push('✅ Perfil profesional activado y visible');
+                } else {
+                    updates.push('⚠️ Perfil existe pero onboarding NO completado - se mantiene invisible');
+                }
+            } else {
+                updates.push('⚠️ No se encontró perfil profesional');
+            }
+        }
+
+        // 4. Enviar email de confirmación
+        await base44.asServiceRole.integrations.Core.SendEmail({
+            to: targetEmail,
+            subject: '✅ Tu suscripción ha sido activada - milautonomos',
+            body: `Hola,
+
+Tu suscripción a milautonomos ha sido activada correctamente.
+
+Estado actual: ${newStatus}
+
+${shouldActivate ? 'Tu perfil ya está visible en las búsquedas.' : 'Para aparecer en búsquedas, completa tu perfil profesional.'}
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Gracias,
+Equipo milautonomos`,
+            from_name: 'milautonomos'
+        });
+
+        updates.push('✅ Email de confirmación enviado');
+
+        return Response.json({
+            ok: true,
+            message: 'Suscripción corregida exitosamente',
+            new_status: newStatus,
+            updates
+        });
+
+    } catch (error) {
+        console.error('❌ Error corrigiendo suscripción:', error);
+        return Response.json({
+            ok: false,
+            error: error.message,
+            details: error.toString()
+        }, { status: 500 });
+    }
+});
