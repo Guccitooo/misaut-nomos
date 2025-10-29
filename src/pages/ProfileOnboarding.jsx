@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox"; // Keeping this import as it might be used elsewhere
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -228,18 +228,31 @@ export default function ProfileOnboardingPage() {
 
   const publishProfileMutation = useMutation({
     mutationFn: async () => {
-      // ✅ VALIDACIÓN CRÍTICA: Verificar suscripción activa antes de publicar
       console.log('🔒 Verificando suscripción antes de publicar perfil...');
       
-      if (!user.subscription_status || user.subscription_status === "inactivo") {
-        throw new Error("No tienes una suscripción activa. Debes contratar un plan antes de publicar tu perfil.");
+      // ✅ CRÍTICO: Recargar usuario para obtener estado más reciente
+      console.log('🔄 Recargando usuario para verificar suscripción...');
+      const freshUser = await base44.auth.me();
+      console.log('👤 Usuario recargado:', {
+        email: freshUser.email,
+        subscription_status: freshUser.subscription_status,
+        user_type: freshUser.user_type
+      });
+      
+      // ✅ CAMBIO CRÍTICO: Aceptar múltiples estados válidos
+      const validStatuses = ["actif", "activo", "en_prueba", "trialing"];
+      
+      if (!freshUser.subscription_status) {
+        console.error('❌ subscription_status no existe en el usuario');
+        throw new Error("No se pudo verificar tu suscripción. Por favor, contacta con soporte.");
+      }
+      
+      if (!validStatuses.includes(freshUser.subscription_status)) {
+        console.error('❌ Estado de suscripción inválido:', freshUser.subscription_status);
+        throw new Error(`Tu suscripción está en estado "${freshUser.subscription_status}". Necesitas una suscripción activa para publicar. Si acabas de pagar, espera unos segundos y vuelve a intentarlo.`);
       }
 
-      if (user.subscription_status !== "actif") {
-        throw new Error(`Tu suscripción está en estado "${user.subscription_status}". Necesitas una suscripción activa para publicar.`);
-      }
-
-      console.log('✅ Suscripción válida detectada:', user.subscription_status);
+      console.log('✅ Suscripción válida detectada:', freshUser.subscription_status);
 
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
@@ -317,15 +330,15 @@ Equipo milautonomos`,
     },
     {
       title: "Actividad",
-      fields: ["categories", "descripcion_corta", "description"] // Added 'description'
+      fields: ["categories", "descripcion_corta", "description"]
     },
     {
       title: "Zona y disponibilidad",
-      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "horario_dias", "horario_apertura", "horario_cierre"] // Added municipio, apertura, cierre
+      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "horario_dias", "horario_apertura", "horario_cierre"]
     },
     {
       title: "Precios y forma de trabajo",
-      fields: ["tarifa_base", "facturacion", "formas_pago"] // Added 'facturacion'
+      fields: ["tarifa_base", "facturacion", "formas_pago"]
     },
     {
       title: "Portfolio (fotos)",
@@ -379,7 +392,7 @@ Equipo milautonomos`,
       }
 
       if (field === "telefono_contacto") {
-        const cleanPhone = value.replace(/\s/g, '');
+        const cleanPhone = value.replace(/[^\d+]/g, '');
         if (!cleanPhone || cleanPhone.length < 9) {
           setError("Teléfono debe tener al menos 9 dígitos");
           return false;
