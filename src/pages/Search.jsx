@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -315,6 +316,11 @@ export default function SearchPage() {
     }).sort((a, b) => {
       if (sortBy === "rating") {
         return (b.average_rating || 0) - (a.average_rating || 0);
+      }
+      // Added condition for 'recent' sort. Assuming 'updated_date' can be used.
+      // If 'recent' implies creation date, that would need to be changed.
+      if (sortBy === "recent") {
+        return new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime();
       }
       return 0;
     });
