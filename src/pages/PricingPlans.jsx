@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -27,19 +26,16 @@ export default function PricingPlansPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      // ✅ NUEVO: Si no ha elegido tipo de usuario, redirigir
+      // ✅ CAMBIO: Permitir acceso a todos los usuarios registrados
+      // Ya no redirigir automáticamente según user_type
       if (!currentUser.user_type) {
         navigate(createPageUrl("UserTypeSelection"));
         return;
       }
-      
-      // ✅ NUEVO: Si es cliente, redirigir a búsqueda
-      if (currentUser.user_type === "client") {
-        navigate(createPageUrl("Search"));
-        return;
-      }
     } catch (error) {
       console.error("Error loading user:", error);
+      // ✅ Si no está autenticado, redirigir a login
+      base44.auth.redirectToLogin();
     }
   };
 
@@ -48,25 +44,21 @@ export default function PricingPlansPage() {
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
       
-      // Create a Map to store only ONE plan per plan_id (the most recent one)
       const planMap = new Map();
       
       allPlans.forEach(plan => {
-        // Only process the 3 active plans we want
         if (plan.plan_id === 'plan_monthly_trial' || 
             plan.plan_id === 'plan_quarterly' || 
             plan.plan_id === 'plan_annual') {
           
           const existingPlan = planMap.get(plan.plan_id);
           
-          // If plan_id doesn't exist in map, or this one is newer, add/update it
           if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
             planMap.set(plan.plan_id, plan);
           }
         }
       });
       
-      // Convert Map to Array and sort by price
       const uniquePlans = Array.from(planMap.values());
       return uniquePlans.sort((a, b) => a.precio - b.precio);
     },
@@ -79,14 +71,18 @@ export default function PricingPlansPage() {
       return;
     }
 
+    // ✅ CAMBIO: Solo permitir que profesionales activen planes
+    if (user.user_type !== "professionnel") {
+      toast.error("Esta funcionalidad es solo para autónomos. Cambia tu tipo de cuenta para continuar.");
+      navigate(createPageUrl("UserTypeSelection"));
+      return;
+    }
+
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
     setError(null);
 
     try {
-      // ✅ CAMBIO CRÍTICO: SIEMPRE redirigir a Stripe, incluso para trial
-      // Esto permite capturar el método de pago sin cobrar
-      
       const loadingToast = toast.loading(
         plan.plan_id === "plan_monthly_trial" 
           ? "Configurando tu prueba gratuita..."
@@ -96,7 +92,7 @@ export default function PricingPlansPage() {
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email,
         fullName: user.full_name || user.email,
-        userType: user.user_type || "professionnel", // Changed from "autonomo"
+        userType: user.user_type || "professionnel",
         cifNif: "",
         phone: user.phone || "",
         activity: "Sin especificar",
@@ -105,7 +101,7 @@ export default function PricingPlansPage() {
         paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
-        isTrial: plan.plan_id === "plan_monthly_trial" // ✅ Nuevo parámetro
+        isTrial: plan.plan_id === "plan_monthly_trial"
       });
 
       toast.dismiss(loadingToast);
@@ -115,7 +111,6 @@ export default function PricingPlansPage() {
       }
 
       if (response.data.url) {
-        // ✅ Redirigir a Stripe para TODOS los planes (incluyendo trial)
         window.location.href = response.data.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
@@ -161,7 +156,7 @@ export default function PricingPlansPage() {
     switch (planId) {
       case "plan_monthly_trial":
         return [
-          "7 días gratis sin tarjeta", // This feature description remains, as the payment flow handles the 'no charge' part.
+          "7 días gratis sin compromiso",
           ...commonFeatures.slice(0, 5),
           "Soporte estándar"
         ];
@@ -196,7 +191,6 @@ export default function PricingPlansPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Elige tu Plan
@@ -204,6 +198,16 @@ export default function PricingPlansPage() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Selecciona el plan que mejor se adapte a tus necesidades y empieza a recibir clientes
           </p>
+          
+          {/* ✅ Mensaje informativo para clientes */}
+          {user?.user_type === "client" && (
+            <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
+              <AlertDescription className="text-blue-900">
+                <strong>ℹ️ Información:</strong> Estos planes son para autónomos que quieren ofrecer sus servicios. 
+                Como cliente, puedes buscar y contactar profesionales de forma totalmente gratuita.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {error && (
@@ -212,7 +216,6 @@ export default function PricingPlansPage() {
           </Alert>
         )}
 
-        {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
           {plans.map((plan) => (
             <Card 
@@ -304,9 +307,10 @@ export default function PricingPlansPage() {
                   )}
                 </Button>
 
+                {/* ✅ CAMBIO: Mensaje positivo en lugar del aviso negativo */}
                 {plan.plan_id === "plan_monthly_trial" && (
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    ⚠️ Se requiere tarjeta de crédito. No se realizará ningún cobro durante los 7 días de prueba.
+                  <p className="text-xs text-green-700 text-center mt-3 bg-green-50 p-2 rounded">
+                    ✓ Activa tu prueba gratuita de 7 días. No se realizará ningún cobro hasta que finalice el periodo.
                   </p>
                 )}
               </CardContent>
