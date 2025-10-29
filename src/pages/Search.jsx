@@ -24,7 +24,6 @@ import {
   Phone,
   MessageCircle,
   MessageSquare,
-  User,
   Zap,
   Hammer,
   Wrench,
@@ -32,7 +31,7 @@ import {
   Paintbrush,
   Leaf,
   Truck,
-  Trash,
+  Trash2,
   Key,
   Wind,
   Settings,
@@ -41,7 +40,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
-// ✅ NUEVO: Categorías con iconos
+// ✅ Categorías con iconos
 const CATEGORY_ICONS = {
   "Electricista": Zap,
   "Carpintero": Hammer,
@@ -50,7 +49,7 @@ const CATEGORY_ICONS = {
   "Pintor": Paintbrush,
   "Jardinero": Leaf,
   "Transportista": Truck,
-  "Autónomo de limpieza": Trash,
+  "Autónomo de limpieza": Trash2,
   "Cerrajero": Key,
   "Instalador de aire acondicionado": Wind,
   "Mantenimiento general": Settings,
@@ -61,13 +60,13 @@ const CATEGORY_ICONS = {
   "Pintura": Paintbrush,
   "Jardinería": Leaf,
   "Transporte": Truck,
-  "Limpieza": Trash,
+  "Limpieza": Trash2,
   "Cerrajería": Key,
   "Aire acondicionado": Wind,
   "Mantenimiento": Settings
 };
 
-// ✅ NUEVO: Categorías base que siempre aparecen
+// ✅ Categorías base que siempre aparecen
 const BASE_CATEGORIES = [
   { name: "Electricista", icon: "Zap" },
   { name: "Carpintero", icon: "Hammer" },
@@ -76,7 +75,7 @@ const BASE_CATEGORIES = [
   { name: "Pintor", icon: "Paintbrush" },
   { name: "Jardinero", icon: "Leaf" },
   { name: "Transportista", icon: "Truck" },
-  { name: "Autónomo de limpieza", icon: "Trash" },
+  { name: "Autónomo de limpieza", icon: "Trash2" },
   { name: "Cerrajero", icon: "Key" },
   { name: "Instalador de aire acondicionado", icon: "Wind" },
   { name: "Mantenimiento general", icon: "Settings" }
@@ -98,7 +97,7 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// ✅ MEJORADO: Componente de categoría con icono
+// ✅ Componente de categoría con icono
 const CategoryBadge = ({ category }) => {
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   return (
@@ -226,7 +225,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             </div>
           )}
 
-          {/* ✅ MEJORADO: Categorías con iconos */}
+          {/* ✅ Categorías con iconos */}
           <div className="flex flex-wrap gap-2 mb-4">
             {profile.categories?.slice(0, 3).map((cat, idx) => (
               <CategoryBadge key={idx} category={cat} />
@@ -327,7 +326,6 @@ export default function SearchPage() {
     }
   };
 
-  // ✅ NUEVO: Categorías disponibles (base + las que existen en perfiles)
   const { data: availableCategories = [] } = useQuery({
     queryKey: ['availableCategories'],
     queryFn: async () => {
@@ -486,7 +484,6 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
@@ -528,7 +525,6 @@ export default function SearchPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* ✅ MEJORADO: Filtros en una sola línea sin precio */}
         <Card className="mb-8 shadow-lg border-0">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -637,7 +633,6 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* ✅ MEJORADO: Mensaje cuando no hay resultados */}
         {!loadingProfiles && filteredProfiles.length === 0 && (
           <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
             <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
