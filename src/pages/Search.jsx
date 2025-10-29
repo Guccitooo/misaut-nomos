@@ -39,7 +39,6 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-// OptimizedImage is no longer used in ProfileCard, so it can be removed.
 
 // ✅ Categorías con iconos
 const CATEGORY_ICONS = {
@@ -371,8 +370,10 @@ export default function SearchPage() {
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
       
+      // ✅ CAMBIO CRÍTICO: Filtrar por campo "ciudad" estructurado, NO por "service_area"
       const matchesCity = selectedCity === "all" || 
-        profile.service_area?.toLowerCase().includes(selectedCity.toLowerCase());
+        profile.ciudad === selectedCity ||
+        profile.provincia === selectedCity;
       
       return matchesSearch && matchesCategory && matchesCity;
     }).sort((a, b) => {
@@ -386,10 +387,21 @@ export default function SearchPage() {
     });
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
 
-  const cities = useMemo(() => 
-    [...new Set(profiles.map(p => p.service_area).filter(Boolean))],
-    [profiles]
-  );
+  // ✅ NUEVO: Extraer solo ciudades estructuradas únicas (campo "ciudad")
+  const cities = useMemo(() => {
+    const citySet = new Set();
+    profiles.forEach(p => {
+      // ✅ Solo añadir si existe el campo "ciudad" (campo estructurado)
+      if (p.ciudad && p.ciudad.trim() !== "") {
+        citySet.add(p.ciudad);
+      }
+      // También incluir provincias como opción de filtro
+      if (p.provincia && p.provincia.trim() !== "") {
+        citySet.add(p.provincia);
+      }
+    });
+    return Array.from(citySet).sort();
+  }, [profiles]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -516,6 +528,7 @@ export default function SearchPage() {
               <Filter className="w-5 h-5 text-blue-700" />
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
+            {/* ✅ CAMBIO: Filtros en UNA SOLA FILA */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -552,15 +565,24 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
+              {/* ✅ CAMBIO: Filtro de ciudad usando solo valores estructurados */}
               <Select value={selectedCity} onValueChange={setSelectedCity}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las ciudades" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las ciudades</SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>Todas las ciudades</span>
+                    </div>
+                  </SelectItem>
                   {cities.map((city) => (
                     <SelectItem key={city} value={city}>
-                      {city}
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{city}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -593,16 +615,16 @@ export default function SearchPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
                 <CardContent className="p-4 flex flex-col h-full">
-                  <Skeleton className="h-6 w-3/4 mb-2" /> {/* Title */}
-                  <Skeleton className="h-4 w-1/2 mb-2" /> {/* Rating/spacing */}
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
                   <div className="flex gap-1 mb-2">
-                    <Skeleton className="h-5 w-16" /> {/* Category 1 */}
-                    <Skeleton className="h-5 w-16" /> {/* Category 2 */}
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-16" />
                   </div>
-                  <Skeleton className="h-4 w-2/3 mb-2" /> {/* Location */}
-                  <Skeleton className="h-10 w-full mb-3" /> {/* Description */}
-                  <div className="flex-1"></div> {/* Spacer */}
-                  <Skeleton className="h-8 w-full" /> {/* Contact buttons */}
+                  <Skeleton className="h-4 w-2/3 mb-2" />
+                  <Skeleton className="h-10 w-full mb-3" />
+                  <div className="flex-1"></div>
+                  <Skeleton className="h-8 w-full" />
                 </CardContent>
               </Card>
             ))}
