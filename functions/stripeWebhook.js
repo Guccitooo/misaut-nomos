@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -35,11 +36,111 @@ Deno.serve(async (req) => {
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             
-            // Extract metadata
+            // ✅ Si es un setup (trial), crear suscripción con trial
+            if (session.mode === 'setup') {
+                const metadata = session.metadata;
+                const customerEmail = session.customer_email || metadata.email;
+
+                // Crear o actualizar usuario
+                const existingUsers = await base44.asServiceRole.entities.User.filter({ 
+                    email: customerEmail 
+                });
+
+                let userId;
+                if (existingUsers.length > 0) {
+                    userId = existingUsers[0].id;
+                    
+                    // Define today and trialEndDate within this scope
+                    const today = new Date();
+                    const trialEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+                    // ✅ Activar suscripción trial
+                    await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
+                        full_name: metadata.fullName,
+                        user_type: "professionnel",
+                        phone: metadata.phone,
+                        city: metadata.address?.split(',').slice(-1)[0].trim() || "",
+                        subscription_status: "actif",
+                        subscription_start_date: today.toISOString().split('T')[0],
+                        subscription_end_date: trialEndDate.toISOString().split('T')[0],
+                        last_payment_date: today.toISOString().split('T')[0],
+                    });
+                    
+                    console.log(`✅ Trial activado para usuario existente: ${customerEmail}`);
+                } else {
+                    console.log(`⚠️ Usuario no existe aún para trial: ${customerEmail}`);
+                    // If user doesn't exist, we can't create a profile for them or update their subscription status in Base44.
+                    // This implies trials are for existing users, or the initial user creation happens elsewhere.
+                    // Following the outline, no user creation is performed here if user doesn't exist.
+                }
+
+                // Crear perfil profesional si no existe (only if userId was found/updated)
+                if (userId) {
+                    const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                        user_id: userId
+                    });
+
+                    if (existingProfiles.length === 0) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.create({
+                            user_id: userId,
+                            business_name: metadata.fullName,
+                            description: `Profesional recién registrado. Completa tu perfil.`,
+                            categories: [metadata.activity?.split(':')[0] || "Sin especificar"],
+                            service_area: metadata.address?.split(',').slice(-1)[0].trim() || "Por definir",
+                            opening_hours: "A convenir",
+                            cif_nif: metadata.cifNif || "",
+                            telefono_contacto: metadata.phone || "",
+                            email_contacto: customerEmail,
+                            photos: [],
+                            price_range: "€€",
+                            average_rating: 0,
+                            total_reviews: 0,
+                            estado_perfil: "pendiente",
+                            visible_en_busqueda: false,
+                            onboarding_completed: false
+                        });
+                        console.log(`✅ Perfil profesional creado en estado PENDIENTE para ${metadata.fullName} (Trial)`);
+                    }
+                    // No explicit update logic for existing profiles during trial sign-up, as per outline.
+                }
+
+                // Email de confirmación
+                await base44.asServiceRole.integrations.Core.SendEmail({
+                    to: customerEmail,
+                    subject: "✅ Tu prueba gratuita de 7 días está activa",
+                    body: `Hola ${metadata.fullName},
+
+¡Bienvenido a milautonomos!
+
+Tu prueba gratuita de 7 días ha sido activada correctamente.
+
+📋 Detalles:
+- Duración: 7 días
+- Inicio: ${new Date().toLocaleDateString('es-ES')}
+- Fin: ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES')}
+- Precio después: 49€/mes
+
+⚠️ IMPORTANTE: 
+- Tu tarjeta ha sido registrada pero NO se realizará ningún cobro durante los 7 días
+- Si no cancelas antes del final del periodo, tu plan se renovará automáticamente por 49€/mes
+- Tu perfil AÚN NO está visible. Completa el quiz para activarlo.
+
+🚀 PRÓXIMO PASO:
+Completa tu perfil profesional ahora para aparecer en las búsquedas.
+
+Gracias por unirte,
+Equipo milautonomos`,
+                    from_name: "milautonomos"
+                });
+
+                console.log(`✅ Prueba gratuita configurada para ${customerEmail}`);
+                return Response.json({ received: true });
+            }
+            
+            // ✅ Flujo normal de subscription (planes de pago)
             const metadata = session.metadata;
             const customerEmail = session.customer_email || metadata.email;
 
-            // Get today's date for subscription
             const today = new Date();
             const nextMonth = new Date(today);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -65,7 +166,7 @@ Deno.serve(async (req) => {
                     full_name: metadata.fullName,
                     user_type: "professionnel",
                     phone: metadata.phone,
-                    city: metadata.address.split(',').slice(-1)[0].trim(),
+                    city: metadata.address?.split(',').slice(-1)[0].trim() || "", // Updated
                     subscription_status: "actif",
                     subscription_start_date: today.toISOString().split('T')[0],
                     subscription_end_date: nextMonth.toISOString().split('T')[0],
@@ -88,25 +189,13 @@ Actividad: ${activityText}
 Dirección: ${metadata.address}
 
 Stripe Customer ID: ${session.customer}
-Stripe Subscription ID: ${session.subscription}
-
-IMPORTANTE: Debes crear la cuenta manualmente:
-1. Ir a Dashboard → Users → Invite User
-2. Email: ${customerEmail}
-3. Configurar como "professionnel" con estado "actif"
-4. Fecha inicio: ${today.toISOString().split('T')[0]}
-5. Fecha fin: ${nextMonth.toISOString().split('T')[0]}
-
-Una vez creada la cuenta, el perfil profesional se creará automáticamente.
-
-Gracias,
-Sistema milautonomos`,
+Stripe Subscription ID: ${session.subscription}`, // Simplified body as per outline
                     from_name: "milautonomos"
                 });
             }
 
             // Create or update professional profile (in PENDING state)
-            if (userId) {
+            if (userId) { // userId will be defined if existing user was found
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
@@ -116,12 +205,12 @@ Sistema milautonomos`,
                     await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
                         business_name: metadata.fullName,
-                        description: `Profesional de ${activityCategory}. Completa tu perfil para aparecer en búsquedas.`,
+                        description: `Profesional de ${activityCategory}.`, // Simplified description
                         categories: [activityCategory],
-                        service_area: metadata.address.split(',').slice(-1)[0].trim(),
+                        service_area: metadata.address?.split(',').slice(-1)[0].trim() || "", // Updated
                         opening_hours: "A convenir",
-                        cif_nif: metadata.cifNif,
-                        telefono_contacto: metadata.phone,
+                        cif_nif: metadata.cifNif || "", // Added default empty string
+                        telefono_contacto: metadata.phone || "", // Added default empty string
                         email_contacto: customerEmail,
                         photos: [],
                         price_range: "€€",
@@ -160,32 +249,13 @@ Sistema milautonomos`,
 
 ¡Bienvenido a milautonomos!
 
-Tu suscripción ha sido activada correctamente. ${isNewUser ? 'Recibirás otro correo en las próximas horas con tus credenciales de acceso.' : ''}
+Tu suscripción ha sido activada correctamente.
 
-Detalles de tu suscripción:
-- Plan: Profesional mensual
-- Precio: 29€/mes
-- Fecha de inicio: ${today.toLocaleDateString('es-ES')}
-- Próxima renovación: ${nextMonth.toLocaleDateString('es-ES')}
+⚠️ IMPORTANTE: Tu perfil aún NO está visible.
+Completa tu perfil profesional para aparecer en búsquedas.
 
-⚠️ IMPORTANTE: Tu perfil aún no está visible en las búsquedas.
-
-Para que los clientes puedan encontrarte, debes completar tu perfil profesional con:
-- Descripción de tus servicios
-- Zona de trabajo
-- Fotos de tus trabajos realizados
-- Tarifas y formas de pago
-
-Próximos pasos:
-1. ${isNewUser ? 'Espera el correo con tus credenciales e inicia sesión' : 'Inicia sesión en milautonomos.com'}
-2. Completa el quiz de perfil profesional (5 minutos)
-3. Sube fotos de tus trabajos
-4. ¡Tu perfil se publicará automáticamente!
-
-Una vez completado, aparecerás en "Buscar Autónomos" y empezarás a recibir contactos.
-
-Gracias por unirte a milautonomos,
-Equipo milautonomos`,
+Gracias,
+Equipo milautonomos`, // Simplified body as per outline
                 from_name: "milautonomos"
             });
 
