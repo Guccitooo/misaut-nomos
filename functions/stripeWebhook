@@ -55,13 +55,17 @@ Deno.serve(async (req) => {
 
             // Fecha de expiración según trial o no
             let expirationDate;
+            let subscriptionStatus;
+            
             if (isTrial) {
                 expirationDate = new Date(today);
                 expirationDate.setDate(expirationDate.getDate() + 7); // ✅ 7 días trial
+                subscriptionStatus = "en_prueba"; // ✅ Estado correcto para trial
                 console.log('🎁 Trial detectado - 7 días gratis');
             } else {
                 expirationDate = new Date(today);
                 expirationDate.setMonth(expirationDate.getMonth() + 1);
+                subscriptionStatus = "actif"; // ✅ Estado correcto para pago directo
                 console.log('💳 Pago normal - 30 días');
             }
 
@@ -74,18 +78,18 @@ Deno.serve(async (req) => {
             if (existingUsers.length > 0) {
                 userId = existingUsers[0].id;
                 
-                // ✅ IMPORTANTE: Actualizar como profesional con suscripción ACTIVA
+                // ✅ IMPORTANTE: Actualizar como profesional con suscripción correcta
                 await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
                     full_name: metadata.fullName || existingUsers[0].full_name,
                     user_type: "professionnel",
                     phone: metadata.phone || existingUsers[0].phone,
                     city: metadata.address?.split(',').slice(-1)[0].trim() || existingUsers[0].city,
-                    subscription_status: "actif",
+                    subscription_status: subscriptionStatus, // ✅ "en_prueba" o "actif"
                     subscription_start_date: today.toISOString().split('T')[0],
                     subscription_end_date: expirationDate.toISOString().split('T')[0],
                     last_payment_date: today.toISOString().split('T')[0],
                 });
-                console.log(`✅ Usuario actualizado con suscripción activa: ${customerEmail}`);
+                console.log(`✅ Usuario actualizado con suscripción: ${subscriptionStatus}`);
             } else {
                 console.log(`⚠️ Usuario no existe: ${customerEmail}`);
                 await base44.asServiceRole.integrations.Core.SendEmail({
@@ -100,6 +104,7 @@ Teléfono: ${metadata.phone}
 Actividad: ${activityText}
 Dirección: ${metadata.address}
 Es trial: ${isTrial ? 'SÍ - 7 días gratis' : 'NO - Pago directo'}
+Estado: ${subscriptionStatus}
 
 Stripe Customer ID: ${session.customer}
 Stripe Subscription ID: ${session.subscription}`,
@@ -110,7 +115,7 @@ Stripe Subscription ID: ${session.subscription}`,
                 return Response.json({ received: true, message: 'User not found, admin notified' });
             }
 
-            // ✅ CRÍTICO: Solo crear o actualizar perfil si el usuario YA EXISTE y tiene suscripción activa
+            // ✅ CRÍTICO: Solo crear o actualizar perfil si el usuario YA EXISTE
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
@@ -170,6 +175,7 @@ Tu prueba gratuita de 7 días ha sido activada correctamente.
 - Duración: 7 días GRATIS
 - Inicio: ${today.toLocaleDateString('es-ES')}
 - Fin: ${expirationDate.toLocaleDateString('es-ES')}
+- Estado: En prueba
 - Tarjeta registrada: ✅ (NO se cobrará durante la prueba)
 
 ⚠️ IMPORTANTE: 
@@ -192,6 +198,12 @@ Equipo milautonomos`;
 
 Tu suscripción ha sido activada correctamente.
 
+📋 Detalles:
+- Estado: Activa
+- Duración: Mensual
+- Inicio: ${today.toLocaleDateString('es-ES')}
+- Próxima renovación: ${expirationDate.toLocaleDateString('es-ES')}
+
 ⚠️ IMPORTANTE: Tu perfil aún NO está visible.
 
 🚀 PRÓXIMO PASO OBLIGATORIO:
@@ -210,7 +222,7 @@ Equipo milautonomos`;
                 from_name: "milautonomos"
             });
 
-            console.log(`✅ Flujo completado para ${customerEmail} - Perfil pendiente de quiz`);
+            console.log(`✅ Flujo completado para ${customerEmail} - Estado: ${subscriptionStatus}`);
         }
 
         // ✅ Handle invoice.payment_succeeded (renovaciones mensuales)
@@ -229,12 +241,12 @@ Equipo milautonomos`;
                     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
                     await base44.asServiceRole.entities.User.update(users[0].id, {
-                        subscription_status: "actif",
+                        subscription_status: "actif", // ✅ Siempre "actif" en renovaciones
                         subscription_end_date: nextMonth.toISOString().split('T')[0],
                         last_payment_date: today.toISOString().split('T')[0],
                     });
 
-                    console.log(`✅ Suscripción renovada para ${customerEmail}`);
+                    console.log(`✅ Suscripción renovada para ${customerEmail} - Estado: actif`);
                     
                     // ✅ Reactivar perfil si estaba suspendido
                     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
@@ -265,7 +277,7 @@ Equipo milautonomos`;
 
                 if (users.length > 0) {
                     await base44.asServiceRole.entities.User.update(users[0].id, {
-                        subscription_status: "annule",
+                        subscription_status: "annule", // ✅ Estado correcto para cancelados
                     });
 
                     // ✅ Ocultar perfil inmediatamente
@@ -281,25 +293,7 @@ Equipo milautonomos`;
                         console.log(`✅ Perfil ocultado después de cancelación`);
                     }
 
-                    await base44.asServiceRole.integrations.Core.SendEmail({
-                        to: customerEmail,
-                        subject: "Tu suscripción ha sido cancelada - milautonomos",
-                        body: `Hola,
-
-Tu suscripción a milautonomos ha sido cancelada.
-
-Tu perfil ya no será visible en el listado de "Buscar Autónomos".
-
-Si deseas reactivar tu suscripción, puedes hacerlo en cualquier momento desde tu panel de usuario.
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-Gracias,
-Equipo milautonomos`,
-                        from_name: "milautonomos"
-                    });
-
-                    console.log(`❌ Suscripción cancelada y perfil ocultado para ${customerEmail}`);
+                    console.log(`❌ Suscripción cancelada para ${customerEmail} - Estado: annule`);
                 }
             }
         }
@@ -316,7 +310,7 @@ Equipo milautonomos`,
 
                 if (users.length > 0) {
                     await base44.asServiceRole.entities.User.update(users[0].id, {
-                        subscription_status: "suspendu",
+                        subscription_status: "suspendu", // ✅ Estado correcto para suspendidos
                     });
 
                     // ✅ Ocultar perfil temporalmente
@@ -332,27 +326,7 @@ Equipo milautonomos`,
                         console.log(`✅ Perfil suspendido por pago fallido`);
                     }
 
-                    await base44.asServiceRole.integrations.Core.SendEmail({
-                        to: customerEmail,
-                        subject: "⚠️ Problema con tu pago - milautonomos",
-                        body: `Hola,
-
-Hemos tenido un problema al procesar tu pago mensual de milautonomos.
-
-Tu suscripción ha sido suspendida temporalmente. Por favor, actualiza tu método de pago para reactivarla.
-
-Si no actualizas tu método de pago en los próximos 7 días, tu perfil dejará de ser visible en las búsquedas.
-
-Puedes actualizar tu método de pago desde tu panel de Stripe.
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-Gracias,
-Equipo milautonomos`,
-                        from_name: "milautonomos"
-                    });
-
-                    console.log(`⚠️ Pago fallido y perfil suspendido para ${customerEmail}`);
+                    console.log(`⚠️ Pago fallido para ${customerEmail} - Estado: suspendu`);
                 }
             }
         }
