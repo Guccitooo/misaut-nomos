@@ -70,5 +70,19 @@
     "comunicacion",
     "calidad",
     "precio_satisfaccion"
-  ]
+  ],
+  "security": {
+    "read": {
+      "rule": "true"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.client_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  }
 }
