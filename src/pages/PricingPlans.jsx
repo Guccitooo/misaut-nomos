@@ -20,13 +20,51 @@ export default function PricingPlansPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ Detectar si viene de cancelación de pago
   const canceled = searchParams.get("canceled");
 
+  // Initial user load on component mount
   useEffect(() => {
     loadUser();
   }, []);
 
+  // Detect and process pending plan selection after user login
+  useEffect(() => {
+    // Only proceed if user is loaded and not loading, and plans are also loaded
+    if (user && !isLoadingUser && plans.length > 0) {
+      const pendingPlan = localStorage.getItem('pending_plan_selection');
+      if (pendingPlan) {
+        try {
+          const planData = JSON.parse(pendingPlan);
+          console.log('🔄 Plan pendiente detectado tras login:', planData);
+          localStorage.removeItem('pending_plan_selection');
+          
+          // Ensure user_type is "professionnel" before proceeding with the pending plan
+          if (user.user_type !== "professionnel") {
+            console.log('⚙️ Actualizando user_type a professionnel...');
+            base44.auth.updateMe({ user_type: "professionnel" }).then(() => {
+              console.log('✅ User actualizado a professionnel');
+              // Reload user to update the state with the new user_type
+              loadUser().then(() => {
+                // Continue with the pending plan selection
+                continuePendingPlanSelection(planData);
+              });
+            }).catch(error => {
+                console.error('Error actualizando user_type a professionnel en useEffect:', error);
+                toast.error('Hubo un error al configurar tu cuenta. Inténtalo de nuevo.');
+            });
+          } else {
+            // User is already a professional, continue directly
+            continuePendingPlanSelection(planData);
+          }
+        } catch (error) {
+          console.error('Error procesando plan pendiente:', error);
+          localStorage.removeItem('pending_plan_selection');
+        }
+      }
+    }
+  }, [user, isLoadingUser, plans]); // Dependency on `plans` ensures they are available for `continuePendingPlanSelection`
+
+  // Show toast message if payment was canceled
   useEffect(() => {
     if (canceled) {
       toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
@@ -40,24 +78,33 @@ export default function PricingPlansPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
       
-      // ✅ CAMBIO: Si no tiene tipo de usuario, aplicar "professionnel" automáticamente
-      // Solo si el usuario existe y no tiene user_type
-      if (currentUser && !currentUser.user_type) {
-        await base44.auth.updateMe({ user_type: "professionnel" });
-        setUser({ ...currentUser, user_type: "professionnel" });
-      }
-      
-      // ✅ Si es cliente, mostrar mensaje informativo (pero permitir ver planes)
-      if (currentUser?.user_type === "client") {
-        console.log("Usuario es cliente viendo planes");
-      }
+      // Removed automatic "professionnel" assignment here, it's now handled by selection logic
+      return currentUser;
     } catch (error) {
       console.error("Error loading user:", error);
-      // ✅ CAMBIO: NO redirigir al login si falla la carga, permitir que vea los planes sin estar logueado
       setUser(null);
+      return null;
     } finally {
       setIsLoadingUser(false);
+    }
+  };
+
+  // Function to continue with a plan that was pending after login/user type update
+  const continuePendingPlanSelection = async (planData) => {
+    console.log('▶️ Continuando con plan:', planData);
+    
+    // Find the full plan object from the loaded plans list
+    const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
+    if (fullPlan) {
+      // Small delay to allow React state updates or UI to settle before triggering another action
+      setTimeout(() => {
+        handleSelectPlan(fullPlan);
+      }, 500);
+    } else {
+      console.error('❌ Plan no encontrado para continuar:', planData.plan_id);
+      toast.error('El plan seleccionado no está disponible actualmente.');
     }
   };
 
@@ -88,15 +135,40 @@ export default function PricingPlansPage() {
   });
 
   const handleSelectPlan = async (plan) => {
-    // ✅ CAMBIO: Verificar login solo al seleccionar plan
+    console.log('🎯 Plan seleccionado:', plan.plan_id);
+    console.log('👤 Usuario actual:', user?.email, 'Tipo:', user?.user_type);
+    
+    // If user is not logged in, save the selected plan and redirect to login
     if (!user) {
+      console.log('🔑 Usuario no logueado, guardando plan y redirigiendo a login...');
+      
+      localStorage.setItem('pending_plan_selection', JSON.stringify({
+        plan_id: plan.plan_id,
+        // Include price for better context, although it will be fetched again on continuation
+        precio: plan.precio, 
+        timestamp: Date.now()
+      }));
+      
       base44.auth.redirectToLogin(window.location.href);
       return;
     }
 
-    // ✅ CAMBIO: Asegurar que el usuario sea profesional antes de proceder
+    // Ensure the user's type is "professionnel" before proceeding with payment
     if (user.user_type !== "professionnel") {
-      await base44.auth.updateMe({ user_type: "professionnel" });
+      console.log('⚙️ Actualizando usuario a professionnel...');
+      try {
+        await base44.auth.updateMe({ user_type: "professionnel" });
+        console.log('✅ Usuario actualizado a professionnel');
+        // Reload user to update the state, crucial for subsequent calls using user data
+        const updatedUser = await loadUser();
+        setUser(updatedUser); 
+      } catch (error) {
+        console.error('❌ Error actualizando user_type en handleSelectPlan:', error);
+        toast.error('Error al configurar tu cuenta. Por favor, inténtalo de nuevo.');
+        setIsProcessing(false);
+        setSelectedPlan(null);
+        return; // Stop processing if user type update fails
+      }
     }
 
     setSelectedPlan(plan.plan_id);
@@ -110,15 +182,16 @@ export default function PricingPlansPage() {
           : "Procesando pago..."
       );
 
+      console.log('💳 Llamando a createCheckoutSession...');
       const response = await base44.functions.invoke('createCheckoutSession', {
-        email: user.email,
+        email: user.email, // `user` is guaranteed to be logged in and user_type "professionnel" here
         fullName: user.full_name || user.email,
-        userType: "professionnel",
-        cifNif: "",
+        userType: "professionnel",  // Always "professionnel" for subscription plans
+        cifNif: "", // Placeholder, might be filled later from user profile
         phone: user.phone || "",
-        activity: "Sin especificar",
+        activity: "Sin especificar", // Placeholder, might be filled later from user profile
         activityOther: "",
-        address: user.city || "Sin especificar",
+        address: user.city || "Sin especificar", // Placeholder, might be filled later from user profile
         paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
@@ -127,17 +200,20 @@ export default function PricingPlansPage() {
 
       toast.dismiss(loadingToast);
 
+      console.log('📥 Respuesta de createCheckoutSession:', response.data);
+
       if (response.data.error) {
         throw new Error(response.data.error);
       }
 
       if (response.data.url) {
+        console.log('✅ Redirigiendo a Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      console.error("Error selecting plan:", err);
+      console.error("❌ Error selecting plan:", err);
       const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -146,22 +222,22 @@ export default function PricingPlansPage() {
     }
   };
 
-  // ✅ NUEVO: Manejar navegación hacia atrás de forma inteligente
+  // Intelligent back navigation logic
   const handleGoBack = () => {
     if (!user) {
-      // Sin usuario → ir al inicio
+      // Without user → go to home/search page
       navigate(createPageUrl("Search"));
     } else if (user.user_type === "professionnel") {
-      // Autónomo → ver si tiene perfil completo
+      // Professional → check if they have an active subscription
       if (user.subscription_status && user.subscription_status !== "inactivo") {
-        // Ya tiene suscripción → ir a su perfil
+        // Has active subscription → go to their profile
         navigate(createPageUrl("MyProfile"));
       } else {
-        // Sin suscripción activa → ir al inicio
+        // No active subscription → go to home/search page
         navigate(createPageUrl("Search"));
       }
     } else {
-      // Cliente → ir al inicio
+      // Client → go to home/search page
       navigate(createPageUrl("Search"));
     }
   };
@@ -231,7 +307,6 @@ export default function PricingPlansPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* ✅ NUEVO: Botón de volver con lógica inteligente */}
         <Button
           variant="ghost"
           onClick={handleGoBack}
@@ -255,7 +330,6 @@ export default function PricingPlansPage() {
             </p>
           )}
           
-          {/* ✅ Alerta si canceló el pago */}
           {canceled && (
             <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-600" />
@@ -266,7 +340,6 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* ✅ Mensaje informativo para clientes */}
           {user?.user_type === "client" && (
             <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <AlertDescription className="text-blue-900">
