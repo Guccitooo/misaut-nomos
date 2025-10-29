@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -236,12 +235,10 @@ export default function SearchPage() {
     queryKey: ['profiles'],
     queryFn: async () => {
       try {
-        // Cargar todos los perfiles con límite
         const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
         
         console.log('📦 Total perfiles cargados:', allProfiles.length);
         
-        // Cargar usuarios en paralelo para verificar suscripciones
         const users = await base44.entities.User.list();
         
         const profilesWithStatus = allProfiles.map(profile => {
@@ -252,24 +249,19 @@ export default function SearchPage() {
           };
         });
 
-        // Filtrar perfiles según múltiples criterios
         const visibleProfiles = profilesWithStatus.filter(profile => {
-          // Criterio 1: Suscripción activa o en prueba
           const hasActiveSubscription = 
             profile.subscription_status === "actif" || 
             profile.subscription_status === "en_prueba";
           
-          // Criterio 2: Estado del perfil activo
           const isProfileActive = 
             profile.estado_perfil === "activo" || 
             profile.estado_perfil === "pendiente";
           
-          // Criterio 3: Visible en búsqueda (puede ser undefined en perfiles viejos)
           const isVisible = 
             profile.visible_en_busqueda === true || 
             profile.visible_en_busqueda === undefined;
           
-          // Criterio 4: Tiene nombre de negocio
           const hasBusinessName = !!profile.business_name;
           
           console.log('🔍 Perfil:', profile.business_name, {
@@ -296,7 +288,6 @@ export default function SearchPage() {
     retry: 1,
   });
 
-  // Memoizar el filtrado de perfiles para evitar recalcular en cada render
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -317,8 +308,6 @@ export default function SearchPage() {
       if (sortBy === "rating") {
         return (b.average_rating || 0) - (a.average_rating || 0);
       }
-      // Added condition for 'recent' sort. Assuming 'updated_date' can be used.
-      // If 'recent' implies creation date, that would need to be changed.
       if (sortBy === "recent") {
         return new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime();
       }
@@ -398,12 +387,15 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            <Link to={createPageUrl("PricingPlans")}>
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
-                <Briefcase className="w-5 h-5 mr-2" />
-                ¿Eres autónomo? Únete ahora
-              </Button>
-            </Link>
+            {/* ✅ CAMBIO: Solo mostrar botón si NO está logueado */}
+            {!user && (
+              <Link to={createPageUrl("PricingPlans")}>
+                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  ¿Eres autónomo? Únete ahora
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
