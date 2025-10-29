@@ -119,6 +119,10 @@ export default function Layout({ children, currentPageName }) {
     setUnreadCount(0);
   };
 
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(window.location.pathname);
+  };
+
   const navigationItems = [
     {
       title: "Buscar Autónomos",
@@ -281,7 +285,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* ✅ CAMBIO: Solo mostrar botón si NO está logueado */}
+            {/* ✅ CAMBIO: Botón "Hazte Autónomo" solo si NO está logueado */}
             {!user && (
               <div className="mt-auto p-3">
                 <Link to={createPageUrl("UserTypeSelection")}>
@@ -295,7 +299,7 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-gray-100 p-4">
-            {user && (
+            {user ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 px-2">
                   <Avatar className="w-10 h-10 border-2 border-blue-600">
@@ -320,6 +324,19 @@ export default function Layout({ children, currentPageName }) {
                   <LogOut className="w-4 h-4 mr-2" />
                   Cerrar sesión
                 </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleLogin}
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Iniciar sesión
+                </Button>
+                <p className="text-xs text-center text-gray-500">
+                  ¿Eres administrador? Inicia sesión para acceder al panel
+                </p>
               </div>
             )}
           </SidebarFooter>
