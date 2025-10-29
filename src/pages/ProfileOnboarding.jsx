@@ -31,6 +31,7 @@ export default function ProfileOnboardingPage() {
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -137,6 +138,18 @@ export default function ProfileOnboardingPage() {
     }
   };
 
+  const reloadCurrentUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      return currentUser; // Return fresh user data
+    } catch (err) {
+      console.error("Error reloading current user:", err);
+      base44.auth.redirectToLogin();
+      return null;
+    }
+  };
+
   useEffect(() => {
     loadUserAndProfile();
   }, []);
@@ -226,6 +239,60 @@ export default function ProfileOnboardingPage() {
     }
   };
 
+  // ✅ NUEVA: Función para verificar y corregir suscripción
+  const handleCheckSubscription = async () => {
+    setCheckingSubscription(true);
+    setError(null);
+    
+    try {
+      console.log('🔍 Verificando suscripción...');
+      
+      // 1. Intentar corregir automáticamente
+      const fixResponse = await base44.functions.invoke('fixUserSubscription', {
+        email: user.email,
+        forceActivate: false
+      });
+
+      console.log('📥 Respuesta de fixUserSubscription:', fixResponse.data);
+
+      if (fixResponse.data.ok) {
+        toast.success('✅ Suscripción verificada y actualizada');
+        
+        // Recargar usuario
+        await reloadCurrentUser();
+        
+        // Esperar un momento y reintentar publicar
+        setTimeout(() => {
+          setCheckingSubscription(false);
+          toast.info('Reintentando publicación...');
+          publishProfileMutation.mutate();
+        }, 2000);
+      } else {
+        // Si no se puede corregir automáticamente, mostrar debug
+        const debugResponse = await base44.functions.invoke('debugUserSubscription', {
+          email: user.email
+        });
+
+        console.log('🔍 Diagnóstico:', debugResponse.data);
+        
+        setError(
+          `No se pudo verificar tu suscripción automáticamente.\n\n` +
+          `Estado actual: ${debugResponse.data.user?.subscription_status || 'desconocido'}\n` +
+          `Stripe: ${debugResponse.data.stripe?.has_subscription ? 'Suscripción encontrada' : 'Sin suscripción'}\n\n` +
+          `Por favor, contacta con soporte: admin@milautonomos.com`
+        );
+        
+        toast.error('No se pudo verificar la suscripción. Contacta con soporte.');
+      }
+    } catch (error) {
+      console.error('❌ Error verificando suscripción:', error);
+      setError('Error al verificar la suscripción. Inténtalo de nuevo o contacta con soporte.');
+      toast.error('Error al verificar la suscripción');
+    } finally {
+      setCheckingSubscription(false);
+    }
+  };
+
   const publishProfileMutation = useMutation({
     mutationFn: async () => {
       console.log('🔒 Verificando suscripción antes de publicar perfil...');
@@ -244,12 +311,12 @@ export default function ProfileOnboardingPage() {
       
       if (!freshUser.subscription_status) {
         console.error('❌ subscription_status no existe en el usuario');
-        throw new Error("No se pudo verificar tu suscripción. Por favor, contacta con soporte.");
+        throw new Error("subscription_not_found");
       }
       
       if (!validStatuses.includes(freshUser.subscription_status)) {
         console.error('❌ Estado de suscripción inválido:', freshUser.subscription_status);
-        throw new Error(`Tu suscripción está en estado "${freshUser.subscription_status}". Necesitas una suscripción activa para publicar. Si acabas de pagar, espera unos segundos y vuelve a intentarlo.`);
+        throw new Error("subscription_invalid");
       }
 
       console.log('✅ Suscripción válida detectada:', freshUser.subscription_status);
@@ -318,8 +385,17 @@ Equipo milautonomos`,
     },
     onError: (error) => {
       console.error('❌ Error al publicar perfil:', error);
-      setError(error.message || "Error al publicar el perfil. Verifica que tengas una suscripción activa.");
-      toast.error(error.message || "Error al publicar el perfil");
+      
+      // ✅ NUEVO: Mensajes de error específicos
+      if (error.message === "subscription_not_found") {
+        setError("No se encontró tu suscripción. Usa el botón 'Verificar suscripción' para sincronizarla.");
+      } else if (error.message === "subscription_invalid") {
+        setError("Tu suscripción no está activa. Usa el botón 'Verificar suscripción' para actualizar su estado.");
+      } else {
+        setError(error.message || "Error al publicar el perfil. Verifica que tengas una suscripción activa.");
+      }
+      
+      toast.error("Error al publicar el perfil");
     }
   });
 
@@ -1360,6 +1436,31 @@ Equipo milautonomos`,
                   </AlertDescription>
                 </Alert>
 
+                {/* ✅ NUEVO: Advertencia de suscripción con botón de verificación */}
+                {error && (error.includes('suscripción') || error.includes('subscription')) && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="flex flex-col gap-3">
+                      <div>{error}</div>
+                      <Button
+                        onClick={handleCheckSubscription}
+                        disabled={checkingSubscription}
+                        className="w-full sm:w-auto"
+                        variant="outline"
+                      >
+                        {checkingSubscription ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Verificando...
+                          </>
+                        ) : (
+                          'Verificar suscripción'
+                        )}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {steps.slice(0, -1).map((step, idx) => (
                   <div key={idx} className="p-4 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
@@ -1418,7 +1519,7 @@ Equipo milautonomos`,
                   variant="outline"
                   onClick={handleBack}
                   className="flex-1 h-12"
-                  disabled={isSaving || publishProfileMutation.isPending}
+                  disabled={isSaving || publishProfileMutation.isPending || checkingSubscription}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Atrás
@@ -1434,7 +1535,7 @@ Equipo milautonomos`,
                     handleNext();
                   }}
                   className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
-                  disabled={isSaving || publishProfileMutation.isPending}
+                  disabled={isSaving || publishProfileMutation.isPending || checkingSubscription}
                 >
                   {isSaving ? (
                     <>
@@ -1452,7 +1553,7 @@ Equipo milautonomos`,
                 <Button
                   onClick={handlePublish}
                   className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                  disabled={publishProfileMutation.isPending || isSaving}
+                  disabled={publishProfileMutation.isPending || isSaving || checkingSubscription}
                 >
                   {publishProfileMutation.isPending || isSaving ? (
                     <>
