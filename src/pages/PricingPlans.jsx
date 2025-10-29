@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ export default function PricingPlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
@@ -34,29 +36,28 @@ export default function PricingPlansPage() {
   }, [canceled]);
 
   const loadUser = async () => {
+    setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      // ✅ Si no está autenticado, redirigir a login
-      if (!currentUser) {
-        base44.auth.redirectToLogin(window.location.href);
-        return;
-      }
-
       // ✅ CAMBIO: Si no tiene tipo de usuario, aplicar "professionnel" automáticamente
-      if (!currentUser.user_type) {
+      // Solo si el usuario existe y no tiene user_type
+      if (currentUser && !currentUser.user_type) {
         await base44.auth.updateMe({ user_type: "professionnel" });
         setUser({ ...currentUser, user_type: "professionnel" });
       }
       
-      // ✅ Si es cliente, mostrar mensaje informativo
-      if (currentUser.user_type === "client") {
+      // ✅ Si es cliente, mostrar mensaje informativo (pero permitir ver planes)
+      if (currentUser?.user_type === "client") {
         console.log("Usuario es cliente viendo planes");
       }
     } catch (error) {
       console.error("Error loading user:", error);
-      base44.auth.redirectToLogin(window.location.href);
+      // ✅ CAMBIO: NO redirigir al login si falla la carga, permitir que vea los planes sin estar logueado
+      setUser(null);
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
@@ -87,6 +88,7 @@ export default function PricingPlansPage() {
   });
 
   const handleSelectPlan = async (plan) => {
+    // ✅ CAMBIO: Verificar login solo al seleccionar plan
     if (!user) {
       base44.auth.redirectToLogin(window.location.href);
       return;
@@ -220,7 +222,7 @@ export default function PricingPlansPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -248,6 +250,12 @@ export default function PricingPlansPage() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Selecciona el plan que mejor se adapte a tus necesidades y empieza a recibir clientes
           </p>
+          
+          {!user && (
+            <p className="text-sm text-blue-600 mt-4">
+              Al seleccionar un plan, se te pedirá que inicies sesión o crees una cuenta
+            </p>
+          )}
           
           {/* ✅ Alerta si canceló el pago */}
           {canceled && (
