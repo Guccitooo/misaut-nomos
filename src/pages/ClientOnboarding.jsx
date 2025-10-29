@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +18,7 @@ export default function ClientOnboardingPage() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
+  const [isRedirecting, setIsRedirecting] = useState(false); // Added new state
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -199,20 +201,25 @@ Equipo MilAutónomos`,
       return;
     }
 
-    // ✅ CAMBIO: Si no tiene sesión, guardar datos y redirigir a crear cuenta
+    // ✅ CAMBIO: Si no tiene sesión, guardar datos y redirigir
     if (!user) {
-      console.log('💾 Guardando datos y redirigiendo a crear cuenta...');
+      console.log('💾 Guardando datos y preparando redirección...');
+      
+      // Activar estado de redirección
+      setIsRedirecting(true);
       
       // Guardar datos en localStorage
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
-      // Mostrar mensaje
-      toast.success('Datos guardados. Redirigiendo a crear tu cuenta...', { duration: 3000 });
-      
-      // Redirigir a Base44 para crear cuenta (Base44 enviará el email de verificación)
-      setTimeout(() => {
-        base44.auth.redirectToLogin(window.location.href);
-      }, 1000);
+      // Redirigir a Base44 para crear cuenta
+      try {
+        console.log('🔄 Redirigiendo a login de Base44...');
+        await base44.auth.redirectToLogin(window.location.href);
+      } catch (error) {
+        console.error('❌ Error en redirección:', error);
+        setError('Error al redirigir al sistema de login. Por favor, intenta de nuevo.');
+        setIsRedirecting(false); // Reset redirection state on error
+      }
       
       return;
     }
@@ -235,6 +242,28 @@ Equipo MilAutónomos`,
       });
     }
   };
+
+  // ✅ NUEVO: Pantalla de carga mientras redirige
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md border-0 shadow-2xl">
+          <CardContent className="p-12 text-center">
+            <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Redirigiendo al registro...
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Estamos guardando tus datos y preparando tu cuenta.
+            </p>
+            <p className="text-sm text-gray-500">
+              Serás redirigido al sistema de registro en unos segundos...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoadingUser) {
     return (
@@ -386,7 +415,7 @@ Equipo MilAutónomos`,
                 </p>
               </div>
 
-              {/* ✅ Términos y condiciones - OBLIGATORIO */}
+              {/* Términos y condiciones */}
               <div className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all ${
                 !formData.acepta_terminos && error?.includes('Términos')
                   ? 'bg-red-50 border-red-300'
@@ -428,12 +457,12 @@ Equipo MilAutónomos`,
               <Button
                 type="submit"
                 className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
-                disabled={completeOnboardingMutation.isPending}
+                disabled={completeOnboardingMutation.isPending || isRedirecting}
               >
-                {completeOnboardingMutation.isPending ? (
+                {completeOnboardingMutation.isPending || isRedirecting ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Creando tu cuenta...
+                    {isRedirecting ? 'Redirigiendo...' : 'Creando tu cuenta...'}
                   </>
                 ) : (
                   <>
