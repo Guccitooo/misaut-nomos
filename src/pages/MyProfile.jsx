@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase } from "lucide-react"; // Added Briefcase
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, Calendar, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -129,6 +129,78 @@ export default function MyProfilePage() {
     } catch (error) {
       console.error("Error loading user:", error);
       base44.auth.redirectToLogin();
+    }
+  };
+
+  // ✅ NUEVA: Query para obtener suscripción activa
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription', user?.id],
+    queryFn: async () => {
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+      return subs[0];
+    },
+    enabled: !!user && user.user_type === "professionnel",
+  });
+
+  // ✅ NUEVA: Calcular días restantes
+  const getDaysLeft = () => {
+    if (!subscription) return 0;
+    const today = new Date();
+    const expiration = new Date(subscription.fecha_expiracion);
+    const diffTime = expiration - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // ✅ NUEVA: Obtener estado unificado de suscripción
+  const getSubscriptionStatus = () => {
+    if (!subscription) return null;
+    
+    const daysLeft = getDaysLeft();
+    
+    switch (subscription.estado) {
+      case "en_prueba":
+        return {
+          text: "En prueba",
+          badge: "🟡",
+          color: "bg-blue-100 text-blue-800",
+          details: `${daysLeft} días restantes`,
+          isActive: true
+        };
+      case "activo":
+        return {
+          text: "Activo",
+          badge: "🟢",
+          color: "bg-green-100 text-green-800",
+          details: "Suscripción activa",
+          isActive: true
+        };
+      case "cancelado":
+        return {
+          text: "Cancelado",
+          badge: "🔴",
+          color: "bg-yellow-100 text-yellow-800",
+          details: `Acceso hasta ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}`,
+          isActive: daysLeft > 0
+        };
+      case "finalizada":
+        return {
+          text: "Expirada",
+          badge: "🔴",
+          color: "bg-red-100 text-red-800",
+          details: "Suscripción finalizada",
+          isActive: false
+        };
+      default:
+        return {
+          text: subscription.estado,
+          badge: "⚪",
+          color: "bg-gray-100 text-gray-800",
+          details: "",
+          isActive: false
+        };
     }
   };
 
@@ -320,6 +392,7 @@ export default function MyProfilePage() {
 
   // ✅ Detectar si es profesional por tener perfil O por user_type
   const isProfessional = profile || user.user_type === "professionnel";
+  const subscriptionStatus = getSubscriptionStatus();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
@@ -331,10 +404,18 @@ export default function MyProfilePage() {
               {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
             {profile && (
-              <div className="mt-2">
-                <Badge className={profile.visible_en_busqueda ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                  {profile.visible_en_busqueda ? "✓ Visible en búsquedas" : "⚠ Oculto"}
-                </Badge>
+              <div className="mt-2 flex gap-2">
+                {/* ✅ MEJORADO: Badge unificado basado en suscripción */}
+                {subscriptionStatus?.isActive && (
+                  <Badge className="bg-green-100 text-green-800">
+                    ✓ Visible en búsquedas
+                  </Badge>
+                )}
+                {!subscriptionStatus?.isActive && (
+                  <Badge className="bg-gray-100 text-gray-800">
+                    ⚠ Oculto en búsquedas
+                  </Badge>
+                )}
               </div>
             )}
           </div>
@@ -416,8 +497,8 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* Subscription Card - Existing */}
-        {isProfessional && (
+        {/* ✅ MEJORADO: Subscription Card con información unificada */}
+        {isProfessional && subscription && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -425,28 +506,84 @@ export default function MyProfilePage() {
                   <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
                     <CreditCard className="w-6 h-6 text-white" />
                   </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg text-gray-900">Gestión de Suscripción</h3>
+                      {subscriptionStatus && (
+                        <Badge className={subscriptionStatus.color}>
+                          {subscriptionStatus.badge} {subscriptionStatus.text}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* ✅ NUEVO: Información detallada */}
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <strong>Plan:</strong> {subscription.plan_nombre}
+                        {subscription.estado === "en_prueba" && " (7 días gratis)"}
+                      </p>
+                      <p>
+                        <strong>Estado:</strong> {subscriptionStatus?.details}
+                      </p>
+                      {subscription.fecha_expiracion && (
+                        <p className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <strong>Renovación:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+                        </p>
+                      )}
+                      {subscription.estado === "en_prueba" && (
+                        <p>
+                          <strong>Próximo cobro:</strong> {subscription.plan_precio}€/mes
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Ver detalles
+                  </Button>
+                  {subscription.plan_id === "plan_monthly_trial" && subscription.estado !== "cancelado" && (
+                    <Button
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
+                      variant="outline"
+                      className="border-purple-600 text-purple-700 hover:bg-purple-50"
+                      size="sm"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      Mejorar plan
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ✅ MEJORADO: Subscription Card para profesionales sin suscripción */}
+        {isProfessional && !subscription && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">Gestión de Suscripción</h3>
+                    <h3 className="font-bold text-lg text-gray-900">No tienes una suscripción activa</h3>
                     <p className="text-sm text-gray-600">
-                      Estado: <Badge className={
-                        user.subscription_status === "actif" ? "bg-green-100 text-green-800" :
-                        user.subscription_status === "cancelado" ? "bg-yellow-100 text-yellow-800" :
-                        user.subscription_status === "en_attente" ? "bg-yellow-100 text-yellow-800" :
-                        "bg-red-100 text-red-800"
-                      }>
-                        {user.subscription_status === "actif" ? "Activo" :
-                         user.subscription_status === "cancelado" ? "Cancelado" : 
-                         user.subscription_status === "en_attente" ? "Pendiente" :
-                         user.subscription_status === "en_prueba" ? "Prueba" : "Inactivo"}
-                      </Badge>
+                      Necesitas un plan para aparecer en búsquedas y recibir clientes
                     </p>
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  className="bg-orange-500 hover:bg-orange-600"
                 >
-                  Ver detalles
+                  Ver planes
                 </Button>
               </div>
             </CardContent>
@@ -504,22 +641,7 @@ export default function MyProfilePage() {
               </Badge>
             </div>
 
-            {user.subscription_status && (
-              <div>
-                <Label>Estado de suscripción</Label>
-                <Badge 
-                  className={
-                    user.subscription_status === "actif" ? "bg-green-100 text-green-800" :
-                    user.subscription_status === "en_attente" ? "bg-yellow-100 text-yellow-800" :
-                    "bg-red-100 text-red-800"
-                  }
-                >
-                  {user.subscription_status === "actif" ? "Activo" :
-                   user.subscription_status === "en_attente" ? "Pendiente" :
-                   user.subscription_status === "suspendu" ? "Suspendido" : "Cancelado"}
-                </Badge>
-              </div>
-            )}
+            {/* ✅ ELIMINADO: Campo "Estado de suscripción" redundante e incorrecto */}
           </CardContent>
         </Card>
 
