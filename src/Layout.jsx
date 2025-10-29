@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -225,8 +226,12 @@ export default function Layout({ children, currentPageName }) {
         <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
           <SidebarHeader className="border-b border-gray-100 p-6">
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
-                <Briefcase className="w-6 h-6 text-orange-400" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
+                  alt="milautonomos"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
