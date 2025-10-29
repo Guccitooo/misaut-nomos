@@ -1,0 +1,74 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional evaluado"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID del cliente que deja la rese\u00f1a"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Nota media general (calculada autom\u00e1ticamente)"
+    },
+    "rapidez": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Valoraci\u00f3n de rapidez"
+    },
+    "comunicacion": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Valoraci\u00f3n de comunicaci\u00f3n"
+    },
+    "calidad": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Valoraci\u00f3n de calidad del trabajo"
+    },
+    "precio_satisfaccion": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Valoraci\u00f3n de precio/satisfacci\u00f3n general"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Comentario (opcional)"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n desde la que se dej\u00f3 la rese\u00f1a"
+    },
+    "is_verified": {
+      "type": "boolean",
+      "default": true,
+      "description": "Rese\u00f1a verificada (cliente tuvo conversaci\u00f3n real)"
+    },
+    "is_reported": {
+      "type": "boolean",
+      "default": false,
+      "description": "Rese\u00f1a reportada por contenido inapropiado"
+    }
+  },
+  "required": [
+    "professional_id",
+    "client_id",
+    "rapidez",
+    "comunicacion",
+    "calidad",
+    "precio_satisfaccion"
+  ]
+}
