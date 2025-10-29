@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -242,11 +243,30 @@ export default function AdminDashboardPage() {
 
   const profilesWithUserData = profiles.map(profile => {
     const userData = users.find(u => u.id === profile.user_id);
+    
+    // ✅ MAPEAR subscription_status correctamente
+    let displayStatus = "desconocido";
+    if (userData?.subscription_status) {
+      const status = userData.subscription_status;
+      // Mapear todos los posibles valores
+      if (status === "actif" || status === "activo") {
+        displayStatus = "actif";
+      } else if (status === "en_prueba" || status === "trial" || status === "en_attente") {
+        displayStatus = "en_prueba";
+      } else if (status === "suspendu" || status === "suspendido") {
+        displayStatus = "suspendu";
+      } else if (status === "annule" || status === "cancelado" || status === "inactivo") {
+        displayStatus = "annule";
+      } else {
+        displayStatus = status; // Usar el valor original si no está en el mapeo
+      }
+    }
+    
     return {
       ...profile,
       user_email: userData?.email || "Sin email",
       user_name: userData?.full_name || "Sin nombre",
-      subscription_status: userData?.subscription_status || "desconocido"
+      subscription_status: displayStatus
     };
   });
 
@@ -418,7 +438,9 @@ export default function AdminDashboardPage() {
                             <Badge className={
                               profile.subscription_status === "actif" ? "bg-green-100 text-green-800" :
                               profile.subscription_status === "en_prueba" ? "bg-blue-100 text-blue-800" :
-                              "bg-red-100 text-red-800"
+                              profile.subscription_status === "annule" ? "bg-red-100 text-red-800" :
+                              profile.subscription_status === "suspendu" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-gray-100 text-gray-800"
                             }>
                               {profile.subscription_status}
                             </Badge>
@@ -781,7 +803,7 @@ export default function AdminDashboardPage() {
                   <li>El usuario <strong>{deletingUser?.email}</strong></li>
                   <li>Su perfil profesional (si existe)</li>
                   <li>Todos sus mensajes</li>
-                  <li>Todas sus reseñas</li>
+                  <li>Todos sus reseñas</li>
                   <li>Su suscripción</li>
                 </ul>
                 <p className="mt-3 text-red-600 font-semibold">
