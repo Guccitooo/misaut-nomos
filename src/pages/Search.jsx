@@ -129,91 +129,99 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white h-full">
-      <CardContent className="p-4 flex flex-col h-full">
-        <div 
-          className="cursor-pointer flex flex-col flex-1"
-          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
-        >
-          {/* ✅ Header: Nombre + Rating + Favoritos - ALTURA FIJA */}
-          <div className="flex items-start justify-between mb-2 min-h-[48px]">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate">
-                {profile.business_name}
-              </h3>
-              {profile.average_rating > 0 ? (
-                <div className="flex items-center gap-1 mt-1">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-semibold text-gray-700">
-                    {profile.average_rating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    ({profile.total_reviews})
-                  </span>
-                </div>
-              ) : (
-                <div className="h-5"></div>
-              )}
-            </div>
-            
-            {/* ✅ Favorito compacto */}
-            <div className="flex flex-col items-end gap-1 ml-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                className={`h-8 w-8 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite(profile.user_id);
-                }}
-              >
-                <Heart 
-                  className={`w-4 h-4 transition-all ${
-                    isFavorite ? 'fill-red-500' : ''
-                  }`}
-                />
-              </Button>
-              {favoriteCount > 0 && (
-                <span className="text-xs text-gray-500">{favoriteCount}</span>
-              )}
-            </div>
-          </div>
-
-          {/* ✅ Categorías - ALTURA FIJA */}
-          <div className="flex flex-wrap gap-1 mb-2 min-h-[28px]">
-            {profile.categories?.slice(0, 2).map((cat, idx) => (
-              <CategoryBadge key={idx} category={cat} />
-            ))}
-            {profile.categories?.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{profile.categories.length - 2}
-              </Badge>
-            )}
-          </div>
-
-          {/* ✅ Ubicación - ALTURA FIJA */}
-          <div className="mb-2 min-h-[20px]">
-            {profile.service_area ? (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <MapPin className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{profile.service_area}</span>
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col">
+      <CardContent className="p-4 flex flex-col flex-1">
+        {/* ✅ Header: Nombre + Rating + Favoritos - ALTURA FIJA 48px */}
+        <div className="flex items-start justify-between mb-2 h-12">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
+                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
+              {profile.business_name}
+            </h3>
+            {profile.average_rating > 0 ? (
+              <div className="flex items-center gap-1 mt-1">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span className="text-sm font-semibold text-gray-700">
+                  {profile.average_rating.toFixed(1)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({profile.total_reviews})
+                </span>
               </div>
             ) : (
-              <div className="h-5"></div>
+              <div className="h-5 mt-1"></div>
             )}
           </div>
-
-          {/* ✅ Descripción - ALTURA FIJA */}
-          <div className="mb-3 min-h-[40px]">
-            <p className="text-sm text-gray-600 line-clamp-2 leading-snug">
-              {profile.descripcion_corta || profile.description || "Profesional disponible"}
-            </p>
+          
+          {/* ✅ Favorito compacto */}
+          <div className="flex flex-col items-end gap-1 ml-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className={`h-8 w-8 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(profile.user_id);
+              }}
+            >
+              <Heart 
+                className={`w-4 h-4 transition-all ${
+                  isFavorite ? 'fill-red-500' : ''
+                }`}
+              />
+            </Button>
+            {favoriteCount > 0 && (
+              <span className="text-xs text-gray-500">{favoriteCount}</span>
+            )}
           </div>
         </div>
 
-        {/* ✅ Botones de contacto - SIEMPRE AL FINAL CON ALTURA FIJA */}
+        {/* ✅ Categorías - ALTURA FIJA 28px */}
+        <div 
+          className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
+          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+        >
+          {profile.categories?.slice(0, 2).map((cat, idx) => (
+            <CategoryBadge key={idx} category={cat} />
+          ))}
+          {profile.categories?.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{profile.categories.length - 2}
+            </Badge>
+          )}
+        </div>
+
+        {/* ✅ Ubicación - ALTURA FIJA 20px */}
+        <div 
+          className="mb-2 h-5 cursor-pointer"
+          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+        >
+          {profile.service_area ? (
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{profile.service_area}</span>
+            </div>
+          ) : (
+            <div></div>
+          )}
+        </div>
+
+        {/* ✅ Descripción - ALTURA FIJA 40px (2 líneas) */}
+        <div 
+          className="mb-3 h-10 cursor-pointer"
+          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+        >
+          <p className="text-sm text-gray-600 line-clamp-2 leading-5">
+            {profile.descripcion_corta || profile.description || "Profesional disponible"}
+          </p>
+        </div>
+
+        {/* ✅ Espaciador flexible */}
+        <div className="flex-1"></div>
+
+        {/* ✅ Botones de contacto - ALTURA FIJA 32px */}
         {profile.telefono_contacto && (
-          <div className="grid grid-cols-3 gap-1.5 mt-auto">
+          <div className="grid grid-cols-3 gap-1.5">
             <a
               href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
               onClick={(e) => e.stopPropagation()}
@@ -581,24 +589,26 @@ export default function SearchPage() {
         </div>
 
         {loadingProfiles ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2 mb-1" />
+              <Card key={i} className="overflow-hidden h-full">
+                <CardContent className="p-4 flex flex-col h-full">
+                  <Skeleton className="h-6 w-3/4 mb-2" /> {/* Title */}
+                  <Skeleton className="h-4 w-1/2 mb-2" /> {/* Rating/spacing */}
                   <div className="flex gap-1 mb-2">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-16" /> {/* Category 1 */}
+                    <Skeleton className="h-5 w-16" /> {/* Category 2 */}
                   </div>
-                  <Skeleton className="h-4 w-2/3 mb-2" />
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-2/3 mb-2" /> {/* Location */}
+                  <Skeleton className="h-10 w-full mb-3" /> {/* Description */}
+                  <div className="flex-1"></div> {/* Spacer */}
+                  <Skeleton className="h-8 w-full" /> {/* Contact buttons */}
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {filteredProfiles.map((profile) => (
               <ProfileCard
                 key={profile.id}
