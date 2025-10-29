@@ -28,6 +28,8 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
+        console.log('🔔 Webhook recibido:', event.type);
+
         // ✅ Handle checkout.session.completed (trial y pagos normales)
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
@@ -49,13 +51,17 @@ Deno.serve(async (req) => {
 
             // Fecha de expiración según trial o no
             let expirationDate;
+            let subscriptionStatus;
+            
             if (isTrial) {
                 expirationDate = new Date(today);
                 expirationDate.setDate(expirationDate.getDate() + 7);
+                subscriptionStatus = "en_prueba"; // ✅ Estado específico para trial
                 console.log('🎁 Trial detectado - 7 días gratis');
             } else {
                 expirationDate = new Date(today);
                 expirationDate.setMonth(expirationDate.getMonth() + 1);
+                subscriptionStatus = "actif"; // ✅ Estado para pago normal
                 console.log('💳 Pago normal - 30 días');
             }
 
@@ -68,18 +74,21 @@ Deno.serve(async (req) => {
             if (existingUsers.length > 0) {
                 userId = existingUsers[0].id;
                 
-                // ✅ CAMBIO CRÍTICO: Solo activar suscripción, NO perfil
+                console.log(`📝 Actualizando usuario ${customerEmail} con suscripción:`, subscriptionStatus);
+                
+                // ✅ CRÍTICO: Actualizar con el estado correcto
                 await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
                     full_name: metadata.fullName,
                     user_type: "professionnel",
                     phone: metadata.phone,
                     city: metadata.address?.split(',').slice(-1)[0].trim() || "",
-                    subscription_status: "actif",
+                    subscription_status: subscriptionStatus,
                     subscription_start_date: today.toISOString().split('T')[0],
                     subscription_end_date: expirationDate.toISOString().split('T')[0],
                     last_payment_date: today.toISOString().split('T')[0],
                 });
-                console.log(`✅ Usuario actualizado con suscripción activa: ${customerEmail}`);
+                
+                console.log(`✅ Usuario actualizado con subscription_status: ${subscriptionStatus}`);
             } else {
                 console.log(`⚠️ Usuario no existe: ${customerEmail}`);
                 await base44.asServiceRole.integrations.Core.SendEmail({
@@ -94,6 +103,7 @@ Teléfono: ${metadata.phone}
 Actividad: ${activityText}
 Dirección: ${metadata.address}
 Es trial: ${isTrial ? 'SÍ - 7 días gratis' : 'NO - Pago directo'}
+Estado suscripción: ${subscriptionStatus}
 
 Stripe Customer ID: ${session.customer}
 Stripe Subscription ID: ${session.subscription}`,
@@ -101,7 +111,7 @@ Stripe Subscription ID: ${session.subscription}`,
                 });
             }
 
-            // ✅ CAMBIO CRÍTICO: Crear perfil en estado PENDIENTE (no visible)
+            // ✅ Crear o actualizar perfil profesional
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
@@ -133,9 +143,9 @@ Stripe Subscription ID: ${session.subscription}`,
                         visible_en_busqueda: false,
                         onboarding_completed: false
                     });
-                    console.log(`✅ Perfil profesional creado en PENDIENTE (no visible hasta completar quiz)`);
+                    console.log(`✅ Perfil profesional creado en PENDIENTE (completará quiz)`);
                 } else {
-                    // ✅ IMPORTANTE: NO activar perfil automáticamente, solo si ya estaba completo
+                    // ✅ NO activar perfil automáticamente, solo si ya estaba completo
                     const profile = existingProfiles[0];
                     if (profile.onboarding_completed) {
                         await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
@@ -144,12 +154,12 @@ Stripe Subscription ID: ${session.subscription}`,
                         });
                         console.log(`✅ Perfil completado reactivado`);
                     } else {
-                        console.log(`⚠️ Perfil existe pero NO completado - se mantiene invisible`);
+                        console.log(`⚠️ Perfil existe pero NO completado - se mantiene invisible hasta quiz`);
                     }
                 }
             }
 
-            // ✅ Email de confirmación con instrucciones claras
+            // ✅ Email de confirmación
             const trialEmailBody = `Hola ${metadata.fullName},
 
 ¡Bienvenido a milautonomos!
@@ -204,7 +214,7 @@ Equipo milautonomos`;
                 from_name: "milautonomos"
             });
 
-            console.log(`✅ Flujo completado para ${customerEmail} - Perfil en estado PENDIENTE hasta completar quiz`);
+            console.log(`✅ Flujo completado para ${customerEmail} - Estado: ${subscriptionStatus}`);
         }
 
         // ✅ Handle invoice.payment_succeeded (renovaciones mensuales)
@@ -233,6 +243,50 @@ Equipo milautonomos`;
             }
         }
 
+        // ✅ Handle customer.subscription.updated (cambios de estado)
+        if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object;
+            const customer = await stripe.customers.retrieve(subscription.customer);
+            const customerEmail = customer.email;
+
+            console.log('🔄 Suscripción actualizada:', subscription.status, 'para', customerEmail);
+
+            if (customerEmail) {
+                const users = await base44.asServiceRole.entities.User.filter({ 
+                    email: customerEmail 
+                });
+
+                if (users.length > 0) {
+                    let newStatus;
+                    
+                    // ✅ Mapear estados de Stripe a nuestros estados
+                    switch (subscription.status) {
+                        case 'trialing':
+                            newStatus = 'en_prueba';
+                            break;
+                        case 'active':
+                            newStatus = 'actif';
+                            break;
+                        case 'past_due':
+                            newStatus = 'suspendu';
+                            break;
+                        case 'canceled':
+                        case 'unpaid':
+                            newStatus = 'annule';
+                            break;
+                        default:
+                            newStatus = subscription.status;
+                    }
+
+                    await base44.asServiceRole.entities.User.update(users[0].id, {
+                        subscription_status: newStatus,
+                    });
+
+                    console.log(`✅ Estado actualizado a: ${newStatus}`);
+                }
+            }
+        }
+
         // ✅ Handle customer.subscription.deleted (cancelaciones)
         if (event.type === 'customer.subscription.deleted') {
             const subscription = event.data.object;
@@ -245,12 +299,11 @@ Equipo milautonomos`;
                 });
 
                 if (users.length > 0) {
-                    // ✅ Desactivar suscripción
                     await base44.asServiceRole.entities.User.update(users[0].id, {
                         subscription_status: "annule",
                     });
 
-                    // ✅ IMPORTANTE: Ocultar perfil profesional
+                    // ✅ Ocultar perfil profesional
                     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                         user_id: users[0].id
                     });
@@ -297,12 +350,10 @@ Equipo milautonomos`,
                 });
 
                 if (users.length > 0) {
-                    // ✅ Suspender suscripción
                     await base44.asServiceRole.entities.User.update(users[0].id, {
                         subscription_status: "suspendu",
                     });
 
-                    // ✅ IMPORTANTE: Ocultar perfil temporalmente
                     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                         user_id: users[0].id
                     });
