@@ -70,58 +70,36 @@ export default function ProfileOnboardingPage() {
     "Vizcaya", "Zamora", "Zaragoza"
   ].sort();
 
-  // ✅ AMPLIADO: Lista completa de ciudades por provincia
+  // ✅ NUEVA: Lista AMPLIADA de ciudades principales por provincia
   const ciudadesPorProvincia = {
-    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas de Madrid", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Aranjuez", "Collado Villalba", "Arganda del Rey", "Pinto", "Colmenar Viejo", "Tres Cantos", "Boadilla del Monte", "San Fernando de Henares", "Villaviciosa de Odón", "Galapagar", "Navalcarnero", "Mejorada del Campo", "Ciempozuelos"],
-    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Granollers", "Vilanova i la Geltrú", "Gavà", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Mollet del Vallès", "Sant Cugat del Vallès", "Esplugues de Llobregat", "Vic", "Igualada", "Cerdanyola del Vallès", "Sant Feliu de Llobregat", "Martorell", "Sitges", "Ripollet", "Sant Adrià de Besòs", "Barberà del Vallès", "Montcada i Reixac"],
-    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Ontinyent", "Alboraya", "Manises", "Algemesí", "Catarroja", "Quart de Poblet", "Xàtiva", "Cullera", "Alcàsser", "Paiporta", "Llíria", "Tavernes de la Valldigna", "Aldaia", "Massamagrell", "Requena", "Picanya", "Alfafar", "Silla", "Carlet", "Meliana"],
-    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Lebrija", "Carmona", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos", "La Algaba", "Pilas", "Brenes", "Castilleja de la Cuesta", "Osuna", "Lora del Río", "Estepa", "Guillena", "Gelves", "Marchena", "Santiponce", "Espartinas", "Fuentes de Andalucía", "El Viso del Alcor"],
-    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Alhaurín de la Torre", "Nerja", "Coín", "Ronda", "Alhaurín el Grande", "Cártama", "Manilva", "Torrox", "Frigiliana", "Algarrobo", "Casares", "Ojén", "Benahavís", "Istán", "Pizarra", "Almogía", "Álora", "Yunquera", "Valle de Abdalajís", "Ardales"],
-    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena", "Santa Pola", "Calpe", "Altea", "Petrer", "Jávea", "Guardamar del Segura", "Pilar de la Horadada", "Crevillent", "Ibi", "Novelda", "Aspe", "San Juan de Alicante", "Villajoyosa", "Campello", "Rojales", "Almoradí", "Callosa de Segura", "Muchamiel", "Cocentaina", "Alfaz del Pi"],
-    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Mequinenza", "La Almunia de Doña Godina", "Tauste", "Épila", "Sabiñán", "Bujaraloz", "Pina de Ebro", "Fuentes de Ebro", "Villanueva de Gállego", "Alfajarín", "María de Huerva", "Cadrete", "San Mateo de Gállego", "Pedrola", "La Puebla de Alfindén", "Villafranca de Ebro", "Mallén", "Ricla", "Illueca", "Sádaba"],
-    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana", "Las Torres de Cotillas", "Los Alcázares", "Archena", "Caravaca de la Cruz", "Alhama de Murcia", "San Pedro del Pinatar", "Santomera", "Fuente Álamo de Murcia", "Cehegín", "Mula", "Abarán", "Fortuna", "Puerto Lumbreras", "La Unión", "Bullas", "Beniel", "Calasparra"],
-    "Álava": ["Vitoria-Gasteiz", "Llodio", "Amurrio", "Alegría-Dulantzi", "Salvatierra", "Oyón", "Laguardia", "Labastida", "Agurain"],
-    "Albacete": ["Albacete", "Hellín", "Villarrobledo", "Almansa", "La Roda", "Caudete", "Tobarra", "Casas-Ibáñez", "Tarazona de la Mancha", "Madrigueras", "Villamalea", "Chinchilla de Monte-Aragón", "Elche de la Sierra", "Alcaraz", "Roda de la Mancha"],
-    "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar", "Adra", "Huércal-Overa", "Níjar", "Berja", "Pulpí", "Vera", "Huércal de Almería", "Cuevas del Almanzora", "Olula del Río", "Macael", "Carboneras"],
-    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Langreo", "Mieres", "Castrillón", "Llanera", "Corvera de Asturias", "Cangas del Narcea", "Llanes", "Tineo", "Valdés", "Navia", "Villaviciosa"],
-    "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro", "Las Navas del Marqués", "Sotillo de la Adrada", "Cebreros", "El Tiemblo", "Piedrahíta", "El Barco de Ávila", "Candeleda"],
-    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Villafranca de los Barros", "Zafra", "Montijo", "Olivenza", "Azuaga", "Jerez de los Caballeros", "Los Santos de Maimona", "Puebla de la Calzada", "Guareña", "Llerena"],
-    "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero", "Briviesca", "Villarcayo de Merindad de Castilla la Vieja", "Medina de Pomar", "Lerma", "Salas de los Infantes", "Villasana de Mena", "Roa"],
-    "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata", "Coria", "Trujillo", "Miajadas", "Talayuela", "Jaraíz de la Vera", "Moraleja", "Valencia de Alcántara", "Montehermoso", "Logrosán", "Arroyo de la Luz", "Jarandilla de la Vera", "Casar de Cáceres"],
-    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Arcos de la Frontera", "Puerto Real", "Rota", "Barbate", "Conil de la Frontera", "Ubrique", "Tarifa"],
-    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "El Astillero", "Piélagos", "Santoña", "Laredo", "Santa Cruz de Bezana", "Reinosa", "Los Corrales de Buelna", "Suances", "Noja", "Comillas", "Bárcena de Cicero"],
-    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Benicarló", "Almassora", "La Vall d'Uixó", "Nules", "Alcalà de Xivert", "Benicàssim", "Vilafamés", "Morella", "Sant Mateu", "Peníscola"],
-    "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Alcázar de San Juan", "Valdepeñas", "Manzanares", "Daimiel", "La Solana", "Bolaños de Calatrava", "Campo de Criptana", "Miguelturra", "Almagro", "Socuéllamos", "Villanueva de los Infantes", "Argamasilla de Alba"],
-    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Palma del Río", "Pozoblanco", "Baena", "Cabra", "Rute", "Villa del Río", "Peñarroya-Pueblonuevo", "Fernán-Núñez", "Bujalance", "La Carlota"],
-    "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey", "San Clemente", "Motilla del Palancar", "Las Pedroñeras", "Huete", "Mota del Cuervo", "Villares del Saz", "Sisante"],
-    "Gerona": ["Gerona", "Figueres", "Blanes", "Lloret de Mar", "Olot", "Salt", "Palafrugell", "Sant Feliu de Guíxols", "Ripoll", "Roses", "Banyoles", "Palamós", "Cassà de la Selva", "Puigcerdà", "Torroella de Montgrí"],
-    "Granada": ["Granada", "Motril", "Almuñécar", "Baza", "Guadix", "Loja", "Armilla", "Maracena", "Atarfe", "Santa Fe", "Huétor Vega", "Iznalloz", "Peligros", "Órgiva", "Salobreña"],
-    "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera", "Cabanillas del Campo", "Yunquera de Henares", "Molina de Aragón", "Sigüenza", "Marchamalo", "Villanueva de la Torre", "Illana"],
-    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Mondragón", "Hernani", "Tolosa", "Andoain", "Zarautz", "Hondarribia", "Pasaia", "Beasain", "Lasarte-Oria", "Zumaia", "Bergara"],
-    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Isla Cristina", "Ayamonte", "Cartaya", "Punta Umbría", "La Palma del Condado", "Bollullos Par del Condado", "Aljaraque", "Valverde del Camino", "Aracena", "Gibraleón", "San Juan del Puerto"],
-    "Huesca": ["Huesca", "Monzón", "Barbastro", "Fraga", "Jaca", "Sabiñánigo", "Binéfar", "Ejea de los Caballeros", "Graus", "Sariñena"],
-    "Islas Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Llucmajor", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Pollença", "Sóller", "Ibiza", "Mahón", "Ciudadela de Menorca", "San Antonio Abad", "Santa Eulalia del Río"],
-    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Bailén", "Villacarrillo", "La Carolina", "Mancha Real", "Torredonjimeno", "Jódar", "Torredelcampo", "Baeza", "Mengíbar"],
-    "La Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Oleiros", "Narón", "Arteixo", "Culleredo", "Carballo", "Cambre", "Ames", "Ribeira", "Betanzos", "Boiro", "Ordes", "Negreira"],
-    "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Lardero", "Alfaro", "Santo Domingo de la Calzada", "Nájera", "Villamediana de Iregua", "Autol"],
-    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía de Tirajana", "Arucas", "Agüimes", "Ingenio", "San Bartolomé de Tirajana", "Mogán", "Gáldar", "Arrecife", "Teguise", "Puerto del Rosario", "Pájara", "Tías", "Antigua"],
-    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "Astorga", "La Bañeza", "Bembibre", "Valencia de Don Juan", "Villablino", "Cistierna", "Cacabelos", "Sahagún", "Fabero", "Vega de Espinareda", "Valverde de la Virgen"],
-    "Lérida": ["Lleida", "Tárrega", "Balaguer", "Mollerussa", "La Seu d'Urgell", "Cervera", "Almacelles", "Tremp", "Les Borges Blanques", "Alcarràs", "Agramunt", "Solsona", "Bellpuig", "Vielha e Mijaran", "Torrefarrera"],
-    "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro", "Vilalba", "Sarria", "Foz", "Chantada", "Burela", "Ribadeo", "Castro de Rei"],
-    "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada", "Estella", "Zizur Mayor", "Tafalla", "Valle de Egüés", "Ansoáin", "Villava", "Berriozar", "Noáin", "Sangüesa", "Alsasua", "Huarte"],
-    "Orense": ["Ourense", "Verín", "O Barco de Valdeorras", "O Carballiño", "Xinzo de Limia", "Ribadavia", "Allariz", "Barbadás", "Celanova", "A Rúa"],
-    "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo", "Venta de Baños", "Villamuriel de Cerrato", "Cervera de Pisuerga", "Saldaña", "Villada", "Dueñas", "Paredes de Nava"],
-    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "Ponteareas", "O Porriño", "Lalín", "Sanxenxo", "Cambados", "Moaña", "Tui", "Poio", "A Estrada"],
-    "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo", "Santa Marta de Tormes", "Peñaranda de Bracamonte", "Alba de Tormes", "Vitigudino", "Guijuelo", "Carbajosa de la Sagrada", "Villamayor"],
-    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Santa Cruz de la Palma", "Los Llanos de Aridane", "Granadilla de Abona", "Puerto de la Cruz", "Los Realejos", "Icod de los Vinos", "La Orotava", "San Sebastián de La Gomera", "Güímar", "Candelaria", "Santiago del Teide"],
-    "Segovia": ["Segovia", "Cuéllar", "San Ildefonso", "El Espinar", "Cantalejo", "Riaza", "Carbonero el Mayor", "Coca", "Sepúlveda", "Palazuelos de Eresma"],
-    "Soria": ["Soria", "Almazán", "Burgo de Osma", "San Esteban de Gormaz", "Ágreda", "Olvega", "Golmayo", "San Leonardo de Yagüe", "Covaleda", "Vinuesa"],
-    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Valls", "Cambrils", "Salou", "Vila-seca", "Amposta", "Calafell", "Móra d'Ebre", "Constantí", "Montblanc", "El Morell", "Falset"],
-    "Teruel": ["Teruel", "Alcañiz", "Andorra", "Calamocha", "Monreal del Campo", "Utrillas", "La Puebla de Valverde", "Alcorisa", "Albarracín", "Mora de Rubielos"],
-    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Quintanar de la Orden", "Madridejos", "Sonseca", "Yuncos", "Mora", "Ocaña", "Villacañas", "Fuensalida", "La Puebla de Montalbán", "Consuegra"],
-    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Durango", "Sestao", "Galdakao", "Gernika-Lumo", "Bermeo", "Leioa", "Mungia", "Erandio", "Amorebieta-Etxano"],
-    "Valladolid": ["Valladolid", "Laguna de Duero", "Medina del Campo", "Arroyo de la Encomienda", "Tudela de Duero", "Zaratán", "Peñafiel", "Cigales", "Íscar", "Tordesillas", "Simancas", "Olmedo", "Medina de Rioseco", "La Cistérniga", "Mojados"],
-    "Zamora": ["Zamora", "Benavente", "Toro", "Villalpando", "Puebla de Sanabria", "Fuentesaúco", "Bermillo de Sayago", "Coreses", "Morales del Vino", "Santa Cristina de la Polvorosa"]
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahuela", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
+    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Ripollet", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges", "Montgat", "Calella", "Berga"],
+    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Catarroja", "Xàtiva", "Cullera", "Massamagrell", "Quart de Poblet", "Alfafar", "Requena", "Aldaia", "Benetússer", "Carlet", "Llíria"],
+    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos", "Castilleja de la Cuesta", "Lora del Río", "Brenes", "Marchena"],
+    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Ronda", "Alhaurín de la Torre", "Nerja", "Coín", "Alhaurín el Grande", "Manilva", "Torrox", "Cártama", "Casares"],
+    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena", "Santa Pola", "Petrer", "Calpe", "Altea", "Jávea", "Villajoyosa", "Ibi", "Campello", "Crevillente", "Novelda", "Aspe", "Guardamar del Segura", "Pilar de la Horadada"],
+    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huelva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Monzón", "Tudela", "Illueca"],
+    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana", "Las Torres de Cotillas", "San Pedro del Pinatar", "Archena", "Caravaca de la Cruz", "Alhama de Murcia"],
+    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Langreo", "Mieres", "Castrillón", "Llanera", "Corvera", "Carreño", "Gozón", "Navia", "Villaviciosa", "Tineo"],
+    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Leioa", "Galdakao", "Durango", "Sestao", "Erandio", "Bermeo", "Amorebieta", "Gernika"],
+    "La Coruña": ["La Coruña", "Santiago de Compostela", "Ferrol", "Oleiros", "Narón", "Arteixo", "Culleredo", "Carballo", "Betanzos", "Cambre"],
+    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Puerto Real", "Arcos de la Frontera", "Conil de la Frontera", "Barbate"],
+    "Islas Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón", "Llucmajor", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Ciutadella de Menorca", "Santa Eulalia del Río"],
+    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "O Porriño", "Sanxenxo", "Baiona", "Moaña"],
+    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía de Tirajana", "Arucas", "Agüimes", "Ingenio", "San Bartolomé de Tirajana", "Puerto del Rosario", "Arrecife"],
+    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Granadilla de Abona", "Santa Cruz de La Palma", "Los Llanos de Aridane", "Puerto de la Cruz"],
+    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "Piélagos", "El Astillero", "Santa Cruz de Bezana", "Laredo"],
+    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Mondragón", "Hernani", "Lasarte-Oria", "Zarautz", "Hondarribia", "Beasain"],
+    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls", "Vila-seca", "Salou", "Amposta", "Calafell"],
+    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Cabra", "Baena", "Palma del Río", "Pozoblanco"],
+    "Granada": ["Granada", "Motril", "Almuñécar", "Armilla", "Loja", "Baza", "Guadix", "Maracena", "Atarfe"],
+    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Benicàssim", "Nules", "Almassora", "Benicarló"],
+    "Valladolid": ["Valladolid", "Laguna de Duero", "Medina del Campo", "Arroyo de la Encomienda", "Tudela de Duero", "Íscar", "Cigales"],
+    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Yuncos", "Olías del Rey", "Sonseca"],
+    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "Astorga", "La Bañeza", "Valencia de Don Juan"],
+    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Bailén", "Baeza"],
+    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Zafra", "Montijo", "Villafranca de los Barros"],
+    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Isla Cristina", "Ayamonte", "Cartaya", "Punta Umbría"]
   };
 
   // Días de la semana
@@ -176,38 +154,6 @@ export default function ProfileOnboardingPage() {
       setFormData(prev => ({ ...prev, service_area: "" }));
     }
   }, [formData.provincia, formData.ciudad, formData.municipio]);
-
-  // ✅ CRÍTICO: Validar que tiene suscripción activa
-  useEffect(() => {
-    checkSubscriptionStatus();
-  }, [user, navigate]); // Added navigate to dependencies
-
-  const checkSubscriptionStatus = async () => {
-    if (!user) return;
-
-    try {
-      // ✅ VALIDACIÓN: Solo profesionales con suscripción activa pueden acceder
-      if (user.user_type !== "professionnel") {
-        console.log("❌ Usuario no es profesional");
-        navigate(createPageUrl("Search"));
-        return;
-      }
-
-      if (!user.subscription_status || user.subscription_status === "inactivo") {
-        console.log("❌ Usuario sin suscripción activa");
-        setError("Debes tener una suscripción activa para completar tu perfil profesional.");
-        toast.error("Debes tener una suscripción activa para completar tu perfil profesional.");
-        setTimeout(() => {
-          navigate(createPageUrl("PricingPlans"));
-        }, 3000);
-        return;
-      }
-
-      console.log("✅ Usuario con suscripción válida:", user.subscription_status);
-    } catch (error) {
-      console.error("Error checking subscription:", error);
-    }
-  };
 
   const loadUserAndProfile = async () => {
     try {
@@ -282,81 +228,23 @@ export default function ProfileOnboardingPage() {
 
   const publishProfileMutation = useMutation({
     mutationFn: async () => {
-      // ✅ VALIDACIÓN CRÍTICA: Verificar todos los requisitos antes de publicar
-      if (!user) {
-        throw new Error("Debes estar autenticado");
-      }
-
-      if (user.user_type !== "professionnel") {
-        throw new Error("Solo los profesionales pueden publicar perfiles");
-      }
-
+      // ✅ VALIDACIÓN CRÍTICA: Verificar suscripción activa antes de publicar
+      console.log('🔒 Verificando suscripción antes de publicar perfil...');
+      
       if (!user.subscription_status || user.subscription_status === "inactivo") {
-        throw new Error("Debes tener una suscripción activa para publicar tu perfil");
+        throw new Error("No tienes una suscripción activa. Debes contratar un plan antes de publicar tu perfil.");
       }
 
-      // ✅ Validar campos obligatorios
-      if (!formData.business_name || formData.business_name.length < 2) {
-        throw new Error("El nombre profesional debe tener al menos 2 caracteres");
+      if (user.subscription_status !== "actif") {
+        throw new Error(`Tu suscripción está en estado "${user.subscription_status}". Necesitas una suscripción activa para publicar.`);
       }
 
-      if (!formData.cif_nif || formData.cif_nif.length < 8) {
-        throw new Error("El NIF/CIF debe tener al menos 8 caracteres");
-      }
-
-      if (!formData.email_contacto || !formData.email_contacto.includes('@')) {
-        throw new Error("El email de contacto es inválido");
-      }
-
-      if (!formData.telefono_contacto || formData.telefono_contacto.replace(/\s/g, '').length < 9) {
-        throw new Error("El teléfono de contacto debe tener al menos 9 dígitos");
-      }
-
-      if (!formData.categories || formData.categories.length === 0) {
-        throw new Error("Debes seleccionar al menos una categoría");
-      }
-
-      if (!formData.descripcion_corta || formData.descripcion_corta.length < 20) {
-        throw new Error("La descripción corta debe tener al menos 20 caracteres");
-      }
-
-      if (!formData.provincia) {
-        throw new Error("La provincia es obligatoria");
-      }
-
-      if (!formData.ciudad) {
-        throw new Error("La ciudad es obligatoria");
-      }
-
-      // ✅ NUEVO: Validar municipio (no puede estar vacío)
-      if (!formData.municipio || formData.municipio.trim().length === 0) {
-        throw new Error("Debes seleccionar un municipio de la lista");
-      }
-
-      if (!formData.horario_dias || formData.horario_dias.length === 0) {
-        throw new Error("Debes seleccionar al menos un día de disponibilidad");
-      }
-
-      if (!formData.tarifa_base || parseFloat(formData.tarifa_base) <= 0) {
-        throw new Error("La tarifa base debe ser mayor a 0");
-      }
-
-      if (!formData.formas_pago || formData.formas_pago.length === 0) {
-        throw new Error("Debes seleccionar al menos una forma de pago");
-      }
-
-      if (!formData.photos || formData.photos.length === 0) {
-        throw new Error("Debes subir al menos 1 foto de tus trabajos");
-      }
-
-      if (!formData.acepta_terminos || !formData.acepta_politica_privacidad || !formData.consiente_contacto_clientes) {
-        throw new Error("Debes aceptar todos los términos legales y consentimientos");
-      }
+      console.log('✅ Suscripción válida detectada:', user.subscription_status);
 
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
       
-      // ✅ IMPORTANTE: Guardar perfil como ACTIVO y VISIBLE
+      // ✅ IMPORTANTE: Guardar perfil como ACTIVO y VISIBLE solo si tiene suscripción
       return base44.entities.ProfessionalProfile.update(profile.id, {
         ...formData,
         imagen_principal: formData.photos[0] || "",
@@ -395,6 +283,7 @@ Los clientes pueden encontrarte buscando por:
 📊 Estado de tu perfil:
 ✅ Visible en búsquedas: SÍ
 ✅ Onboarding completado: SÍ
+✅ Suscripción: ACTIVA
 ✅ Fotos subidas: ${formData.photos.length}
 ✅ Categorías: ${formData.categories.length}
 
@@ -415,8 +304,8 @@ Equipo milautonomos`,
       setCurrentStep(steps.length);
     },
     onError: (error) => {
-      console.error("Error publishing profile:", error);
-      setError(error.message || "Error al publicar el perfil");
+      console.error('❌ Error al publicar perfil:', error);
+      setError(error.message || "Error al publicar el perfil. Verifica que tengas una suscripción activa.");
       toast.error(error.message || "Error al publicar el perfil");
     }
   });
@@ -524,13 +413,6 @@ Equipo milautonomos`,
           return false;
         }
       }
-
-      if (field === "municipio") { // New validation for municipio
-        if (!value || value.trim().length === 0) {
-          setError("Debes seleccionar un municipio de la lista");
-          return false;
-        }
-      }
       
       // Removed old service_area validation as it's now derived.
       // If `service_area` validation is still needed, it should refer to the derived field.
@@ -623,16 +505,16 @@ Equipo milautonomos`,
     setIsSaving(true);
     try {
       if (profile) {
-        // ✅ IMPORTANTE: Mantener estado activo al guardar pasos intermedios
+        // ✅ IMPORTANTE: NO activar perfil hasta el final
         await base44.entities.ProfessionalProfile.update(profile.id, {
           ...dataToSave,
-          estado_perfil: profile.estado_perfil || "pendiente",
-          visible_en_busqueda: profile.visible_en_busqueda || false,
-          onboarding_completed: profile.onboarding_completed || false
+          estado_perfil: "pendiente",
+          visible_en_busqueda: false,
+          onboarding_completed: false
         });
         console.log("💾 Guardado exitoso (actualización)");
       } else {
-        // ✅ Crear con campos mínimos requeridos
+        // ✅ Crear con estado PENDIENTE (no visible hasta completar)
         const newProfile = await base44.entities.ProfessionalProfile.create({
           user_id: user.id,
           business_name: formData.business_name || "Nuevo autónomo",
@@ -662,7 +544,7 @@ Equipo milautonomos`,
           consiente_contacto_clientes: false
         });
         setProfile(newProfile);
-        console.log("💾 Guardado exitoso (creación)");
+        console.log("💾 Guardado exitoso (creación en estado PENDIENTE)");
       }
     } catch (error) {
       console.error("⚠️ Error guardando:", error);
@@ -1059,21 +941,21 @@ Equipo milautonomos`,
 
                 {formData.provincia && (
                   <div>
-                    <Label>Ciudad / Localidad *</Label>
+                    <Label>Ciudad / Localidad * (selecciona de la lista)</Label>
                     <Select
                       value={formData.ciudad}
                       onValueChange={(value) => {
                         setFormData({ 
                           ...formData, 
                           ciudad: value,
-                          municipio: "" // Reset municipio when city changes
+                          municipio: ""
                         });
                       }}
                     >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecciona tu ciudad" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
+                      <SelectContent className="max-h-[300px] overflow-y-auto">
                         {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
                           ciudadesPorProvincia[formData.provincia].map((ciudad) => (
                             <SelectItem key={ciudad} value={ciudad}>
@@ -1081,42 +963,29 @@ Equipo milautonomos`,
                             </SelectItem>
                           ))
                         ) : (
-                          // Fallback if no specific cities listed for the province
                           <SelectItem value={formData.provincia}>
                             {formData.provincia} (como ciudad principal)
                           </SelectItem>
                         )}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ⚠️ Solo se puede seleccionar de la lista. Si tu localidad no aparece, elige la ciudad más cercana.
+                    </p>
                   </div>
                 )}
 
                 {formData.ciudad && (
                   <div>
-                    <Label>Municipio / Localidad * (selecciona de la lista)</Label>
-                    <Select
+                    <Label>Barrio / Municipio (opcional - texto libre)</Label>
+                    <Input
                       value={formData.municipio}
-                      onValueChange={(value) => setFormData({ ...formData, municipio: value })}
-                    >
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Selecciona tu municipio" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
-                          ciudadesPorProvincia[formData.provincia].map((municipio) => (
-                            <SelectItem key={municipio} value={municipio}>
-                              {municipio}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value={formData.ciudad}>
-                            {formData.ciudad}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
+                      placeholder="Ej: Centro, Chamartín, Eixample..."
+                      className="h-12"
+                    />
                     <p className="text-sm text-gray-500 mt-1">
-                      ⚠️ Debes seleccionar un municipio de la lista.
+                      Especifica un barrio o zona específica si quieres ser más preciso (opcional)
                     </p>
                   </div>
                 )}
