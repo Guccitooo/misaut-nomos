@@ -73,19 +73,18 @@ Deno.serve(async (req) => {
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // ✅ CRÍTICO: URLs de redirección corregidas
+        // ✅ CRÍTICO: URLs usando nombres exactos de páginas Base44
         const origin = req.headers.get('origin');
         let successUrl, cancelUrl;
 
         if (isReactivation) {
-            // ✅ Usuario existente que reactiva → Ir a Mi Perfil con mensaje de éxito
-            successUrl = `${origin}/my-profile?reactivation=success`;
-            cancelUrl = `${origin}/my-profile?reactivation=canceled`;
+            // ✅ Usuario existente que reactiva → Ir a MyProfile
+            successUrl = `${origin}/MyProfile?reactivation=success`;
+            cancelUrl = `${origin}/MyProfile?reactivation=canceled`;
         } else {
-            // ✅ CAMBIO: Redirigir a My Profile con parámetro para mostrar onboarding
-            // En lugar de redirigir a una página separada que puede no existir
-            successUrl = `${origin}/my-profile?onboarding=pending`;
-            cancelUrl = `${origin}/pricing-plans?canceled=true`;
+            // ✅ Nuevo usuario → Ir directo a ProfileOnboarding
+            successUrl = `${origin}/ProfileOnboarding?from=checkout`;
+            cancelUrl = `${origin}/PricingPlans?canceled=true`;
         }
 
         console.log('🔗 Success URL:', successUrl);
