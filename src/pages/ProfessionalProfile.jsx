@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -187,19 +188,31 @@ export default function ProfessionalProfilePage() {
   const { data: reviews = [], isLoading: loadingReviews } = useQuery({
     queryKey: ['reviews', professionalId],
     queryFn: async () => {
-      console.log('🔍 Cargando reviews para professional_id:', professionalId);
-      const allReviews = await base44.entities.Review.filter(
-        { professional_id: professionalId },
-        '-created_date',
-        100
-      );
-      console.log('✅ Reviews encontradas:', allReviews.length, allReviews);
-      return allReviews;
+      console.log('🔍 [REVIEWS] Intentando cargar reviews para professional_id:', professionalId);
+      console.log('🔍 [REVIEWS] User actual:', user?.email || 'SIN LOGIN');
+      
+      try {
+        // Intentar cargar TODAS las reviews sin filtro primero para debug
+        const allReviewsInDB = await base44.entities.Review.list();
+        console.log('📊 [REVIEWS] Total reviews en DB:', allReviewsInDB.length);
+        console.log('📊 [REVIEWS] Todas las reviews:', allReviewsInDB);
+        
+        // Ahora filtrar por professional_id
+        const filteredReviews = allReviewsInDB.filter(r => r.professional_id === professionalId);
+        console.log('✅ [REVIEWS] Reviews filtradas para este profesional:', filteredReviews.length);
+        console.log('✅ [REVIEWS] Datos:', filteredReviews);
+        
+        return filteredReviews;
+      } catch (error) {
+        console.error('❌ [REVIEWS] Error cargando reviews:', error);
+        return [];
+      }
     },
     enabled: !!professionalId,
     initialData: [],
-    staleTime: 1000 * 60 * 3,
-    cacheTime: 1000 * 60 * 10,
+    staleTime: 0, // Sin caché para debug
+    cacheTime: 0,
+    refetchOnMount: true,
   });
 
   if (loadingProfile) {
