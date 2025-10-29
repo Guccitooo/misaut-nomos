@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom"; // ✅ MODIFIED: Added useSearchParams
 import { createPageUrl } from "@/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,13 +25,18 @@ import { toast } from "sonner";
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [searchParams] = useSearchParams(); // ✅ NUEVO
+  const [currentStep, setCurrentStep] = useState(0); // ✅ MODIFIED: Initial state of currentStep to 0, if it was intended to be 1, the outline is misleading or requires extra logic not present. Sticking to initial 0 for safety.
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFixingSubscription, setIsFixingSubscription] = useState(false); // Renamed from checkingSubscription
+  const [isFixingSubscription, setIsFixingSubscription] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true); // ✅ NUEVO
+
+  // ✅ NUEVO: Detectar si viene desde checkout
+  const fromCheckout = searchParams.get("from") === "checkout";
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -150,25 +155,8 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  useEffect(() => {
-    loadUserAndProfile();
-  }, []);
-
-  // Update service_area when location changes
-  useEffect(() => {
-    if (formData.provincia && formData.ciudad) {
-      const area = formData.municipio
-        ? `${formData.municipio}, ${formData.ciudad}, ${formData.provincia}`
-        : `${formData.ciudad}, ${formData.provincia}`;
-      setFormData(prev => ({ ...prev, service_area: area }));
-    } else if (formData.provincia) {
-      setFormData(prev => ({ ...prev, service_area: formData.provincia }));
-    } else {
-      setFormData(prev => ({ ...prev, service_area: "" }));
-    }
-  }, [formData.provincia, formData.ciudad, formData.municipio]);
-
-  const loadUserAndProfile = async () => {
+  const loadUser = async () => { // Renamed from loadUserAndProfile
+    setIsLoadingUser(true); // ✅ NUEVO: Start loading
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
@@ -236,8 +224,41 @@ export default function ProfileOnboardingPage() {
     } catch (error) {
       console.error("Error loading user and profile:", error);
       base44.auth.redirectToLogin();
+    } finally {
+      setIsLoadingUser(false); // ✅ NUEVO: Ensure loading state is reset
     }
   };
+
+
+  useEffect(() => {
+    loadUser();
+  }, []); // ✅ MODIFIED: Called loadUser
+
+  useEffect(() => {
+    // ✅ NUEVO: Mostrar mensaje si viene desde checkout
+    if (fromCheckout && user) {
+      toast.success("✅ ¡Pago confirmado! Completa tu perfil para aparecer en búsquedas.", {
+        duration: 6000
+      });
+      
+      // Limpiar URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [fromCheckout, user]); // ✅ NUEVO: Dependency array updated
+
+  // Update service_area when location changes
+  useEffect(() => {
+    if (formData.provincia && formData.ciudad) {
+      const area = formData.municipio
+        ? `${formData.municipio}, ${formData.ciudad}, ${formData.provincia}`
+        : `${formData.ciudad}, ${formData.provincia}`;
+      setFormData(prev => ({ ...prev, service_area: area }));
+    } else if (formData.provincia) {
+      setFormData(prev => ({ ...prev, service_area: formData.provincia }));
+    } else {
+      setFormData(prev => ({ ...prev, service_area: "" }));
+    }
+  }, [formData.provincia, formData.ciudad, formData.municipio]);
 
   // ✅ NUEVA: Función mejorada para verificar y corregir suscripción
   const handleFixSubscription = async () => {
@@ -764,7 +785,7 @@ Equipo milautonomos`,
     }
   };
 
-  if (!user) {
+  if (isLoadingUser) { // ✅ MODIFIED: Use isLoadingUser instead of !user
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
