@@ -225,11 +225,13 @@ export default function Layout({ children, currentPageName }) {
         <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
           <SidebarHeader className="border-b border-gray-100 p-6">
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
-                alt="milautonomos"
-                className="h-10 w-auto object-contain"
-              />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                <Briefcase className="w-6 h-6 text-orange-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
+                <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
+              </div>
             </Link>
           </SidebarHeader>
           
@@ -310,11 +312,7 @@ export default function Layout({ children, currentPageName }) {
               <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors">
                 <Menu className="w-6 h-6" />
               </SidebarTrigger>
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
-                alt="milautonomos"
-                className="h-8 w-auto object-contain"
-              />
+              <h1 className="text-lg font-bold text-gray-900">milautonomos</h1>
               <div className="w-10" />
             </div>
           </header>
