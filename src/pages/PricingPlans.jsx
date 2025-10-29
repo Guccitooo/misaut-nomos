@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -156,9 +157,10 @@ export default function PricingPlansPage() {
     switch (planId) {
       case "plan_monthly_trial":
         return [
-          "7 días gratis sin compromiso",
+          "🎁 7 días gratis (requiere tarjeta)",
           ...commonFeatures.slice(0, 5),
-          "Soporte estándar"
+          "Soporte estándar",
+          "Luego 49€/mes"
         ];
       case "plan_quarterly":
         return [
@@ -277,10 +279,11 @@ export default function PricingPlansPage() {
                 <ul className="space-y-3 mb-8">
                   {getPlanFeatures(plan.plan_id).map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      {feature.includes("⭐") ? (
+                      {feature.includes("⭐") || feature.includes("🎁") ? (
                         <>
-                          <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" />
-                          <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "")}</span>
+                          {feature.includes("⭐") && <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" />}
+                          {feature.includes("🎁") && <Gift className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />}
+                          <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "").replace("🎁 ", "")}</span>
                         </>
                       ) : (
                         <>
@@ -307,10 +310,10 @@ export default function PricingPlansPage() {
                   )}
                 </Button>
 
-                {/* ✅ CAMBIO: Mensaje positivo en lugar del aviso negativo */}
+                {/* ✅ CAMBIO: Texto actualizado a 7 días */}
                 {plan.plan_id === "plan_monthly_trial" && (
                   <p className="text-xs text-green-700 text-center mt-3 bg-green-50 p-2 rounded">
-                    ✓ Activa tu prueba gratuita de 7 días. No se realizará ningún cobro hasta que finalice el periodo.
+                    ✓ Activa tu prueba gratuita de 7 días. Se requiere tarjeta de crédito pero NO se realizará ningún cobro hasta que finalice el periodo. Si no cancelas, se cobrará automáticamente 49€/mes.
                   </p>
                 )}
               </CardContent>
@@ -342,6 +345,12 @@ export default function PricingPlansPage() {
                   <tr>
                     <td className="px-6 py-4 text-sm text-gray-700">Prueba gratuita</td>
                     <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center">-</td>
+                    <td className="px-6 py-4 text-center">-</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 text-sm text-gray-700">Duración prueba</td>
+                    <td className="px-6 py-4 text-sm text-center font-semibold text-green-700">7 días gratis</td>
                     <td className="px-6 py-4 text-center">-</td>
                     <td className="px-6 py-4 text-center">-</td>
                   </tr>
@@ -408,7 +417,16 @@ export default function PricingPlansPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-2">¿Qué pasa después de los 7 días de prueba?</h3>
                 <p className="text-gray-600">
-                  Si no cancelas antes de que termine tu prueba gratuita, tu plan se convertirá automáticamente en el plan mensual de 49€/mes.
+                  <strong>⚠️ IMPORTANTE:</strong> Se requiere tarjeta de crédito para activar la prueba. Si no cancelas antes de que terminen los 7 días, se cobrará automáticamente 49€/mes y tu plan se convertirá en el plan mensual. NO se realizará ningún cobro durante los 7 días de prueba.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">¿Por qué necesito añadir una tarjeta para la prueba gratuita?</h3>
+                <p className="text-gray-600">
+                  La tarjeta es necesaria para poder cobrar automáticamente después del periodo de prueba si decides continuar. <strong>No se te cobrará nada durante los 7 días.</strong> Puedes cancelar en cualquier momento antes de que finalice la prueba.
                 </p>
               </CardContent>
             </Card>
@@ -427,7 +445,7 @@ export default function PricingPlansPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
                 <p className="text-gray-600">
-                  Sí, puedes cancelar tu suscripción en cualquier momento desde tu panel de usuario. No hay permanencia.
+                  Sí, puedes cancelar tu suscripción en cualquier momento desde tu panel de usuario. Si cancelas durante la prueba gratuita de 7 días, no se te cobrará nada. Si cancelas después, seguirás teniendo acceso hasta el final del periodo pagado.
                 </p>
               </CardContent>
             </Card>
