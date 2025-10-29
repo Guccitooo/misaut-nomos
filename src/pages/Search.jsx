@@ -226,8 +226,8 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => base44.entities.ServiceCategory.list(),
-    staleTime: 1000 * 60 * 10, // 10 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
+    staleTime: 1000 * 60 * 10,
+    cacheTime: 1000 * 60 * 30,
     initialData: [],
   });
 
@@ -235,10 +235,12 @@ export default function SearchPage() {
     queryKey: ['profiles'],
     queryFn: async () => {
       try {
-        // Cargar perfiles con límite optimizado
-        const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 50);
+        // Cargar todos los perfiles con límite
+        const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
         
-        // Cargar usuarios en paralelo
+        console.log('📦 Total perfiles cargados:', allProfiles.length);
+        
+        // Cargar usuarios en paralelo para verificar suscripciones
         const users = await base44.entities.User.list();
         
         const profilesWithStatus = allProfiles.map(profile => {
@@ -249,23 +251,46 @@ export default function SearchPage() {
           };
         });
 
-        // Filtrar solo perfiles visibles y activos
-        return profilesWithStatus.filter(profile => {
+        // Filtrar perfiles según múltiples criterios
+        const visibleProfiles = profilesWithStatus.filter(profile => {
+          // Criterio 1: Suscripción activa o en prueba
           const hasActiveSubscription = 
             profile.subscription_status === "actif" || 
             profile.subscription_status === "en_prueba";
-          const isVisible = profile.visible_en_busqueda === true;
-          const isActive = profile.estado_perfil === "activo";
           
-          return hasActiveSubscription && isVisible && isActive;
+          // Criterio 2: Estado del perfil activo
+          const isProfileActive = 
+            profile.estado_perfil === "activo" || 
+            profile.estado_perfil === "pendiente";
+          
+          // Criterio 3: Visible en búsqueda (puede ser undefined en perfiles viejos)
+          const isVisible = 
+            profile.visible_en_busqueda === true || 
+            profile.visible_en_busqueda === undefined;
+          
+          // Criterio 4: Tiene nombre de negocio
+          const hasBusinessName = !!profile.business_name;
+          
+          console.log('🔍 Perfil:', profile.business_name, {
+            subscription: profile.subscription_status,
+            estado: profile.estado_perfil,
+            visible: profile.visible_en_busqueda,
+            passes: hasActiveSubscription && isProfileActive && isVisible && hasBusinessName
+          });
+          
+          return hasActiveSubscription && isProfileActive && isVisible && hasBusinessName;
         });
+
+        console.log('✅ Perfiles visibles después de filtros:', visibleProfiles.length);
+        
+        return visibleProfiles;
       } catch (error) {
         console.error("Error al cargar perfiles:", error);
         return [];
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 15, // 15 minutos
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 15,
     initialData: [],
     retry: 1,
   });
