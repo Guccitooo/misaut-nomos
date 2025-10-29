@@ -1,0 +1,109 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.10.0';
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+
+Deno.serve(async (req) => {
+    try {
+        const base44 = createClientFromRequest(req);
+        
+        // Authenticate user
+        const user = await base44.auth.me();
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        console.log(`🔴 Cancelación solicitada por usuario: ${user.email}`);
+
+        // Get user's subscription
+        const subscriptions = await base44.entities.Subscription.filter({
+            user_id: user.id
+        });
+
+        if (subscriptions.length === 0) {
+            return Response.json({ 
+                error: 'No tienes una suscripción activa' 
+            }, { status: 404 });
+        }
+
+        const subscription = subscriptions[0];
+
+        // Cancel Stripe subscription if exists
+        if (subscription.stripe_subscription_id) {
+            try {
+                await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+                console.log(`✅ Suscripción de Stripe cancelada: ${subscription.stripe_subscription_id}`);
+            } catch (stripeError) {
+                console.error('Error cancelando en Stripe:', stripeError);
+            }
+        }
+
+        // Update subscription status to "cancelado"
+        await base44.entities.Subscription.update(subscription.id, {
+            estado: "cancelado",
+            renovacion_automatica: false,
+            fecha_cancelacion: new Date().toISOString()
+        });
+
+        // Update user subscription status
+        await base44.auth.updateMe({
+            subscription_status: "cancelado"
+        });
+
+        // ✅ CRÍTICO: Ocultar perfil de búsquedas INMEDIATAMENTE
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+            user_id: user.id
+        });
+
+        if (profiles.length > 0) {
+            await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+                visible_en_busqueda: false,      // ✅ Ocultar inmediatamente
+                estado_perfil: "inactivo"         // ✅ Cambiar a inactivo
+            });
+            console.log(`✅ Perfil ocultado de búsquedas inmediatamente`);
+        }
+
+        // Send cancellation email
+        try {
+            await base44.integrations.Core.SendEmail({
+                to: user.email,
+                subject: "Suscripción cancelada - milautonomos",
+                body: `Hola ${user.full_name || user.email},
+
+Tu suscripción a milautonomos ha sido cancelada correctamente.
+
+Detalles:
+- Fecha de cancelación: ${new Date().toLocaleDateString('es-ES')}
+- Tu perfil seguirá activo hasta: ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+- Después de esa fecha, tu perfil dejará de aparecer en las búsquedas
+
+⚠️ IMPORTANTE: 
+Tu perfil ya no es visible en las búsquedas públicas.
+Podrás seguir accediendo a tu cuenta hasta la fecha de expiración.
+
+Si cambias de opinión, puedes reactivar tu suscripción en cualquier momento desde tu panel de usuario.
+
+¿Necesitas ayuda? Responde a este email y estaremos encantados de asistirte.
+
+Gracias,
+Equipo milautonomos`,
+                from_name: "milautonomos"
+            });
+        } catch (emailError) {
+            console.error('Error enviando email de cancelación:', emailError);
+        }
+
+        return Response.json({
+            success: true,
+            message: 'Suscripción cancelada correctamente. Tu perfil ha sido ocultado de las búsquedas.',
+            fecha_expiracion: subscription.fecha_expiracion
+        });
+
+    } catch (error) {
+        console.error('Error cancelando suscripción:', error);
+        return Response.json({
+            error: 'Error al cancelar la suscripción',
+            details: error.message
+        }, { status: 500 });
+    }
+});
