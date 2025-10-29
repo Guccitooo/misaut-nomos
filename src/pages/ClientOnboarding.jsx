@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox"; // Keeping this import as it's part of the component's imports, even if the terms checkbox is now a native input.
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -171,7 +171,7 @@ Equipo MilAutónomos`,
     if (!formData.acepta_terminos) {
       setError("❌ Debes aceptar los Términos y Condiciones para continuar.");
       toast.error("Debes aceptar los Términos y Condiciones");
-      document.querySelector('[type="checkbox"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('acepta_terminos_client')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -415,25 +415,48 @@ Equipo MilAutónomos`,
                 </p>
               </div>
 
-              {/* Términos y condiciones */}
-              <div className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all ${
-                !formData.acepta_terminos && error?.includes('Términos')
-                  ? 'bg-red-50 border-red-300'
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <Checkbox
-                  checked={formData.acepta_terminos}
-                  onCheckedChange={(checked) => {
-                    setFormData({ ...formData, acepta_terminos: checked });
-                    if (checked && error?.includes('Términos')) {
-                      setError(null);
-                    }
-                  }}
-                  required
-                  className="mt-1"
-                />
+              {/* ✅ MEJORADO: Términos y condiciones con check visible */}
+              <div 
+                className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                  !formData.acepta_terminos && error?.includes('Términos')
+                    ? 'bg-red-50 border-red-400 shadow-md animate-pulse'
+                    : formData.acepta_terminos
+                      ? 'bg-green-50 border-green-400 shadow-sm'
+                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="relative flex-shrink-0 mt-1">
+                  <input
+                    type="checkbox"
+                    id="acepta_terminos_client"
+                    checked={formData.acepta_terminos}
+                    onChange={(e) => {
+                      setFormData({ ...formData, acepta_terminos: e.target.checked });
+                      if (e.target.checked && error?.includes('Términos')) {
+                        setError(null);
+                      }
+                    }}
+                    required
+                    className="peer appearance-none w-7 h-7 border-2 border-gray-400 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
+                  />
+                  {/* ✅ NUEVO: Check visible grande y claro */}
+                  <svg
+                    className="absolute top-1 left-1 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="3"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
                 <label 
-                  className="text-sm cursor-pointer flex-1" 
+                  htmlFor="acepta_terminos_client"
+                  className="cursor-pointer flex-1" 
                   onClick={() => {
                     setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos });
                     if (!formData.acepta_terminos && error?.includes('Términos')) {
@@ -441,13 +464,13 @@ Equipo MilAutónomos`,
                     }
                   }}
                 >
-                  <strong className="text-gray-900">
+                  <strong className="text-gray-900 text-base block mb-1">
                     ✅ Acepto los Términos y Condiciones *
                   </strong>
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-gray-700 text-sm leading-relaxed">
                     He leído y acepto los términos y condiciones de uso, la política de privacidad y el tratamiento de mis datos personales.
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 mt-2 font-medium">
                     Este campo es obligatorio para poder crear tu cuenta
                   </p>
                 </label>
