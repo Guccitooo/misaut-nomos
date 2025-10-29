@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -220,6 +221,7 @@ export default function SearchPage() {
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
+      // ✅ No pasa nada si no hay usuario - continuar como visitante
     }
   };
 
@@ -235,43 +237,27 @@ export default function SearchPage() {
     queryKey: ['profiles'],
     queryFn: async () => {
       try {
+        // ✅ CAMBIO: Cargar perfiles sin necesidad de User entity para visitantes
         const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
         
         console.log('📦 Total perfiles cargados:', allProfiles.length);
         
-        const users = await base44.entities.User.list();
-        
-        const profilesWithStatus = allProfiles.map(profile => {
-          const user = users.find(u => u.id === profile.user_id);
-          return {
-            ...profile,
-            subscription_status: user?.subscription_status || "actif",
-          };
-        });
-
-        const visibleProfiles = profilesWithStatus.filter(profile => {
-          const hasActiveSubscription = 
-            profile.subscription_status === "actif" || 
-            profile.subscription_status === "en_prueba";
-          
-          const isProfileActive = 
-            profile.estado_perfil === "activo" || 
-            profile.estado_perfil === "pendiente";
-          
-          const isVisible = 
-            profile.visible_en_busqueda === true || 
-            profile.visible_en_busqueda === undefined;
-          
+        // ✅ Filtrar solo por datos del propio perfil, sin depender de User
+        const visibleProfiles = allProfiles.filter(profile => {
+          // Solo verificar datos del perfil mismo
+          const isVisible = profile.visible_en_busqueda === true;
+          const isActive = profile.estado_perfil === "activo";
           const hasBusinessName = !!profile.business_name;
+          const hasCompletedOnboarding = profile.onboarding_completed === true;
           
           console.log('🔍 Perfil:', profile.business_name, {
-            subscription: profile.subscription_status,
-            estado: profile.estado_perfil,
             visible: profile.visible_en_busqueda,
-            passes: hasActiveSubscription && isProfileActive && isVisible && hasBusinessName
+            estado: profile.estado_perfil,
+            onboarding: profile.onboarding_completed,
+            passes: isVisible && isActive && hasBusinessName && hasCompletedOnboarding
           });
           
-          return hasActiveSubscription && isProfileActive && isVisible && hasBusinessName;
+          return isVisible && isActive && hasBusinessName && hasCompletedOnboarding;
         });
 
         console.log('✅ Perfiles visibles después de filtros:', visibleProfiles.length);
