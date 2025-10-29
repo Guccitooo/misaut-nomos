@@ -228,7 +228,7 @@
   ],
   "security": {
     "read": {
-      "rule": "public"
+      "rule": "true"
     },
     "create": {
       "rule": "authenticated"
