@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -83,7 +84,7 @@ export default function UserTypeSelectionPage() {
       <div className="max-w-5xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            ¡Bienvenido a milautonomos!
+            ¡Bienvenido a MilAutónomos!
           </h1>
           <p className="text-xl text-gray-600">
             ¿Cómo quieres usar la plataforma?
