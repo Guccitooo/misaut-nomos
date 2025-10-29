@@ -26,6 +26,18 @@ export default function PricingPlansPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      
+      // ✅ NUEVO: Si no ha elegido tipo de usuario, redirigir
+      if (!currentUser.user_type) {
+        navigate(createPageUrl("UserTypeSelection"));
+        return;
+      }
+      
+      // ✅ NUEVO: Si es cliente, redirigir a búsqueda
+      if (currentUser.user_type === "client") {
+        navigate(createPageUrl("Search"));
+        return;
+      }
     } catch (error) {
       console.error("Error loading user:", error);
     }
@@ -73,7 +85,7 @@ export default function PricingPlansPage() {
 
     try {
       if (plan.plan_id === "plan_monthly_trial") {
-        // For trial plan, create subscription with 7 days free
+        // ✅ CAMBIO CRÍTICO: Para plan trial, crear suscripción y redirigir al quiz
         const loadingToast = toast.loading("Activando tu prueba gratuita...");
 
         const response = await base44.functions.invoke('onUserCreated', {
@@ -98,12 +110,13 @@ export default function PricingPlansPage() {
 
         toast.success("¡Prueba gratuita activada! Completa tu perfil ahora...");
         
+        // ✅ REDIRIGIR AUTOMÁTICAMENTE AL QUIZ
         setTimeout(() => {
           navigate(createPageUrl("ProfileOnboarding"));
         }, 1000);
 
       } else {
-        // For paid plans, redirect to Stripe
+        // ✅ Para planes de pago, redirigir a Stripe
         const response = await base44.functions.invoke('createCheckoutSession', {
           email: user.email,
           fullName: user.full_name || user.email,
