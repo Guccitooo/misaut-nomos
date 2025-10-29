@@ -84,62 +84,41 @@ export default function PricingPlansPage() {
     setError(null);
 
     try {
-      if (plan.plan_id === "plan_monthly_trial") {
-        // ✅ CAMBIO CRÍTICO: Para plan trial, crear suscripción y redirigir al quiz
-        const loadingToast = toast.loading("Activando tu prueba gratuita...");
+      // ✅ CAMBIO CRÍTICO: SIEMPRE redirigir a Stripe, incluso para trial
+      // Esto permite capturar el método de pago sin cobrar
+      
+      const loadingToast = toast.loading(
+        plan.plan_id === "plan_monthly_trial" 
+          ? "Configurando tu prueba gratuita..."
+          : "Procesando pago..."
+      );
 
-        const response = await base44.functions.invoke('onUserCreated', {
-          userId: user.id,
-          selectedPlan: plan.plan_id,
-          userData: {
-            fullName: user.full_name,
-            city: user.city,
-            activity: "Sin especificar"
-          }
-        });
+      const response = await base44.functions.invoke('createCheckoutSession', {
+        email: user.email,
+        fullName: user.full_name || user.email,
+        userType: user.user_type || "professionnel", // Changed from "autonomo"
+        cifNif: "",
+        phone: user.phone || "",
+        activity: "Sin especificar",
+        activityOther: "",
+        address: user.city || "Sin especificar",
+        paymentMethod: "stripe",
+        planId: plan.plan_id,
+        planPrice: plan.precio,
+        isTrial: plan.plan_id === "plan_monthly_trial" // ✅ Nuevo parámetro
+      });
 
-        toast.dismiss(loadingToast);
+      toast.dismiss(loadingToast);
 
-        if (response.data.ok === false) {
-          toast.error(`No pudimos completar el registro: ${response.data.message}. Inténtalo de nuevo.`);
-          setError(response.data.message);
-          setIsProcessing(false);
-          setSelectedPlan(null);
-          return;
-        }
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
 
-        toast.success("¡Prueba gratuita activada! Completa tu perfil ahora...");
-        
-        // ✅ REDIRIGIR AUTOMÁTICAMENTE AL QUIZ
-        setTimeout(() => {
-          navigate(createPageUrl("ProfileOnboarding"));
-        }, 1000);
-
+      if (response.data.url) {
+        // ✅ Redirigir a Stripe para TODOS los planes (incluyendo trial)
+        window.location.href = response.data.url;
       } else {
-        // ✅ Para planes de pago, redirigir a Stripe
-        const response = await base44.functions.invoke('createCheckoutSession', {
-          email: user.email,
-          fullName: user.full_name || user.email,
-          userType: user.user_type || "autonomo",
-          cifNif: "",
-          phone: user.phone || "",
-          activity: "Sin especificar",
-          activityOther: "",
-          address: user.city || "Sin especificar",
-          paymentMethod: "stripe",
-          planId: plan.plan_id,
-          planPrice: plan.precio
-        });
-
-        if (response.data.error) {
-          throw new Error(response.data.error);
-        }
-
-        if (response.data.url) {
-          window.location.href = response.data.url;
-        } else {
-          throw new Error('No se pudo crear la sesión de pago');
-        }
+        throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
       console.error("Error selecting plan:", err);
@@ -182,7 +161,7 @@ export default function PricingPlansPage() {
     switch (planId) {
       case "plan_monthly_trial":
         return [
-          "7 días gratis sin tarjeta",
+          "7 días gratis sin tarjeta", // This feature description remains, as the payment flow handles the 'no charge' part.
           ...commonFeatures.slice(0, 5),
           "Soporte estándar"
         ];
@@ -238,7 +217,7 @@ export default function PricingPlansPage() {
           {plans.map((plan) => (
             <Card 
               key={plan.plan_id}
-              className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 ${
+              className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 bg-white ${
                 plan.plan_id === "plan_quarterly" ? "ring-4 ring-green-500" : ""
               }`}
             >
@@ -287,7 +266,7 @@ export default function PricingPlansPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-8">
+              <CardContent className="p-8 bg-white">
                 <p className="text-gray-600 mb-6 min-h-[60px] text-sm leading-relaxed">
                   {plan.descripcion}
                 </p>
@@ -327,7 +306,7 @@ export default function PricingPlansPage() {
 
                 {plan.plan_id === "plan_monthly_trial" && (
                   <p className="text-xs text-gray-500 text-center mt-3">
-                    Sin tarjeta de crédito requerida inicialmente
+                    ⚠️ Se requiere tarjeta de crédito. No se realizará ningún cobro durante los 7 días de prueba.
                   </p>
                 )}
               </CardContent>
