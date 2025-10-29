@@ -1,53 +1,61 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star } from "lucide-react";
+import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
+  // ✅ Detectar si viene de cancelación de pago
+  const canceled = searchParams.get("canceled");
+
   useEffect(() => {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (canceled) {
+      toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
+        duration: 5000
+      });
+    }
+  }, [canceled]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      setUser(currentUser);
       
       // ✅ Si no está autenticado, redirigir a login
       if (!currentUser) {
         base44.auth.redirectToLogin(window.location.href);
         return;
       }
-      
-      setUser(currentUser);
 
       // ✅ CAMBIO: Si no tiene tipo de usuario, aplicar "professionnel" automáticamente
       if (!currentUser.user_type) {
         await base44.auth.updateMe({ user_type: "professionnel" });
-        setUser({ ...currentUser, user_type: "professionnel" }); // Update local state with new user_type
+        setUser({ ...currentUser, user_type: "professionnel" });
       }
       
       // ✅ Si es cliente, mostrar mensaje informativo
       if (currentUser.user_type === "client") {
-        // No redirigir, solo mostrar mensaje
         console.log("Usuario es cliente viendo planes");
       }
     } catch (error) {
       console.error("Error loading user:", error);
-      // Si no está autenticado, redirigir a login
       base44.auth.redirectToLogin(window.location.href);
     }
   };
@@ -87,7 +95,6 @@ export default function PricingPlansPage() {
     // ✅ CAMBIO: Asegurar que el usuario sea profesional antes de proceder
     if (user.user_type !== "professionnel") {
       await base44.auth.updateMe({ user_type: "professionnel" });
-      setUser(prevUser => ({ ...prevUser, user_type: "professionnel" })); // Update local state immediately
     }
 
     setSelectedPlan(plan.plan_id);
@@ -104,7 +111,7 @@ export default function PricingPlansPage() {
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email,
         fullName: user.full_name || user.email,
-        userType: "professionnel", // This will always be professionnel for plan selection
+        userType: "professionnel",
         cifNif: "",
         phone: user.phone || "",
         activity: "Sin especificar",
@@ -134,6 +141,26 @@ export default function PricingPlansPage() {
       toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
+    }
+  };
+
+  // ✅ NUEVO: Manejar navegación hacia atrás de forma inteligente
+  const handleGoBack = () => {
+    if (!user) {
+      // Sin usuario → ir al inicio
+      navigate(createPageUrl("Search"));
+    } else if (user.user_type === "professionnel") {
+      // Autónomo → ver si tiene perfil completo
+      if (user.subscription_status && user.subscription_status !== "inactivo") {
+        // Ya tiene suscripción → ir a su perfil
+        navigate(createPageUrl("MyProfile"));
+      } else {
+        // Sin suscripción activa → ir al inicio
+        navigate(createPageUrl("Search"));
+      }
+    } else {
+      // Cliente → ir al inicio
+      navigate(createPageUrl("Search"));
     }
   };
 
@@ -204,6 +231,16 @@ export default function PricingPlansPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
+        {/* ✅ NUEVO: Botón de volver con lógica inteligente */}
+        <Button
+          variant="ghost"
+          onClick={handleGoBack}
+          className="mb-6 hover:bg-blue-50"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Volver
+        </Button>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Elige tu Plan
@@ -212,6 +249,17 @@ export default function PricingPlansPage() {
             Selecciona el plan que mejor se adapte a tus necesidades y empieza a recibir clientes
           </p>
           
+          {/* ✅ Alerta si canceló el pago */}
+          {canceled && (
+            <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                <strong>Pago cancelado.</strong> No te preocupes, puedes volver a elegir un plan cuando quieras. 
+                Tu información se guardará y podrás continuar donde lo dejaste.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* ✅ Mensaje informativo para clientes */}
           {user?.user_type === "client" && (
             <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
@@ -321,7 +369,6 @@ export default function PricingPlansPage() {
                   )}
                 </Button>
 
-                {/* ✅ CAMBIO: Texto actualizado a 7 días */}
                 {plan.plan_id === "plan_monthly_trial" && (
                   <p className="text-xs text-green-700 text-center mt-3 bg-green-50 p-2 rounded">
                     ✓ Activa tu prueba gratuita de 7 días. Se requiere tarjeta de crédito pero NO se realizará ningún cobro hasta que finalice el periodo. Si no cancelas, se cobrará automáticamente 49€/mes.
