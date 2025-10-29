@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -49,6 +50,9 @@ Deno.serve(async (req) => {
             const isTrial = metadata.isTrial === "true" || 
                            session.subscription_data?.trial_period_days > 0;
 
+            // ✅ NUEVO: Verificar si es reactivación
+            const isReactivation = metadata.isReactivation === "true";
+
             // ✅ Obtener ID del plan desde metadata o usar default
             const planId = metadata.planId || "plan_monthly_trial";
 
@@ -97,7 +101,7 @@ Deno.serve(async (req) => {
             if (existingUsers.length > 0) {
                 userId = existingUsers[0].id;
                 
-                console.log(`📝 Actualizando usuario ${customerEmail} con suscripción:`, subscriptionStatus);
+                console.log(`📝 ${isReactivation ? 'REACTIVANDO' : 'Actualizando'} usuario ${customerEmail} con suscripción:`, subscriptionStatus);
                 
                 // ✅ Actualizar usuario
                 await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
@@ -134,14 +138,12 @@ Deno.serve(async (req) => {
                 };
 
                 if (existingSubscriptions.length > 0) {
-                    // Actualizar suscripción existente
                     await base44.asServiceRole.entities.Subscription.update(
                         existingSubscriptions[0].id,
                         subscriptionData
                     );
-                    console.log(`✅ Suscripción actualizada para user_id: ${userId}`);
+                    console.log(`✅ Suscripción ${isReactivation ? 'REACTIVADA' : 'actualizada'} para user_id: ${userId}`);
                 } else {
-                    // Crear nueva suscripción
                     await base44.asServiceRole.entities.Subscription.create(subscriptionData);
                     console.log(`✅ Suscripción creada para user_id: ${userId}`);
                 }
@@ -168,13 +170,14 @@ Stripe Subscription ID: ${session.subscription}`,
                 });
             }
 
-            // ✅ Crear o actualizar perfil profesional
+            // ✅ MEJORADO: Gestión de perfil profesional
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
                 if (existingProfiles.length === 0) {
+                    // ✅ NUEVO USUARIO: Crear perfil en pendiente (debe completar quiz)
                     await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
                         business_name: metadata.fullName,
@@ -196,28 +199,51 @@ Stripe Subscription ID: ${session.subscription}`,
                             linkedin: ""
                         },
                         estado_perfil: "pendiente",
-                        visible_en_busqueda: false,
+                        visible_en_busqueda: false,  // ✅ NO visible hasta completar quiz
                         onboarding_completed: false
                     });
-                    console.log(`✅ Perfil profesional creado en PENDIENTE`);
+                    console.log(`✅ Perfil profesional creado en PENDIENTE (debe completar quiz)`);
                 } else {
                     const profile = existingProfiles[0];
+                    
+                    // ✅ REACTIVACIÓN: Si ya completó el quiz, REACTIVAR perfil
                     if (profile.onboarding_completed) {
                         await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
                             estado_perfil: "activo",
-                            visible_en_busqueda: true
+                            visible_en_busqueda: true  // ✅ REACTIVAR visibilidad
                         });
-                        console.log(`✅ Perfil completado reactivado`);
+                        console.log(`✅ ♻️ PERFIL REACTIVADO - Visible en búsquedas`);
                     } else {
-                        console.log(`⚠️ Perfil existe pero NO completado`);
+                        // ✅ Perfil existe pero NO completado → Mantener pendiente
+                        console.log(`⚠️ Perfil existe pero NO completado - Mantener pendiente`);
                     }
                 }
             }
 
             // ✅ Email de confirmación
+            const reactivationEmailBody = `Hola ${metadata.fullName},
+
+¡Bienvenido de vuelta a milautonomos!
+
+Tu suscripción ha sido reactivada correctamente.
+
+📋 Detalles de tu suscripción:
+- Plan: ${plan?.nombre || 'Plan Mensual'}
+- Estado: ✅ ACTIVA
+- Precio: ${plan?.precio || 49}€
+- Fecha de renovación: ${expirationDate.toLocaleDateString('es-ES')}
+
+✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS
+Los clientes pueden encontrarte y contactarte desde ahora mismo.
+
+Puedes gestionar tu suscripción desde "Mi Perfil" > "Mi Suscripción".
+
+Gracias por confiar en nosotros,
+Equipo milautonomos`;
+
             const trialEmailBody = `Hola ${metadata.fullName},
 
-¡Bienvenido a milautonomos!
+¡Bienvenido${isReactivation ? ' de vuelta' : ''} a milautonomos!
 
 Tu prueba gratuita de 7 días ha sido activada correctamente.
 
@@ -229,7 +255,9 @@ Tu prueba gratuita de 7 días ha sido activada correctamente.
 - Fin de prueba: ${expirationDate.toLocaleDateString('es-ES')}
 - Tarjeta registrada: ✅ (NO se cobrará durante la prueba)
 
-⚠️ IMPORTANTE PRÓXIMO PASO:
+${isReactivation ? 
+  '✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS\nLos clientes pueden encontrarte desde ahora mismo.' :
+  `⚠️ IMPORTANTE PRÓXIMO PASO:
 Tu perfil NO está visible aún. Debes completar el quiz profesional para aparecer en búsquedas.
 
 🚀 COMPLETA TU PERFIL AHORA:
@@ -239,18 +267,18 @@ Tu perfil NO está visible aún. Debes completar el quiz profesional para aparec
    - Ubicación y zona de trabajo
    - Fotos de tus trabajos
    - Tarifas y forma de pago
-3. ¡Tu perfil se publicará automáticamente!
+3. ¡Tu perfil se publicará automáticamente!`}
 
 💰 Información de pago:
 Si NO cancelas antes del ${expirationDate.toLocaleDateString('es-ES')}, se cobrará automáticamente 49€/mes.
 Puedes cancelar en cualquier momento desde "Mi Suscripción" sin coste alguno durante el periodo de prueba.
 
-Gracias por unirte,
+Gracias por ${isReactivation ? 'volver a' : ''} unirte,
 Equipo milautonomos`;
 
             const normalEmailBody = `Hola ${metadata.fullName},
 
-¡Bienvenido a milautonomos!
+¡Bienvenido${isReactivation ? ' de vuelta' : ''} a milautonomos!
 
 Tu suscripción ha sido activada correctamente.
 
@@ -261,24 +289,41 @@ Tu suscripción ha sido activada correctamente.
 - Inicio: ${today.toLocaleDateString('es-ES')}
 - Renovación: ${expirationDate.toLocaleDateString('es-ES')}
 
-⚠️ IMPORTANTE: Tu perfil aún NO está visible.
+${isReactivation ? 
+  '✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS\nLos clientes pueden encontrarte y contactarte desde ahora mismo.' :
+  `⚠️ IMPORTANTE: Tu perfil aún NO está visible.
 
 🚀 PRÓXIMO PASO:
 Completa tu perfil profesional (5 minutos) para aparecer en las búsquedas de clientes.
 
-Una vez completes el quiz, tu perfil se publicará automáticamente y empezarás a recibir contactos.
+Una vez completes el quiz, tu perfil se publicará automáticamente y empezarás a recibir contactos.`}
 
 Gracias,
 Equipo milautonomos`;
 
+            // ✅ Seleccionar email según tipo de activación
+            let emailBody;
+            let emailSubject;
+
+            if (isReactivation) {
+                emailBody = reactivationEmailBody;
+                emailSubject = "✅ Tu suscripción ha sido reactivada - milautonomos";
+            } else if (isTrial) {
+                emailBody = trialEmailBody;
+                emailSubject = "✅ Tu prueba gratuita está activa - Completa tu perfil";
+            } else {
+                emailBody = normalEmailBody;
+                emailSubject = "✅ Bienvenido a milautonomos - Completa tu perfil";
+            }
+
             await base44.asServiceRole.integrations.Core.SendEmail({
                 to: customerEmail,
-                subject: isTrial ? "✅ Tu prueba gratuita está activa - Completa tu perfil" : "✅ Bienvenido a milautonomos - Completa tu perfil",
-                body: isTrial ? trialEmailBody : normalEmailBody,
+                subject: emailSubject,
+                body: emailBody,
                 from_name: "milautonomos"
             });
 
-            console.log(`✅ Flujo completado para ${customerEmail} - Estado: ${subscriptionStatus}`);
+            console.log(`✅ Flujo completado para ${customerEmail} - ${isReactivation ? 'REACTIVACIÓN' : 'NUEVA SUSCRIPCIÓN'} - Estado: ${subscriptionStatus}`);
         }
 
         // ✅ Handle invoice.payment_succeeded (renovaciones mensuales)
