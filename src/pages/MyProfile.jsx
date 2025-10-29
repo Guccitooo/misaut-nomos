@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom"; // ✅ Añadido useSearchParams
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner"; // ✅ Añadido toast
 
 export default function MyProfilePage() {
   const navigate = useNavigate();
@@ -29,6 +30,10 @@ export default function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [searchParams] = useSearchParams(); // ✅ NUEVO
+
+  // ✅ NUEVO: Detectar reactivación exitosa
+  const reactivationSuccess = searchParams.get("reactivation");
 
   // User data
   const [userData, setUserData] = useState({
@@ -116,6 +121,25 @@ export default function MyProfilePage() {
       setProfileData(prev => ({ ...prev, service_area: area }));
     }
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
+
+  // ✅ NUEVO: Detectar reactivación exitosa
+  useEffect(() => {
+    if (reactivationSuccess === "success") {
+      toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
+        duration: 6000
+      });
+      
+      // Limpiar URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Recargar datos
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    } else if (reactivationSuccess === "canceled") {
+      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [reactivationSuccess, queryClient]); // Añadir queryClient a las dependencias del useEffect
 
   const loadUser = async () => {
     try {
@@ -406,12 +430,11 @@ export default function MyProfilePage() {
             {profile && (
               <div className="mt-2 flex gap-2">
                 {/* ✅ MEJORADO: Badge unificado basado en suscripción */}
-                {subscriptionStatus?.isActive && (
+                {subscriptionStatus?.isActive ? (
                   <Badge className="bg-green-100 text-green-800">
                     ✓ Visible en búsquedas
                   </Badge>
-                )}
-                {!subscriptionStatus?.isActive && (
+                ) : (
                   <Badge className="bg-gray-100 text-gray-800">
                     ⚠ Oculto en búsquedas
                   </Badge>
