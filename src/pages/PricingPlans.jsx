@@ -19,96 +19,12 @@ export default function PricingPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [processingPendingPlan, setProcessingPendingPlan] = useState(false); // New state to manage pending plan processing
 
   const canceled = searchParams.get("canceled");
 
-  // Initial user load on component mount
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  // Detect and process pending plan selection after user login
-  useEffect(() => {
-    // Only proceed if user is loaded and not loading, and plans are also loaded
-    if (user && !isLoadingUser && plans.length > 0) {
-      const pendingPlan = localStorage.getItem('pending_plan_selection');
-      if (pendingPlan) {
-        try {
-          const planData = JSON.parse(pendingPlan);
-          console.log('🔄 Plan pendiente detectado tras login:', planData);
-          localStorage.removeItem('pending_plan_selection');
-          
-          // Ensure user_type is "professionnel" before proceeding with the pending plan
-          if (user.user_type !== "professionnel") {
-            console.log('⚙️ Actualizando user_type a professionnel...');
-            base44.auth.updateMe({ user_type: "professionnel" }).then(() => {
-              console.log('✅ User actualizado a professionnel');
-              // Reload user to update the state with the new user_type
-              loadUser().then(() => {
-                // Continue with the pending plan selection
-                continuePendingPlanSelection(planData);
-              });
-            }).catch(error => {
-                console.error('Error actualizando user_type a professionnel en useEffect:', error);
-                toast.error('Hubo un error al configurar tu cuenta. Inténtalo de nuevo.');
-            });
-          } else {
-            // User is already a professional, continue directly
-            continuePendingPlanSelection(planData);
-          }
-        } catch (error) {
-          console.error('Error procesando plan pendiente:', error);
-          localStorage.removeItem('pending_plan_selection');
-        }
-      }
-    }
-  }, [user, isLoadingUser, plans]); // Dependency on `plans` ensures they are available for `continuePendingPlanSelection`
-
-  // Show toast message if payment was canceled
-  useEffect(() => {
-    if (canceled) {
-      toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
-        duration: 5000
-      });
-    }
-  }, [canceled]);
-
-  const loadUser = async () => {
-    setIsLoadingUser(true);
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
-      
-      // Removed automatic "professionnel" assignment here, it's now handled by selection logic
-      return currentUser;
-    } catch (error) {
-      console.error("Error loading user:", error);
-      setUser(null);
-      return null;
-    } finally {
-      setIsLoadingUser(false);
-    }
-  };
-
-  // Function to continue with a plan that was pending after login/user type update
-  const continuePendingPlanSelection = async (planData) => {
-    console.log('▶️ Continuando con plan:', planData);
-    
-    // Find the full plan object from the loaded plans list
-    const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
-    if (fullPlan) {
-      // Small delay to allow React state updates or UI to settle before triggering another action
-      setTimeout(() => {
-        handleSelectPlan(fullPlan);
-      }, 500);
-    } else {
-      console.error('❌ Plan no encontrado para continuar:', planData.plan_id);
-      toast.error('El plan seleccionado no está disponible actualmente.');
-    }
-  };
-
-  const { data: plans = [], isLoading } = useQuery({
+  // Query for subscription plans, moved up to be available early for useEffects
+  const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
@@ -134,18 +50,112 @@ export default function PricingPlansPage() {
     initialData: [],
   });
 
-  const handleSelectPlan = async (plan) => {
-    console.log('🎯 Plan seleccionado:', plan.plan_id);
-    console.log('👤 Usuario actual:', user?.email, 'Tipo:', user?.user_type);
+  // Initial user load on component mount
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  // Show toast message if payment was canceled
+  useEffect(() => {
+    if (canceled) {
+      toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
+        duration: 5000
+      });
+    }
+  }, [canceled]);
+
+  // ✅ CORREGIDO: Procesar plan pendiente solo cuando todo esté listo
+  useEffect(() => {
+    // Guard: evitar ejecución múltiple o si ya estamos procesando
+    if (processingPendingPlan) return;
     
-    // If user is not logged in, save the selected plan and redirect to login
+    // Esperar a que todo esté cargado: user, plans, y que no haya carga activa
+    if (isLoadingUser || loadingPlans || !user || plans.length === 0) {
+      return;
+    }
+
+    const pendingPlan = localStorage.getItem('pending_plan_selection');
+    if (pendingPlan) {
+      setProcessingPendingPlan(true); // Indicar que estamos procesando
+      
+      try {
+        const planData = JSON.parse(pendingPlan);
+        console.log('🔄 Plan pendiente detectado tras login/carga:', planData);
+        
+        // Limpiar inmediatamente para evitar loops si algo falla más adelante
+        localStorage.removeItem('pending_plan_selection');
+        
+        // Buscar el plan completo en la lista de planes cargados
+        const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
+        
+        if (fullPlan) {
+          console.log('✅ Plan completo encontrado:', fullPlan.plan_id);
+          
+          // Verificar/actualizar user_type a "professionnel" si no lo es ya
+          if (user.user_type !== "professionnel") {
+            console.log('⚙️ Actualizando user_type a professionnel para plan pendiente...');
+            base44.auth.updateMe({ user_type: "professionnel" })
+              .then(async () => {
+                console.log('✅ User actualizado a professionnel. Recargando usuario...');
+                // Recargar el usuario para que el estado `user` se actualice con el nuevo `user_type`
+                await loadUser(); 
+                // Dar un pequeño tiempo para que React procese la actualización del estado y luego procesar el plan
+                setTimeout(() => {
+                  handleSelectPlan(fullPlan);
+                }, 500); // Pequeño delay
+              })
+              .catch(error => {
+                console.error('❌ Error actualizando user_type para plan pendiente:', error);
+                toast.error('Hubo un error al configurar tu cuenta. Inténtalo de nuevo.');
+                setProcessingPendingPlan(false); // Finalizar procesamiento en caso de error
+              });
+          } else {
+            // Ya es profesional, procesar el plan directamente
+            console.log('✅ Usuario ya es professionnel, continuando con plan pendiente...');
+            setTimeout(() => {
+              handleSelectPlan(fullPlan);
+            }, 500); // Pequeño delay
+          }
+        } else {
+          console.error('❌ Plan no encontrado para continuar:', planData.plan_id);
+          toast.error('El plan seleccionado no está disponible actualmente.');
+          setProcessingPendingPlan(false); // Finalizar procesamiento en caso de plan no encontrado
+        }
+      } catch (error) {
+        console.error('❌ Error procesando plan pendiente:', error);
+        localStorage.removeItem('pending_plan_selection'); // Asegurar limpieza
+        setProcessingPendingPlan(false); // Finalizar procesamiento en caso de error
+      }
+    }
+  }, [user, isLoadingUser, plans, loadingPlans, processingPendingPlan]); // Dependencias actualizadas
+
+  const loadUser = async () => {
+    setIsLoadingUser(true);
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
+      return currentUser;
+    } catch (error) {
+      console.error("Error loading user:", error);
+      setUser(null);
+      return null;
+    } finally {
+      setIsLoadingUser(false);
+    }
+  };
+
+  const handleSelectPlan = async (plan) => {
+    console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
+    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type);
+    
+    // Si no hay usuario, guardar plan y redirigir a login
     if (!user) {
-      console.log('🔑 Usuario no logueado, guardando plan y redirigiendo a login...');
+      console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
       
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_id: plan.plan_id,
-        // Include price for better context, although it will be fetched again on continuation
-        precio: plan.precio, 
+        precio: plan.precio,
         timestamp: Date.now()
       }));
       
@@ -153,13 +163,15 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // Ensure the user's type is "professionnel" before proceeding with payment
+    // Verificar que sea profesional, si no, actualizar y luego continuar
+    // Esta lógica podría haberse ejecutado ya por el useEffect de pending_plan_selection,
+    // pero se mantiene aquí como un fallback robusto por si handleSelectPlan se llama directamente
     if (user.user_type !== "professionnel") {
-      console.log('⚙️ Actualizando usuario a professionnel...');
+      console.log('⚙️ Usuario no es profesional, intentando actualizar...');
       try {
         await base44.auth.updateMe({ user_type: "professionnel" });
         console.log('✅ Usuario actualizado a professionnel');
-        // Reload user to update the state, crucial for subsequent calls using user data
+        // Recargar usuario para que el estado se actualice
         const updatedUser = await loadUser();
         setUser(updatedUser); 
       } catch (error) {
@@ -167,7 +179,8 @@ export default function PricingPlansPage() {
         toast.error('Error al configurar tu cuenta. Por favor, inténtalo de nuevo.');
         setIsProcessing(false);
         setSelectedPlan(null);
-        return; // Stop processing if user type update fails
+        setProcessingPendingPlan(false); // Asegurar que el flag se resetee
+        return; 
       }
     }
 
@@ -183,15 +196,16 @@ export default function PricingPlansPage() {
       );
 
       console.log('💳 Llamando a createCheckoutSession...');
+      // En este punto, `user` debe ser "professionnel" y estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
-        email: user.email, // `user` is guaranteed to be logged in and user_type "professionnel" here
+        email: user.email, 
         fullName: user.full_name || user.email,
-        userType: "professionnel",  // Always "professionnel" for subscription plans
-        cifNif: "", // Placeholder, might be filled later from user profile
+        userType: "professionnel",  
+        cifNif: "", 
         phone: user.phone || "",
-        activity: "Sin especificar", // Placeholder, might be filled later from user profile
+        activity: "Sin especificar", 
         activityOther: "",
-        address: user.city || "Sin especificar", // Placeholder, might be filled later from user profile
+        address: user.city || "Sin especificar", 
         paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
@@ -219,6 +233,7 @@ export default function PricingPlansPage() {
       toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
+      setProcessingPendingPlan(false); // Asegurar que el flag se resetee en caso de error
     }
   };
 
@@ -296,10 +311,14 @@ export default function PricingPlansPage() {
     }
   };
 
-  if (isLoading || isLoadingUser) {
+  // ✅ Mostrar loading mientras se procesa plan pendiente
+  if (isLoadingUser || loadingPlans || processingPendingPlan) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+        {processingPendingPlan && (
+          <p className="text-gray-600">Continuando con tu selección...</p>
+        )}
       </div>
     );
   }
