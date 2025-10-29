@@ -776,33 +776,137 @@ Equipo milautonomos`,
   // Success screen
   if (currentStep === steps.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full border-0 shadow-2xl">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-              <CheckCircle className="w-12 h-12 text-green-600" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex items-center justify-center p-4">
+        {/* ✅ Elementos decorativos de fondo */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
+        </div>
+
+        <Card className="max-w-3xl w-full border-0 shadow-2xl relative z-10 overflow-hidden">
+          {/* ✅ Barra de confetti decorativa */}
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"></div>
+          
+          <CardContent className="p-8 md:p-12">
+            {/* ✅ Icono de éxito con animación */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-28 h-28 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                  <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
+                </div>
+                {/* ✅ Anillo animado alrededor */}
+                <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              ✅ ¡Tu perfil ya está activo!
+
+            {/* ✅ Título principal */}
+            <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
+              ✅ ¡Tu perfil profesional está activo!
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Tu perfil profesional ahora es visible en las búsquedas de milautonomos
+
+            {/* ✅ Subtítulo */}
+            <p className="text-lg md:text-xl text-center text-gray-600 mb-3 max-w-2xl mx-auto">
+              Ya eres visible en las búsquedas de <span className="font-semibold text-blue-700">milautonomos</span>
             </p>
-            <div className="flex gap-4 justify-center">
+
+            <p className="text-base text-center text-gray-500 mb-8 max-w-xl mx-auto">
+              Empieza a recibir contactos de clientes interesados en tus servicios profesionales.
+            </p>
+
+            {/* ✅ Estadísticas rápidas */}
+            <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl mx-auto">
+              <div className="text-center p-4 bg-blue-50 rounded-xl">
+                <div className="text-2xl font-bold text-blue-700">✓</div>
+                <div className="text-xs text-gray-600 mt-1">Perfil activo</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-xl">
+                <div className="text-2xl font-bold text-green-700">👁️</div>
+                <div className="text-xs text-gray-600 mt-1">Visible en búsquedas</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-xl">
+                <div className="text-2xl font-bold text-purple-700">🚀</div>
+                <div className="text-xs text-gray-600 mt-1">Listo para clientes</div>
+              </div>
+            </div>
+
+            {/* ✅ Botones de acción principales */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-base px-8 py-6"
+                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${user.id}`)}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Ver mi ficha pública
+              </Button>
+              
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${user.id}`)}
-              >
-                Ver mi ficha pública
-              </Button>
-              <Button
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700"
+                className="border-2 border-blue-600 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6"
                 onClick={() => navigate(createPageUrl("Search"))}
               >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
                 Ver búsquedas de clientes
               </Button>
+            </div>
+
+            {/* ✅ Botón secundario - Editar perfil */}
+            <div className="text-center mb-8">
+              <Button
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                onClick={() => navigate(createPageUrl("MyProfile"))}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Editar mi perfil
+              </Button>
+            </div>
+
+            {/* ✅ Separador */}
+            <div className="border-t border-gray-200 my-8"></div>
+
+            {/* ✅ Mensaje motivacional */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-2">💡 Consejos para destacar</h3>
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Pide valoraciones a tus clientes satisfechos</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ Próximos pasos */}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-500">
+                ¿Necesitas ayuda? Contacta con soporte:{" "}
+                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium">
+                  admin@milautonomos.com
+                </a>
+              </p>
             </div>
           </CardContent>
         </Card>
