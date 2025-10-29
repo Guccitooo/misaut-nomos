@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +15,7 @@ import { toast } from "sonner";
 export default function ClientOnboardingPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -51,47 +45,55 @@ export default function ClientOnboardingPage() {
   }, []);
 
   const loadUser = async () => {
+    setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
-      
-      if (!currentUser) {
-        // Sin usuario → redirigir a login y volver aquí
-        base44.auth.redirectToLogin(window.location.href);
-        return;
-      }
-
       setUser(currentUser);
 
-      // Pre-cargar datos del usuario
-      setFormData(prev => ({
-        ...prev,
-        nombre: currentUser.full_name || "",
-        email: currentUser.email || "",
-        telefono: currentUser.phone || "",
-        ciudad: currentUser.city || "",
-      }));
+      // Pre-cargar datos del usuario si existe
+      if (currentUser) {
+        setFormData(prev => ({
+          ...prev,
+          nombre: currentUser.full_name || "",
+          email: currentUser.email || "",
+          telefono: currentUser.phone || "",
+          ciudad: currentUser.city || "",
+        }));
 
-      // Si ya es cliente y completó onboarding → ir a búsqueda
-      if (currentUser.user_type === "client") {
-        navigate(createPageUrl("Search"));
-        return;
-      }
+        // Si ya es cliente y completó onboarding → ir a búsqueda
+        if (currentUser.user_type === "client") {
+          navigate(createPageUrl("Search"));
+          return;
+        }
 
-      // Si es autónomo → mensaje de advertencia
-      if (currentUser.user_type === "professionnel") {
-        setError("Ya tienes una cuenta profesional activa. No puedes crear una cuenta de cliente.");
-        setTimeout(() => {
-          navigate(createPageUrl("MyProfile"));
-        }, 3000);
+        // Si es autónomo → mensaje de advertencia
+        if (currentUser.user_type === "professionnel") {
+          setError("Ya tienes una cuenta profesional activa. No puedes crear una cuenta de cliente.");
+          setTimeout(() => {
+            navigate(createPageUrl("MyProfile"));
+          }, 3000);
+        }
       }
     } catch (error) {
       console.error("Error loading user:", error);
-      base44.auth.redirectToLogin(window.location.href);
+      // ✅ CAMBIO: NO redirigir al login, permitir que vea el formulario
+      setUser(null);
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async (data) => {
+      // ✅ CAMBIO: Verificar si tiene sesión antes de proceder
+      let currentUser = user;
+      
+      if (!currentUser) {
+        // Si no tiene sesión, redirigir a login y volver aquí
+        base44.auth.redirectToLogin(window.location.href);
+        throw new Error("Debes iniciar sesión primero");
+      }
+
       // 1. Actualizar usuario como cliente
       await base44.auth.updateMe({
         user_type: "client",
@@ -136,6 +138,10 @@ Equipo MilAutónomos`,
       navigate(createPageUrl("Search"));
     },
     onError: (error) => {
+      if (error.message === "Debes iniciar sesión primero") {
+        // El usuario será redirigido al login por el código anterior
+        return;
+      }
       console.error("Error completing onboarding:", error);
       setError("Error al completar el registro: " + error.message);
       toast.error("Error al completar el registro");
@@ -195,7 +201,7 @@ Equipo MilAutónomos`,
     }
   };
 
-  if (!user) {
+  if (isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -205,7 +211,7 @@ Equipo MilAutónomos`,
   }
 
   // Si es autónomo, mostrar mensaje
-  if (user.user_type === "professionnel") {
+  if (user?.user_type === "professionnel") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-md border-0 shadow-lg">
@@ -242,6 +248,11 @@ Equipo MilAutónomos`,
           <p className="text-sm text-green-700 font-semibold mt-2">
             ✅ 100% GRATIS - Sin costes ocultos
           </p>
+          {!user && (
+            <p className="text-sm text-blue-600 mt-2">
+              Al enviar el formulario, se te pedirá que inicies sesión o crees una cuenta
+            </p>
+          )}
         </div>
 
         {error && (
@@ -277,11 +288,13 @@ Equipo MilAutónomos`,
                   placeholder="tu@email.com"
                   className="h-12 mt-2"
                   required
-                  disabled
+                  disabled={!!user}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Email de tu cuenta (no se puede cambiar aquí)
-                </p>
+                {user && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email de tu cuenta (no se puede cambiar aquí)
+                  </p>
+                )}
               </div>
 
               {/* Teléfono */}
