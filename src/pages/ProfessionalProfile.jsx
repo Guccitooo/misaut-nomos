@@ -27,6 +27,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
 import PhotoGallery from "../components/profile/PhotoGallery.jsx";
+import OptimizedImage from "../components/ui/OptimizedImage";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
@@ -155,6 +156,8 @@ export default function ProfessionalProfilePage() {
       return profiles[0];
     },
     enabled: !!professionalId,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    cacheTime: 1000 * 60 * 15, // 15 minutos
   });
 
   const { data: professionalUser } = useQuery({
@@ -164,13 +167,17 @@ export default function ProfessionalProfilePage() {
       return users[0];
     },
     enabled: !!professionalId,
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 15,
   });
 
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews', professionalId],
-    queryFn: () => base44.entities.Review.filter({ professional_id: professionalId }, '-created_date'),
+    queryFn: () => base44.entities.Review.filter({ professional_id: professionalId }, '-created_date', 20),
     enabled: !!professionalId,
     initialData: [],
+    staleTime: 1000 * 60 * 3,
+    cacheTime: 1000 * 60 * 10,
   });
 
   if (loadingProfile) {
@@ -199,10 +206,11 @@ export default function ProfessionalProfilePage() {
       {/* Header with Cover */}
       <div className="relative h-64 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700">
         {profile.photos?.[0] && (
-          <img 
-            src={profile.photos[0]} 
+          <OptimizedImage
+            src={profile.photos[0]}
             alt={profile.business_name}
-            className="w-full h-full object-cover opacity-30"
+            className="w-full h-full absolute inset-0 opacity-30"
+            priority={true}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent" />
