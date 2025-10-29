@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +24,8 @@ import {
   Briefcase,
   Phone,
   MessageCircle,
-  MessageSquare
+  MessageSquare,
+  User // Added User icon import
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import OptimizedImage from "@/components/ui/OptimizedImage";
@@ -377,7 +379,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - ✅ CAMBIO: Botón solo se renderiza si NO hay usuario */}
+      {/* Hero Section - ✅ CAMBIO: DOS BOTONES DIFERENCIADOS */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
@@ -388,14 +390,45 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Renderizado condicional INMEDIATO - no esperar estado asíncrono */}
+            {/* ✅ CAMBIO: Dos botones diferenciados con mensaje explicativo */}
             {!isLoadingUser && !user && (
-              <Link to={createPageUrl("PricingPlans")}>
-                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl">
-                  <Briefcase className="w-5 h-5 mr-2" />
-                  ¿Eres autónomo? Únete ahora
-                </Button>
-              </Link>
+              <div className="space-y-4">
+                <p className="text-base text-blue-100 max-w-xl mx-auto">
+                  <strong>Elige cómo quieres empezar:</strong>
+                </p>
+                <div className="flex flex-col md:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
+                  <Link to={createPageUrl("UserTypeSelection") + "?type=autonomo"} className="w-full md:w-auto">
+                    <Button 
+                      size="lg" 
+                      className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl border-2 border-orange-400 transition-all hover:scale-105"
+                    >
+                      <Briefcase className="w-5 h-5 mr-2" />
+                      🧰 Soy autónomo
+                    </Button>
+                  </Link>
+                  <Link to={createPageUrl("UserTypeSelection") + "?type=cliente"} className="w-full md:w-auto">
+                    <Button 
+                      size="lg" 
+                      className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl border-2 border-blue-400 transition-all hover:scale-105"
+                    >
+                      <User className="w-5 h-5 mr-2" />
+                      👤 Soy cliente
+                    </Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mt-6 text-left">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-sm text-blue-50">
+                      <strong>🧰 Si eres profesional:</strong> crea tu perfil de autónomo y aparece en las búsquedas
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-sm text-blue-50">
+                      <strong>👤 Si buscas servicios:</strong> crea tu cuenta de cliente para contactar directamente con expertos
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
