@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Star, MessageSquare, AlertCircle, Flag, CheckCircle2, XCircle } from "lucide-react";
+import { Star, MessageSquare, AlertCircle, Flag, CheckCircle2, XCircle, Zap, MessageCircleIcon, Sparkles, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -20,139 +20,48 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Progress } from "@/components/ui/progress";
 
 export default function ReviewSection({ reviews, professionalId, currentUser }) {
-  const [showForm, setShowForm] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-  const [error, setError] = useState(null);
   const [reportingReview, setReportingReview] = useState(null);
-  const [canReview, setCanReview] = useState(false);
-  const [checkingEligibility, setCheckingEligibility] = useState(false);
   const queryClient = useQueryClient();
 
-  // ✅ Verificar si el usuario puede dejar reseña
-  useEffect(() => {
-    if (currentUser && professionalId) {
-      checkReviewEligibility();
+  // ✅ NUEVO: Calcular estadísticas de valoraciones detalladas
+  const calculateDetailedStats = () => {
+    if (!reviews || reviews.length === 0) {
+      return {
+        rapidez: 0,
+        comunicacion: 0,
+        calidad: 0,
+        precio_satisfaccion: 0,
+        total: 0
+      };
     }
-  }, [currentUser, professionalId]);
 
-  const checkReviewEligibility = async () => {
-    if (!currentUser || currentUser.user_type !== "client") {
-      setCanReview(false);
-      return;
-    }
+    const stats = reviews.reduce((acc, review) => {
+      acc.rapidez += review.rapidez || 0;
+      acc.comunicacion += review.comunicacion || 0;
+      acc.calidad += review.calidad || 0;
+      acc.precio_satisfaccion += review.precio_satisfaccion || 0;
+      return acc;
+    }, { rapidez: 0, comunicacion: 0, calidad: 0, precio_satisfaccion: 0 });
 
-    setCheckingEligibility(true);
-    try {
-      // 1. Verificar si ya dejó una reseña
-      const existingReviews = await base44.entities.Review.filter({
-        professional_id: professionalId,
-        client_id: currentUser.id
-      });
-
-      if (existingReviews.length > 0) {
-        setCanReview(false);
-        setError("Ya has dejado una opinión para este autónomo");
-        setCheckingEligibility(false);
-        return;
-      }
-
-      // 2. Verificar si existe conversación
-      const conversationId = [currentUser.id, professionalId].sort().join('_');
-      const messages = await base44.entities.Message.filter({
-        conversation_id: conversationId
-      });
-
-      if (messages.length === 0) {
-        setCanReview(false);
-        setError("Debes contactar primero con este autónomo antes de dejar una opinión");
-        setCheckingEligibility(false);
-        return;
-      }
-
-      // 3. ✅ VERIFICACIÓN CRÍTICA: El profesional debe haber respondido
-      const professionalResponded = messages.some(msg => msg.sender_id === professionalId);
-
-      if (!professionalResponded) {
-        setCanReview(false);
-        setError("Solo puedes dejar una opinión si el profesional ha respondido a tu mensaje");
-        setCheckingEligibility(false);
-        return;
-      }
-
-      // ✅ Todas las verificaciones pasadas
-      setCanReview(true);
-      setError(null);
-    } catch (error) {
-      console.error("Error checking review eligibility:", error);
-      setCanReview(false);
-      setError("Error al verificar elegibilidad");
-    }
-    setCheckingEligibility(false);
+    const count = reviews.length;
+    return {
+      rapidez: stats.rapidez / count,
+      comunicacion: stats.comunicacion / count,
+      calidad: stats.calidad / count,
+      precio_satisfaccion: stats.precio_satisfaccion / count,
+      total: (stats.rapidez + stats.comunicacion + stats.calidad + stats.precio_satisfaccion) / (count * 4)
+    };
   };
 
-  const createReviewMutation = useMutation({
-    mutationFn: async (reviewData) => {
-      return base44.entities.Review.create(reviewData);
-    },
-    onSuccess: async () => {
-      // Update profile rating
-      const allReviews = await base44.entities.Review.filter({
-        professional_id: professionalId
-      });
-      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
-      
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: professionalId
-      });
-      
-      if (profiles[0]) {
-        await base44.entities.ProfessionalProfile.update(profiles[0].id, {
-          average_rating: avgRating,
-          total_reviews: allReviews.length
-        });
-      }
-
-      // Send notification to professional
-      const professionalUser = await base44.entities.User.filter({ id: professionalId });
-      if (professionalUser[0]) {
-        await base44.integrations.Core.SendEmail({
-          to: professionalUser[0].email,
-          subject: "Nueva opinión en tu perfil - milautonomos",
-          body: `Hola,
-
-Has recibido una nueva opinión en tu perfil de milautonomos.
-
-Calificación: ${rating} estrellas
-Comentario: ${comment}
-
-Puedes ver todas tus opiniones en tu perfil profesional.
-
-Gracias,
-Equipo milautonomos`,
-          from_name: "milautonomos"
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['reviews', professionalId] });
-      setShowForm(false);
-      setComment("");
-      setRating(5);
-      setError(null);
-      setCanReview(false); // Ya no puede dejar otra reseña
-    },
-    onError: (err) => {
-      setError(err.message);
-    }
-  });
+  const stats = calculateDetailedStats();
 
   const reportReviewMutation = useMutation({
     mutationFn: async (reviewId) => {
       await base44.entities.Review.update(reviewId, { is_reported: true });
       
-      // Send email to admin
       await base44.integrations.Core.SendEmail({
         to: "admin@milautonomos.com",
         subject: "⚠️ Opinión reportada - milautonomos",
@@ -174,161 +83,82 @@ Sistema milautonomos`,
     }
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!currentUser) {
-      base44.auth.redirectToLogin();
-      return;
-    }
-
-    if (!canReview) {
-      setError("No cumples los requisitos para dejar una opinión");
-      return;
-    }
-
-    createReviewMutation.mutate({
-      professional_id: professionalId,
-      client_id: currentUser.id,
-      client_name: currentUser.full_name || currentUser.email,
-      rating,
-      comment,
-      is_verified: true,
-      is_reported: false
-    });
-  };
-
-  const handleOpenForm = () => {
-    if (!currentUser) {
-      base44.auth.redirectToLogin();
-      return;
-    }
-
-    if (currentUser.user_type !== "client") {
-      setError("Solo los clientes pueden dejar opiniones");
-      return;
-    }
-
-    setShowForm(true);
-    // Volver a verificar al abrir el formulario
-    checkReviewEligibility();
-  };
+  // ✅ NUEVO: Componente de barra de progreso con icono
+  const RatingBar = ({ label, value, icon: Icon, color }) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${color}`} />
+          <span className="text-sm font-medium text-gray-700">{label}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+          <span className="text-sm font-bold text-gray-900">{value.toFixed(1)}</span>
+        </div>
+      </div>
+      <Progress value={(value / 5) * 100} className="h-2" />
+    </div>
+  );
 
   return (
     <>
       <Card className="shadow-lg border-0">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-700" />
-              Opiniones ({reviews.length})
-            </CardTitle>
-            {currentUser && currentUser.user_type === "client" && !showForm && (
-              <Button
-                variant="outline"
-                onClick={handleOpenForm}
-                className="border-blue-700 text-blue-700 hover:bg-blue-50"
-              >
-                <Star className="w-4 h-4 mr-2" />
-                Dejar opinión
-              </Button>
-            )}
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-700" />
+            Opiniones ({reviews.length})
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {showForm && (
-            <>
-              {checkingEligibility ? (
-                <Alert className="bg-blue-50 border-blue-200">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-800">
-                    Verificando tu elegibilidad para dejar una opinión...
-                  </AlertDescription>
-                </Alert>
-              ) : !canReview && error ? (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{error}</strong>
-                    <ul className="list-disc list-inside mt-2 text-sm">
-                      <li>Debes haber contactado con el profesional</li>
-                      <li>El profesional debe haber respondido a tu mensaje</li>
-                      <li>Solo puedes dejar una opinión por profesional</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              ) : canReview ? (
-                <form onSubmit={handleSubmit} className="p-6 bg-blue-50 rounded-xl space-y-4">
-                  <Alert className="bg-green-50 border-green-200">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      ✅ <strong>Puedes dejar tu opinión</strong> - Has tenido una conversación verificada con este profesional
-                    </AlertDescription>
-                  </Alert>
+          {/* ✅ NUEVO: Resumen de valoraciones detalladas */}
+          {reviews.length > 0 && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Star className="w-8 h-8 fill-amber-400 text-amber-400" />
+                  <span className="text-4xl font-bold text-gray-900">
+                    {stats.total.toFixed(1)}
+                  </span>
+                  <span className="text-2xl text-gray-500">/ 5</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Basado en {reviews.length} {reviews.length === 1 ? 'opinión' : 'opiniones'}
+                </p>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tu valoración
-                    </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setRating(star)}
-                          className="transition-transform hover:scale-110"
-                        >
-                          <Star
-                            className={`w-8 h-8 ${
-                              star <= rating
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tu comentario
-                    </label>
-                    <Textarea
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Comparte tu experiencia..."
-                      className="h-32"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex gap-3 justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowForm(false);
-                        setError(null);
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createReviewMutation.isPending || !canReview}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {createReviewMutation.isPending ? "Enviando..." : "Publicar opinión"}
-                    </Button>
-                  </div>
-                </form>
-              ) : null}
-            </>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RatingBar
+                  label="Rapidez"
+                  value={stats.rapidez}
+                  icon={Zap}
+                  color="text-yellow-600"
+                />
+                <RatingBar
+                  label="Comunicación"
+                  value={stats.comunicacion}
+                  icon={MessageCircleIcon}
+                  color="text-blue-600"
+                />
+                <RatingBar
+                  label="Calidad del trabajo"
+                  value={stats.calidad}
+                  icon={Sparkles}
+                  color="text-purple-600"
+                />
+                <RatingBar
+                  label="Precio / Satisfacción"
+                  value={stats.precio_satisfaccion}
+                  icon={DollarSign}
+                  color="text-green-600"
+                />
+              </div>
+            </div>
           )}
 
+          {/* Lista de opiniones */}
           <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div key={review.id} className="p-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-4">
                   <Avatar>
                     <AvatarFallback className="bg-blue-100 text-blue-900">
@@ -369,7 +199,41 @@ Sistema milautonomos`,
                         )}
                       </div>
                     </div>
-                    <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+
+                    {/* ✅ NUEVO: Mostrar valoraciones detalladas */}
+                    {(review.rapidez || review.comunicacion || review.calidad || review.precio_satisfaccion) && (
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        {review.rapidez && (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <Zap className="w-3 h-3 text-yellow-600" />
+                            <span>Rapidez: {review.rapidez}/5</span>
+                          </div>
+                        )}
+                        {review.comunicacion && (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <MessageCircleIcon className="w-3 h-3 text-blue-600" />
+                            <span>Comunicación: {review.comunicacion}/5</span>
+                          </div>
+                        )}
+                        {review.calidad && (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <Sparkles className="w-3 h-3 text-purple-600" />
+                            <span>Calidad: {review.calidad}/5</span>
+                          </div>
+                        )}
+                        {review.precio_satisfaccion && (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <DollarSign className="w-3 h-3 text-green-600" />
+                            <span>Precio: {review.precio_satisfaccion}/5</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {review.comment && (
+                      <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                    )}
+                    
                     <div className="flex gap-2 mt-2">
                       {review.is_verified && (
                         <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
@@ -391,7 +255,7 @@ Sistema milautonomos`,
               <div className="text-center py-12 text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="font-medium">Sin opiniones por ahora</p>
-                <p className="text-sm">Sé el primero en dejar una opinión</p>
+                <p className="text-sm">Las valoraciones aparecerán aquí una vez los clientes dejen su opinión</p>
               </div>
             )}
           </div>
