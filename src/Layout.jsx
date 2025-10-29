@@ -38,6 +38,7 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -46,6 +47,7 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     checkOnboardingStatus();
+    checkSubscriptionStatus();
   }, [user, location.pathname]);
 
   const loadUser = async () => {
@@ -73,6 +75,29 @@ export default function Layout({ children, currentPageName }) {
     } catch (error) {
       console.error("Error loading unread count:", error);
       setUnreadCount(0);
+    }
+  };
+
+  const checkSubscriptionStatus = async () => {
+    if (!user || user.user_type !== "professionnel") {
+      setHasActiveSubscription(false);
+      return;
+    }
+
+    try {
+      const subscriptions = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+
+      const activeStates = ["activo", "en_prueba", "trialing"];
+      const hasActive = subscriptions.length > 0 &&
+                       activeStates.includes(subscriptions[0].estado);
+      
+      setHasActiveSubscription(hasActive);
+      console.log('💳 Suscripción activa:', hasActive);
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      setHasActiveSubscription(false);
     }
   };
 
@@ -122,20 +147,17 @@ export default function Layout({ children, currentPageName }) {
   const handleLogin = () => {
     console.log('🔑 Intentando redirigir al login...');
     try {
-      // ✅ CAMBIO: Probar diferentes métodos
       if (typeof base44.auth.redirectToLogin === 'function') {
         console.log('✅ Método redirectToLogin existe, llamando...');
         base44.auth.redirectToLogin();
       } else {
         console.warn('⚠️ redirectToLogin no existe, usando método alternativo');
-        // Fallback: redirigir manualmente a la URL de login de Base44
         const loginUrl = `https://app.base44.com/login?app_id=${window.location.hostname}&redirect_uri=${encodeURIComponent(window.location.href)}`;
         console.log('🔗 Redirigiendo a:', loginUrl);
         window.location.href = loginUrl;
       }
     } catch (error) {
       console.error('❌ Error al intentar login:', error);
-      // Último fallback: reload
       alert('Error al iniciar sesión. Intenta recargando la página.');
     }
   };
@@ -164,17 +186,25 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  navigationItems.push({
-    title: "Ver Planes",
-    url: createPageUrl("PricingPlans"),
-    icon: CreditCard,
-  });
-
   if (user?.user_type === "professionnel") {
+    if (hasActiveSubscription) {
+      navigationItems.push({
+        title: "Mi Suscripción",
+        url: createPageUrl("SubscriptionManagement"),
+        icon: Briefcase,
+      });
+    } else {
+      navigationItems.push({
+        title: "Ver Planes",
+        url: createPageUrl("PricingPlans"),
+        icon: CreditCard,
+      });
+    }
+  } else if (!user || user?.user_type === "client") {
     navigationItems.push({
-      title: "Mi Suscripción",
-      url: createPageUrl("SubscriptionManagement"),
-      icon: Briefcase,
+      title: "Ver Planes",
+      url: createPageUrl("PricingPlans"),
+      icon: CreditCard,
     });
   }
 
@@ -220,7 +250,7 @@ export default function Layout({ children, currentPageName }) {
             --card: #ffffff;
           }
           
-          /* ✅ Fondo blanco sólido para todos los modales y diálogos */
+          /* Fondo blanco sólido para todos los modales y diálogos */
           [role="dialog"],
           [role="alertdialog"],
           .modal-content,
@@ -231,7 +261,7 @@ export default function Layout({ children, currentPageName }) {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
           }
           
-          /* ✅ Inputs, selects y textareas con fondo blanco */
+          /* Inputs, selects y textareas con fondo blanco */
           input, select, textarea {
             background-color: #FFFFFF !important;
             color: #222222 !important;
@@ -243,7 +273,7 @@ export default function Layout({ children, currentPageName }) {
             color: #888888 !important;
           }
           
-          /* ✅ Labels y textos oscuros */
+          /* Labels y textos oscuros */
           label {
             color: #333333 !important;
           }
