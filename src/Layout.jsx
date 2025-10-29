@@ -236,7 +236,7 @@ export default function Layout({ children, currentPageName }) {
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de2/f1c507180_123.png"
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
                   alt="MilAutónomos"
                   className="w-full h-full object-contain"
                 />
@@ -276,7 +276,8 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {(!user || user.user_type !== "professionnel") && (
+            {/* ✅ CAMBIO: Solo mostrar botón si NO está logueado */}
+            {!user && (
               <div className="mt-auto p-3">
                 <Link to={createPageUrl("UserTypeSelection")}>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
