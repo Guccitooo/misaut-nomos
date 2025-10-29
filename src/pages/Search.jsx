@@ -129,10 +129,10 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white h-full">
-      <CardContent className="p-4">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white flex flex-col h-full">
+      <CardContent className="p-4 flex flex-col flex-1">
         <div 
-          className="cursor-pointer"
+          className="cursor-pointer flex-1 flex flex-col"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           {/* ✅ Header: Nombre + Rating + Favoritos */}
@@ -198,14 +198,14 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
 
           {/* ✅ Descripción corta */}
-          <p className="text-sm text-gray-600 line-clamp-2 mb-3 leading-snug">
+          <p className="text-sm text-gray-600 line-clamp-2 mb-3 leading-snug flex-1">
             {profile.descripcion_corta || profile.description || "Profesional disponible"}
           </p>
         </div>
 
-        {/* ✅ Botones de contacto compactos */}
+        {/* ✅ Botones de contacto compactos - SIEMPRE AL FINAL */}
         {profile.telefono_contacto && (
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-1.5 mt-auto">
             <a
               href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
               onClick={(e) => e.stopPropagation()}
