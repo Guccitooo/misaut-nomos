@@ -38,8 +38,17 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
+        // ✅ NUEVO: Verificar que sea profesional
+        if (user.user_type !== "professionnel") {
+            return Response.json({
+                ok: false,
+                step: "validation",
+                message: 'Solo los profesionales pueden crear suscripciones'
+            }, { status: 400 });
+        }
+
         // Get plan details (default to trial)
-        const planId = selectedPlan || "plan_trial";
+        const planId = selectedPlan || "plan_monthly_trial";
         const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
             plan_id: planId
         });
@@ -53,8 +62,7 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        // ✅ IMPORTANTE: SIEMPRE usar "actif" incluso para trial (no "en_prueba")
-        // Los usuarios de prueba deben aparecer en búsquedas desde el día 1
+        // ✅ IMPORTANTE: SIEMPRE usar "actif" para que aparezcan en búsquedas
         await base44.asServiceRole.entities.User.update(userId, {
             subscription_status: "actif",
             user_type: "professionnel",
@@ -69,7 +77,6 @@ Deno.serve(async (req) => {
 
         let subscription;
         if (existingSubscriptions.length > 0) {
-            // Subscription already exists, return existing one
             subscription = existingSubscriptions[0];
             console.log(`✅ Suscripción ya existía para usuario ${userId}`);
         } else {
@@ -84,7 +91,7 @@ Deno.serve(async (req) => {
                 plan_precio: plan.precio,
                 fecha_inicio: now.toISOString(),
                 fecha_expiracion: expiration.toISOString(),
-                estado: plan.plan_id === "plan_trial" ? "en_prueba" : "activo",
+                estado: plan.plan_id === "plan_monthly_trial" ? "en_prueba" : "activo",
                 renovacion_automatica: plan.renovacion_automatica,
                 metodo_pago: "stripe",
                 fecha_ultima_renovacion: now.toISOString()
@@ -99,16 +106,11 @@ Deno.serve(async (req) => {
 
         let profile;
         if (existingProfiles.length > 0) {
-            // Profile already exists, update to ensure it's active
+            // ✅ Profile already exists - NO cambiar estado, dejar que el quiz lo haga
             profile = existingProfiles[0];
-            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                estado_perfil: "activo",
-                visible_en_busqueda: true,
-                onboarding_completed: false
-            });
-            console.log(`✅ Perfil profesional actualizado para usuario ${userId}`);
+            console.log(`✅ Perfil profesional ya existe para usuario ${userId}`);
         } else {
-            // Create new professional profile in PENDING state (not visible yet)
+            // ✅ Create new professional profile in PENDING state
             const fullName = userData?.fullName || user.full_name || "Nuevo autónomo";
             const activity = userData?.activity || "Sin especificar";
             const city = userData?.city || user.city || "Por definir";
@@ -140,7 +142,7 @@ Deno.serve(async (req) => {
             console.log(`✅ Nuevo perfil profesional creado en estado PENDIENTE para usuario ${userId}`);
         }
 
-        // Send welcome email only if it's a new subscription
+        // ✅ Send welcome email SOLO si es nuevo
         if (existingSubscriptions.length === 0) {
             try {
                 await base44.asServiceRole.integrations.Core.SendEmail({
@@ -159,16 +161,20 @@ Detalles de tu plan:
 
 ⚠️ IMPORTANTE: Tu perfil aún NO está visible en las búsquedas.
 
-Para que los clientes puedan encontrarte, debes completar tu perfil profesional:
-1. Inicia sesión en milautonomos
-2. Completa el quiz de perfil (5 minutos)
-3. Sube fotos de tus trabajos realizados
+📋 PRÓXIMO PASO:
+Completa tu perfil profesional (5 minutos):
+1. Añade tu nombre profesional y NIF
+2. Selecciona tu actividad y ubicación
+3. Sube fotos de tus trabajos
 4. Añade tu descripción y tarifas
 5. ¡Tu perfil se publicará automáticamente!
 
-${plan.plan_id === "plan_trial" ? 
-`Al finalizar tu prueba gratuita, tu plan se convertirá automáticamente en ${plan.plan_siguiente} (49€/mes) si no lo cancelas antes.` : 
-`Una vez completes tu perfil, aparecerás en "Buscar Autónomos" y empezarás a recibir contactos.`}
+Una vez completes el quiz, aparecerás en "Buscar Autónomos" y empezarás a recibir contactos de clientes.
+
+${plan.plan_id === "plan_monthly_trial" ? 
+`🎁 Tienes 7 días GRATIS para probar la plataforma.
+Al finalizar tu prueba, tu plan se convertirá automáticamente en plan mensual (49€/mes) si no lo cancelas antes.` : 
+`Una vez completes tu perfil, aparecerás en las búsquedas y empezarás a recibir contactos.`}
 
 Gracias por unirte a milautonomos,
 Equipo milautonomos`,
@@ -177,14 +183,13 @@ Equipo milautonomos`,
                 console.log(`✅ Email de bienvenida enviado a ${user.email}`);
             } catch (emailError) {
                 console.error('Error sending welcome email:', emailError);
-                // Don't fail the whole operation if email fails
             }
         }
 
         // Return success with profile data
         return Response.json({
             ok: true,
-            message: 'Suscripción y perfil creados correctamente',
+            message: 'Suscripción y perfil creados correctamente. Redirigiendo al quiz...',
             data: {
                 subscription: {
                     id: subscription.id,
