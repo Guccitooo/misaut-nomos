@@ -8,19 +8,23 @@
     },
     "business_name": {
       "type": "string",
-      "description": "Nombre comercial"
+      "description": "Nombre comercial",
+      "default": ""
     },
     "cif_nif": {
       "type": "string",
-      "description": "CIF / NIF"
+      "description": "CIF / NIF",
+      "default": ""
     },
     "email_contacto": {
       "type": "string",
-      "description": "Email de contacto"
+      "description": "Email de contacto",
+      "default": ""
     },
     "telefono_contacto": {
       "type": "string",
-      "description": "Tel\u00e9fono de contacto"
+      "description": "Tel\u00e9fono de contacto",
+      "default": ""
     },
     "categories": {
       "type": "array",
@@ -133,17 +137,24 @@
       "type": "object",
       "properties": {
         "facebook": {
-          "type": "string"
+          "type": "string",
+          "default": ""
         },
         "instagram": {
-          "type": "string"
+          "type": "string",
+          "default": ""
         },
         "linkedin": {
-          "type": "string"
+          "type": "string",
+          "default": ""
         }
       },
       "description": "Enlaces de redes sociales",
-      "default": {}
+      "default": {
+        "facebook": "",
+        "instagram": "",
+        "linkedin": ""
+      }
     },
     "price_range": {
       "type": "string",
@@ -208,12 +219,12 @@
     },
     "slug_publico": {
       "type": "string",
-      "description": "Slug para URL p\u00fablica"
+      "description": "Slug para URL p\u00fablica",
+      "default": ""
     }
   },
   "required": [
-    "user_id",
-    "business_name"
+    "user_id"
   ],
   "security": {
     "read": {
