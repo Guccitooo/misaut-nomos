@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Added useQueryClient
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,9 @@ import {
   MessageSquare,
   Heart,
   FileText,
-  Phone, // Added Phone icon
-  MessageCircle // Added MessageCircle icon
+  Phone,
+  MessageCircle,
+  Loader2 // Added Loader2 icon for loading states
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
@@ -31,11 +32,11 @@ import OptimizedImage from "../components/ui/OptimizedImage";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get('id');
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const queryClient = useQueryClient(); // Initialized useQueryClient
 
   useEffect(() => {
     loadUser();
@@ -68,7 +69,6 @@ export default function ProfessionalProfilePage() {
     }
   };
 
-  // ✅ NUEVA QUERY: Contar favoritos del profesional
   const { data: favoriteCount = 0 } = useQuery({
     queryKey: ['favoriteCount', professionalId],
     queryFn: async () => {
@@ -107,8 +107,7 @@ export default function ProfessionalProfilePage() {
         });
         setIsFavorite(true);
       }
-      
-      // ✅ Refrescar contador
+
       queryClient.invalidateQueries({ queryKey: ['favoriteCount', professionalId] });
     } catch (error) {
       console.error("Error toggling favorite:", error);
@@ -122,13 +121,11 @@ export default function ProfessionalProfilePage() {
     }
 
     const conversationId = [user.id, professionalId].sort().join('_');
-    
-    // Check if conversation exists
+
     const existingMessages = await base44.entities.Message.filter({
       conversation_id: conversationId
     });
 
-    // If no messages, create initial message
     if (existingMessages.length === 0) {
       await base44.entities.Message.create({
         conversation_id: conversationId,
@@ -146,10 +143,8 @@ export default function ProfessionalProfilePage() {
 
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
-    // Remove all non-numeric characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
-    // Add +34 if no prefix exists
-    if (!cleaned.startsWith('+') && cleaned.length === 9) { // Added length check to avoid adding +34 to already international numbers
+    if (!cleaned.startsWith('+') && cleaned.length === 9) {
       cleaned = '+34' + cleaned;
     }
     return cleaned;
@@ -157,9 +152,7 @@ export default function ProfessionalProfilePage() {
 
   const formatPhoneForWhatsApp = (phone) => {
     if (!phone) return null;
-    // Remove all non-numeric characters
     let cleaned = phone.replace(/\D/g, '');
-    // Add 34 if no prefix exists
     if (!cleaned.startsWith('34') && cleaned.length === 9) {
       cleaned = '34' + cleaned;
     }
@@ -169,14 +162,16 @@ export default function ProfessionalProfilePage() {
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['profile', professionalId],
     queryFn: async () => {
+      console.log('🔍 Cargando perfil para:', professionalId);
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: professionalId
       });
+      console.log('✅ Perfil encontrado:', profiles[0]);
       return profiles[0];
     },
     enabled: !!professionalId,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 15, // 15 minutos
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 15,
   });
 
   const { data: professionalUser } = useQuery({
@@ -190,9 +185,18 @@ export default function ProfessionalProfilePage() {
     cacheTime: 1000 * 60 * 15,
   });
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery({
     queryKey: ['reviews', professionalId],
-    queryFn: () => base44.entities.Review.filter({ professional_id: professionalId }, '-created_date', 20),
+    queryFn: async () => {
+      console.log('🔍 Cargando reviews para professional_id:', professionalId);
+      const allReviews = await base44.entities.Review.filter(
+        { professional_id: professionalId },
+        '-created_date',
+        100 // Changed limit from 20 to 100
+      );
+      console.log('✅ Reviews encontradas:', allReviews.length, allReviews);
+      return allReviews;
+    },
     enabled: !!professionalId,
     initialData: [],
     staleTime: 1000 * 60 * 3,
@@ -220,6 +224,8 @@ export default function ProfessionalProfilePage() {
     );
   }
 
+  console.log('📊 Renderizando perfil con', reviews.length, 'reviews');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header with Cover */}
@@ -233,7 +239,7 @@ export default function ProfessionalProfilePage() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent" />
-        
+
         <div className="absolute top-6 left-6">
           <Button
             variant="secondary"
@@ -288,35 +294,33 @@ export default function ProfessionalProfilePage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {/* ✅ MEJORADO: Botón de favorito con contador */}
                     <div className="relative">
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={handleToggleFavorite}
                         className={`transition-all ${
-                          isFavorite 
-                            ? 'bg-red-50 border-red-300 hover:bg-red-100' 
+                          isFavorite
+                            ? 'bg-red-50 border-red-300 hover:bg-red-100'
                             : 'hover:bg-gray-50'
                         }`}
                       >
-                        <Heart 
+                        <Heart
                           className={`w-5 h-5 transition-all ${
-                            isFavorite 
-                              ? 'fill-red-500 text-red-500 scale-110' 
+                            isFavorite
+                              ? 'fill-red-500 text-red-500 scale-110'
                               : 'text-gray-400'
                           }`}
                         />
                       </Button>
-                      
-                      {/* ✅ NUEVO: Badge con contador */}
+
                       {favoriteCount > 0 && (
                         <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
                           {favoriteCount}
                         </div>
                       )}
                     </div>
-                    
+
                     {profile.telefono_contacto && (
                       <>
                         <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
@@ -337,7 +341,7 @@ export default function ProfessionalProfilePage() {
                         </a>
                       </>
                     )}
-                    <Button 
+                    <Button
                       className="bg-blue-600 hover:bg-blue-700"
                       onClick={handleStartChat}
                     >
@@ -373,11 +377,22 @@ export default function ProfessionalProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             <PhotoGallery photos={profile.photos || []} />
 
-            <ReviewSection 
-              reviews={reviews}
-              professionalId={professionalId}
-              currentUser={user}
-            />
+            {loadingReviews ? (
+              <Card className="shadow-lg border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-700" />
+                    <span>Cargando opiniones...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <ReviewSection
+                reviews={reviews}
+                professionalId={professionalId}
+                currentUser={user}
+              />
+            )}
           </div>
 
           {/* Right Column - Contact Info */}
