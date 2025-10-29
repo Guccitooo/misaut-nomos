@@ -19,7 +19,7 @@ export default function PricingPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [processingPendingPlan, setProcessingPendingPlan] = useState(false); // New state to manage pending plan processing
+  const [processingPendingPlan, setProcessingPendingPlan] = useState(false);
 
   const canceled = searchParams.get("canceled");
 
@@ -48,6 +48,21 @@ export default function PricingPlansPage() {
       return uniquePlans.sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
+  });
+
+  // ✅ NUEVA: Query para verificar suscripción existente
+  const { data: existingSubscription } = useQuery({
+    queryKey: ['existingSubscription', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null; // Ensure user ID exists before fetching
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+      // Assuming a user can only have one active subscription of a given type
+      // or we only care about the first one found
+      return subs.length > 0 ? subs[0] : null; 
+    },
+    enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
 
   // Initial user load on component mount
@@ -127,7 +142,7 @@ export default function PricingPlansPage() {
         setProcessingPendingPlan(false); // Finalizar procesamiento en caso de error
       }
     }
-  }, [user, isLoadingUser, plans, loadingPlans, processingPendingPlan]); // Dependencias actualizadas
+  }, [user, isLoadingUser, plans, loadingPlans, processingPendingPlan, existingSubscription]); // Dependencias actualizadas
 
   const loadUser = async () => {
     setIsLoadingUser(true);
@@ -149,6 +164,21 @@ export default function PricingPlansPage() {
     console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
     console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type);
     
+    // ✅ NUEVO: Verificar si ya tiene este plan activo
+    // Check if there's an existing subscription and it's in an active state (activo, en_prueba)
+    // and if the plan being selected is the same as the existing one.
+    if (existingSubscription) {
+      const activeStates = ["activo", "en_prueba"];
+      if (activeStates.includes(existingSubscription.estado) && 
+          existingSubscription.plan_id === plan.plan_id) {
+        toast.error("Ya tienes este plan activo. Puedes gestionarlo desde 'Mi Suscripción'.", {
+          duration: 5000
+        });
+        navigate(createPageUrl("SubscriptionManagement"));
+        return;
+      }
+    }
+
     // Si no hay usuario, guardar plan y redirigir a login
     if (!user) {
       console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
@@ -196,6 +226,11 @@ export default function PricingPlansPage() {
       );
 
       console.log('💳 Llamando a createCheckoutSession...');
+      
+      // ✅ NUEVO: Detectar si es reactivación
+      // A subscription exists but it's not the exact same active plan (e.g., cancelled, or different plan_id)
+      const isReactivation = !!existingSubscription; 
+      
       // En este punto, `user` debe ser "professionnel" y estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email, 
@@ -209,7 +244,8 @@ export default function PricingPlansPage() {
         paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
-        isTrial: plan.plan_id === "plan_monthly_trial"
+        isTrial: plan.plan_id === "plan_monthly_trial",
+        isReactivation: isReactivation  // ✅ NUEVO: Flag de reactivación
       });
 
       toast.dismiss(loadingToast);
