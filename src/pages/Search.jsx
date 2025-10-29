@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ function useDebounce(value, delay) {
 }
 
 // Componente memoizado para tarjetas de perfil
-const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate }) => {
+const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
     let cleaned = phone.replace(/[^\d+]/g, '');
@@ -85,17 +85,39 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             <p className="text-sm text-blue-700 font-medium">Sin fotos aún</p>
           </div>
         )}
-        <Button
-          size="icon"
-          variant="secondary"
-          className="absolute top-3 right-3 bg-white/90 hover:bg-white shadow-lg"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(profile.user_id);
-          }}
-        >
-          <Heart className="w-4 h-4 text-orange-500" />
-        </Button>
+        
+        {/* ✅ MEJORADO: Botón favorito con contador */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+          <Button
+            size="icon"
+            variant="secondary"
+            className={`bg-white/90 hover:bg-white shadow-lg transition-all ${
+              isFavorite ? 'ring-2 ring-red-500' : ''
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(profile.user_id);
+            }}
+          >
+            <Heart 
+              className={`w-5 h-5 transition-all ${
+                isFavorite 
+                  ? 'fill-red-500 text-red-500 scale-110' 
+                  : 'text-gray-400'
+              }`}
+            />
+          </Button>
+          
+          {/* ✅ NUEVO: Contador de favoritos */}
+          {favoriteCount > 0 && (
+            <div className="bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-md">
+              <div className="flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 fill-red-500 text-red-500" />
+                <span className="text-xs font-bold text-gray-800">{favoriteCount}</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <CardContent className="p-6">
@@ -204,6 +226,7 @@ ProfileCard.displayName = 'ProfileCard';
 
 export default function SearchPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // For invalidating queries
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -213,9 +236,19 @@ export default function SearchPage() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
+  // ✅ NUEVO: Estado para favoritos del usuario
+  const [userFavorites, setUserFavorites] = useState(new Set());
+
   useEffect(() => {
     loadUser();
   }, []);
+
+  // ✅ NUEVO: Cargar favoritos del usuario
+  useEffect(() => {
+    if (user) {
+      loadUserFavorites();
+    }
+  }, [user]);
 
   const loadUser = async () => {
     try {
@@ -227,6 +260,19 @@ export default function SearchPage() {
       setUser(null);
     } finally {
       setIsLoadingUser(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar favoritos del usuario
+  const loadUserFavorites = async () => {
+    try {
+      const favorites = await base44.entities.Favorite.filter({
+        client_id: user.id
+      });
+      const favSet = new Set(favorites.map(f => f.professional_id));
+      setUserFavorites(favSet);
+    } catch (error) {
+      console.error("Error loading favorites:", error);
     }
   };
 
@@ -278,6 +324,22 @@ export default function SearchPage() {
     refetchOnWindowFocus: false,
   });
 
+  // ✅ NUEVA QUERY: Contar favoritos de todos los perfiles
+  const { data: favoriteCounts = {} } = useQuery({
+    queryKey: ['favoriteCounts'],
+    queryFn: async () => {
+      const allFavorites = await base44.entities.Favorite.list();
+      const counts = {};
+      allFavorites.forEach(fav => {
+        counts[fav.professional_id] = (counts[fav.professional_id] || 0) + 1;
+      });
+      return counts;
+    },
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 10,
+    initialData: {},
+  });
+
   const filteredProfiles = useMemo(() => {
     console.log('🔍 Aplicando filtros...');
     console.log('🔍 Profiles antes de filtrar:', profiles.length);
@@ -324,21 +386,43 @@ export default function SearchPage() {
     }
 
     try {
-      const favorites = await base44.entities.Favorite.filter({
-        client_id: user.id,
-        professional_id: professionalId
-      });
-
-      if (favorites.length > 0) {
-        await base44.entities.Favorite.delete(favorites[0].id);
+      const isFavorite = userFavorites.has(professionalId);
+      
+      if (isFavorite) {
+        // Eliminar de favoritos
+        const favorites = await base44.entities.Favorite.filter({
+          client_id: user.id,
+          professional_id: professionalId
+        });
+        if (favorites.length > 0) {
+          await base44.entities.Favorite.delete(favorites[0].id);
+        }
+        
+        // ✅ Actualizar estado local
+        setUserFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(professionalId);
+          return newSet;
+        });
       } else {
+        // Añadir a favoritos
         const profile = profiles.find(p => p.user_id === professionalId);
         await base44.entities.Favorite.create({
           client_id: user.id,
           professional_id: professionalId,
           business_name: profile.business_name
         });
+        
+        // ✅ Actualizar estado local
+        setUserFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.add(professionalId);
+          return newSet;
+        });
       }
+      
+      // Refrescar contador
+      queryClient.invalidateQueries({ queryKey: ['favoriteCounts'] });
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
@@ -538,6 +622,8 @@ export default function SearchPage() {
                 onToggleFavorite={handleToggleFavorite}
                 onStartChat={handleStartChat}
                 navigate={navigate}
+                isFavorite={userFavorites.has(profile.user_id)}
+                favoriteCount={favoriteCounts[profile.user_id] || 0}
               />
             ))}
           </div>
