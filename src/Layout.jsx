@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -348,7 +349,7 @@ export default function Layout({ children, currentPageName }) {
                   Iniciar sesión
                 </Button>
                 <p className="text-xs text-center text-gray-500">
-                  ¿Eres administrador? Inicia sesión para acceder al panel
+                  Inicia sesión para acceder a tu cuenta
                 </p>
               </div>
             )}
