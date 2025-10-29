@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Added useQueryClient
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export default function ProfessionalProfilePage() {
   const professionalId = urlParams.get('id');
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const queryClient = useQueryClient(); // Initialized useQueryClient
 
   useEffect(() => {
     loadUser();
@@ -67,6 +68,21 @@ export default function ProfessionalProfilePage() {
     }
   };
 
+  // ✅ NUEVA QUERY: Contar favoritos del profesional
+  const { data: favoriteCount = 0 } = useQuery({
+    queryKey: ['favoriteCount', professionalId],
+    queryFn: async () => {
+      const favorites = await base44.entities.Favorite.filter({
+        professional_id: professionalId
+      });
+      return favorites.length;
+    },
+    enabled: !!professionalId,
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 10,
+    initialData: 0,
+  });
+
   const handleToggleFavorite = async () => {
     if (!user) {
       base44.auth.redirectToLogin();
@@ -91,6 +107,9 @@ export default function ProfessionalProfilePage() {
         });
         setIsFavorite(true);
       }
+      
+      // ✅ Refrescar contador
+      queryClient.invalidateQueries({ queryKey: ['favoriteCount', professionalId] });
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
@@ -269,14 +288,35 @@ export default function ProfessionalProfilePage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleToggleFavorite}
-                      className={isFavorite ? "bg-orange-50 border-orange-300" : ""}
-                    >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-orange-500 text-orange-500" : ""}`} />
-                    </Button>
+                    {/* ✅ MEJORADO: Botón de favorito con contador */}
+                    <div className="relative">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleToggleFavorite}
+                        className={`transition-all ${
+                          isFavorite 
+                            ? 'bg-red-50 border-red-300 hover:bg-red-100' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <Heart 
+                          className={`w-5 h-5 transition-all ${
+                            isFavorite 
+                              ? 'fill-red-500 text-red-500 scale-110' 
+                              : 'text-gray-400'
+                          }`}
+                        />
+                      </Button>
+                      
+                      {/* ✅ NUEVO: Badge con contador */}
+                      {favoriteCount > 0 && (
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                          {favoriteCount}
+                        </div>
+                      )}
+                    </div>
+                    
                     {profile.telefono_contacto && (
                       <>
                         <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
