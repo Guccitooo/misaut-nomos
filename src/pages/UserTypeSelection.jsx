@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,9 @@ import { Briefcase, Search, CheckCircle } from "lucide-react";
 
 export default function UserTypeSelectionPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedType = searchParams.get("type"); // "autonomo" o "cliente"
+  
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,6 +42,9 @@ export default function UserTypeSelectionPage() {
           // Cliente → ir a buscar
           navigate(createPageUrl("Search"));
         }
+      } else if (preselectedType) {
+        // ✅ NUEVO: Si viene con tipo preseleccionado, aplicarlo directamente
+        handleSelectType(preselectedType === "autonomo" ? "professionnel" : "client");
       }
     } catch (error) {
       console.error("Error loading user:", error);
@@ -57,7 +62,7 @@ export default function UserTypeSelectionPage() {
         user_type: userType
       });
 
-      // ✅ CAMBIO CRÍTICO: Redirigir según el tipo
+      // ✅ Redirigir según el tipo
       if (userType === "professionnel") {
         // ✅ Autónomo → ir DIRECTAMENTE al quiz (sin pasar por planes)
         navigate(createPageUrl("ProfileOnboarding"));
@@ -94,15 +99,15 @@ export default function UserTypeSelectionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Opción Autónomo */}
           <Card 
-            className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-blue-600 cursor-pointer group"
+            className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-orange-500 cursor-pointer group"
             onClick={() => handleSelectType("professionnel")}
           >
-            <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-8">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-700 text-white p-8">
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Briefcase className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Soy Autónomo</h2>
-              <p className="text-blue-100">
+              <h2 className="text-2xl font-bold mb-2">🧰 Soy Autónomo</h2>
+              <p className="text-orange-100">
                 Quiero ofrecer mis servicios profesionales
               </p>
             </div>
@@ -133,7 +138,7 @@ export default function UserTypeSelectionPage() {
                 </li>
               </ul>
               <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
+                className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectType("professionnel");
@@ -146,15 +151,15 @@ export default function UserTypeSelectionPage() {
 
           {/* Opción Cliente */}
           <Card 
-            className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-orange-600 cursor-pointer group"
+            className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-blue-500 cursor-pointer group"
             onClick={() => handleSelectType("client")}
           >
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 text-white p-8">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-8">
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Search className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Busco un Profesional</h2>
-              <p className="text-orange-100">
+              <h2 className="text-2xl font-bold mb-2">👤 Soy Cliente</h2>
+              <p className="text-blue-100">
                 Necesito contratar servicios de autónomos
               </p>
             </div>
@@ -185,7 +190,7 @@ export default function UserTypeSelectionPage() {
                 </li>
               </ul>
               <Button 
-                className="w-full bg-orange-600 hover:bg-orange-700 h-12 text-lg"
+                className="w-full bg-blue-500 hover:bg-blue-600 h-12 text-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectType("client");
@@ -198,7 +203,7 @@ export default function UserTypeSelectionPage() {
         </div>
 
         <div className="text-center mt-8 text-gray-500 text-sm">
-          ¿No estás seguro? No te preocupes, puedes cambiar tu tipo de cuenta más tarde.
+          ¿No estás seguro? No te preocupes, <strong>puedes cambiar tu tipo de cuenta más tarde</strong> desde tu perfil.
         </div>
       </div>
     </div>
