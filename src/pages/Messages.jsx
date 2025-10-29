@@ -48,15 +48,18 @@ export default function MessagesPage() {
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
-      const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date');
-      const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date');
+      // Optimización: limitar a 100 mensajes más recientes
+      const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 100);
+      const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 100);
       return [...sent, ...received].sort((a, b) => 
         new Date(b.created_date) - new Date(a.created_date)
       );
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 5000,
+    refetchInterval: 10000, // 10 segundos en lugar de 5
+    staleTime: 1000 * 5, // 5 segundos
+    cacheTime: 1000 * 60 * 5, // 5 minutos
   });
 
   // Group messages by conversation
