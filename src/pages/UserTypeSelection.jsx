@@ -1,74 +1,82 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Search, CheckCircle } from "lucide-react";
+import { Briefcase, Search, CheckCircle, Loader2 } from "lucide-react";
+
+// ⚠️ NOTA: Esta página ya NO se usa en el flujo principal
+// Se mantiene solo para compatibilidad con enlaces antiguos
+// El flujo principal ahora va directo desde Search a:
+// - PricingPlans (autónomos)
+// - ClientOnboarding (clientes)
 
 export default function UserTypeSelectionPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const preselectedType = searchParams.get("type"); // "autonomo" o "cliente"
-  
-  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
+    checkUserAndRedirect();
   }, []);
 
-  const loadUser = async () => {
+  const checkUserAndRedirect = async () => {
     try {
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
       
-      // Si ya tiene tipo de usuario definido, redirigir según estado
-      if (currentUser.user_type) {
+      if (currentUser) {
+        // Usuario ya logueado → redirigir según su tipo
         if (currentUser.user_type === "professionnel") {
-          // ✅ Si es profesional, verificar si completó onboarding
+          // Autónomo → ver si completó onboarding
           const profiles = await base44.entities.ProfessionalProfile.filter({
             user_id: currentUser.id
           });
           
           if (profiles[0]?.onboarding_completed && profiles[0]?.visible_en_busqueda) {
-            // Ya completó todo → ir al perfil
             navigate(createPageUrl("MyProfile"));
           } else {
-            // No ha completado → FORZAR quiz
             navigate(createPageUrl("ProfileOnboarding"));
           }
-        } else {
-          // Cliente → ir a buscar
+        } else if (currentUser.user_type === "client") {
+          // Cliente → a búsqueda
           navigate(createPageUrl("Search"));
+        } else {
+          // Sin tipo definido → mantener en esta página
+          setIsLoading(false);
         }
-      } else if (preselectedType) {
-        // ✅ NUEVO: Si viene con tipo preseleccionado, aplicarlo directamente
-        handleSelectType(preselectedType === "autonomo" ? "professionnel" : "client");
+      } else {
+        // Sin usuario → redirigir al inicio (botones principales)
+        navigate(createPageUrl("Search"));
       }
     } catch (error) {
-      console.error("Error loading user:", error);
-      base44.auth.redirectToLogin();
-    } finally {
-      setIsLoading(false);
+      console.error("Error checking user:", error);
+      // Si hay error de auth, ir al inicio
+      navigate(createPageUrl("Search"));
     }
   };
 
   const handleSelectType = async (userType) => {
     setIsLoading(true);
     try {
-      // Actualizar tipo de usuario
-      await base44.auth.updateMe({
-        user_type: userType
-      });
+      const currentUser = await base44.auth.me();
+      
+      if (!currentUser) {
+        // Sin login → ir al flujo correspondiente (que hará login automático)
+        if (userType === "professionnel") {
+          navigate(createPageUrl("PricingPlans"));
+        } else {
+          navigate(createPageUrl("ClientOnboarding"));
+        }
+        return;
+      }
 
-      // ✅ Redirigir según el tipo
+      // Con login → actualizar tipo y redirigir
+      await base44.auth.updateMe({ user_type: userType });
+
       if (userType === "professionnel") {
-        // ✅ Autónomo → ir DIRECTAMENTE al quiz (sin pasar por planes)
-        navigate(createPageUrl("ProfileOnboarding"));
+        navigate(createPageUrl("PricingPlans"));
       } else {
-        // Cliente → ir directamente a buscar
-        navigate(createPageUrl("Search"));
+        navigate(createPageUrl("ClientOnboarding"));
       }
     } catch (error) {
       console.error("Error setting user type:", error);
@@ -79,7 +87,7 @@ export default function UserTypeSelectionPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -203,7 +211,9 @@ export default function UserTypeSelectionPage() {
         </div>
 
         <div className="text-center mt-8 text-gray-500 text-sm">
-          ¿No estás seguro? No te preocupes, <strong>puedes cambiar tu tipo de cuenta más tarde</strong> desde tu perfil.
+          <p>
+            ⚠️ Nota: Esta página es solo para compatibilidad. El flujo principal ahora es más directo.
+          </p>
         </div>
       </div>
     </div>
