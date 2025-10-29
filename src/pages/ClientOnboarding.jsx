@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Search, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientOnboardingPage() {
@@ -17,6 +17,7 @@ export default function ClientOnboardingPage() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -44,25 +45,20 @@ export default function ClientOnboardingPage() {
     loadUser();
   }, []);
 
-  // ✅ NUEVO: Auto-procesar formulario guardado después de login
+  // ✅ Procesar datos guardados cuando vuelva con sesión
   useEffect(() => {
     if (user) {
       const savedFormData = localStorage.getItem('client_onboarding_pending');
       if (savedFormData) {
         try {
           const parsedData = JSON.parse(savedFormData);
-          console.log('📋 Datos guardados encontrados, procesando automáticamente...');
+          console.log('📋 Datos guardados encontrados, procesando...');
           
-          // Actualizar formulario con datos guardados
           setFormData(parsedData);
-          
-          // Limpiar localStorage
           localStorage.removeItem('client_onboarding_pending');
           
-          // Procesar automáticamente después de un momento
-          setTimeout(() => {
-            completeOnboardingMutation.mutate(parsedData);
-          }, 500);
+          // Procesar el registro
+          completeOnboardingMutation.mutate(parsedData);
           
           toast.info('Completando tu registro...', { duration: 2000 });
         } catch (error) {
@@ -79,7 +75,6 @@ export default function ClientOnboardingPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
-      // Pre-cargar datos del usuario si existe
       if (currentUser) {
         setFormData(prev => ({
           ...prev,
@@ -89,7 +84,7 @@ export default function ClientOnboardingPage() {
           ciudad: currentUser.city || prev.ciudad,
         }));
 
-        // Si ya es cliente y completó onboarding → ir a búsqueda
+        // Si ya es cliente → ir a búsqueda
         if (currentUser.user_type === "client") {
           navigate(createPageUrl("Search"));
           return;
@@ -154,9 +149,7 @@ Equipo MilAutónomos`,
     },
     onSuccess: () => {
       toast.success("✅ ¡Bienvenido a MilAutónomos! Tu cuenta está lista.");
-      // Limpiar cualquier dato guardado
       localStorage.removeItem('client_onboarding_pending');
-      // Redirigir a búsqueda
       setTimeout(() => {
         navigate(createPageUrl("Search"));
       }, 1000);
@@ -165,7 +158,6 @@ Equipo MilAutónomos`,
       console.error("Error completing onboarding:", error);
       setError("Error al completar el registro: " + error.message);
       toast.error("Error al completar el registro");
-      // Limpiar datos guardados en caso de error
       localStorage.removeItem('client_onboarding_pending');
     }
   });
@@ -174,11 +166,10 @@ Equipo MilAutónomos`,
     e.preventDefault();
     setError(null);
 
-    // ✅ VALIDACIÓN CRÍTICA: Términos obligatorios
+    // ✅ VALIDACIÓN: Términos obligatorios
     if (!formData.acepta_terminos) {
       setError("❌ Debes aceptar los Términos y Condiciones para continuar.");
       toast.error("Debes aceptar los Términos y Condiciones");
-      // Hacer scroll al checkbox
       document.querySelector('[type="checkbox"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -209,19 +200,18 @@ Equipo MilAutónomos`,
       return;
     }
 
-    // ✅ NUEVO: Si no tiene sesión, guardar datos y redirigir a login
+    // ✅ NUEVO: Si no tiene sesión, guardar datos y mostrar mensaje
     if (!user) {
-      console.log('💾 Guardando datos del formulario antes de login...');
+      console.log('💾 Guardando datos del formulario...');
       
       // Guardar datos en localStorage
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
-      toast.info('Redirigiendo al inicio de sesión...', { duration: 2000 });
+      // Mostrar mensaje de éxito
+      setShowSuccessMessage(true);
       
-      // Redirigir a login con URL de retorno
-      setTimeout(() => {
-        base44.auth.redirectToLogin(window.location.href);
-      }, 500);
+      // Scroll al top para ver el mensaje
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       
       return;
     }
@@ -276,6 +266,65 @@ Equipo MilAutónomos`,
     );
   }
 
+  // ✅ NUEVO: Mostrar mensaje de éxito después de enviar sin sesión
+  if (showSuccessMessage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-2xl border-0 shadow-2xl">
+          <CardContent className="p-12 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-10 h-10 text-green-600" />
+            </div>
+            
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              ✅ ¡Formulario recibido correctamente!
+            </h2>
+            
+            <div className="space-y-4 text-left max-w-lg mx-auto mb-8">
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertDescription className="text-blue-900">
+                  <strong>📧 Paso 1: Verifica tu correo electrónico</strong>
+                  <p className="mt-2">
+                    Hemos guardado tus datos. Ahora necesitas verificar tu dirección de correo electrónico:
+                  </p>
+                  <p className="mt-2 font-semibold">
+                    {formData.email}
+                  </p>
+                  <p className="mt-2 text-sm">
+                    Revisa tu bandeja de entrada (y también la carpeta de spam) y confirma tu email.
+                  </p>
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="bg-green-50 border-green-200">
+                <AlertDescription className="text-green-900">
+                  <strong>🔐 Paso 2: Inicia sesión</strong>
+                  <p className="mt-2">
+                    Una vez verificado tu email, inicia sesión con tus credenciales para completar el registro y acceder a la plataforma.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                size="lg"
+                className="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-lg h-14"
+                onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              >
+                Iniciar sesión ahora
+              </Button>
+              
+              <p className="text-sm text-gray-500">
+                Cuando inicies sesión, completaremos tu registro automáticamente
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
@@ -294,7 +343,7 @@ Equipo MilAutónomos`,
           </p>
           {!user && (
             <p className="text-sm text-blue-600 mt-2">
-              📝 Al enviar el formulario, crearemos tu cuenta automáticamente
+              📝 Después de enviar, deberás verificar tu email e iniciar sesión
             </p>
           )}
         </div>
@@ -442,14 +491,14 @@ Equipo MilAutónomos`,
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5 mr-2" />
-                    {!user ? 'Crear mi cuenta y empezar' : 'Crear mi cuenta de cliente'}
+                    {!user ? 'Enviar datos' : 'Crear mi cuenta de cliente'}
                   </>
                 )}
               </Button>
 
               <p className="text-xs text-center text-gray-500">
                 {!user 
-                  ? '🔐 Al crear tu cuenta, iniciarás sesión automáticamente y podrás buscar profesionales de inmediato'
+                  ? '📧 Después de enviar, recibirás instrucciones para verificar tu email e iniciar sesión'
                   : 'Al crear tu cuenta podrás buscar y contactar con profesionales de forma gratuita'
                 }
               </p>
