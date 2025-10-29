@@ -140,8 +140,15 @@ export default function ProfileOnboardingPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
-      // ✅ NUEVO: Verificar que sea profesional
-      if (!currentUser.user_type || currentUser.user_type === "client") {
+      // ✅ CRÍTICO: Solo profesionales pueden acceder
+      if (!currentUser.user_type) {
+        // Sin tipo → elegir tipo primero
+        navigate(createPageUrl("UserTypeSelection"));
+        return;
+      }
+      
+      if (currentUser.user_type === "client") {
+        // Cliente → ir a búsqueda
         navigate(createPageUrl("Search"));
         return;
       }
@@ -615,9 +622,9 @@ Equipo milautonomos`,
               <Button
                 size="lg"
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => navigate(createPageUrl("MyProfile"))}
+                onClick={() => navigate(createPageUrl("Search"))}
               >
-                Ir a mi panel
+                Ver búsquedas de clientes
               </Button>
             </div>
           </CardContent>
@@ -626,7 +633,31 @@ Equipo milautonomos`,
     );
   }
 
-  // ✅ NUEVO: Mensaje si no es profesional
+  // ✅ MENSAJE si no tiene tipo de usuario
+  if (!user.user_type) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md border-0 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Selecciona tu tipo de cuenta
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Primero debes elegir si eres autónomo o cliente.
+            </p>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate(createPageUrl("UserTypeSelection"))}
+            >
+              Elegir tipo de cuenta
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ✅ MENSAJE si no es profesional
   if (user.user_type === "client") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
