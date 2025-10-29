@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Loader2, AlertCircle, Search, Mail } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientOnboardingPage() {
@@ -17,7 +17,6 @@ export default function ClientOnboardingPage() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -200,18 +199,20 @@ Equipo MilAutónomos`,
       return;
     }
 
-    // ✅ NUEVO: Si no tiene sesión, guardar datos y mostrar mensaje
+    // ✅ CAMBIO: Si no tiene sesión, guardar datos y redirigir a crear cuenta
     if (!user) {
-      console.log('💾 Guardando datos del formulario...');
+      console.log('💾 Guardando datos y redirigiendo a crear cuenta...');
       
       // Guardar datos en localStorage
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
-      // Mostrar mensaje de éxito
-      setShowSuccessMessage(true);
+      // Mostrar mensaje
+      toast.success('Datos guardados. Redirigiendo a crear tu cuenta...', { duration: 3000 });
       
-      // Scroll al top para ver el mensaje
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Redirigir a Base44 para crear cuenta (Base44 enviará el email de verificación)
+      setTimeout(() => {
+        base44.auth.redirectToLogin(window.location.href);
+      }, 1000);
       
       return;
     }
@@ -266,65 +267,6 @@ Equipo MilAutónomos`,
     );
   }
 
-  // ✅ NUEVO: Mostrar mensaje de éxito después de enviar sin sesión
-  if (showSuccessMessage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-2xl border-0 shadow-2xl">
-          <CardContent className="p-12 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="w-10 h-10 text-green-600" />
-            </div>
-            
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              ✅ ¡Formulario recibido correctamente!
-            </h2>
-            
-            <div className="space-y-4 text-left max-w-lg mx-auto mb-8">
-              <Alert className="bg-blue-50 border-blue-200">
-                <AlertDescription className="text-blue-900">
-                  <strong>📧 Paso 1: Verifica tu correo electrónico</strong>
-                  <p className="mt-2">
-                    Hemos guardado tus datos. Ahora necesitas verificar tu dirección de correo electrónico:
-                  </p>
-                  <p className="mt-2 font-semibold">
-                    {formData.email}
-                  </p>
-                  <p className="mt-2 text-sm">
-                    Revisa tu bandeja de entrada (y también la carpeta de spam) y confirma tu email.
-                  </p>
-                </AlertDescription>
-              </Alert>
-
-              <Alert className="bg-green-50 border-green-200">
-                <AlertDescription className="text-green-900">
-                  <strong>🔐 Paso 2: Inicia sesión</strong>
-                  <p className="mt-2">
-                    Una vez verificado tu email, inicia sesión con tus credenciales para completar el registro y acceder a la plataforma.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            </div>
-
-            <div className="space-y-3">
-              <Button
-                size="lg"
-                className="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-lg h-14"
-                onClick={() => base44.auth.redirectToLogin(window.location.href)}
-              >
-                Iniciar sesión ahora
-              </Button>
-              
-              <p className="text-sm text-gray-500">
-                Cuando inicies sesión, completaremos tu registro automáticamente
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
@@ -343,7 +285,7 @@ Equipo MilAutónomos`,
           </p>
           {!user && (
             <p className="text-sm text-blue-600 mt-2">
-              📝 Después de enviar, deberás verificar tu email e iniciar sesión
+              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación
             </p>
           )}
         </div>
@@ -386,6 +328,11 @@ Equipo MilAutónomos`,
                 {user && (
                   <p className="text-xs text-gray-500 mt-1">
                     Email de tu cuenta (no se puede cambiar aquí)
+                  </p>
+                )}
+                {!user && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Recibirás un email de verificación en esta dirección
                   </p>
                 )}
               </div>
@@ -491,15 +438,15 @@ Equipo MilAutónomos`,
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5 mr-2" />
-                    {!user ? 'Enviar datos' : 'Crear mi cuenta de cliente'}
+                    {!user ? 'Crear mi cuenta de cliente' : 'Completar registro'}
                   </>
                 )}
               </Button>
 
               <p className="text-xs text-center text-gray-500">
                 {!user 
-                  ? '📧 Después de enviar, recibirás instrucciones para verificar tu email e iniciar sesión'
-                  : 'Al crear tu cuenta podrás buscar y contactar con profesionales de forma gratuita'
+                  ? '📧 Recibirás un email de verificación de Base44 para confirmar tu cuenta'
+                  : 'Al completar el registro podrás buscar y contactar con profesionales de forma gratuita'
                 }
               </p>
             </form>
