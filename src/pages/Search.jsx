@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,12 +24,64 @@ import {
   Phone,
   MessageCircle,
   MessageSquare,
-  User // Added User icon import
+  User,
+  Zap,
+  Hammer,
+  Wrench,
+  Home,
+  Paintbrush,
+  Leaf,
+  Truck,
+  Trash,
+  Key,
+  Wind,
+  Tool,
+  AlertCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
-// Debounce hook para optimizar búsquedas
+// ✅ NUEVO: Categorías con iconos
+const CATEGORY_ICONS = {
+  "Electricista": Zap,
+  "Carpintero": Hammer,
+  "Fontanero": Wrench,
+  "Albañil / Reformas": Home,
+  "Pintor": Paintbrush,
+  "Jardinero": Leaf,
+  "Transportista": Truck,
+  "Autónomo de limpieza": Trash,
+  "Cerrajero": Key,
+  "Instalador de aire acondicionado": Wind,
+  "Mantenimiento general": Tool,
+  "Fontanería": Wrench,
+  "Albañilería": Home,
+  "Electricidad": Zap,
+  "Carpintería": Hammer,
+  "Pintura": Paintbrush,
+  "Jardinería": Leaf,
+  "Transporte": Truck,
+  "Limpieza": Trash,
+  "Cerrajería": Key,
+  "Aire acondicionado": Wind,
+  "Mantenimiento": Tool
+};
+
+// ✅ NUEVO: Categorías base que siempre aparecen
+const BASE_CATEGORIES = [
+  { name: "Electricista", icon: "Zap" },
+  { name: "Carpintero", icon: "Hammer" },
+  { name: "Fontanero", icon: "Wrench" },
+  { name: "Albañil / Reformas", icon: "Home" },
+  { name: "Pintor", icon: "Paintbrush" },
+  { name: "Jardinero", icon: "Leaf" },
+  { name: "Transportista", icon: "Truck" },
+  { name: "Autónomo de limpieza", icon: "Trash" },
+  { name: "Cerrajero", icon: "Key" },
+  { name: "Instalador de aire acondicionado", icon: "Wind" },
+  { name: "Mantenimiento general", icon: "Tool" }
+];
+
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -47,7 +98,17 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// Componente memoizado para tarjetas de perfil
+// ✅ MEJORADO: Componente de categoría con icono
+const CategoryBadge = ({ category }) => {
+  const Icon = CATEGORY_ICONS[category] || Briefcase;
+  return (
+    <Badge variant="outline" className="text-xs flex items-center gap-1">
+      <Icon className="w-3 h-3" />
+      {category}
+    </Badge>
+  );
+};
+
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -86,7 +147,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         )}
         
-        {/* ✅ MEJORADO: Botón favorito con contador */}
         <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
           <Button
             size="icon"
@@ -108,7 +168,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             />
           </Button>
           
-          {/* ✅ NUEVO: Contador de favoritos */}
           {favoriteCount > 0 && (
             <div className="bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-md">
               <div className="flex items-center gap-1.5">
@@ -167,11 +226,10 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             </div>
           )}
 
+          {/* ✅ MEJORADO: Categorías con iconos */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {profile.categories?.slice(0, 2).map((cat, idx) => (
-              <Badge key={idx} variant="outline" className="text-xs">
-                {cat}
-              </Badge>
+            {profile.categories?.slice(0, 3).map((cat, idx) => (
+              <CategoryBadge key={idx} category={cat} />
             ))}
           </div>
         </div>
@@ -226,24 +284,20 @@ ProfileCard.displayName = 'ProfileCard';
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient(); // For invalidating queries
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
-  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("rating");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-  // ✅ NUEVO: Estado para favoritos del usuario
   const [userFavorites, setUserFavorites] = useState(new Set());
 
   useEffect(() => {
     loadUser();
   }, []);
 
-  // ✅ NUEVO: Cargar favoritos del usuario
   useEffect(() => {
     if (user) {
       loadUserFavorites();
@@ -254,16 +308,13 @@ export default function SearchPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      console.log('👤 Usuario autenticado:', currentUser?.email);
     } catch (error) {
-      console.log('👤 Usuario no autenticado (visitante)');
       setUser(null);
     } finally {
       setIsLoadingUser(false);
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Cargar favoritos del usuario
   const loadUserFavorites = async () => {
     try {
       const favorites = await base44.entities.Favorite.filter({
@@ -276,55 +327,45 @@ export default function SearchPage() {
     }
   };
 
-  const { data: categories = [], isLoading: loadingCategories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => base44.entities.ServiceCategory.list(),
+  // ✅ NUEVO: Categorías disponibles (base + las que existen en perfiles)
+  const { data: availableCategories = [] } = useQuery({
+    queryKey: ['availableCategories'],
+    queryFn: async () => {
+      // Obtener todas las categorías únicas de los perfiles
+      const profiles = await base44.entities.ProfessionalProfile.list();
+      const usedCategories = new Set();
+      
+      profiles.forEach(profile => {
+        if (profile.categories && Array.isArray(profile.categories)) {
+          profile.categories.forEach(cat => usedCategories.add(cat));
+        }
+      });
+
+      // Combinar categorías base con las usadas
+      const allCategories = new Set([
+        ...BASE_CATEGORIES.map(c => c.name),
+        ...Array.from(usedCategories)
+      ]);
+
+      return Array.from(allCategories).sort();
+    },
     staleTime: 1000 * 60 * 10,
-    cacheTime: 1000 * 60 * 30,
-    initialData: [],
+    initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      console.log('🚀 ============ INICIO CARGA PERFILES ============');
-      console.log('🔵 Usuario actual:', user?.email || 'VISITANTE SIN LOGIN');
-      
-      try {
-        console.log('📞 Llamando a base44.entities.ProfessionalProfile.list()...');
-        
-        const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-        
-        console.log('✅ Respuesta recibida!');
-        console.log('📦 Total perfiles en BD:', allProfiles?.length || 0);
-        
-        if (!allProfiles || allProfiles.length === 0) {
-          console.warn('⚠️ NO HAY PERFILES EN LA BASE DE DATOS');
-          return [];
-        }
-
-        console.log('✅ DEVOLVIENDO TODOS LOS PERFILES SIN FILTRAR');
-        console.log('📊 Total a mostrar:', allProfiles.length);
-        
-        return allProfiles;
-        
-      } catch (error) {
-        console.error('❌ ============ ERROR EN CARGA ============');
-        console.error('❌ Tipo de error:', error.constructor.name);
-        console.error('❌ Mensaje:', error.message);
-        console.error('❌ Stack:', error.stack);
-        throw error;
-      }
+      const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
+      return allProfiles || [];
     },
     staleTime: 0,
-    cacheTime: 0,
     initialData: [],
     retry: false,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
-  // ✅ NUEVA QUERY: Contar favoritos de todos los perfiles
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
     queryFn: async () => {
@@ -336,15 +377,11 @@ export default function SearchPage() {
       return counts;
     },
     staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 10,
     initialData: {},
   });
 
   const filteredProfiles = useMemo(() => {
-    console.log('🔍 Aplicando filtros...');
-    console.log('🔍 Profiles antes de filtrar:', profiles.length);
-    
-    const filtered = profiles.filter(profile => {
+    return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -356,10 +393,7 @@ export default function SearchPage() {
       const matchesCity = selectedCity === "all" || 
         profile.service_area?.toLowerCase().includes(selectedCity.toLowerCase());
       
-      const matchesPriceRange = selectedPriceRange === "all" || 
-        profile.price_range === selectedPriceRange;
-      
-      return matchesSearch && matchesCategory && matchesCity && matchesPriceRange;
+      return matchesSearch && matchesCategory && matchesCity;
     }).sort((a, b) => {
       if (sortBy === "rating") {
         return (b.average_rating || 0) - (a.average_rating || 0);
@@ -369,10 +403,7 @@ export default function SearchPage() {
       }
       return 0;
     });
-    
-    console.log('🔍 Profiles después de filtrar:', filtered.length);
-    return filtered;
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, selectedPriceRange, sortBy]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
 
   const cities = useMemo(() => 
     [...new Set(profiles.map(p => p.service_area).filter(Boolean))],
@@ -389,7 +420,6 @@ export default function SearchPage() {
       const isFavorite = userFavorites.has(professionalId);
       
       if (isFavorite) {
-        // Eliminar de favoritos
         const favorites = await base44.entities.Favorite.filter({
           client_id: user.id,
           professional_id: professionalId
@@ -398,14 +428,12 @@ export default function SearchPage() {
           await base44.entities.Favorite.delete(favorites[0].id);
         }
         
-        // ✅ Actualizar estado local
         setUserFavorites(prev => {
           const newSet = new Set(prev);
           newSet.delete(professionalId);
           return newSet;
         });
       } else {
-        // Añadir a favoritos
         const profile = profiles.find(p => p.user_id === professionalId);
         await base44.entities.Favorite.create({
           client_id: user.id,
@@ -413,7 +441,6 @@ export default function SearchPage() {
           business_name: profile.business_name
         });
         
-        // ✅ Actualizar estado local
         setUserFavorites(prev => {
           const newSet = new Set(prev);
           newSet.add(professionalId);
@@ -421,7 +448,6 @@ export default function SearchPage() {
         });
       }
       
-      // Refrescar contador
       queryClient.invalidateQueries({ queryKey: ['favoriteCounts'] });
     } catch (error) {
       console.error("Error toggling favorite:", error);
@@ -455,15 +481,15 @@ export default function SearchPage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
-  console.log('🎨 ============ RENDER ============');
-  console.log('🎨 Loading:', loadingProfiles);
-  console.log('🎨 Profiles:', profiles.length);
-  console.log('🎨 Filtered:', filteredProfiles.length);
-  console.log('🎨 Error:', profilesError);
+  // ✅ NUEVO: Obtener icono para categoría seleccionada
+  const getCategoryIcon = (categoryName) => {
+    const Icon = CATEGORY_ICONS[categoryName] || Briefcase;
+    return Icon;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - ✅ FLUJO DIRECTO CORREGIDO */}
+      {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
@@ -474,14 +500,12 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Redirecciones directas sin intermediarios */}
             {!isLoadingUser && !user && (
               <div className="space-y-4">
                 <p className="text-base text-blue-100 font-medium">
                   Elige cómo quieres empezar:
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
-                  {/* ✅ Autónomo → Planes (directo) */}
                   <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
@@ -491,7 +515,6 @@ export default function SearchPage() {
                     </Button>
                   </Link>
                   
-                  {/* ✅ Cliente → Quiz de cliente (directo) */}
                   <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
@@ -508,7 +531,7 @@ export default function SearchPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Filters */}
+        {/* ✅ MEJORADO: Filtros en una sola línea sin precio */}
         <Card className="mb-8 shadow-lg border-0">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -516,6 +539,7 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -526,23 +550,36 @@ export default function SearchPage() {
                 />
               </div>
 
+              {/* ✅ MEJORADO: Categoría con iconos */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Categoría" />
+                  <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4" />
+                      <span>Todas las categorías</span>
+                    </div>
+                  </SelectItem>
+                  {availableCategories.map((cat) => {
+                    const Icon = getCategoryIcon(cat);
+                    return (
+                      <SelectItem key={cat} value={cat}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4" />
+                          <span>{cat}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
 
+              {/* Ciudad */}
               <Select value={selectedCity} onValueChange={setSelectedCity}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Ciudad" />
+                  <SelectValue placeholder="Todas las ciudades" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las ciudades</SelectItem>
@@ -554,18 +591,7 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Precio" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los precios</SelectItem>
-                  <SelectItem value="€">€ - Económico</SelectItem>
-                  <SelectItem value="€€">€€ - Medio</SelectItem>
-                  <SelectItem value="€€€">€€€ - Premium</SelectItem>
-                </SelectContent>
-              </Select>
-
+              {/* Ordenar */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Ordenar por" />
@@ -587,16 +613,6 @@ export default function SearchPage() {
           <p className="text-gray-600">
             Profesionales verificados y listos para ayudarte
           </p>
-          {profilesError && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm font-semibold">
-                ⚠️ Error al cargar perfiles: {profilesError.message}
-              </p>
-              <p className="text-red-600 text-xs mt-2">
-                Abre la consola del navegador (F12) para ver más detalles
-              </p>
-            </div>
-          )}
         </div>
 
         {loadingProfiles ? (
@@ -629,17 +645,34 @@ export default function SearchPage() {
           </div>
         )}
 
+        {/* ✅ MEJORADO: Mensaje cuando no hay resultados */}
         {!loadingProfiles && filteredProfiles.length === 0 && (
-          <Card className="p-12 text-center border-0 shadow-lg">
-            <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
+            <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No se encontraron resultados
+              {selectedCategory !== "all" 
+                ? `🚧 Todavía no hay profesionales en "${selectedCategory}"`
+                : "No se encontraron resultados"}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 max-w-md mx-auto mb-6">
               {profiles.length === 0 
                 ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                : 'Intenta modificar tus criterios de búsqueda'}
+                : selectedCategory !== "all"
+                  ? 'Estamos trabajando para incorporar nuevos autónomos en esta categoría. Prueba con otras categorías o elimina los filtros.'
+                  : 'Intenta modificar tus criterios de búsqueda o elimina los filtros activos.'}
             </p>
+            {(selectedCategory !== "all" || selectedCity !== "all" || searchTerm) && (
+              <Button
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setSelectedCity("all");
+                  setSearchTerm("");
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Ver todos los autónomos
+              </Button>
+            )}
           </Card>
         )}
       </div>
