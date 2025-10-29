@@ -25,18 +25,30 @@ export default function PricingPlansPage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
       
-      // ✅ CAMBIO: Permitir acceso a todos los usuarios registrados
-      // Ya no redirigir automáticamente según user_type
-      if (!currentUser.user_type) {
-        navigate(createPageUrl("UserTypeSelection"));
+      // ✅ Si no está autenticado, redirigir a login
+      if (!currentUser) {
+        base44.auth.redirectToLogin(window.location.href);
         return;
+      }
+      
+      setUser(currentUser);
+
+      // ✅ CAMBIO: Si no tiene tipo de usuario, aplicar "professionnel" automáticamente
+      if (!currentUser.user_type) {
+        await base44.auth.updateMe({ user_type: "professionnel" });
+        setUser({ ...currentUser, user_type: "professionnel" }); // Update local state with new user_type
+      }
+      
+      // ✅ Si es cliente, mostrar mensaje informativo
+      if (currentUser.user_type === "client") {
+        // No redirigir, solo mostrar mensaje
+        console.log("Usuario es cliente viendo planes");
       }
     } catch (error) {
       console.error("Error loading user:", error);
-      // ✅ Si no está autenticado, redirigir a login
-      base44.auth.redirectToLogin();
+      // Si no está autenticado, redirigir a login
+      base44.auth.redirectToLogin(window.location.href);
     }
   };
 
@@ -68,15 +80,14 @@ export default function PricingPlansPage() {
 
   const handleSelectPlan = async (plan) => {
     if (!user) {
-      base44.auth.redirectToLogin();
+      base44.auth.redirectToLogin(window.location.href);
       return;
     }
 
-    // ✅ CAMBIO: Solo permitir que profesionales activen planes
+    // ✅ CAMBIO: Asegurar que el usuario sea profesional antes de proceder
     if (user.user_type !== "professionnel") {
-      toast.error("Esta funcionalidad es solo para autónomos. Cambia tu tipo de cuenta para continuar.");
-      navigate(createPageUrl("UserTypeSelection"));
-      return;
+      await base44.auth.updateMe({ user_type: "professionnel" });
+      setUser(prevUser => ({ ...prevUser, user_type: "professionnel" })); // Update local state immediately
     }
 
     setSelectedPlan(plan.plan_id);
@@ -93,7 +104,7 @@ export default function PricingPlansPage() {
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email,
         fullName: user.full_name || user.email,
-        userType: user.user_type || "professionnel",
+        userType: "professionnel", // This will always be professionnel for plan selection
         cifNif: "",
         phone: user.phone || "",
         activity: "Sin especificar",
