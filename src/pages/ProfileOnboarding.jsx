@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox"; // Keeping this import as it might be used elsewhere
 import {
   Select,
   SelectContent,
@@ -72,7 +72,7 @@ export default function ProfileOnboardingPage() {
 
   // ✅ NUEVA: Lista AMPLIADA de ciudades principales por provincia
   const ciudadesPorProvincia = {
-    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahuela", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
     "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Ripollet", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges", "Montgat", "Calella", "Berga"],
     "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Catarroja", "Xàtiva", "Cullera", "Massamagrell", "Quart de Poblet", "Alfafar", "Requena", "Aldaia", "Benetússer", "Carlet", "Llíria"],
     "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos", "Castilleja de la Cuesta", "Lora del Río", "Brenes", "Marchena"],
@@ -1208,40 +1208,129 @@ Equipo milautonomos`,
             {/* Step 5: Legales */}
             {currentStep === 5 && (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Checkbox
-                    checked={formData.acepta_terminos}
-                    onCheckedChange={(checked) => setFormData({ ...formData, acepta_terminos: checked })}
-                  />
-                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}>
-                    <strong>Acepto los términos y condiciones *</strong>
-                    <p className="text-gray-600 mt-1">
+                {/* ✅ MEJORADO: Checkbox con check visible */}
+                <div 
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                    formData.acepta_terminos 
+                      ? 'bg-green-50 border-green-400 shadow-sm' 
+                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="relative flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      id="acepta_terminos"
+                      checked={formData.acepta_terminos}
+                      onChange={(e) => setFormData({ ...formData, acepta_terminos: e.target.checked })}
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
+                    />
+                    {/* ✅ NUEVO: Check visible personalizado */}
+                    <svg
+                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="3"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <label 
+                    htmlFor="acepta_terminos"
+                    className="text-sm cursor-pointer flex-1"
+                  >
+                    <strong className="text-gray-900 text-base">
+                      ✅ Acepto los términos y condiciones *
+                    </strong>
+                    <p className="text-gray-600 mt-2 leading-relaxed">
                       He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
                     </p>
                   </label>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Checkbox
-                    checked={formData.acepta_politica_privacidad}
-                    onCheckedChange={(checked) => setFormData({ ...formData, acepta_politica_privacidad: checked })}
-                  />
-                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}>
-                    <strong>Acepto la política de privacidad *</strong>
-                    <p className="text-gray-600 mt-1">
+                <div 
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                    formData.acepta_politica_privacidad 
+                      ? 'bg-green-50 border-green-400 shadow-sm' 
+                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="relative flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      id="acepta_politica"
+                      checked={formData.acepta_politica_privacidad}
+                      onChange={(e) => setFormData({ ...formData, acepta_politica_privacidad: e.target.checked })}
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
+                    />
+                    <svg
+                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="3"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <label 
+                    htmlFor="acepta_politica"
+                    className="text-sm cursor-pointer flex-1"
+                  >
+                    <strong className="text-gray-900 text-base">
+                      ✅ Acepto la política de privacidad *
+                    </strong>
+                    <p className="text-gray-600 mt-2 leading-relaxed">
                       He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
                     </p>
                   </label>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Checkbox
-                    checked={formData.consiente_contacto_clientes}
-                    onCheckedChange={(checked) => setFormData({ ...formData, consiente_contacto_clientes: checked })}
-                  />
-                  <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}>
-                    <strong>Consiento el contacto de clientes *</strong>
-                    <p className="text-gray-600 mt-1">
+                <div 
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                    formData.consiente_contacto_clientes 
+                      ? 'bg-green-50 border-green-400 shadow-sm' 
+                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="relative flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      id="consiente_contacto"
+                      checked={formData.consiente_contacto_clientes}
+                      onChange={(e) => setFormData({ ...formData, consiente_contacto_clientes: e.target.checked })}
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
+                    />
+                    <svg
+                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="3"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <label 
+                    htmlFor="consiente_contacto"
+                    className="text-sm cursor-pointer flex-1"
+                  >
+                    <strong className="text-gray-900 text-base">
+                      ✅ Consiento el contacto de clientes *
+                    </strong>
+                    <p className="text-gray-600 mt-2 leading-relaxed">
                       Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
                     </p>
                   </label>
