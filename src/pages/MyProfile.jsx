@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -386,6 +386,43 @@ export default function MyProfilePage() {
               ✅ Tu perfil se ha actualizado correctamente. Los cambios ya son visibles en las búsquedas.
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Subscription Card - NEW */}
+        {isProfessional && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">Gestión de Suscripción</h3>
+                    <p className="text-sm text-gray-600">
+                      Estado: <Badge className={
+                        user.subscription_status === "actif" ? "bg-green-100 text-green-800" :
+                        user.subscription_status === "cancelado" ? "bg-yellow-100 text-yellow-800" :
+                        user.subscription_status === "en_attente" ? "bg-yellow-100 text-yellow-800" :
+                        "bg-red-100 text-red-800"
+                      }>
+                        {user.subscription_status === "actif" ? "Activo" :
+                         user.subscription_status === "cancelado" ? "Cancelado" : 
+                         user.subscription_status === "en_attente" ? "Pendiente" :
+                         user.subscription_status === "en_prueba" ? "Prueba" : "Inactivo"}
+                      </Badge>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Ver detalles
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* User Info */}
