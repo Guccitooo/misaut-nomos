@@ -37,6 +37,12 @@ Deno.serve(async (req) => {
             console.log('✅ Checkout completado para:', customerEmail);
             console.log('📋 Metadata:', metadata);
 
+            // ✅ CRÍTICO: Validar que el email existe
+            if (!customerEmail) {
+                console.error('❌ No se pudo obtener el email del cliente');
+                return Response.json({ error: 'Email required' }, { status: 400 });
+            }
+
             const today = new Date();
             const activityText = metadata.activity || "Sin especificar";
             const activityCategory = activityText.includes(":") 
@@ -68,17 +74,18 @@ Deno.serve(async (req) => {
             if (existingUsers.length > 0) {
                 userId = existingUsers[0].id;
                 
+                // ✅ IMPORTANTE: Actualizar como profesional con suscripción ACTIVA
                 await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
-                    full_name: metadata.fullName,
+                    full_name: metadata.fullName || existingUsers[0].full_name,
                     user_type: "professionnel",
-                    phone: metadata.phone,
-                    city: metadata.address?.split(',').slice(-1)[0].trim() || "",
+                    phone: metadata.phone || existingUsers[0].phone,
+                    city: metadata.address?.split(',').slice(-1)[0].trim() || existingUsers[0].city,
                     subscription_status: "actif",
                     subscription_start_date: today.toISOString().split('T')[0],
                     subscription_end_date: expirationDate.toISOString().split('T')[0],
                     last_payment_date: today.toISOString().split('T')[0],
                 });
-                console.log(`✅ Usuario actualizado: ${customerEmail}`);
+                console.log(`✅ Usuario actualizado con suscripción activa: ${customerEmail}`);
             } else {
                 console.log(`⚠️ Usuario no existe: ${customerEmail}`);
                 await base44.asServiceRole.integrations.Core.SendEmail({
@@ -98,20 +105,24 @@ Stripe Customer ID: ${session.customer}
 Stripe Subscription ID: ${session.subscription}`,
                     from_name: "milautonomos"
                 });
+                
+                // ✅ NO crear perfil aún, usuario no existe en sistema
+                return Response.json({ received: true, message: 'User not found, admin notified' });
             }
 
-            // Crear o actualizar perfil profesional
+            // ✅ CRÍTICO: Solo crear o actualizar perfil si el usuario YA EXISTE y tiene suscripción activa
             if (userId) {
                 const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
                 if (existingProfiles.length === 0) {
+                    // ✅ Crear perfil PENDIENTE (no activo ni visible hasta completar quiz)
                     await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
-                        business_name: metadata.fullName,
+                        business_name: metadata.fullName || "Nuevo autónomo",
                         description: `Profesional recién registrado.`,
-                        categories: [activityCategory],
+                        categories: activityCategory !== "Sin especificar" ? [activityCategory] : [],
                         service_area: metadata.address?.split(',').slice(-1)[0].trim() || "",
                         opening_hours: "A convenir",
                         cif_nif: metadata.cifNif || "",
@@ -127,24 +138,28 @@ Stripe Subscription ID: ${session.subscription}`,
                             instagram: "",
                             linkedin: ""
                         },
+                        // ✅ CRÍTICO: Perfil NO activo ni visible hasta completar quiz
                         estado_perfil: "pendiente",
                         visible_en_busqueda: false,
                         onboarding_completed: false
                     });
-                    console.log(`✅ Perfil profesional creado en PENDIENTE`);
+                    console.log(`✅ Perfil profesional creado en PENDIENTE (no visible)`);
                 } else {
                     const profile = existingProfiles[0];
+                    // ✅ Solo activar si ya completó el onboarding
                     if (profile.onboarding_completed) {
                         await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
                             estado_perfil: "activo",
                             visible_en_busqueda: true
                         });
-                        console.log(`✅ Perfil actualizado a activo`);
+                        console.log(`✅ Perfil actualizado a activo (ya tenía onboarding completo)`);
+                    } else {
+                        console.log(`⚠️ Perfil existe pero aún no completó onboarding`);
                     }
                 }
             }
 
-            // ✅ Email de confirmación con textos corregidos
+            // ✅ Email de confirmación
             const trialEmailBody = `Hola ${metadata.fullName},
 
 ¡Bienvenido a milautonomos!
@@ -162,8 +177,11 @@ Tu prueba gratuita de 7 días ha sido activada correctamente.
 - Si NO cancelas antes del ${expirationDate.toLocaleDateString('es-ES')}, se cobrará automáticamente tu plan mensual de 49€/mes
 - Tu perfil AÚN NO está visible. Completa el quiz para activarlo.
 
-🚀 PRÓXIMO PASO:
-Completa tu perfil profesional ahora para aparecer en las búsquedas.
+🚀 PRÓXIMO PASO OBLIGATORIO:
+Completa tu perfil profesional ahora para aparecer en las búsquedas:
+${Deno.env.get("APP_URL") || window.location.origin}/profile-onboarding
+
+❌ Si no completas el quiz, tu perfil NO aparecerá en búsquedas aunque tengas la suscripción pagada.
 
 Gracias por unirte,
 Equipo milautonomos`;
@@ -175,19 +193,24 @@ Equipo milautonomos`;
 Tu suscripción ha sido activada correctamente.
 
 ⚠️ IMPORTANTE: Tu perfil aún NO está visible.
-Completa tu perfil profesional para aparecer en búsquedas.
+
+🚀 PRÓXIMO PASO OBLIGATORIO:
+Completa tu perfil profesional para aparecer en búsquedas:
+${Deno.env.get("APP_URL") || window.location.origin}/profile-onboarding
+
+❌ Si no completas el quiz, tu perfil NO aparecerá aunque tengas la suscripción pagada.
 
 Gracias,
 Equipo milautonomos`;
 
             await base44.asServiceRole.integrations.Core.SendEmail({
                 to: customerEmail,
-                subject: isTrial ? "✅ Tu prueba gratuita de 7 días está activa" : "✅ Bienvenido a milautonomos",
+                subject: isTrial ? "✅ Tu prueba gratuita está activa - COMPLETA TU PERFIL" : "✅ Suscripción activada - COMPLETA TU PERFIL",
                 body: isTrial ? trialEmailBody : normalEmailBody,
                 from_name: "milautonomos"
             });
 
-            console.log(`✅ Flujo completado para ${customerEmail}`);
+            console.log(`✅ Flujo completado para ${customerEmail} - Perfil pendiente de quiz`);
         }
 
         // ✅ Handle invoice.payment_succeeded (renovaciones mensuales)
@@ -212,6 +235,19 @@ Equipo milautonomos`;
                     });
 
                     console.log(`✅ Suscripción renovada para ${customerEmail}`);
+                    
+                    // ✅ Reactivar perfil si estaba suspendido
+                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                        user_id: users[0].id
+                    });
+                    
+                    if (profiles.length > 0 && profiles[0].onboarding_completed) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                            estado_perfil: "activo",
+                            visible_en_busqueda: true
+                        });
+                        console.log(`✅ Perfil reactivado después de renovación`);
+                    }
                 }
             }
         }
@@ -232,6 +268,19 @@ Equipo milautonomos`;
                         subscription_status: "annule",
                     });
 
+                    // ✅ Ocultar perfil inmediatamente
+                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                        user_id: users[0].id
+                    });
+                    
+                    if (profiles.length > 0) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                            visible_en_busqueda: false,
+                            estado_perfil: "inactivo"
+                        });
+                        console.log(`✅ Perfil ocultado después de cancelación`);
+                    }
+
                     await base44.asServiceRole.integrations.Core.SendEmail({
                         to: customerEmail,
                         subject: "Tu suscripción ha sido cancelada - milautonomos",
@@ -250,7 +299,7 @@ Equipo milautonomos`,
                         from_name: "milautonomos"
                     });
 
-                    console.log(`❌ Suscripción cancelada para ${customerEmail}`);
+                    console.log(`❌ Suscripción cancelada y perfil ocultado para ${customerEmail}`);
                 }
             }
         }
@@ -269,6 +318,19 @@ Equipo milautonomos`,
                     await base44.asServiceRole.entities.User.update(users[0].id, {
                         subscription_status: "suspendu",
                     });
+
+                    // ✅ Ocultar perfil temporalmente
+                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                        user_id: users[0].id
+                    });
+                    
+                    if (profiles.length > 0) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                            visible_en_busqueda: false,
+                            estado_perfil: "suspendu"
+                        });
+                        console.log(`✅ Perfil suspendido por pago fallido`);
+                    }
 
                     await base44.asServiceRole.integrations.Core.SendEmail({
                         to: customerEmail,
@@ -290,7 +352,7 @@ Equipo milautonomos`,
                         from_name: "milautonomos"
                     });
 
-                    console.log(`⚠️ Pago fallido para ${customerEmail}`);
+                    console.log(`⚠️ Pago fallido y perfil suspendido para ${customerEmail}`);
                 }
             }
         }
