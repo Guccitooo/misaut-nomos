@@ -379,7 +379,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - ✅ VERSIÓN LIMPIA SIN DUPLICACIONES */}
+      {/* Hero Section - ✅ FLUJO DIRECTO CORREGIDO */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
@@ -390,13 +390,14 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Sin textos explicativos, sin emojis duplicados */}
+            {/* ✅ CAMBIO: Redirecciones directas sin intermediarios */}
             {!isLoadingUser && !user && (
               <div className="space-y-4">
                 <p className="text-base text-blue-100 font-medium">
                   Elige cómo quieres empezar:
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+                  {/* ✅ Autónomo → Planes (directo) */}
                   <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
@@ -405,16 +406,9 @@ export default function SearchPage() {
                       🧰 Soy autónomo
                     </Button>
                   </Link>
-                  <Link 
-                    to={createPageUrl("Search")} 
-                    className="w-full sm:w-auto" 
-                    onClick={(e) => {
-                      if (!user) {
-                        e.preventDefault();
-                        base44.auth.redirectToLogin(window.location.href);
-                      }
-                    }}
-                  >
+                  
+                  {/* ✅ Cliente → Quiz de cliente (directo) */}
+                  <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
                       className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
