@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Star, MessageSquare, AlertCircle, Flag } from "lucide-react";
+import { Star, MessageSquare, AlertCircle, Flag, CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -27,30 +27,74 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
   const [comment, setComment] = useState("");
   const [error, setError] = useState(null);
   const [reportingReview, setReportingReview] = useState(null);
+  const [canReview, setCanReview] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
   const queryClient = useQueryClient();
 
-  const createReviewMutation = useMutation({
-    mutationFn: async (reviewData) => {
-      // Check if user has chatted with professional
-      const conversationId = [currentUser.id, professionalId].sort().join('_');
-      const messages = await base44.entities.Message.filter({
-        conversation_id: conversationId
-      });
+  // ✅ Verificar si el usuario puede dejar reseña
+  useEffect(() => {
+    if (currentUser && professionalId) {
+      checkReviewEligibility();
+    }
+  }, [currentUser, professionalId]);
 
-      if (messages.length === 0) {
-        throw new Error("Debes contactar primero con este autónomo antes de dejar una opinión");
-      }
+  const checkReviewEligibility = async () => {
+    if (!currentUser || currentUser.user_type !== "client") {
+      setCanReview(false);
+      return;
+    }
 
-      // Check if user already reviewed
+    setCheckingEligibility(true);
+    try {
+      // 1. Verificar si ya dejó una reseña
       const existingReviews = await base44.entities.Review.filter({
         professional_id: professionalId,
         client_id: currentUser.id
       });
 
       if (existingReviews.length > 0) {
-        throw new Error("Ya has dejado una opinión para este autónomo");
+        setCanReview(false);
+        setError("Ya has dejado una opinión para este autónomo");
+        setCheckingEligibility(false);
+        return;
       }
 
+      // 2. Verificar si existe conversación
+      const conversationId = [currentUser.id, professionalId].sort().join('_');
+      const messages = await base44.entities.Message.filter({
+        conversation_id: conversationId
+      });
+
+      if (messages.length === 0) {
+        setCanReview(false);
+        setError("Debes contactar primero con este autónomo antes de dejar una opinión");
+        setCheckingEligibility(false);
+        return;
+      }
+
+      // 3. ✅ VERIFICACIÓN CRÍTICA: El profesional debe haber respondido
+      const professionalResponded = messages.some(msg => msg.sender_id === professionalId);
+
+      if (!professionalResponded) {
+        setCanReview(false);
+        setError("Solo puedes dejar una opinión si el profesional ha respondido a tu mensaje");
+        setCheckingEligibility(false);
+        return;
+      }
+
+      // ✅ Todas las verificaciones pasadas
+      setCanReview(true);
+      setError(null);
+    } catch (error) {
+      console.error("Error checking review eligibility:", error);
+      setCanReview(false);
+      setError("Error al verificar elegibilidad");
+    }
+    setCheckingEligibility(false);
+  };
+
+  const createReviewMutation = useMutation({
+    mutationFn: async (reviewData) => {
       return base44.entities.Review.create(reviewData);
     },
     onSuccess: async () => {
@@ -97,6 +141,7 @@ Equipo milautonomos`,
       setComment("");
       setRating(5);
       setError(null);
+      setCanReview(false); // Ya no puede dejar otra reseña
     },
     onError: (err) => {
       setError(err.message);
@@ -136,6 +181,11 @@ Sistema milautonomos`,
       return;
     }
 
+    if (!canReview) {
+      setError("No cumples los requisitos para dejar una opinión");
+      return;
+    }
+
     createReviewMutation.mutate({
       professional_id: professionalId,
       client_id: currentUser.id,
@@ -147,6 +197,22 @@ Sistema milautonomos`,
     });
   };
 
+  const handleOpenForm = () => {
+    if (!currentUser) {
+      base44.auth.redirectToLogin();
+      return;
+    }
+
+    if (currentUser.user_type !== "client") {
+      setError("Solo los clientes pueden dejar opiniones");
+      return;
+    }
+
+    setShowForm(true);
+    // Volver a verificar al abrir el formulario
+    checkReviewEligibility();
+  };
+
   return (
     <>
       <Card className="shadow-lg border-0">
@@ -156,10 +222,10 @@ Sistema milautonomos`,
               <MessageSquare className="w-5 h-5 text-blue-700" />
               Opiniones ({reviews.length})
             </CardTitle>
-            {currentUser && currentUser.user_type === "client" && (
+            {currentUser && currentUser.user_type === "client" && !showForm && (
               <Button
                 variant="outline"
-                onClick={() => setShowForm(!showForm)}
+                onClick={handleOpenForm}
                 className="border-blue-700 text-blue-700 hover:bg-blue-50"
               >
                 <Star className="w-4 h-4 mr-2" />
@@ -169,72 +235,95 @@ Sistema milautonomos`,
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
           {showForm && (
-            <form onSubmit={handleSubmit} className="p-6 bg-blue-50 rounded-xl space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tu valoración
-                </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
+            <>
+              {checkingEligibility ? (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    Verificando tu elegibilidad para dejar una opinión...
+                  </AlertDescription>
+                </Alert>
+              ) : !canReview && error ? (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>{error}</strong>
+                    <ul className="list-disc list-inside mt-2 text-sm">
+                      <li>Debes haber contactado con el profesional</li>
+                      <li>El profesional debe haber respondido a tu mensaje</li>
+                      <li>Solo puedes dejar una opinión por profesional</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              ) : canReview ? (
+                <form onSubmit={handleSubmit} className="p-6 bg-blue-50 rounded-xl space-y-4">
+                  <Alert className="bg-green-50 border-green-200">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      ✅ <strong>Puedes dejar tu opinión</strong> - Has tenido una conversación verificada con este profesional
+                    </AlertDescription>
+                  </Alert>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tu valoración
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          className="transition-transform hover:scale-110"
+                        >
+                          <Star
+                            className={`w-8 h-8 ${
+                              star <= rating
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tu comentario
+                    </label>
+                    <Textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Comparte tu experiencia..."
+                      className="h-32"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-3 justify-end">
+                    <Button
                       type="button"
-                      onClick={() => setRating(star)}
-                      className="transition-transform hover:scale-110"
+                      variant="outline"
+                      onClick={() => {
+                        setShowForm(false);
+                        setError(null);
+                      }}
                     >
-                      <Star
-                        className={`w-8 h-8 ${
-                          star <= rating
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tu comentario
-                </label>
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Comparte tu experiencia..."
-                  className="h-32"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowForm(false);
-                    setError(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createReviewMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {createReviewMutation.isPending ? "Enviando..." : "Publicar opinión"}
-                </Button>
-              </div>
-            </form>
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createReviewMutation.isPending || !canReview}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createReviewMutation.isPending ? "Enviando..." : "Publicar opinión"}
+                    </Button>
+                  </div>
+                </form>
+              ) : null}
+            </>
           )}
 
           <div className="space-y-4">
@@ -284,12 +373,12 @@ Sistema milautonomos`,
                     <div className="flex gap-2 mt-2">
                       {review.is_verified && (
                         <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                          Opinión verificada
+                          ✅ Opinión verificada
                         </Badge>
                       )}
                       {review.is_reported && (
                         <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                          Reportada
+                          ⚠️ Reportada
                         </Badge>
                       )}
                     </div>
