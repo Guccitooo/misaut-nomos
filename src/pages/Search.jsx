@@ -379,7 +379,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - ✅ VERSIÓN COMPACTA */}
+      {/* Hero Section - ✅ VERSIÓN LIMPIA SIN DUPLICACIONES */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
@@ -390,33 +390,35 @@ export default function SearchPage() {
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {/* ✅ CAMBIO: Versión compacta sin textos explicativos */}
+            {/* ✅ CAMBIO: Sin textos explicativos, sin emojis duplicados */}
             {!isLoadingUser && !user && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <p className="text-base text-blue-100 font-medium">
                   Elige cómo quieres empezar:
                 </p>
-                <div className="flex flex-row gap-3 justify-center items-center">
-                  <Link to={createPageUrl("PricingPlans")} className="flex-1 max-w-xs">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+                  <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105"
+                      className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
                     >
-                      <Briefcase className="w-5 h-5 mr-2" />
                       🧰 Soy autónomo
                     </Button>
                   </Link>
-                  <Link to={createPageUrl("Search")} className="flex-1 max-w-xs" onClick={(e) => {
-                    if (!user) {
-                      e.preventDefault();
-                      base44.auth.redirectToLogin(window.location.href);
-                    }
-                  }}>
+                  <Link 
+                    to={createPageUrl("Search")} 
+                    className="w-full sm:w-auto" 
+                    onClick={(e) => {
+                      if (!user) {
+                        e.preventDefault();
+                        base44.auth.redirectToLogin(window.location.href);
+                      }
+                    }}
+                  >
                     <Button 
                       size="lg" 
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105"
+                      className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
                     >
-                      <SearchIcon className="w-5 h-5 mr-2" />
                       👤 Soy cliente
                     </Button>
                   </Link>
