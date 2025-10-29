@@ -242,22 +242,22 @@ export default function SearchPage() {
         
         console.log('📦 Total perfiles cargados:', allProfiles.length);
         
-        // ✅ Filtrar solo por datos del propio perfil, sin depender de User
+        // ✅ CAMBIO: Filtros más permisivos - solo verificar campos esenciales
         const visibleProfiles = allProfiles.filter(profile => {
-          // Solo verificar datos del perfil mismo
           const isVisible = profile.visible_en_busqueda === true;
           const isActive = profile.estado_perfil === "activo";
           const hasBusinessName = !!profile.business_name;
-          const hasCompletedOnboarding = profile.onboarding_completed === true;
+          
+          // ✅ Ya NO requiere onboarding_completed
+          // Solo que esté visible, activo y tenga nombre
           
           console.log('🔍 Perfil:', profile.business_name, {
             visible: profile.visible_en_busqueda,
             estado: profile.estado_perfil,
-            onboarding: profile.onboarding_completed,
-            passes: isVisible && isActive && hasBusinessName && hasCompletedOnboarding
+            passes: isVisible && isActive && hasBusinessName
           });
           
-          return isVisible && isActive && hasBusinessName && hasCompletedOnboarding;
+          return isVisible && isActive && hasBusinessName;
         });
 
         console.log('✅ Perfiles visibles después de filtros:', visibleProfiles.length);
