@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,7 +24,9 @@ import {
   Loader2,
   ArrowLeft,
   RefreshCw,
-  Info
+  Info,
+  TrendingUp,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,8 @@ export default function SubscriptionManagementPage() {
   const [user, setUser] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isFixing, setIsFixing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -43,6 +46,11 @@ export default function SubscriptionManagementPage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      console.log('👤 Usuario cargado:', {
+        email: currentUser.email,
+        subscription_status: currentUser.subscription_status,
+        user_type: currentUser.user_type
+      });
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
@@ -50,15 +58,30 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  const { data: subscription, isLoading: loadingSubscription } = useQuery({
+  const { data: subscription, isLoading: loadingSubscription, error: subscriptionError } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
+      console.log('🔍 Buscando suscripción para user_id:', user.id);
+      
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
       });
+      
+      console.log('📦 Suscripciones encontradas:', subs.length);
+      if (subs[0]) {
+        console.log('✅ Suscripción:', {
+          estado: subs[0].estado,
+          plan_nombre: subs[0].plan_nombre,
+          fecha_expiracion: subs[0].fecha_expiracion
+        });
+      } else {
+        console.log('❌ No se encontró suscripción');
+      }
+      
       return subs[0];
     },
     enabled: !!user,
+    retry: 1,
   });
 
   const { data: plan } = useQuery({
@@ -71,6 +94,51 @@ export default function SubscriptionManagementPage() {
     },
     enabled: !!subscription,
   });
+
+  // ✅ NUEVA: Función para diagnosticar y corregir suscripción
+  const handleFixSubscription = async () => {
+    setIsFixing(true);
+    try {
+      console.log('🔧 Diagnosticando suscripción...');
+      
+      // 1. Diagnosticar
+      const debugResponse = await base44.functions.invoke('debugUserSubscription', {
+        email: user.email
+      });
+      
+      console.log('📋 Diagnóstico:', debugResponse.data);
+      setDebugInfo(debugResponse.data);
+      
+      // 2. Si hay problemas, intentar corregir
+      if (!debugResponse.data.ok || debugResponse.data.issues?.length > 0) {
+        console.log('🔧 Intentando corregir...');
+        
+        const fixResponse = await base44.functions.invoke('fixUserSubscription', {
+          email: user.email,
+          forceActivate: true
+        });
+        
+        console.log('✅ Resultado corrección:', fixResponse.data);
+        
+        if (fixResponse.data.ok) {
+          toast.success('✅ Suscripción corregida correctamente');
+          
+          // Recargar todo
+          await loadUser();
+          queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        } else {
+          toast.error('No se pudo corregir automáticamente. Contacta con soporte.');
+        }
+      } else {
+        toast.info('Tu suscripción está correctamente configurada');
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+      toast.error('Error al verificar la suscripción');
+    } finally {
+      setIsFixing(false);
+    }
+  };
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
@@ -125,6 +193,7 @@ export default function SubscriptionManagementPage() {
     );
   }
 
+  // ✅ MEJORADO: Pantalla sin suscripción con debug
   if (!subscription) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
@@ -138,21 +207,67 @@ export default function SubscriptionManagementPage() {
             Volver al perfil
           </Button>
 
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg border-0 mb-6">
             <CardContent className="p-12 text-center">
               <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                No tienes una suscripción activa
+                No se encontró registro de suscripción
               </h2>
               <p className="text-gray-600 mb-6">
-                Necesitas una suscripción para aparecer en las búsquedas y recibir clientes
+                No se pudo encontrar tu suscripción en la base de datos
               </p>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-              >
-                Ver planes disponibles
-              </Button>
+
+              {/* ✅ Información de debug */}
+              {user.subscription_status && (
+                <Alert className="mb-6 bg-blue-50 border-blue-200 text-left">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    <strong>Estado en tu cuenta:</strong><br/>
+                    subscription_status: <code className="bg-blue-100 px-2 py-1 rounded">{user.subscription_status}</code><br/>
+                    user_type: <code className="bg-blue-100 px-2 py-1 rounded">{user.user_type}</code>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {debugInfo && (
+                <Alert className="mb-6 bg-gray-50 border-gray-200 text-left max-h-96 overflow-auto">
+                  <AlertDescription>
+                    <pre className="text-xs">{JSON.stringify(debugInfo, null, 2)}</pre>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* ✅ Botones de acción */}
+              <div className="flex flex-col gap-3 max-w-md mx-auto">
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={handleFixSubscription}
+                  disabled={isFixing}
+                >
+                  {isFixing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verificando y corrigiendo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Verificar y corregir suscripción
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                >
+                  Ver planes disponibles
+                </Button>
+
+                <p className="text-xs text-gray-500 mt-4">
+                  Si el problema persiste después de verificar, contacta con soporte: admin@milautonomos.com
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -205,7 +320,6 @@ export default function SubscriptionManagementPage() {
           </Alert>
         )}
 
-        {/* ✅ CAMBIO: Alerta específica para trial */}
         {subscription?.estado === "en_prueba" && (
           <Alert className="mb-6 bg-blue-50 border-blue-200">
             <Info className="h-4 w-4 text-blue-600" />
@@ -307,6 +421,28 @@ export default function SubscriptionManagementPage() {
 
         {/* Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ✅ NUEVO: Botón "Mejorar plan" */}
+          {isActive && subscription.plan_id === "plan_monthly_trial" && (
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+              <CardContent className="p-6 text-center">
+                <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
+                <h3 className="font-bold text-lg text-gray-900 mb-2">
+                  Mejora tu plan
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Ahorra hasta 138€/año cambiando a plan trimestral o anual
+                </p>
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Ver planes superiores
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {(isExpired || isCancelled) && (
             <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-6 text-center">
@@ -368,6 +504,39 @@ export default function SubscriptionManagementPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ✅ NUEVO: Botón debug (solo visible si hay problemas) */}
+        {(!isActive || subscriptionError) && (
+          <Card className="mt-6 shadow-lg border-0 bg-gray-50">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                ¿Problemas con tu suscripción?
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Si completaste el pago pero tu suscripción no aparece correctamente, usa esta herramienta para sincronizarla.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleFixSubscription}
+                disabled={isFixing}
+                className="w-full"
+              >
+                {isFixing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Verificar y sincronizar suscripción
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cancellation Confirmation Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
