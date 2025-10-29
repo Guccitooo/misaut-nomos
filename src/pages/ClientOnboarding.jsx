@@ -44,6 +44,35 @@ export default function ClientOnboardingPage() {
     loadUser();
   }, []);
 
+  // ✅ NUEVO: Auto-procesar formulario guardado después de login
+  useEffect(() => {
+    if (user) {
+      const savedFormData = localStorage.getItem('client_onboarding_pending');
+      if (savedFormData) {
+        try {
+          const parsedData = JSON.parse(savedFormData);
+          console.log('📋 Datos guardados encontrados, procesando automáticamente...');
+          
+          // Actualizar formulario con datos guardados
+          setFormData(parsedData);
+          
+          // Limpiar localStorage
+          localStorage.removeItem('client_onboarding_pending');
+          
+          // Procesar automáticamente después de un momento
+          setTimeout(() => {
+            completeOnboardingMutation.mutate(parsedData);
+          }, 500);
+          
+          toast.info('Completando tu registro...', { duration: 2000 });
+        } catch (error) {
+          console.error('Error procesando datos guardados:', error);
+          localStorage.removeItem('client_onboarding_pending');
+        }
+      }
+    }
+  }, [user]);
+
   const loadUser = async () => {
     setIsLoadingUser(true);
     try {
@@ -54,10 +83,10 @@ export default function ClientOnboardingPage() {
       if (currentUser) {
         setFormData(prev => ({
           ...prev,
-          nombre: currentUser.full_name || "",
-          email: currentUser.email || "",
-          telefono: currentUser.phone || "",
-          ciudad: currentUser.city || "",
+          nombre: currentUser.full_name || prev.nombre,
+          email: currentUser.email || prev.email,
+          telefono: currentUser.phone || prev.telefono,
+          ciudad: currentUser.city || prev.ciudad,
         }));
 
         // Si ya es cliente y completó onboarding → ir a búsqueda
@@ -76,7 +105,6 @@ export default function ClientOnboardingPage() {
       }
     } catch (error) {
       console.error("Error loading user:", error);
-      // ✅ CAMBIO: NO redirigir al login, permitir que vea el formulario
       setUser(null);
     } finally {
       setIsLoadingUser(false);
@@ -85,15 +113,6 @@ export default function ClientOnboardingPage() {
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async (data) => {
-      // ✅ CAMBIO: Verificar si tiene sesión antes de proceder
-      let currentUser = user;
-      
-      if (!currentUser) {
-        // Si no tiene sesión, redirigir a login y volver aquí
-        base44.auth.redirectToLogin(window.location.href);
-        throw new Error("Debes iniciar sesión primero");
-      }
-
       // 1. Actualizar usuario como cliente
       await base44.auth.updateMe({
         user_type: "client",
@@ -134,17 +153,20 @@ Equipo MilAutónomos`,
       return data;
     },
     onSuccess: () => {
-      toast.success("✅ ¡Bienvenido a MilAutónomos!");
-      navigate(createPageUrl("Search"));
+      toast.success("✅ ¡Bienvenido a MilAutónomos! Tu cuenta está lista.");
+      // Limpiar cualquier dato guardado
+      localStorage.removeItem('client_onboarding_pending');
+      // Redirigir a búsqueda
+      setTimeout(() => {
+        navigate(createPageUrl("Search"));
+      }, 1000);
     },
     onError: (error) => {
-      if (error.message === "Debes iniciar sesión primero") {
-        // El usuario será redirigido al login por el código anterior
-        return;
-      }
       console.error("Error completing onboarding:", error);
       setError("Error al completar el registro: " + error.message);
       toast.error("Error al completar el registro");
+      // Limpiar datos guardados en caso de error
+      localStorage.removeItem('client_onboarding_pending');
     }
   });
 
@@ -152,7 +174,16 @@ Equipo MilAutónomos`,
     e.preventDefault();
     setError(null);
 
-    // Validaciones
+    // ✅ VALIDACIÓN CRÍTICA: Términos obligatorios
+    if (!formData.acepta_terminos) {
+      setError("❌ Debes aceptar los Términos y Condiciones para continuar.");
+      toast.error("Debes aceptar los Términos y Condiciones");
+      // Hacer scroll al checkbox
+      document.querySelector('[type="checkbox"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Validaciones básicas
     if (!formData.nombre || formData.nombre.trim().length < 2) {
       setError("El nombre debe tener al menos 2 caracteres");
       return;
@@ -178,11 +209,24 @@ Equipo MilAutónomos`,
       return;
     }
 
-    if (!formData.acepta_terminos) {
-      setError("Debes aceptar los términos y condiciones");
+    // ✅ NUEVO: Si no tiene sesión, guardar datos y redirigir a login
+    if (!user) {
+      console.log('💾 Guardando datos del formulario antes de login...');
+      
+      // Guardar datos en localStorage
+      localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
+      
+      toast.info('Redirigiendo al inicio de sesión...', { duration: 2000 });
+      
+      // Redirigir a login con URL de retorno
+      setTimeout(() => {
+        base44.auth.redirectToLogin(window.location.href);
+      }, 500);
+      
       return;
     }
 
+    // ✅ Si tiene sesión, procesar directamente
     completeOnboardingMutation.mutate(formData);
   };
 
@@ -250,7 +294,7 @@ Equipo MilAutónomos`,
           </p>
           {!user && (
             <p className="text-sm text-blue-600 mt-2">
-              Al enviar el formulario, se te pedirá que inicies sesión o crees una cuenta
+              📝 Al enviar el formulario, crearemos tu cuenta automáticamente
             </p>
           )}
         </div>
@@ -346,17 +390,40 @@ Equipo MilAutónomos`,
                 </p>
               </div>
 
-              {/* Términos y condiciones */}
-              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+              {/* ✅ Términos y condiciones - OBLIGATORIO */}
+              <div className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all ${
+                !formData.acepta_terminos && error?.includes('Términos')
+                  ? 'bg-red-50 border-red-300'
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
                 <Checkbox
                   checked={formData.acepta_terminos}
-                  onCheckedChange={(checked) => setFormData({ ...formData, acepta_terminos: checked })}
+                  onCheckedChange={(checked) => {
+                    setFormData({ ...formData, acepta_terminos: checked });
+                    if (checked && error?.includes('Términos')) {
+                      setError(null);
+                    }
+                  }}
                   required
+                  className="mt-1"
                 />
-                <label className="text-sm cursor-pointer flex-1" onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}>
-                  <strong>Acepto los términos y condiciones *</strong>
+                <label 
+                  className="text-sm cursor-pointer flex-1" 
+                  onClick={() => {
+                    setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos });
+                    if (!formData.acepta_terminos && error?.includes('Términos')) {
+                      setError(null);
+                    }
+                  }}
+                >
+                  <strong className="text-gray-900">
+                    ✅ Acepto los Términos y Condiciones *
+                  </strong>
                   <p className="text-gray-600 mt-1">
                     He leído y acepto los términos y condiciones de uso, la política de privacidad y el tratamiento de mis datos personales.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Este campo es obligatorio para poder crear tu cuenta
                   </p>
                 </label>
               </div>
@@ -375,13 +442,16 @@ Equipo MilAutónomos`,
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5 mr-2" />
-                    Crear mi cuenta de cliente
+                    {!user ? 'Crear mi cuenta y empezar' : 'Crear mi cuenta de cliente'}
                   </>
                 )}
               </Button>
 
               <p className="text-xs text-center text-gray-500">
-                Al crear tu cuenta podrás buscar y contactar con profesionales de forma gratuita
+                {!user 
+                  ? '🔐 Al crear tu cuenta, iniciarás sesión automáticamente y podrás buscar profesionales de inmediato'
+                  : 'Al crear tu cuenta podrás buscar y contactar con profesionales de forma gratuita'
+                }
               </p>
             </form>
           </CardContent>
