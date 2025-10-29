@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +22,7 @@ import {
   FileText,
   Phone,
   MessageCircle,
-  Loader2 // Added Loader2 icon for loading states
+  Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
@@ -192,7 +191,7 @@ export default function ProfessionalProfilePage() {
       const allReviews = await base44.entities.Review.filter(
         { professional_id: professionalId },
         '-created_date',
-        100 // Changed limit from 20 to 100
+        100
       );
       console.log('✅ Reviews encontradas:', allReviews.length, allReviews);
       return allReviews;
