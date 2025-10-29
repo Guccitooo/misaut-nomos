@@ -233,27 +233,27 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+  const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
+      console.log('🔵 Iniciando carga de perfiles...');
       try {
-        // ✅ CAMBIO: Cargar perfiles sin necesidad de User entity para visitantes
         const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
         
         console.log('📦 Total perfiles cargados:', allProfiles.length);
+        console.log('📋 Perfiles raw:', allProfiles);
         
-        // ✅ CAMBIO: Filtros más permisivos - solo verificar campos esenciales
+        // ✅ Filtros muy permisivos - solo campos esenciales
         const visibleProfiles = allProfiles.filter(profile => {
           const isVisible = profile.visible_en_busqueda === true;
           const isActive = profile.estado_perfil === "activo";
           const hasBusinessName = !!profile.business_name;
           
-          // ✅ Ya NO requiere onboarding_completed
-          // Solo que esté visible, activo y tenga nombre
-          
           console.log('🔍 Perfil:', profile.business_name, {
+            id: profile.id,
             visible: profile.visible_en_busqueda,
             estado: profile.estado_perfil,
+            hasName: hasBusinessName,
             passes: isVisible && isActive && hasBusinessName
           });
           
@@ -261,18 +261,31 @@ export default function SearchPage() {
         });
 
         console.log('✅ Perfiles visibles después de filtros:', visibleProfiles.length);
+        console.log('👀 Perfiles finales:', visibleProfiles);
         
         return visibleProfiles;
       } catch (error) {
-        console.error("Error al cargar perfiles:", error);
-        return [];
+        console.error("❌ Error al cargar perfiles:", error);
+        console.error("❌ Error completo:", error.message, error.stack);
+        throw error; // Re-throw para que React Query lo capture
       }
     },
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 15,
     initialData: [],
-    retry: 1,
+    retry: 2,
+    onError: (error) => {
+      console.error("❌ React Query error:", error);
+    }
   });
+
+  // Log cuando cambian los profiles
+  useEffect(() => {
+    console.log('🔄 Profiles actualizados:', profiles?.length || 0);
+    if (profilesError) {
+      console.error('❌ Error en profiles:', profilesError);
+    }
+  }, [profiles, profilesError]);
 
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
@@ -461,11 +474,18 @@ export default function SearchPage() {
         {/* Results */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {filteredProfiles.length} autónomos disponibles
+            {loadingProfiles ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
           </h2>
           <p className="text-gray-600">
             Profesionales verificados y listos para ayudarte
           </p>
+          {profilesError && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">
+                ⚠️ Error al cargar perfiles: {profilesError.message}
+              </p>
+            </div>
+          )}
         </div>
 
         {loadingProfiles ? (
