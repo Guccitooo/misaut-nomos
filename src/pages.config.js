@@ -8,6 +8,7 @@ import Onboarding from './pages/Onboarding';
 import PricingPlans from './pages/PricingPlans';
 import ProfileOnboarding from './pages/ProfileOnboarding';
 import SubscriptionManagement from './pages/SubscriptionManagement';
+import UserTypeSelection from './pages/UserTypeSelection';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "PricingPlans": PricingPlans,
     "ProfileOnboarding": ProfileOnboarding,
     "SubscriptionManagement": SubscriptionManagement,
+    "UserTypeSelection": UserTypeSelection,
 }
 
 export const pagesConfig = {
