@@ -1,0 +1,393 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  CreditCard,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Loader2,
+  ArrowLeft,
+  RefreshCw,
+  Info
+} from "lucide-react";
+import { toast } from "sonner";
+
+export default function SubscriptionManagementPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error loading user:", error);
+      base44.auth.redirectToLogin();
+    }
+  };
+
+  const { data: subscription, isLoading: loadingSubscription } = useQuery({
+    queryKey: ['subscription', user?.id],
+    queryFn: async () => {
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+      return subs[0];
+    },
+    enabled: !!user,
+  });
+
+  const { data: plan } = useQuery({
+    queryKey: ['plan', subscription?.plan_id],
+    queryFn: async () => {
+      const plans = await base44.entities.SubscriptionPlan.filter({
+        plan_id: subscription.plan_id
+      });
+      return plans[0];
+    },
+    enabled: !!subscription,
+  });
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('cancelSubscription', {});
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      toast.success(data.message);
+      setShowCancelDialog(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Error al cancelar la suscripción');
+    }
+  });
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    await cancelSubscriptionMutation.mutateAsync();
+    setIsCancelling(false);
+  };
+
+  const getStatusBadge = (estado) => {
+    switch (estado) {
+      case "activo":
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Activo</Badge>;
+      case "cancelado":
+        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />Cancelado</Badge>;
+      case "finalizada":
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Finalizado</Badge>;
+      case "en_prueba":
+        return <Badge className="bg-blue-100 text-blue-800"><Info className="w-3 h-3 mr-1" />Prueba</Badge>;
+      default:
+        return <Badge variant="outline">{estado}</Badge>;
+    }
+  };
+
+  const getDaysLeft = () => {
+    if (!subscription) return 0;
+    const today = new Date();
+    const expiration = new Date(subscription.fecha_expiracion);
+    const diffTime = expiration - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  if (!user || loadingSubscription) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      </div>
+    );
+  }
+
+  if (!subscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("MyProfile"))}
+            className="mb-6"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver al perfil
+          </Button>
+
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-12 text-center">
+              <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                No tienes una suscripción activa
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Necesitas una suscripción para aparecer en las búsquedas y recibir clientes
+              </p>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+              >
+                Ver planes disponibles
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const daysLeft = getDaysLeft();
+  const isActive = subscription.estado === "activo" || subscription.estado === "en_prueba";
+  const isCancelled = subscription.estado === "cancelado";
+  const isExpired = subscription.estado === "finalizada";
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(createPageUrl("MyProfile"))}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Volver al perfil
+        </Button>
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Suscripción</h1>
+          <p className="text-gray-600">Administra tu plan y configuración de pagos</p>
+        </div>
+
+        {/* Status Alerts */}
+        {isCancelled && (
+          <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <strong>Suscripción cancelada.</strong> Tu perfil permanecerá activo hasta el{" "}
+              <strong>{new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}</strong>
+              {daysLeft > 0 && ` (${daysLeft} días restantes)`}.
+              Después de esa fecha, tu perfil dejará de aparecer en las búsquedas.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isExpired && (
+          <Alert className="mb-6 bg-red-50 border-red-200">
+            <XCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <strong>Tu suscripción ha finalizado.</strong> Tu perfil ya no es visible en las búsquedas.
+              Reactiva tu plan para volver a recibir clientes.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Current Plan Card */}
+        <Card className="mb-6 shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-blue-700" />
+                Plan Actual
+              </div>
+              {getStatusBadge(subscription.estado)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Plan</p>
+                <p className="text-xl font-bold text-gray-900">{plan?.nombre || subscription.plan_nombre}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Precio</p>
+                <p className="text-xl font-bold text-gray-900">{subscription.plan_precio}€</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Fecha de inicio</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <p className="font-semibold text-gray-900">
+                    {new Date(subscription.fecha_inicio).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Fecha de expiración</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <p className="font-semibold text-gray-900">
+                    {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
+              </div>
+
+              {daysLeft > 0 && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 mb-2">Tiempo restante</p>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-2xl font-bold text-blue-900">
+                      {daysLeft} {daysLeft === 1 ? 'día' : 'días'}
+                    </p>
+                    <p className="text-sm text-blue-700">hasta la próxima renovación</p>
+                  </div>
+                </div>
+              )}
+
+              {subscription.renovacion_automatica && isActive && (
+                <div className="md:col-span-2">
+                  <Alert className="bg-green-50 border-green-200">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      <strong>Renovación automática activada.</strong> Tu suscripción se renovará automáticamente el{" "}
+                      {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(isExpired || isCancelled) && (
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-6 text-center">
+                <RefreshCw className="w-12 h-12 text-blue-700 mx-auto mb-3" />
+                <h3 className="font-bold text-lg text-gray-900 mb-2">
+                  Reactiva tu plan
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Vuelve a aparecer en las búsquedas y recibe nuevos clientes
+                </p>
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                >
+                  Ver planes disponibles
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {isActive && (
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-lg text-gray-900 mb-2">
+                  Cancelar suscripción
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Tu perfil dejará de aparecer en las búsquedas inmediatamente, pero seguirás teniendo acceso hasta la fecha de expiración.
+                </p>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => setShowCancelDialog(true)}
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancelar suscripción
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                Cambiar plan
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Explora otros planes que se adapten mejor a tus necesidades
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+              >
+                Ver todos los planes
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Cancellation Confirmation Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                ¿Cancelar suscripción?
+              </DialogTitle>
+              <DialogDescription className="space-y-3 pt-4">
+                <p>
+                  Si cancelas tu suscripción:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-sm">
+                  <li>Tu perfil <strong>dejará de aparecer en las búsquedas inmediatamente</strong></li>
+                  <li>No recibirás nuevos contactos de clientes</li>
+                  <li>Mantendrás acceso a tu cuenta hasta el <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
+                  <li>Podrás reactivar tu suscripción en cualquier momento</li>
+                </ul>
+                <p className="text-gray-900 font-semibold pt-2">
+                  ¿Estás seguro que deseas continuar?
+                </p>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+                disabled={isCancelling}
+              >
+                No, mantener activo
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelSubscription}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Sí, cancelar suscripción
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Onboarding from './pages/Onboarding';
 import PricingPlans from './pages/PricingPlans';
 import ProfileOnboarding from './pages/ProfileOnboarding';
+import SubscriptionManagement from './pages/SubscriptionManagement';
 import Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "PricingPlans": PricingPlans,
     "ProfileOnboarding": ProfileOnboarding,
+    "SubscriptionManagement": SubscriptionManagement,
 }
 
 export const pagesConfig = {
