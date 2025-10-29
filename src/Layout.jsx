@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -120,7 +119,24 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogin = () => {
-    base44.auth.redirectToLogin(window.location.pathname);
+    console.log('🔑 Intentando redirigir al login...');
+    try {
+      // ✅ CAMBIO: Probar diferentes métodos
+      if (typeof base44.auth.redirectToLogin === 'function') {
+        console.log('✅ Método redirectToLogin existe, llamando...');
+        base44.auth.redirectToLogin();
+      } else {
+        console.warn('⚠️ redirectToLogin no existe, usando método alternativo');
+        // Fallback: redirigir manualmente a la URL de login de Base44
+        const loginUrl = `https://app.base44.com/login?app_id=${window.location.hostname}&redirect_uri=${encodeURIComponent(window.location.href)}`;
+        console.log('🔗 Redirigiendo a:', loginUrl);
+        window.location.href = loginUrl;
+      }
+    } catch (error) {
+      console.error('❌ Error al intentar login:', error);
+      // Último fallback: reload
+      alert('Error al iniciar sesión. Intenta recargando la página.');
+    }
   };
 
   const navigationItems = [
@@ -147,19 +163,17 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  // ✅ CAMBIO: Mostrar "Ver Planes" a TODOS los usuarios (no solo profesionales)
   navigationItems.push({
     title: "Ver Planes",
     url: createPageUrl("PricingPlans"),
     icon: CreditCard,
   });
 
-  // Solo mostrar "Mi Suscripción" (gestión) a profesionales
   if (user?.user_type === "professionnel") {
     navigationItems.push({
       title: "Mi Suscripción",
       url: createPageUrl("SubscriptionManagement"),
-      icon: Briefcase, // Changed icon from CreditCard to Briefcase
+      icon: Briefcase,
     });
   }
 
@@ -285,7 +299,6 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* ✅ CAMBIO: Botón "Hazte Autónomo" solo si NO está logueado */}
             {!user && (
               <div className="mt-auto p-3">
                 <Link to={createPageUrl("UserTypeSelection")}>
