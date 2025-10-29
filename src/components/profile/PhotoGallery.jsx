@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Image, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import OptimizedImage from "../ui/OptimizedImage";
 
 export default function PhotoGallery({ photos }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
@@ -29,10 +29,11 @@ export default function PhotoGallery({ photos }) {
                 className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group shadow-md hover:shadow-xl transition-shadow"
                 onClick={() => setSelectedPhoto(photo)}
               >
-                <img
+                <OptimizedImage
                   src={photo}
                   alt={`Photo ${idx + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  className="w-full h-full"
+                  priority={idx < 6}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                   <Image className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -58,6 +59,7 @@ export default function PhotoGallery({ photos }) {
               src={selectedPhoto}
               alt="Photo en grand"
               className="w-full h-auto max-h-[80vh] object-contain"
+              loading="eager"
             />
           </div>
         </DialogContent>
