@@ -35,7 +35,7 @@ import {
   Trash,
   Key,
   Wind,
-  Tool,
+  Settings,
   AlertCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +53,7 @@ const CATEGORY_ICONS = {
   "Autónomo de limpieza": Trash,
   "Cerrajero": Key,
   "Instalador de aire acondicionado": Wind,
-  "Mantenimiento general": Tool,
+  "Mantenimiento general": Settings,
   "Fontanería": Wrench,
   "Albañilería": Home,
   "Electricidad": Zap,
@@ -64,7 +64,7 @@ const CATEGORY_ICONS = {
   "Limpieza": Trash,
   "Cerrajería": Key,
   "Aire acondicionado": Wind,
-  "Mantenimiento": Tool
+  "Mantenimiento": Settings
 };
 
 // ✅ NUEVO: Categorías base que siempre aparecen
@@ -79,7 +79,7 @@ const BASE_CATEGORIES = [
   { name: "Autónomo de limpieza", icon: "Trash" },
   { name: "Cerrajero", icon: "Key" },
   { name: "Instalador de aire acondicionado", icon: "Wind" },
-  { name: "Mantenimiento general", icon: "Tool" }
+  { name: "Mantenimiento general", icon: "Settings" }
 ];
 
 function useDebounce(value, delay) {
@@ -331,7 +331,6 @@ export default function SearchPage() {
   const { data: availableCategories = [] } = useQuery({
     queryKey: ['availableCategories'],
     queryFn: async () => {
-      // Obtener todas las categorías únicas de los perfiles
       const profiles = await base44.entities.ProfessionalProfile.list();
       const usedCategories = new Set();
       
@@ -341,7 +340,6 @@ export default function SearchPage() {
         }
       });
 
-      // Combinar categorías base con las usadas
       const allCategories = new Set([
         ...BASE_CATEGORIES.map(c => c.name),
         ...Array.from(usedCategories)
@@ -481,7 +479,6 @@ export default function SearchPage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
-  // ✅ NUEVO: Obtener icono para categoría seleccionada
   const getCategoryIcon = (categoryName) => {
     const Icon = CATEGORY_ICONS[categoryName] || Briefcase;
     return Icon;
@@ -539,7 +536,6 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -550,7 +546,6 @@ export default function SearchPage() {
                 />
               </div>
 
-              {/* ✅ MEJORADO: Categoría con iconos */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las categorías" />
@@ -576,7 +571,6 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* Ciudad */}
               <Select value={selectedCity} onValueChange={setSelectedCity}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las ciudades" />
@@ -591,7 +585,6 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* Ordenar */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Ordenar por" />
@@ -605,7 +598,6 @@ export default function SearchPage() {
           </CardContent>
         </Card>
 
-        {/* Results */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {loadingProfiles ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
