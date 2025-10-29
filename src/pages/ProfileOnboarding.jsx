@@ -140,6 +140,12 @@ export default function ProfileOnboardingPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
+      // ✅ NUEVO: Verificar que sea profesional
+      if (!currentUser.user_type || currentUser.user_type === "client") {
+        navigate(createPageUrl("Search"));
+        return;
+      }
+
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: currentUser.id
       });
@@ -148,11 +154,13 @@ export default function ProfileOnboardingPage() {
         const existingProfile = profiles[0];
         setProfile(existingProfile);
 
+        // ✅ CAMBIO: Si ya está completo Y visible, ir al perfil
         if (existingProfile.onboarding_completed && existingProfile.visible_en_busqueda) {
           navigate(createPageUrl("MyProfile"));
           return;
         }
 
+        // ✅ CARGAR datos existentes para continuar donde lo dejó
         setFormData({
           business_name: existingProfile.business_name || "",
           cif_nif: existingProfile.cif_nif || "",
@@ -178,6 +186,7 @@ export default function ProfileOnboardingPage() {
           consiente_contacto_clientes: existingProfile.consiente_contacto_clientes || false,
         });
       } else {
+        // ✅ NUEVO: Pre-cargar datos del usuario
         setFormData(prev => ({
           ...prev,
           email_contacto: currentUser.email,
@@ -611,6 +620,30 @@ Equipo milautonomos`,
                 Ir a mi panel
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ✅ NUEVO: Mensaje si no es profesional
+  if (user.user_type === "client") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md border-0 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Esta página es solo para autónomos
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Como cliente, puedes buscar y contactar profesionales directamente.
+            </p>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate(createPageUrl("Search"))}
+            >
+              Ir a buscar profesionales
+            </Button>
           </CardContent>
         </Card>
       </div>
