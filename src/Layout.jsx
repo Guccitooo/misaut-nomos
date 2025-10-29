@@ -81,14 +81,12 @@ export default function Layout({ children, currentPageName }) {
       return;
     }
 
-    // ✅ Lista de páginas que NO requieren redirección
     const allowedPaths = [
       createPageUrl("ProfileOnboarding"),
       createPageUrl("UserTypeSelection"),
       "/logout"
     ];
 
-    // Si está en una página permitida, no verificar
     if (allowedPaths.includes(location.pathname)) {
       setNeedsOnboarding(false);
       return;
@@ -99,11 +97,9 @@ export default function Layout({ children, currentPageName }) {
         user_id: user.id
       });
 
-      // ✅ FORZAR REDIRECCIÓN si no ha completado onboarding
       if (!profiles[0] || !profiles[0].onboarding_completed || !profiles[0].visible_en_busqueda) {
         setNeedsOnboarding(true);
         
-        // Mostrar advertencia por 2 segundos antes de redirigir
         setTimeout(() => {
           navigate(createPageUrl("ProfileOnboarding"));
         }, 2000);
@@ -146,7 +142,6 @@ export default function Layout({ children, currentPageName }) {
     },
   ];
 
-  // Add subscription management for professionals
   if (user?.user_type === "professionnel") {
     navigationItems.push({
       title: "Suscripción",
@@ -163,14 +158,13 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // ✅ Mostrar alerta si necesita completar onboarding
   if (needsOnboarding) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
-          <Alert className="bg-yellow-50 border-yellow-200">
+          <Alert className="bg-white border-yellow-300 shadow-lg">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
+            <AlertDescription className="text-gray-800">
               <strong>Completa tu perfil profesional</strong>
               <p className="mt-2">
                 Para activar tu cuenta y aparecer en las búsquedas, primero debes completar tu perfil profesional.
@@ -197,19 +191,45 @@ export default function Layout({ children, currentPageName }) {
             --background: #f8fafc;
             --card: #ffffff;
           }
+          
+          /* ✅ Fondo blanco sólido para todos los modales y diálogos */
+          [role="dialog"],
+          [role="alertdialog"],
+          .modal-content,
+          .dialog-content,
+          .popover-content {
+            background-color: #FFFFFF !important;
+            color: #222222 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+          }
+          
+          /* ✅ Inputs, selects y textareas con fondo blanco */
+          input, select, textarea {
+            background-color: #FFFFFF !important;
+            color: #222222 !important;
+            border: 1px solid #DDD !important;
+          }
+          
+          input:disabled, select:disabled, textarea:disabled {
+            background-color: #F5F5F5 !important;
+            color: #888888 !important;
+          }
+          
+          /* ✅ Labels y textos oscuros */
+          label {
+            color: #333333 !important;
+          }
         `}
       </style>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
         <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
           <SidebarHeader className="border-b border-gray-100 p-6">
             <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
-                <Briefcase className="w-6 h-6 text-orange-400" />
-              </div>
-              <div>
-                <h2 className="font-bold text-xl text-gray-900">milautonomos</h2>
-                <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
-              </div>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
+                alt="milautonomos"
+                className="h-10 w-auto object-contain"
+              />
             </Link>
           </SidebarHeader>
           
@@ -241,7 +261,6 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Hazte Autónomo Button */}
             {(!user || user.user_type !== "professionnel") && (
               <div className="mt-auto p-3">
                 <Link to={createPageUrl("UserTypeSelection")}>
@@ -291,7 +310,11 @@ export default function Layout({ children, currentPageName }) {
               <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors">
                 <Menu className="w-6 h-6" />
               </SidebarTrigger>
-              <h1 className="text-lg font-bold text-gray-900">milautonomos</h1>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/8977001b6_image.png"
+                alt="milautonomos"
+                className="h-8 w-auto object-contain"
+              />
               <div className="w-10" />
             </div>
           </header>
