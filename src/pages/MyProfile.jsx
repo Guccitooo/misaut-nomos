@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, Calendar, TrendingUp, AlertCircle } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, Calendar, TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -49,7 +49,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       
       return expiration >= today;
     } catch (error) {
-      console.error('Error parseando fecha para estado activo:', error, 'Fecha:', fechaExpiracion);
+      console.error('Error parseando fecha:', error);
       // Si hay error parseando fecha (ej: tipo de dato inesperado), pero el estado es válido, asumir que está activo
       return true;
     }
@@ -71,7 +71,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
 
       return expiration >= today;
     } catch (error) {
-      console.error('Error parseando fecha para estado cancelado:', error, 'Fecha:', fechaExpiracion);
+      console.error('Error parseando fecha:', error);
       return false;
     }
   }
@@ -87,6 +87,7 @@ export default function MyProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
   const [searchParams] = useSearchParams();
+  const [forcingSync, setForcingSync] = useState(false);
 
   // ✅ NUEVO: Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
@@ -211,7 +212,8 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', {
+      console.log('👤 Usuario cargado en MyProfile:', {
+        id: currentUser.id,
         email: currentUser.email,
         subscription_status: currentUser.subscription_status,
         user_type: currentUser.user_type
@@ -228,32 +230,71 @@ export default function MyProfilePage() {
     }
   };
 
+  // ✅ NUEVA FUNCIÓN: Forzar sincronización
+  const handleForceSync = async () => {
+    setForcingSync(true);
+    try {
+      console.log('🔄 Forzando sincronización...');
+      
+      // Recargar usuario
+      await loadUser();
+      
+      // Invalidar todas las queries
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+      
+      // Esperar un momento y refetch
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      queryClient.refetchQueries({ queryKey: ['subscription'] });
+      
+      toast.success('Datos sincronizados correctamente');
+    } catch (error) {
+      console.error('Error sincronizando:', error);
+      toast.error('Error al sincronizar');
+    } finally {
+      setForcingSync(false);
+    }
+  };
+
   const { data: subscription, isLoading: loadingSubscription, error: subscriptionError } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      console.log('🔍 Buscando suscripción para user_id:', user.id);
+      console.log('🔍 [MyProfile] Buscando suscripción para user_id:', user.id);
+      console.log('🔍 [MyProfile] Email del usuario:', user.email);
       
-      const subs = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-      
-      console.log('📦 Suscripciones encontradas:', subs.length);
-      if (subs[0]) {
-        console.log('✅ Suscripción:', {
-          estado: subs[0].estado,
-          plan_nombre: subs[0].plan_nombre,
-          fecha_expiracion: subs[0].fecha_expiracion,
-          is_active: isSubscriptionActive(subs[0].estado, subs[0].fecha_expiracion)
+      try {
+        const subs = await base44.entities.Subscription.filter({
+          user_id: user.id
         });
-      } else {
-        console.log('❌ No se encontró suscripción');
+        
+        console.log('📦 [MyProfile] Suscripciones encontradas:', subs.length);
+        
+        if (subs.length > 0) {
+          console.log('✅ [MyProfile] Suscripción encontrada:', {
+            id: subs[0].id,
+            estado: subs[0].estado,
+            plan_nombre: subs[0].plan_nombre,
+            fecha_expiracion: subs[0].fecha_expiracion,
+            is_active: isSubscriptionActive(subs[0].estado, subs[0].fecha_expiracion)
+          });
+          return subs[0];
+        } else {
+          console.log('❌ [MyProfile] No se encontró suscripción para este user_id');
+          console.log('🔍 [MyProfile] Intentando buscar por email como fallback...');
+          
+          // ❌ NO PODEMOS BUSCAR POR EMAIL EN SUBSCRIPTION
+          // La suscripción DEBE tener el user_id correcto
+          return null;
+        }
+      } catch (error) {
+        console.error('❌ [MyProfile] Error buscando suscripción:', error);
+        throw error;
       }
-      
-      return subs[0];
     },
     enabled: !!user,
     retry: 1,
-    staleTime: 0, // ✅ No cachear, siempre refrescar
+    staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -545,6 +586,51 @@ export default function MyProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
+        {/* ✅ NUEVO: Banner de debug para admin */}
+        {user.role === 'admin' && (
+          <Alert className="mb-6 bg-purple-50 border-purple-200">
+            <AlertCircle className="h-4 w-4 text-purple-600" />
+            <AlertDescription className="text-purple-800 space-y-2">
+              <div><strong>🔧 Debug Info (solo admin):</strong></div>
+              <div className="text-xs font-mono space-y-1">
+                <div>User ID: <code className="bg-purple-100 px-1 rounded">{user.id}</code></div>
+                <div>Email: <code className="bg-purple-100 px-1 rounded">{user.email}</code></div>
+                <div>Subscription Status (User): <code className="bg-purple-100 px-1 rounded">{user.subscription_status || 'null'}</code></div>
+                <div>Subscription Found: <code className="bg-purple-100 px-1 rounded">{subscription ? 'YES' : 'NO'}</code></div>
+                {subscription && (
+                  <>
+                    <div>Subscription Estado: <code className="bg-purple-100 px-1 rounded">{subscription.estado}</code></div>
+                    <div>Subscription User ID: <code className="bg-purple-100 px-1 rounded">{subscription.user_id}</code></div>
+                  </>
+                )}
+                {!subscription && (
+                  <div className="text-red-700 font-semibold mt-2">
+                    ⚠️ NO SE ENCONTRÓ SUSCRIPCIÓN en la tabla Subscription para este user_id
+                  </div>
+                )}
+              </div>
+              <Button
+                onClick={handleForceSync}
+                disabled={forcingSync}
+                size="sm"
+                className="mt-2 bg-purple-600 hover:bg-purple-700"
+              >
+                {forcingSync ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Forzar sincronización
+                  </>
+                )}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* ✅ NUEVO: Banner de onboarding pendiente */}
         {needsOnboarding && (
           <Alert className="mb-6 bg-orange-50 border-orange-200">
