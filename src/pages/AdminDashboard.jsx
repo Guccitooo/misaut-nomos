@@ -70,10 +70,19 @@ export default function AdminDashboardPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDays, setExtendDays] = useState(7);
+  const [isCleaningOrphans, setIsCleaningOrphans] = useState(false);
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  // ✅ NUEVO: Ejecutar limpieza automática al cargar admin dashboard
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      console.log('👮 Admin detectado, ejecutando limpieza automática...');
+      executeAutomaticCleanup();
+    }
+  }, [user]);
 
   const loadUser = async () => {
     try {
@@ -85,6 +94,80 @@ export default function AdminDashboardPage() {
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
+    }
+  };
+
+  // ✅ NUEVO: Limpieza automática silenciosa
+  const executeAutomaticCleanup = async () => {
+    try {
+      console.log('🧹 Ejecutando limpieza automática de datos huérfanos...');
+      const response = await base44.functions.invoke('cleanOrphanData');
+      
+      if (response.data.ok && response.data.stats) {
+        const total = Object.values(response.data.stats).reduce((a, b) => a + b, 0);
+        
+        if (total > 0) {
+          console.log(`✅ Limpieza completada: ${total} registros huérfanos eliminados`);
+          toast.success(`🧹 Limpieza automática: ${total} registros huérfanos eliminados`, {
+            duration: 5000
+          });
+          
+          // Refrescar datos
+          queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+          queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+          queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        } else {
+          console.log('✅ Base de datos limpia, no hay registros huérfanos');
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ Error en limpieza automática:', error);
+    }
+  };
+
+  // ✅ NUEVO: Limpieza manual forzada (botón discreto)
+  const handleForceCleanup = async () => {
+    setIsCleaningOrphans(true);
+    try {
+      console.log('🧹 Forzando limpieza manual...');
+      const response = await base44.functions.invoke('cleanOrphanData');
+      
+      if (response.data.ok) {
+        const total = Object.values(response.data.stats).reduce((a, b) => a + b, 0);
+        
+        if (total > 0) {
+          toast.success(`✅ ${total} registros huérfanos eliminados`);
+          
+          // Mostrar detalles
+          setTimeout(() => {
+            const details = [];
+            if (response.data.stats.profiles > 0) details.push(`${response.data.stats.profiles} perfiles`);
+            if (response.data.stats.subscriptions > 0) details.push(`${response.data.stats.subscriptions} suscripciones`);
+            if (response.data.stats.messages > 0) details.push(`${response.data.stats.messages} mensajes`);
+            if (response.data.stats.favorites > 0) details.push(`${response.data.stats.favorites} favoritos`);
+            if (response.data.stats.reviews > 0) details.push(`${response.data.stats.reviews} reseñas`);
+            
+            if (details.length > 0) {
+              toast.info(`Eliminados: ${details.join(', ')}`, {
+                duration: 8000
+              });
+            }
+          }, 1000);
+        } else {
+          toast.success('✅ Base de datos limpia, no hay registros huérfanos');
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error en limpieza forzada:', error);
+      toast.error('Error al ejecutar limpieza');
+    } finally {
+      setIsCleaningOrphans(false);
     }
   };
 
@@ -241,12 +324,33 @@ export default function AdminDashboardPage() {
     enabled: !!user,
   });
 
+  // ✅ MODIFICADO: Filtrar suscripciones para NO mostrar huérfanas
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
-      const allSubs = await base44.entities.Subscription.list();
-      return allSubs;
+      console.log('\n💳 ========== CARGANDO SUSCRIPCIONES ==========');
+      const subs = await base44.entities.Subscription.list();
+      console.log(`📊 Total suscripciones: ${subs.length}`);
+      
+      // ✅ Filtrar solo suscripciones con usuario existente
+      const usersList = await base44.entities.User.list(); // Renamed to avoid conflict with 'users' state/query result
+      const userIds = new Set(usersList.map(u => u.id));
+      
+      const validSubs = subs.filter(sub => {
+        const hasUser = userIds.has(sub.user_id);
+        if (!hasUser) {
+          console.log(`⚠️ Suscripción huérfana detectada: user_id ${sub.user_id}`);
+        }
+        return hasUser;
+      });
+      
+      console.log(`✅ Suscripciones válidas: ${validSubs.length}`);
+      return validSubs;
     },
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
+    initialData: [],
     enabled: !!user,
   });
 
@@ -385,9 +489,27 @@ export default function AdminDashboardPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
               <p className="text-gray-600">Gestiona usuarios, perfiles y suscripciones</p>
               <p className="text-sm text-green-600 mt-2">
-                ✅ Limpieza automática activada - Los datos huérfanos se eliminan automáticamente
+                ✅ Limpieza automática activada - Los datos huérfanos se eliminan al cargar el panel
               </p>
             </div>
+            <Button
+              onClick={handleForceCleanup}
+              disabled={isCleaningOrphans}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 border-gray-300 hover:bg-gray-50"
+            >
+              {isCleaningOrphans ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Limpiando...
+                </>
+              ) : (
+                <>
+                  🧹 Forzar limpieza
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
