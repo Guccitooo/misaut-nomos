@@ -42,31 +42,62 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) return false;
+  console.log('🔍 Verificando suscripción:', { estado, fechaExpiracion });
   
-  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active"];
+  if (!estado) {
+    console.log('❌ Sin estado');
+    return false;
+  }
+  
+  // ✅ Normalizar estado (minúsculas, sin espacios)
+  const normalizedState = estado.toLowerCase().trim();
+  
+  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
   // Si está en un estado válido
-  if (validStates.includes(estado)) {
-    // Verificar que no haya expirado
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expiration = new Date(fechaExpiracion);
-    expiration.setHours(0, 0, 0, 0);
-    
-    return expiration >= today;
+  if (validStates.includes(normalizedState)) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiration = new Date(fechaExpiracion);
+      expiration.setHours(0, 0, 0, 0);
+      
+      const isValid = expiration >= today;
+      console.log(`✅ Estado válido (${normalizedState}), fecha ${isValid ? 'válida' : 'expirada'}:`, {
+        today: today.toISOString().split('T')[0],
+        expiration: expiration.toISOString().split('T')[0],
+        isValid
+      });
+      return isValid;
+    } catch (error) {
+      console.error('❌ Error parseando fecha:', error);
+      // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
+      return true;
+    }
   }
   
   // Si está cancelado pero aún tiene tiempo
-  if (estado === "cancelado" || estado === "canceled") {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expiration = new Date(fechaExpiracion);
-    expiration.setHours(0, 0, 0, 0);
-    
-    return expiration >= today;
+  if (normalizedState === "cancelado" || normalizedState === "canceled") {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiration = new Date(fechaExpiracion);
+      expiration.setHours(0, 0, 0, 0);
+      
+      const isValid = expiration >= today;
+      console.log(`⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}:`, {
+        today: today.toISOString().split('T')[0],
+        expiration: expiration.toISOString().split('T')[0],
+        isValid
+      });
+      return isValid;
+    } catch (error) {
+      console.error('❌ Error parseando fecha:', error);
+      return false;
+    }
   }
   
+  console.log('❌ Estado no válido:', normalizedState);
   return false;
 };
 
@@ -369,72 +400,84 @@ export default function SearchPage() {
     queryFn: async () => {
       const subs = await base44.entities.Subscription.list();
       console.log(`📊 Total suscripciones cargadas: ${subs.length}`);
+      subs.forEach(sub => {
+        console.log(`   - Usuario ${sub.user_id}: ${sub.estado} (expira: ${new Date(sub.fecha_expiracion).toLocaleDateString('es-ES')})`);
+      });
       return subs;
     },
-    staleTime: 0, // ✅ No cachear
+    staleTime: 0, 
     refetchOnMount: true,
     initialData: [],
   });
 
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
-    queryKey: ['profiles', subscriptions.length], // ✅ Depender de subscriptions
+    queryKey: ['profiles', subscriptions.length], 
     queryFn: async () => {
+      console.log('\n🔍 ========== INICIANDO FILTRADO DE PERFILES ==========\n');
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-      console.log(`📊 Total perfiles en BD: ${allProfiles.length}`);
+      console.log(`📊 Total perfiles en BD: ${allProfiles.length}\n`);
       
-      // ✅ NUEVA LÓGICA: Filtrar SOLO perfiles con suscripción válida
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       const visibleProfiles = allProfiles.filter(profile => {
-        const businessName = profile.business_name || `ID:${profile.user_id}`;
+        const businessName = profile.business_name || 'Sin nombre';
+        console.log(`\n🔍 Evaluando: ${businessName} (user_id: ${profile.user_id})`);
         
         // 1. Debe tener onboarding completado
         if (!profile.onboarding_completed) {
-          console.log(`❌ ${businessName} - Onboarding incompleto`);
+          console.log(`   ❌ Onboarding incompleto`);
           return false;
         }
+        console.log(`   ✅ Onboarding completado`);
         
-        // 2. Debe estar marcado como visible (esto se actualiza automáticamente por webhook)
+        // 2. Debe estar marcado como visible
         if (!profile.visible_en_busqueda) {
-          console.log(`❌ ${businessName} - Marcado como no visible`);
+          console.log(`   ❌ Marcado como no visible`);
           return false;
         }
+        console.log(`   ✅ Marcado como visible`);
         
         // 3. Debe estar en estado activo
         if (profile.estado_perfil !== "activo") {
-          console.log(`❌ ${businessName} - Estado perfil: ${profile.estado_perfil}`);
+          console.log(`   ❌ Estado perfil: ${profile.estado_perfil}`);
           return false;
         }
+        console.log(`   ✅ Estado perfil: activo`);
         
         // 4. ✅ VALIDACIÓN CLAVE: Verificar que tiene suscripción válida
         const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
         
         if (!userSub) {
-          console.log(`❌ ${businessName} - Sin registro de suscripción`);
+          console.log(`   ❌ Sin registro de suscripción`);
           return false;
         }
+        console.log(`   📋 Suscripción encontrada:`, {
+          estado: userSub.estado,
+          fecha_expiracion: userSub.fecha_expiracion
+        });
         
         // ✅ USAR HELPER PARA VERIFICAR SI ESTÁ ACTIVO
         const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
         
         if (!isActive) {
-          console.log(`❌ ${businessName} - Suscripción ${userSub.estado} (inactiva o expirada)`);
+          console.log(`   ❌ Suscripción ${userSub.estado} NO ES VÁLIDA`);
           return false;
         }
         
-        console.log(`✅ ${businessName} - Suscripción ${userSub.estado} (activa) - Expira: ${new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')}`);
+        console.log(`   ✅ ${businessName} - VISIBLE (${userSub.estado})`);
         return true;
       });
       
-      console.log(`\n📊 RESUMEN VISIBILIDAD:`);
+      console.log(`\n📊 ========== RESUMEN FINAL ==========`);
       console.log(`   Total perfiles: ${allProfiles.length}`);
       console.log(`   Perfiles visibles: ${visibleProfiles.length}`);
       console.log(`   Perfiles ocultos: ${allProfiles.length - visibleProfiles.length}`);
+      console.log(`=====================================\n`);
       
       return visibleProfiles || [];
     },
-    staleTime: 0, // ✅ No cachear
+    staleTime: 0, 
     initialData: [],
     retry: false,
     refetchOnMount: true,
