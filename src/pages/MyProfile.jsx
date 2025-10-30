@@ -178,60 +178,73 @@ export default function MyProfilePage() {
     enabled: !!user && user.user_type === "professionnel",
   });
 
-  const getDaysLeft = () => {
-    if (!subscription) return 0;
-    const today = new Date();
-    const expiration = new Date(subscription.fecha_expiracion);
-    const diffTime = expiration - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
   const getSubscriptionStatus = () => {
     if (!subscription) return null;
     
-    const daysLeft = getDaysLeft();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const expirationDate = new Date(subscription.fecha_expiracion);
+    expirationDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = expirationDate - today;
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const isExpired = daysLeft <= 0;
     
     switch (subscription.estado) {
       case "en_prueba":
         return {
-          text: "En prueba",
+          text: "Periodo de prueba",
           badge: "🟡",
-          color: "bg-blue-100 text-blue-800",
-          details: `${daysLeft} días restantes`,
-          isActive: true
+          color: "bg-blue-100 text-blue-800 border border-blue-300",
+          details: isExpired ? "Prueba finalizada" : `${daysLeft} días de prueba restantes`,
+          isActive: !isExpired,
+          showUpgrade: true,
+          showReactivate: false
         };
       case "activo":
         return {
-          text: "Activo",
+          text: "Suscripción activa",
           badge: "🟢",
-          color: "bg-green-100 text-green-800",
-          details: "Suscripción activa",
-          isActive: true
+          color: "bg-green-100 text-green-800 border border-green-300",
+          details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
+          isActive: true,
+          showUpgrade: false,
+          showReactivate: false
         };
       case "cancelado":
         return {
-          text: "Cancelado",
-          badge: "🔴",
-          color: "bg-yellow-100 text-yellow-800",
-          details: `Acceso hasta ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}`,
-          isActive: daysLeft > 0
+          text: isExpired ? "Suscripción finalizada" : "Suscripción cancelada",
+          badge: isExpired ? "🔴" : "⚪",
+          color: isExpired 
+            ? "bg-red-100 text-red-800 border border-red-300" 
+            : "bg-yellow-100 text-yellow-800 border border-yellow-300",
+          details: isExpired 
+            ? "Tu perfil está oculto" 
+            : `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`,
+          isActive: !isExpired,
+          showUpgrade: false,
+          showReactivate: true
         };
       case "finalizada":
         return {
-          text: "Expirada",
+          text: "Suscripción finalizada",
           badge: "🔴",
-          color: "bg-red-100 text-red-800",
-          details: "Suscripción finalizada",
-          isActive: false
+          color: "bg-red-100 text-red-800 border border-red-300",
+          details: "Tu perfil está oculto de las búsquedas",
+          isActive: false,
+          showUpgrade: false,
+          showReactivate: true
         };
       default:
         return {
           text: subscription.estado,
           badge: "⚪",
-          color: "bg-gray-100 text-gray-800",
+          color: "bg-gray-100 text-gray-800 border border-gray-300",
           details: "",
-          isActive: false
+          isActive: false,
+          showUpgrade: false,
+          showReactivate: true
         };
     }
   };
@@ -547,7 +560,7 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* ✅ MEJORADO: Subscription Card con información unificada */}
+        {/* ✅ MEJORADO: Subscription Card con estados claros */}
         {isProfessional && subscription && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="p-6">
@@ -558,7 +571,9 @@ export default function MyProfilePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg text-gray-900">Gestión de Suscripción</h3>
+                      <h3 className="font-bold text-lg text-gray-900">
+                        Gestión de Suscripción
+                      </h3>
                       {subscriptionStatus && (
                         <Badge className={subscriptionStatus.color}>
                           {subscriptionStatus.badge} {subscriptionStatus.text}
@@ -566,8 +581,8 @@ export default function MyProfilePage() {
                       )}
                     </div>
                     
-                    {/* ✅ NUEVO: Información detallada */}
-                    <div className="text-sm text-gray-600 space-y-1">
+                    {/* ✅ Información detallada */}
+                    <div className="text-sm text-gray-700 space-y-1">
                       <p>
                         <strong>Plan:</strong> {subscription.plan_nombre}
                         {subscription.estado === "en_prueba" && " (7 días gratis)"}
@@ -578,25 +593,48 @@ export default function MyProfilePage() {
                       {subscription.fecha_expiracion && (
                         <p className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          <strong>Renovación:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+                          <strong>Expiración:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
                         </p>
                       )}
-                      {subscription.plan_id === "plan_monthly_trial" && subscription.estado === "en_prueba" && (
-                        <p>
-                          <strong>Próximo cobro:</strong> {subscription.plan_precio}€/mes
+                      
+                      {/* ✅ Mensaje de visibilidad */}
+                      <div className={`mt-2 p-2 rounded-lg ${
+                        subscriptionStatus?.isActive 
+                          ? 'bg-green-50 border border-green-200' 
+                          : 'bg-red-50 border border-red-200'
+                      }`}>
+                        <p className={`text-sm font-semibold ${
+                          subscriptionStatus?.isActive ? 'text-green-800' : 'text-red-800'
+                        }`}>
+                          {subscriptionStatus?.isActive 
+                            ? '✅ Tu perfil es visible en las búsquedas' 
+                            : '❌ Tu perfil está oculto en las búsquedas'}
                         </p>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
+                
                 <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Ver detalles
-                  </Button>
-                  {subscription.plan_id === "plan_monthly_trial" && subscription.estado !== "cancelado" && (
+                  {/* ✅ Botón principal según estado */}
+                  {subscriptionStatus?.isActive && !subscriptionStatus?.showReactivate ? (
+                    <Button
+                      onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Gestionar suscripción
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
+                      className="bg-orange-500 hover:bg-orange-600"
+                    >
+                      {subscriptionStatus?.showReactivate ? 'Reactivar plan' : 'Ver planes'}
+                    </Button>
+                  )}
+                  
+                  {/* ✅ Botón upgrade (solo para trial) */}
+                  {subscriptionStatus?.showUpgrade && subscriptionStatus?.isActive && (
                     <Button
                       onClick={() => navigate(createPageUrl("PricingPlans"))}
                       variant="outline"
@@ -613,20 +651,25 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* ✅ MEJORADO: Subscription Card para profesionales sin suscripción */}
+        {/* ✅ Card para profesionales sin suscripción */}
         {isProfessional && !subscription && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-white" />
+                    <AlertCircle className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">No tienes una suscripción activa</h3>
-                    <p className="text-sm text-gray-600">
-                      Necesitas un plan para aparecer en búsquedas y recibir clientes
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">Sin suscripción activa</h3>
+                    <p className="text-sm text-gray-700 mb-2">
+                      Tu perfil está oculto. Necesitas un plan para aparecer en búsquedas.
                     </p>
+                    <div className="p-2 bg-red-100 border border-red-200 rounded-lg">
+                      <p className="text-sm font-semibold text-red-800">
+                        ❌ Tu perfil no es visible para clientes
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <Button
