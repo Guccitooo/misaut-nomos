@@ -797,64 +797,64 @@ Equipo milautonomos`,
   // Success screen
   if (currentStep === steps.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex items-center justify-center p-4">
-        {/* ✅ Elementos decorativos de fondo */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-white flex items-center justify-center p-4">
+        {/* ✅ Elementos decorativos de fondo sutiles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-700"></div>
         </div>
 
-        <Card className="max-w-3xl w-full border-0 shadow-2xl relative z-10 overflow-hidden">
-          {/* ✅ Barra de confetti decorativa */}
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"></div>
+        <Card className="max-w-4xl w-full border-0 shadow-xl relative z-10 overflow-hidden bg-white">
+          {/* ✅ Barra de éxito decorativa */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-400 via-blue-500 to-green-400"></div>
           
           <CardContent className="p-8 md:p-12">
             {/* ✅ Icono de éxito con animación */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8">
               <div className="relative">
-                <div className="w-28 h-28 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                  <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
+                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-xl animate-bounce">
+                  <CheckCircle className="w-14 h-14 text-white" strokeWidth={2.5} />
                 </div>
-                {/* ✅ Anillo animado alrededor */}
-                <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
+                {/* ✅ Anillo animado */}
+                <div className="absolute inset-0 w-24 h-24 rounded-full border-4 border-green-400 animate-ping opacity-40"></div>
               </div>
             </div>
 
-            {/* ✅ Título principal - MEJORADO CONTRASTE */}
-            <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
+            {/* ✅ Título principal con contraste mejorado */}
+            <h1 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-4 leading-tight">
               ✅ ¡Tu perfil profesional está activo!
             </h1>
 
-            {/* ✅ Subtítulo - MEJORADO CONTRASTE */}
-            <p className="text-lg md:text-xl text-center text-gray-800 font-semibold mb-3 max-w-2xl mx-auto">
+            {/* ✅ Subtítulos con mejor jerarquía */}
+            <p className="text-lg md:text-xl text-center text-slate-700 font-semibold mb-3 max-w-2xl mx-auto">
               Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">milautonomos</span>
             </p>
 
-            <p className="text-base text-center text-gray-700 mb-8 max-w-xl mx-auto">
+            <p className="text-base text-center text-slate-600 mb-10 max-w-xl mx-auto">
               Empieza a recibir contactos de clientes interesados en tus servicios profesionales.
             </p>
 
-            {/* ✅ Estadísticas rápidas */}
-            <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl mx-auto">
-              <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <div className="text-2xl font-bold text-blue-700">✓</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Perfil activo</div>
+            {/* ✅ Estadísticas con fondo blanco y borde */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto">
+              <div className="text-center p-4 bg-white rounded-xl border-2 border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-green-600 mb-1">✓</div>
+                <div className="text-sm text-slate-700 font-medium">Perfil activo</div>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-                <div className="text-2xl font-bold text-green-700">👁️</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Visible en búsquedas</div>
+              <div className="text-center p-4 bg-white rounded-xl border-2 border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-blue-600 mb-1">👁️</div>
+                <div className="text-sm text-slate-700 font-medium">Visible en búsquedas</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
-                <div className="text-2xl font-bold text-purple-700">🚀</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Listo para clientes</div>
+              <div className="text-center p-4 bg-white rounded-xl border-2 border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl font-bold text-purple-600 mb-1">🚀</div>
+                <div className="text-sm text-slate-700 font-medium">Listo para clientes</div>
               </div>
             </div>
 
-            {/* ✅ Botones de acción principales */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            {/* ✅ Botones de acción con contraste mejorado */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-base px-8 py-6"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-base px-8 py-6 font-semibold"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${user.id}`)}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -867,7 +867,7 @@ Equipo milautonomos`,
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-blue-600 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6 bg-white"
+                className="border-2 border-blue-600 text-blue-700 bg-white hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6 font-semibold"
                 onClick={() => navigate(createPageUrl("Search"))}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -878,10 +878,10 @@ Equipo milautonomos`,
             </div>
 
             {/* ✅ Botón secundario - Editar perfil */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-10">
               <Button
                 variant="ghost"
-                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 onClick={() => navigate(createPageUrl("MyProfile"))}
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -889,42 +889,62 @@ Equipo milautonomos`,
               </Button>
             </div>
 
-            {/* ✅ Separador */}
-            <div className="border-t border-gray-200 my-8"></div>
+            {/* ✅ Separador sutil */}
+            <div className="border-t border-slate-200 my-10"></div>
 
-            {/* ✅ Mensaje motivacional */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-              <div className="flex items-start gap-3">
+            {/* ✅ Consejos con mejor contraste y estructura */}
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-slate-200 shadow-sm">
+              <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">💡 Consejos para destacar</h3>
-                  <ul className="text-sm text-gray-700 space-y-2">
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
+                  <h3 className="font-bold text-lg text-slate-900 mb-4">💡 Consejos para destacar más en MilAutónomos</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <span className="text-slate-700 leading-relaxed">Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <span className="text-slate-700 leading-relaxed">Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Pide valoraciones a tus clientes satisfechos</span>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <span className="text-slate-700 leading-relaxed">Pide valoraciones a tus clientes satisfechos</span>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* ✅ Próximos pasos */}
+            {/* ✅ Soporte con mejor contraste */}
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-slate-600">
                 ¿Necesitas ayuda? Contacta con soporte:{" "}
-                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium underline">
+                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-semibold underline">
                   admin@milautonomos.com
                 </a>
               </p>
