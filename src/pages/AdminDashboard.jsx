@@ -70,6 +70,7 @@ export default function AdminDashboardPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDays, setExtendDays] = useState(7);
+  const [isCleaningUsers, setIsCleaningUsers] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -220,6 +221,29 @@ export default function AdminDashboardPage() {
     } catch (error) {
       console.error('Error extendiendo trial:', error);
       toast.error('Error al extender prueba');
+    }
+  };
+
+  const handleCleanDeletedUsers = async () => {
+    try {
+      setIsCleaningUsers(true);
+      console.log('🧹 Limpiando usuarios eliminados...');
+      
+      const response = await base44.functions.invoke('cleanDeletedUsers');
+      
+      if (response.data.ok) {
+        toast.success(response.data.message);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error limpiando usuarios:', error);
+      toast.error('Error al limpiar usuarios eliminados');
+    } finally {
+      setIsCleaningUsers(false);
     }
   };
 
@@ -380,8 +404,29 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
-          <p className="text-gray-600">Gestiona usuarios, perfiles y suscripciones</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
+              <p className="text-gray-600">Gestiona usuarios, perfiles y suscripciones</p>
+            </div>
+            <Button
+              onClick={handleCleanDeletedUsers}
+              disabled={isCleaningUsers}
+              variant="outline"
+              className="text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              {isCleaningUsers ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Limpiando...
+                </>
+              ) : (
+                <>
+                  🧹 Limpiar eliminados
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
