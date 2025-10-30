@@ -23,6 +23,31 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
+// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+const isSubscriptionActive = (estado, fechaExpiracion) => {
+  if (!estado || !fechaExpiracion) return false;
+  
+  const normalizedState = estado.toLowerCase();
+  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active"];
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiration = new Date(fechaExpiracion);
+  expiration.setHours(0, 0, 0, 0);
+  
+  // Si está en un estado válido Y no ha expirado
+  if (validStates.includes(normalizedState)) {
+    return expiration >= today;
+  }
+  
+  // Si está cancelado pero aún tiene tiempo
+  if (normalizedState === "cancelado" || normalizedState === "canceled") {
+    return expiration >= today;
+  }
+  
+  return false;
+};
+
 export default function MyProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -155,6 +180,11 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      console.log('👤 Usuario cargado:', {
+        email: currentUser.email,
+        subscription_status: currentUser.subscription_status,
+        user_type: currentUser.user_type
+      });
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -167,15 +197,34 @@ export default function MyProfilePage() {
     }
   };
 
-  const { data: subscription } = useQuery({
+  const { data: subscription, isLoading: loadingSubscription, error: subscriptionError } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
+      console.log('🔍 Buscando suscripción para user_id:', user.id);
+      
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
       });
+      
+      console.log('📦 Suscripciones encontradas:', subs.length);
+      if (subs[0]) {
+        console.log('✅ Suscripción:', {
+          estado: subs[0].estado,
+          plan_nombre: subs[0].plan_nombre,
+          fecha_expiracion: subs[0].fecha_expiracion,
+          is_active: isSubscriptionActive(subs[0].estado, subs[0].fecha_expiracion)
+        });
+      } else {
+        console.log('❌ No se encontró suscripción');
+      }
+      
       return subs[0];
     },
-    enabled: !!user && user.user_type === "professionnel",
+    enabled: !!user,
+    retry: 1,
+    staleTime: 0, // ✅ No cachear, siempre refrescar
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const getSubscriptionStatus = () => {
@@ -187,66 +236,86 @@ export default function MyProfilePage() {
     const expirationDate = new Date(subscription.fecha_expiracion);
     expirationDate.setHours(0, 0, 0, 0);
     
-    const diffTime = expirationDate - today;
-    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
     const isExpired = daysLeft <= 0;
     
-    switch (subscription.estado) {
-      case "en_prueba":
-        return {
-          text: "Periodo de prueba",
-          badge: "🟡",
-          color: "bg-blue-100 text-blue-800 border border-blue-300",
-          details: isExpired ? "Prueba finalizada" : `${daysLeft} días de prueba restantes`,
-          isActive: !isExpired,
-          showUpgrade: true,
-          showReactivate: false
-        };
-      case "activo":
-        return {
-          text: "Suscripción activa",
-          badge: "🟢",
-          color: "bg-green-100 text-green-800 border border-green-300",
-          details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
-          isActive: true,
-          showUpgrade: false,
-          showReactivate: false
-        };
-      case "cancelado":
-        return {
-          text: isExpired ? "Suscripción finalizada" : "Suscripción cancelada",
-          badge: isExpired ? "🔴" : "⚪",
-          color: isExpired 
-            ? "bg-red-100 text-red-800 border border-red-300" 
-            : "bg-yellow-100 text-yellow-800 border border-yellow-300",
-          details: isExpired 
-            ? "Tu perfil está oculto" 
-            : `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`,
-          isActive: !isExpired,
-          showUpgrade: false,
-          showReactivate: true
-        };
-      case "finalizada":
-        return {
-          text: "Suscripción finalizada",
-          badge: "🔴",
-          color: "bg-red-100 text-red-800 border border-red-300",
-          details: "Tu perfil está oculto de las búsquedas",
-          isActive: false,
-          showUpgrade: false,
-          showReactivate: true
-        };
-      default:
-        return {
-          text: subscription.estado,
-          badge: "⚪",
-          color: "bg-gray-100 text-gray-800 border border-gray-300",
-          details: "",
-          isActive: false,
-          showUpgrade: false,
-          showReactivate: true
-        };
+    // ✅ USAR HELPER PARA DETERMINAR SI ESTÁ ACTIVO
+    const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
+    
+    console.log('📊 Estado de suscripción:', {
+      estado: subscription.estado,
+      daysLeft,
+      isExpired,
+      isActive
+    });
+    
+    // ✅ NORMALIZAR ESTADOS
+    const normalizedState = subscription.estado.toLowerCase();
+    
+    if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
+      return {
+        text: "Periodo de prueba",
+        badge: "🟡",
+        color: "bg-blue-100 text-blue-800 border border-blue-300",
+        details: isExpired ? "Prueba finalizada" : `${daysLeft} días de prueba restantes`,
+        isActive: isActive,
+        showUpgrade: true,
+        showReactivate: false
+      };
     }
+    
+    if (normalizedState === "activo" || normalizedState === "active") {
+      return {
+        text: "Suscripción activa",
+        badge: "🟢",
+        color: "bg-green-100 text-green-800 border border-green-300",
+        details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
+        isActive: true,
+        showUpgrade: false,
+        showReactivate: false
+      };
+    }
+    
+    if (normalizedState === "cancelado" || normalizedState === "canceled") {
+      return {
+        text: isExpired ? "Suscripción finalizada" : "Suscripción cancelada",
+        badge: isExpired ? "🔴" : "⚪",
+        color: isExpired 
+          ? "bg-red-100 text-red-800 border border-red-300" 
+          : "bg-yellow-100 text-yellow-800 border border-yellow-300",
+        details: isExpired 
+          ? "Tu perfil está oculto" 
+          : `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`,
+        isActive: isActive,
+        showUpgrade: false,
+        showReactivate: true
+      };
+    }
+    
+    if (normalizedState === "finalizada" || normalizedState === "expired") {
+      return {
+        text: "Suscripción finalizada",
+        badge: "🔴",
+        color: "bg-red-100 text-red-800 border border-red-300",
+        details: "Tu perfil está oculto de las búsquedas",
+        isActive: false,
+        showUpgrade: false,
+        showReactivate: true
+      };
+    }
+    
+    // Estado desconocido, verificar por fecha
+    return {
+      text: subscription.estado,
+      badge: isActive ? "🟡" : "🔴",
+      color: isActive 
+        ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+        : "bg-red-100 text-red-800 border border-red-300",
+      details: isActive ? "Activo" : "Inactivo",
+      isActive: isActive,
+      showUpgrade: false,
+      showReactivate: !isActive
+    };
   };
 
   // ✅ CAMBIO CRÍTICO: Cargar perfil SIEMPRE que haya usuario, independiente de user_type
@@ -427,7 +496,7 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user || loadingProfile) {
+  if (!user || loadingProfile || loadingSubscription) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -436,7 +505,7 @@ export default function MyProfilePage() {
   }
 
   // ✅ Detectar si es profesional por tener perfil O por user_type
-  const isProfessional = profile || user.user_type === "professionnel";
+  const isProfessional = profile || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
 
   // ✅ NUEVO: Detectar si necesita completar onboarding
@@ -585,7 +654,7 @@ export default function MyProfilePage() {
                     <div className="text-sm text-gray-700 space-y-1">
                       <p>
                         <strong>Plan:</strong> {subscription.plan_nombre}
-                        {subscription.estado === "en_prueba" && " (7 días gratis)"}
+                        {(subscription.estado === "en_prueba" || subscription.estado === "trialing") && " (7 días gratis)"}
                       </p>
                       <p>
                         <strong>Estado:</strong> {subscriptionStatus?.details}
