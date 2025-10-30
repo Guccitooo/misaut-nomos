@@ -211,7 +211,7 @@ export default function MyProfilePage() {
     }
   }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
 
-  // ✅ NUEVO: Polling para verificar suscripción
+  // ✅ NUEVO: Polling mejorado con sincronización forzada
   const startSubscriptionPolling = async () => {
     console.log('🔄 Iniciando polling de suscripción...');
     
@@ -262,8 +262,56 @@ export default function MyProfilePage() {
             }, 2000);
           }
           
+          window.history.replaceState({}, document.title, window.location.pathname);
           queryClient.invalidateQueries({ queryKey: ['myProfile'] });
           return; // Éxito, salir del polling
+        }
+        
+        // ✅ NUEVO: A partir del intento 5, intentar sincronización forzada
+        if (attempt === 5 && currentUser) { // Only attempt if user is loaded
+          console.log('🔄 Intento 5: Ejecutando sincronización forzada...');
+          try {
+            const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
+              user_id: currentUser.id // Pass user ID to the function
+            });
+            console.log('📥 Respuesta de sincronización:', syncResponse.data);
+            
+            if (syncResponse.data.ok) {
+              console.log('✅ Sincronización forzada exitosa');
+              
+              // Refrescar datos
+              await loadUser(); // Reload user to get latest subscription_status
+              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+              await queryClient.refetchQueries({ queryKey: ['subscription'] });
+              
+              // Verificar si necesita onboarding
+              if (syncResponse.data.needs_onboarding) {
+                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
+                  duration: 8000
+                });
+                setTimeout(() => {
+                  navigate(createPageUrl("ProfileOnboarding"));
+                }, 2000);
+              } else {
+                toast.success("🎉 ¡Tu suscripción está activa!", {
+                  duration: 6000
+                });
+              }
+              
+              setIsVerifyingSubscription(false);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              return; // Exit polling as subscription is active
+            } else if (syncResponse.data.error === 'no_stripe_customer' || 
+                       syncResponse.data.error === 'no_subscription') {
+              console.log('⚠️ No se encontró suscripción en Stripe (después de forzar sync). Continuar polling.');
+              // Continue polling, maybe it's just a timing issue or the subscription is not in the expected state yet
+            } else {
+              console.error('❌ Error desconocido en sincronización forzada:', syncResponse.data.error);
+            }
+          } catch (syncError) {
+            console.error('❌ Error en sincronización forzada (invocación de función):', syncError);
+            // Continue polling
+          }
         }
         
         // Si no encontró suscripción o no está activa, esperar 2 segundos antes del siguiente intento
@@ -284,9 +332,16 @@ export default function MyProfilePage() {
     setIsVerifyingSubscription(false);
     setPollingAttempts(0); // Reset attempts
     
-    toast.error('No se pudo verificar tu suscripción. Recarga la página en unos segundos o contacta a soporte.', {
-      duration: 8000
-    });
+    toast.error(
+      <div>
+        <p className="font-semibold">No se pudo verificar tu suscripción</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: admin@milautonomos.com</p>
+        <p className="text-xs mt-2">Incluye tu email en el mensaje para que podamos ayudarte.</p>
+      </div>,
+      {
+        duration: 15000
+      }
+    );
   };
 
   const loadUser = async () => {
@@ -711,6 +766,7 @@ export default function MyProfilePage() {
                 </p>
                 <p className="text-xs text-blue-700 mt-2">
                   Esto puede tardar unos segundos mientras procesamos tu pago.
+                  {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
                 </p>
               </div>
               {pollingAttempts >= 5 && (
@@ -718,7 +774,7 @@ export default function MyProfilePage() {
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
                   <AlertDescription className="text-yellow-800 text-sm">
                     El proceso está tardando más de lo esperado. Si el problema persiste, 
-                    puedes recargar la página en unos segundos.
+                    puedes recargar la página en unos segundos o contactar a soporte.
                   </AlertDescription>
                 </Alert>
               )}

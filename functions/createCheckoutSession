@@ -24,6 +24,12 @@ Deno.serve(async (req) => {
             isReactivation
         } = body;
 
+        console.log('💳 ========== CREANDO CHECKOUT SESSION ==========');
+        console.log('📧 Email:', email);
+        console.log('💼 Plan:', planId);
+        console.log('🎁 Trial:', isTrial);
+        console.log('🔄 Reactivación:', isReactivation);
+
         let plan;
         let amount;
         let interval;
@@ -73,26 +79,43 @@ Deno.serve(async (req) => {
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // ✅ CRÍTICO: URLs usando nombres exactos de páginas Base44
+        // ✅ URLs usando nombres exactos de páginas Base44
         const origin = req.headers.get('origin');
         let successUrl, cancelUrl;
 
         if (isReactivation) {
-            // ✅ Usuario existente que reactiva → Ir a MyProfile
             successUrl = `${origin}/MyProfile?reactivation=success`;
             cancelUrl = `${origin}/MyProfile?reactivation=canceled`;
         } else {
-            // ✅ Nuevo usuario → Ir directo a ProfileOnboarding
-            successUrl = `${origin}/ProfileOnboarding?from=checkout`;
+            successUrl = `${origin}/MyProfile?onboarding=pending`;
             cancelUrl = `${origin}/PricingPlans?canceled=true`;
         }
 
         console.log('🔗 Success URL:', successUrl);
         console.log('🔗 Cancel URL:', cancelUrl);
 
+        // ✅ CRÍTICO: Metadata completo y consistente
+        const metadata = {
+            email: email,
+            fullName: fullName,
+            userType: userType || "professionnel",
+            cifNif: cifNif || "",
+            phone: phone || "",
+            activity: activityText,
+            address: address || "",
+            paymentMethod: paymentMethod || "stripe",
+            planId: planId || "plan_monthly_trial",
+            isTrial: isTrial ? "true" : "false",
+            isReactivation: isReactivation ? "true" : "false",
+            // ✅ NUEVO: Timestamp para tracking
+            created_at: new Date().toISOString()
+        };
+
+        console.log('📋 Metadata completo:', metadata);
+
         // ✅ Trial con tarjeta obligatoria
         if (isTrial && planId === "plan_monthly_trial") {
-            console.log('🎁 Creando sesión de prueba gratuita CON tarjeta obligatoria');
+            console.log('🎁 Creando sesión de prueba gratuita');
             
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
@@ -117,30 +140,21 @@ Deno.serve(async (req) => {
                 subscription_data: {
                     trial_period_days: 7,
                     metadata: {
-                        plan_id: planId,
-                        is_trial: 'true',
-                        is_reactivation: isReactivation ? 'true' : 'false'
+                        ...metadata,
+                        plan_id: planId
                     }
                 },
                 customer_email: email,
-                metadata: {
-                    email,
-                    fullName,
-                    userType: userType || "autonomo",
-                    cifNif: cifNif || "",
-                    phone: phone || "",
-                    activity: activityText,
-                    address: address || "",
-                    paymentMethod: paymentMethod || "stripe",
-                    planId: planId,
-                    isTrial: "true",
-                    isReactivation: isReactivation ? "true" : "false"
-                },
+                metadata: metadata,
                 success_url: successUrl,
                 cancel_url: cancelUrl,
+                // ✅ NUEVO: Permitir códigos promocionales
+                allow_promotion_codes: true,
             });
 
             console.log('✅ Sesión de trial creada:', session.id);
+            console.log('🔗 URL checkout:', session.url);
+            
             return Response.json({
                 sessionId: session.id,
                 url: session.url
@@ -170,21 +184,20 @@ Deno.serve(async (req) => {
                     },
                 ],
                 customer_email: email,
-                metadata: {
-                    email,
-                    fullName,
-                    userType: userType || "autonomo",
-                    cifNif: cifNif || "",
-                    phone: phone || "",
-                    activity: activityText,
-                    address: address || "",
-                    paymentMethod: paymentMethod || "stripe",
-                    planId: planId || "plan_monthly_trial",
-                    isReactivation: isReactivation ? "true" : "false"
+                metadata: metadata,
+                subscription_data: {
+                    metadata: {
+                        ...metadata,
+                        plan_id: planId
+                    }
                 },
                 success_url: successUrl,
                 cancel_url: cancelUrl,
+                allow_promotion_codes: true,
             });
+
+            console.log('✅ Sesión creada:', session.id);
+            console.log('🔗 URL checkout:', session.url);
 
             return Response.json({
                 sessionId: session.id,
@@ -192,7 +205,7 @@ Deno.serve(async (req) => {
             });
         }
     } catch (error) {
-        console.error('Error creating checkout session:', error);
+        console.error('❌ Error creating checkout session:', error);
         return Response.json({
             error: 'Failed to create checkout session',
             details: error.message
