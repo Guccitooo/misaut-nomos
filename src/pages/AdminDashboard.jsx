@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +41,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       return isValid;
     } catch (error) {
       console.error('Error parseando fecha:', error);
-      return true;
+      return true; // Assume valid if date parsing fails to prevent accidental hiding
     }
   }
   
@@ -121,6 +122,16 @@ export default function AdminDashboardPage() {
       
       if (response.data.ok) {
         toast.success(`Usuario ${selectedUser.email} eliminado correctamente`);
+        
+        // ⚠️ Mostrar nota importante sobre eliminación manual
+        if (response.data.note) {
+          setTimeout(() => {
+            toast.info(response.data.note, {
+              duration: 10000
+            });
+          }, 2000);
+        }
+        
         queryClient.invalidateQueries({ queryKey: ['allUsers'] });
         queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
         queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
@@ -132,6 +143,27 @@ export default function AdminDashboardPage() {
     } catch (error) {
       console.error('Error eliminando usuario:', error);
       toast.error('Error al eliminar usuario');
+    }
+  };
+
+  const handleFixSubscription = async (email) => {
+    try {
+      console.log('🔧 Corrigiendo suscripción para:', email);
+      
+      const response = await base44.functions.invoke('fixUserSubscription', {
+        email: email
+      });
+      
+      if (response.data.ok) {
+        toast.success(`Suscripción corregida para ${email}`);
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error corrigiendo suscripción:', error);
+      toast.error('Error al corregir suscripción');
     }
   };
 
@@ -494,9 +526,10 @@ export default function AdminDashboardPage() {
                         {users.map((u) => {
                           const userSub = subscriptions.find(s => s.user_id === u.id);
                           const isSuspended = u.subscription_status === 'suspendu';
+                          const isDeleted = u.subscription_status === 'eliminado' || u.full_name?.startsWith('[ELIMINADO]');
                           
                           return (
-                            <tr key={u.id} className={`hover:bg-gray-50 ${isSuspended ? 'bg-yellow-50' : ''}`}>
+                            <tr key={u.id} className={`hover:bg-gray-50 ${isSuspended ? 'bg-yellow-50' : ''} ${isDeleted ? 'bg-red-50 opacity-60' : ''}`}>
                               <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                 {u.full_name || 'Sin nombre'}
                               </td>
@@ -509,7 +542,9 @@ export default function AdminDashboardPage() {
                                 </Badge>
                               </td>
                               <td className="px-4 py-3">
-                                {isSuspended ? (
+                                {isDeleted ? (
+                                  <Badge className="bg-red-100 text-red-800">Eliminado</Badge>
+                                ) : isSuspended ? (
                                   <Badge className="bg-yellow-100 text-yellow-800">Suspendido</Badge>
                                 ) : userSub ? (
                                   getSubscriptionBadge(userSub)
@@ -521,53 +556,69 @@ export default function AdminDashboardPage() {
                                 {new Date(u.created_date).toLocaleDateString('es-ES')}
                               </td>
                               <td className="px-4 py-3">
-                                <div className="flex gap-1">
-                                  {isSuspended ? (
+                                {isDeleted ? (
+                                  <span className="text-xs text-gray-500">Usuario eliminado</span>
+                                ) : (
+                                  <div className="flex gap-1">
+                                    {isSuspended ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSuspendUser(u.id, false)}
+                                        className="text-xs"
+                                      >
+                                        Reactivar
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSuspendUser(u.id, true)}
+                                        className="text-xs"
+                                      >
+                                        Suspender
+                                      </Button>
+                                    )}
+                                    
+                                    {userSub && !userSub.renovacion_automatica && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleFixSubscription(u.email)}
+                                        className="text-xs text-orange-600"
+                                        title="Corregir renovación automática"
+                                      >
+                                        ⚠️ Fix
+                                      </Button>
+                                    )}
+                                    
+                                    {userSub && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedUser(u);
+                                          setShowExtendDialog(true);
+                                        }}
+                                        className="text-xs text-purple-600"
+                                      >
+                                        Extender
+                                      </Button>
+                                    )}
+                                    
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      onClick={() => handleSuspendUser(u.id, false)}
-                                      className="text-xs"
-                                    >
-                                      Reactivar
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleSuspendUser(u.id, true)}
-                                      className="text-xs"
-                                    >
-                                      Suspender
-                                    </Button>
-                                  )}
-                                  
-                                  {userSub && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
+                                      variant="destructive"
                                       onClick={() => {
                                         setSelectedUser(u);
-                                        setShowExtendDialog(true);
+                                        setShowDeleteDialog(true);
                                       }}
-                                      className="text-xs text-purple-600"
+                                      className="text-xs"
                                     >
-                                      Extender
+                                      Eliminar
                                     </Button>
-                                  )}
-                                  
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => {
-                                      setSelectedUser(u);
-                                      setShowDeleteDialog(true);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    Eliminar
-                                  </Button>
-                                </div>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           );
@@ -654,12 +705,29 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-gray-700">
-                  ⚠️ ¿Estás seguro de que quieres eliminar este usuario y todo su perfil asociado?
+                  ⚠️ ¿Estás seguro de que quieres eliminar este usuario y todo su contenido?
                 </p>
                 <p className="text-sm font-semibold text-gray-900">
                   Usuario: {selectedUser?.email}
                 </p>
-                <p className="text-sm text-red-600">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Se eliminará:</strong>
+                  </p>
+                  <ul className="text-xs text-yellow-700 list-disc ml-4 mt-1">
+                    <li>Perfil profesional</li>
+                    <li>Suscripción y pagos</li>
+                    <li>Mensajes enviados/recibidos</li>
+                    <li>Reseñas y favoritos</li>
+                    <li>Todos los datos relacionados</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    <strong>📝 Nota:</strong> El usuario quedará marcado como eliminado en la base de datos, pero para eliminar completamente la cuenta de autenticación deberás hacerlo manualmente desde el Dashboard de Base44.
+                  </p>
+                </div>
+                <p className="text-sm text-red-600 font-semibold">
                   Esta acción no se puede deshacer.
                 </p>
                 <div className="flex gap-3 justify-end">
