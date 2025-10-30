@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +21,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-// ✅ HELPER: Verificar si suscripción está activa (MISMA LÓGICA QUE EN SEARCH)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) {
     return false;
@@ -286,8 +284,6 @@ export default function AdminDashboardPage() {
     } else if (normalizedState === "cancelado" || normalizedState === "canceled") {
       colorClass = isActive ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "cancelado (activo)" : "cancelado";
-    } else {
-      colorClass = "bg-gray-100 text-gray-800";
     }
 
     return (
@@ -310,6 +306,11 @@ export default function AdminDashboardPage() {
           <div className="text-xs text-gray-500 flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')}
+          </div>
+        )}
+        {userSub.renovacion_automatica !== undefined && (
+          <div className="text-xs text-gray-500">
+            {userSub.renovacion_automatica ? '🔄 Auto-renovación' : '⏸️ Manual'}
           </div>
         )}
       </div>
@@ -627,7 +628,7 @@ export default function AdminDashboardPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <Badge className={sub.renovacion_automatica ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                                  {sub.renovacion_automatica ? 'Automática' : 'Manual'}
+                                  {sub.renovacion_automatica ? '🔄 Automática' : '⏸️ Manual'}
                                 </Badge>
                               </td>
                             </tr>
