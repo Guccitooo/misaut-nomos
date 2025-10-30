@@ -42,15 +42,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  console.log('🔍 Verificando suscripción:', { estado, fechaExpiracion });
-  
   if (!estado) {
-    console.log('❌ Sin estado');
+    console.log('❌ Sin estado de suscripción');
     return false;
   }
   
   // ✅ Normalizar estado (minúsculas, sin espacios)
   const normalizedState = estado.toLowerCase().trim();
+  console.log(`🔍 Estado normalizado: "${normalizedState}"`);
   
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
@@ -63,15 +62,10 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       expiration.setHours(0, 0, 0, 0);
       
       const isValid = expiration >= today;
-      console.log(`✅ Estado válido (${normalizedState}), fecha ${isValid ? 'válida' : 'expirada'}:`, {
-        today: today.toISOString().split('T')[0],
-        expiration: expiration.toISOString().split('T')[0],
-        isValid
-      });
+      console.log(`   ✅ Estado "${normalizedState}" es válido, fecha expira: ${expiration.toISOString().split('T')[0]}, ¿vigente?: ${isValid}`);
       return isValid;
     } catch (error) {
-      console.error('❌ Error parseando fecha:', error);
-      // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
+      console.error('   ⚠️ Error parseando fecha, asumiendo activo:', error);
       return true;
     }
   }
@@ -85,19 +79,15 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       expiration.setHours(0, 0, 0, 0);
       
       const isValid = expiration >= today;
-      console.log(`⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}:`, {
-        today: today.toISOString().split('T')[0],
-        expiration: expiration.toISOString().split('T')[0],
-        isValid
-      });
+      console.log(`   ⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}`);
       return isValid;
     } catch (error) {
-      console.error('❌ Error parseando fecha:', error);
+      console.error('   ❌ Error parseando fecha de cancelación:', error);
       return false;
     }
   }
   
-  console.log('❌ Estado no válido:', normalizedState);
+  console.log(`   ❌ Estado "${normalizedState}" no es válido`);
   return false;
 };
 
@@ -394,28 +384,37 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
-  // ✅ CRÍTICO: Cargar suscripciones para verificar visibilidad
-  const { data: subscriptions = [] } = useQuery({
+  // ✅ PASO 1: Cargar TODAS las suscripciones
+  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
+      console.log('\n💳 ========== CARGANDO SUSCRIPCIONES ==========');
       const subs = await base44.entities.Subscription.list();
-      console.log(`📊 Total suscripciones cargadas: ${subs.length}`);
+      console.log(`📊 Total suscripciones: ${subs.length}`);
       subs.forEach(sub => {
-        console.log(`   - Usuario ${sub.user_id}: ${sub.estado} (expira: ${new Date(sub.fecha_expiracion).toLocaleDateString('es-ES')})`);
+        console.log(`   - User ${sub.user_id.substring(0, 8)}...: ${sub.estado} (expira: ${new Date(sub.fecha_expiracion).toLocaleDateString('es-ES')})`);
       });
       return subs;
     },
-    staleTime: 0, 
-    refetchOnMount: true,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
     initialData: [],
   });
 
-  const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
-    queryKey: ['profiles', subscriptions.length], 
+  // ✅ PASO 2: Cargar TODOS los perfiles y filtrar
+  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+    queryKey: ['profiles'],
     queryFn: async () => {
-      console.log('\n🔍 ========== INICIANDO FILTRADO DE PERFILES ==========\n');
+      console.log('\n👤 ========== CARGANDO PERFILES ==========');
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
       console.log(`📊 Total perfiles en BD: ${allProfiles.length}\n`);
+      
+      // ✅ Verificar que tenemos suscripciones cargadas
+      if (subscriptions.length === 0 && !loadingSubscriptions) {
+        console.log('⚠️ AÚN NO HAY SUSCRIPCIONES CARGADAS, esperando...');
+        return [];
+      }
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -433,7 +432,7 @@ export default function SearchPage() {
         
         // 2. Debe estar marcado como visible
         if (!profile.visible_en_busqueda) {
-          console.log(`   ❌ Marcado como no visible`);
+          console.log(`   ❌ Marcado como NO visible`);
           return false;
         }
         console.log(`   ✅ Marcado como visible`);
@@ -445,27 +444,25 @@ export default function SearchPage() {
         }
         console.log(`   ✅ Estado perfil: activo`);
         
-        // 4. ✅ VALIDACIÓN CLAVE: Verificar que tiene suscripción válida
+        // 4. ✅ VALIDACIÓN CLAVE: Verificar suscripción
         const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
         
         if (!userSub) {
-          console.log(`   ❌ Sin registro de suscripción`);
+          console.log(`   ❌ Sin suscripción registrada`);
           return false;
         }
-        console.log(`   📋 Suscripción encontrada:`, {
-          estado: userSub.estado,
-          fecha_expiracion: userSub.fecha_expiracion
-        });
         
-        // ✅ USAR HELPER PARA VERIFICAR SI ESTÁ ACTIVO
+        console.log(`   📋 Suscripción encontrada: ${userSub.estado} (expira: ${new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')})`);
+        
+        // ✅ USAR HELPER
         const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
         
         if (!isActive) {
-          console.log(`   ❌ Suscripción ${userSub.estado} NO ES VÁLIDA`);
+          console.log(`   ❌ Suscripción NO VÁLIDA`);
           return false;
         }
         
-        console.log(`   ✅ ${businessName} - VISIBLE (${userSub.estado})`);
+        console.log(`   ✅✅✅ ${businessName} - VISIBLE EN BÚSQUEDAS`);
         return true;
       });
       
@@ -473,17 +470,16 @@ export default function SearchPage() {
       console.log(`   Total perfiles: ${allProfiles.length}`);
       console.log(`   Perfiles visibles: ${visibleProfiles.length}`);
       console.log(`   Perfiles ocultos: ${allProfiles.length - visibleProfiles.length}`);
-      console.log(`=====================================\n`);
+      console.log(`========================================\n`);
       
-      return visibleProfiles || [];
+      return visibleProfiles;
     },
-    staleTime: 0, 
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
     initialData: [],
-    retry: false,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    // ✅ Solo ejecutar cuando haya suscripciones cargadas
-    enabled: subscriptions.length >= 0,
+    // ✅ CRUCIAL: Solo ejecutar DESPUÉS de cargar suscripciones
+    enabled: !loadingSubscriptions && subscriptions.length > 0,
   });
 
   const { data: favoriteCounts = {} } = useQuery({
@@ -500,7 +496,7 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ CAMBIO: Ahora filteredProfiles usa 'profiles' directamente
+  // ✅ Filtrado en frontend
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -511,7 +507,6 @@ export default function SearchPage() {
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
       
-      // ✅ CAMBIO CRÍTICO: Filtrar por campo "ciudad" estructurado, NO por "service_area"
       const matchesCity = selectedCity === "all" || 
         profile.ciudad === selectedCity ||
         profile.provincia === selectedCity;
@@ -528,16 +523,12 @@ export default function SearchPage() {
     });
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
 
-  // ✅ NUEVO: Extraer solo ciudades estructuradas únicas (campo "ciudad")
-  // Ahora cities usa 'profiles' directamente
   const cities = useMemo(() => {
     const citySet = new Set();
     profiles.forEach(p => {
-      // ✅ Solo añadir si existe el campo "ciudad" (campo estructurado)
       if (p.ciudad && p.ciudad.trim() !== "") {
         citySet.add(p.ciudad);
       }
-      // También incluir provincias como opción de filtro
       if (p.provincia && p.provincia.trim() !== "") {
         citySet.add(p.provincia);
       }
@@ -569,7 +560,6 @@ export default function SearchPage() {
           return newSet;
         });
       } else {
-        // Now 'profiles' already contains the filtered, visible profiles.
         const profile = profiles.find(p => p.user_id === professionalId); 
         await base44.entities.Favorite.create({
           client_id: user.id,
@@ -746,14 +736,14 @@ export default function SearchPage() {
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {loadingProfiles ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
+            {loadingProfiles || loadingSubscriptions ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
           </h2>
           <p className="text-sm text-gray-600">
             Profesionales verificados en toda España
           </p>
         </div>
 
-        {loadingProfiles ? (
+        {(loadingProfiles || loadingSubscriptions) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
@@ -789,7 +779,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!loadingProfiles && filteredProfiles.length === 0 && (
+        {!loadingProfiles && !loadingSubscriptions && filteredProfiles.length === 0 && (
           <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
             <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
