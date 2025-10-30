@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useQueryClient } from "@tanstack/react-query"; // Removed useMutation as per changes
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,14 +28,15 @@ export default function ProfileOnboardingPage() {
   const [searchParams] = useSearchParams();
   const fromCheckout = searchParams.get("from") === "checkout";
 
-  const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null); // This will hold the professional profile once loaded/created
-  const [error, setError] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // For intermediate step saves
-  const [isSubmitting, setIsSubmitting] = useState(false); // For final step submission
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [profile, setProfile] = useState(null); // This will hold the professional profile once loaded/created
+  const [existingProfile, setExistingProfile] = useState(null); // To store the initially loaded profile
+  const [uploadingPhoto, setUploadingPhoto] = useState(false); // Re-added this state
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -149,8 +150,9 @@ export default function ProfileOnboardingPage() {
     setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('👤 Usuario cargado:', currentUser.email, 'Tipo:', currentUser.user_type);
       setUser(currentUser);
+      return currentUser;
     } catch (error) {
       console.error("Error loading user:", error);
       base44.auth.redirectToLogin();
@@ -159,8 +161,8 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const loadProfileDataWhenUserIsSet = async () => {
-    if (!user || user.user_type !== "professionnel") return; // Only load profile for professionals
+  const loadExistingProfile = async () => {
+    if (!user || user.user_type !== "professionnel") return;
 
     try {
       const profiles = await base44.entities.ProfessionalProfile.filter({
@@ -169,40 +171,41 @@ export default function ProfileOnboardingPage() {
 
       if (profiles[0]) {
         console.log('✅ Perfil existente encontrado');
-        const existingProfile = profiles[0];
-        setProfile(existingProfile); // Set the profile state
+        const existingProfileData = profiles[0];
+        setExistingProfile(existingProfileData);
+        setProfile(existingProfileData);
 
         // Pre-llenar formulario con datos existentes
         setFormData({
           ...formData, // Keep initial state for website/social_links if not present in existingProfile
-          business_name: existingProfile.business_name || "",
-          cif_nif: existingProfile.cif_nif || "",
-          email_contacto: existingProfile.email_contacto || user.email,
-          telefono_contacto: existingProfile.telefono_contacto || user.phone || "",
-          categories: existingProfile.categories || [],
-          descripcion_corta: existingProfile.descripcion_corta || "",
-          description: existingProfile.description || "",
-          service_area: existingProfile.service_area || "",
-          provincia: existingProfile.provincia || "",
-          ciudad: existingProfile.ciudad || "",
-          municipio: existingProfile.municipio || "",
-          radio_servicio_km: existingProfile.radio_servicio_km || 10,
-          horario_dias: existingProfile.horario_dias || [],
-          horario_apertura: existingProfile.horario_apertura || "09:00",
-          horario_cierre: existingProfile.horario_cierre || "18:00",
-          tarifa_base: existingProfile.tarifa_base || "",
-          facturacion: existingProfile.facturacion || "autonomo",
-          formas_pago: existingProfile.formas_pago || [],
-          photos: existingProfile.photos || [],
-          website: existingProfile.website || "",
-          social_links: existingProfile.social_links || { facebook: "", instagram: "", linkedin: "" },
-          acepta_terminos: existingProfile.acepta_terminos || false,
-          acepta_politica_privacidad: existingProfile.acepta_politica_privacidad || false,
-          consiente_contacto_clientes: existingProfile.consiente_contacto_clientes || false,
+          business_name: existingProfileData.business_name || "",
+          cif_nif: existingProfileData.cif_nif || "",
+          email_contacto: existingProfileData.email_contacto || user.email,
+          telefono_contacto: existingProfileData.telefono_contacto || user.phone || "",
+          categories: existingProfileData.categories || [],
+          descripcion_corta: existingProfileData.descripcion_corta || "",
+          description: existingProfileData.description || "",
+          service_area: existingProfileData.service_area || "",
+          provincia: existingProfileData.provincia || "",
+          ciudad: existingProfileData.ciudad || "",
+          municipio: existingProfileData.municipio || "",
+          radio_servicio_km: existingProfileData.radio_servicio_km || 10,
+          horario_dias: existingProfileData.horario_dias || [],
+          horario_apertura: existingProfileData.horario_apertura || "09:00",
+          horario_cierre: existingProfileData.horario_cierre || "18:00",
+          tarifa_base: existingProfileData.tarifa_base || "",
+          facturacion: existingProfileData.facturacion || "autonomo",
+          formas_pago: existingProfileData.formas_pago || [],
+          photos: existingProfileData.photos || [],
+          website: existingProfileData.website || "",
+          social_links: existingProfileData.social_links || { facebook: "", instagram: "", linkedin: "" },
+          acepta_terminos: existingProfileData.acepta_terminos || true,
+          acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || true,
+          consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || true,
         });
 
         // If profile is already completed and visible, navigate to MyProfile
-        if (existingProfile.onboarding_completed && existingProfile.visible_en_busqueda) {
+        if (existingProfileData.onboarding_completed && existingProfileData.visible_en_busqueda) {
           navigate(createPageUrl("MyProfile"));
         }
 
@@ -219,72 +222,15 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  // ✅ NUEVO: Función para verificar y activar suscripción automáticamente
-  const checkAndActivateSubscription = async () => {
-    if (!user) return;
-    try {
-      console.log('🔍 Verificando suscripción...');
-      
-      const subscriptions = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-
-      if (subscriptions.length === 0) {
-        console.log('❌ No se encontró suscripción');
-        toast.error('No se encontró tu suscripción. Por favor, contacta con soporte: admin@milautonomos.com');
-        return;
-      }
-
-      const subscription = subscriptions[0];
-      const today = new Date();
-      const expiration = new Date(subscription.fecha_expiracion);
-      const isActive = expiration >= today;
-
-      console.log('📊 Suscripción:', {
-        estado: subscription.estado,
-        fecha_expiracion: subscription.fecha_expiracion,
-        isActive
-      });
-
-      if (isActive) {
-        console.log('✅ Suscripción activa, usuario puede continuar con quiz');
-        toast.success('Suscripción verificada correctamente. Completa tu perfil para aparecer en búsquedas.', {
-          duration: 6000
-        });
-      } else {
-        console.log('❌ Suscripción no activa');
-        toast.error('Tu suscripción ha expirado. Por favor, renueva tu plan.');
-        setTimeout(() => {
-          navigate(createPageUrl("PricingPlans"));
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Error verificando suscripción:', error);
-      toast.error('Error al verificar tu suscripción. Contacta con soporte: admin@milautonomos.com');
-    }
-  };
-
-
   useEffect(() => {
     loadUser();
   }, []);
 
   useEffect(() => {
     if (user && user.user_type === "professionnel") {
-      loadProfileDataWhenUserIsSet();
+      loadExistingProfile();
     }
   }, [user]);
-
-  // ✅ NUEVO: Activar automáticamente si llega desde checkout
-  useEffect(() => {
-    if (fromCheckout && user && !isLoadingUser) {
-      console.log('✅ Usuario viene desde checkout, verificando suscripción...');
-      checkAndActivateSubscription();
-      // Limpiar URL después de la verificación inicial
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [fromCheckout, user, isLoadingUser]);
-
 
   // Update service_area when location changes
   useEffect(() => {
@@ -302,30 +248,37 @@ export default function ProfileOnboardingPage() {
 
   const steps = [
     {
+      id: "identity",
       title: "Identidad",
       fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto"]
     },
     {
+      id: "activity",
       title: "Actividad",
       fields: ["categories", "descripcion_corta", "description"]
     },
     {
+      id: "location_availability",
       title: "Zona y disponibilidad",
       fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "horario_dias", "horario_apertura", "horario_cierre"]
     },
     {
+      id: "prices_work_method",
       title: "Precios y forma de trabajo",
       fields: ["tarifa_base", "facturacion", "formas_pago"]
     },
     {
+      id: "portfolio",
       title: "Portfolio (fotos)",
       fields: ["photos"]
     },
     {
+      id: "legal_verification",
       title: "Verificación y legales",
       fields: ["acepta_terminos", "acepta_politica_privacidad", "consiente_contacto_clientes"]
     },
     {
+      id: "review",
       title: "Revisión final",
       fields: []
     }
@@ -403,7 +356,7 @@ export default function ProfileOnboardingPage() {
           return false;
         }
       }
-      
+
       if (field === "horario_dias") {
         if (!value || value.length === 0) {
           setError("Selecciona al menos un día de disponibilidad");
@@ -460,7 +413,7 @@ export default function ProfileOnboardingPage() {
   const handleNext = async () => {
     console.log("🔴 BOTÓN CLICKEADO - handleNext ejecutándose");
     console.log("Paso actual:", currentStep);
-    
+
     setError(null);
 
     // Validar el paso actual
@@ -474,7 +427,7 @@ export default function ProfileOnboardingPage() {
     // Solo guardar campos relevantes del paso actual
     const stepFields = steps[currentStep].fields;
     const dataToSave = {};
-    
+
     // Incluir campos del paso actual en dataToSave
     stepFields.forEach(field => {
       if (formData[field] !== undefined) {
@@ -487,8 +440,8 @@ export default function ProfileOnboardingPage() {
     dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
 
-    // Guardar en background
-    setIsSaving(true);
+    // Save in background, using isSubmitting to disable buttons during this
+    setIsSubmitting(true);
     try {
       if (profile) {
         // Actualizar perfil existente con el estado "pendiente"
@@ -499,6 +452,7 @@ export default function ProfileOnboardingPage() {
           onboarding_completed: false
         });
         setProfile(updatedProfile); // Update profile state with latest data
+        setExistingProfile(updatedProfile); // Also update existingProfile
         console.log("💾 Guardado exitoso (actualización de paso)");
       } else {
         // Crear un nuevo perfil con estado "pendiente"
@@ -514,16 +468,17 @@ export default function ProfileOnboardingPage() {
           social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" }
         });
         setProfile(newProfile);
+        setExistingProfile(newProfile); // Also set existingProfile
         console.log("💾 Guardado exitoso (creación de perfil en estado PENDIENTE)");
       }
     } catch (error) {
       console.error("⚠️ Error guardando paso:", error);
       const errorMessage = error.message || error.toString();
       setError("Error al guardar este paso: " + errorMessage + ". Por favor, verifica los datos.");
-      setIsSaving(false);
+      setIsSubmitting(false);
       return; // Stop progression on critical save error
     }
-    setIsSaving(false);
+    setIsSubmitting(false);
 
     // Avanzar al siguiente paso
     console.log("➡️ Avanzando al siguiente paso");
@@ -543,7 +498,7 @@ export default function ProfileOnboardingPage() {
 
   // Replaces handlePublish and publishProfileMutation
   const handleSubmit = async () => {
-    console.log('💾 Iniciando proceso de guardado final...');
+    console.log('💾 ========== INICIANDO GUARDADO DE PERFIL ==========');
     setIsSubmitting(true);
     setError(null);
 
@@ -558,29 +513,12 @@ export default function ProfileOnboardingPage() {
         }
       }
 
-      // ✅ Segundo verificar suscripción
-      const subscriptions = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-
-      if (subscriptions.length === 0) {
-        throw new Error('No se encontró tu suscripción. Por favor, contacta con soporte: admin@milautonomos.com');
-      }
-
-      const subscription = subscriptions[0];
-      const today = new Date();
-      const expiration = new Date(subscription.fecha_expiracion);
-      const isSubscriptionActive = expiration >= today;
-
-      if (!isSubscriptionActive) {
-        throw new Error('Tu suscripción ha expirado. Por favor, renueva tu plan.');
-      }
-
-      console.log('✅ Suscripción verificada como activa');
+      // Removed subscription verification logic as per outline.
+      console.log('✅ Usuario autenticado, procediendo a guardar perfil...');
 
       // Preparar datos del perfil
       const now = new Date().toISOString();
-      const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile?.id ? profile.id.slice(-6) : Math.random().toString(36).substring(2, 8)}`;
+      const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${existingProfile?.id ? existingProfile.id.slice(-6) : Math.random().toString(36).substring(2, 8)}`;
 
       const profileData = {
         user_id: user.id,
@@ -622,10 +560,10 @@ export default function ProfileOnboardingPage() {
       console.log('📝 Datos del perfil a guardar:', profileData);
 
       let savedProfile;
-      if (profile) { // Using 'profile' state variable
+      if (existingProfile) { // Using 'existingProfile' state variable
         console.log('🔄 Actualizando perfil existente...');
         savedProfile = await base44.entities.ProfessionalProfile.update(
-          profile.id,
+          existingProfile.id,
           profileData
         );
       } else {
@@ -633,8 +571,9 @@ export default function ProfileOnboardingPage() {
         savedProfile = await base44.entities.ProfessionalProfile.create(profileData);
       }
 
-      console.log('✅ Perfil guardado:', savedProfile);
+      console.log('✅ Perfil guardado correctamente:', savedProfile.id);
       setProfile(savedProfile); // Update the profile state with the saved data
+      setExistingProfile(savedProfile); // Also update existingProfile
 
       // ✅ Actualizar usuario (user_type, phone, city)
       await base44.auth.updateMe({
@@ -643,7 +582,7 @@ export default function ProfileOnboardingPage() {
         city: formData.ciudad || user.city
       });
       setUser(prevUser => ({ ...prevUser, user_type: "professionnel", phone: formData.telefono_contacto || prevUser.phone, city: formData.ciudad || prevUser.city }));
-      console.log('✅ Usuario actualizado');
+      console.log('✅ Usuario actualizado correctamente');
 
       // ✅ Email de confirmación con notificación de activación
       await base44.integrations.Core.SendEmail({
@@ -663,7 +602,6 @@ Los clientes pueden encontrarte buscando por:
 📊 Estado de tu perfil:
 ✅ Visible en búsquedas: SÍ
 ✅ Onboarding completado: SÍ
-✅ Suscripción: ACTIVA
 ✅ Fotos subidas: ${formData.photos.length}
 ✅ Categorías: ${formData.categories.length}
 
@@ -800,7 +738,7 @@ Equipo milautonomos`,
         <Card className="max-w-3xl w-full border-0 shadow-2xl relative z-10 overflow-hidden">
           {/* ✅ Barra de confetti decorativa */}
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"></div>
-          
+
           <CardContent className="p-8 md:p-12">
             {/* ✅ Icono de éxito con animación */}
             <div className="flex justify-center mb-6">
@@ -856,7 +794,7 @@ Equipo milautonomos`,
                 </svg>
                 Ver mi ficha pública
               </Button>
-              
+
               <Button
                 size="lg"
                 variant="outline"
@@ -928,6 +866,746 @@ Equipo milautonomos`,
     );
   }
 
+  const renderStep = () => {
+    const step = steps[currentStep];
+
+    switch (step.id) {
+      case "identity":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Nombre profesional *</Label>
+              <Input
+                value={formData.business_name}
+                onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                placeholder="Ej: Juan Pérez - Electricista"
+                maxLength={100}
+                className="h-12"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                {formData.business_name.length}/100 caracteres
+              </p>
+            </div>
+
+            <div>
+              <Label>NIF / CIF *</Label>
+              <Input
+                value={formData.cif_nif}
+                onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
+                placeholder="12345678A o B12345678"
+                maxLength={9}
+                className="h-12"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                {formData.cif_nif.length}/9 caracteres
+              </p>
+            </div>
+
+            <div>
+              <Label>Email de contacto *</Label>
+              <Input
+                type="email"
+                value={formData.email_contacto}
+                onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
+                placeholder="tu@email.com"
+                className="h-12"
+              />
+            </div>
+
+            <div>
+              <Label>Teléfono de contacto *</Label>
+              <Input
+                type="tel"
+                value={formData.telefono_contacto}
+                onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value.replace(/[^\d+]/g, '') })}
+                placeholder="612345678 o +34612345678"
+                maxLength={15}
+                className="h-12"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                {formData.telefono_contacto.replace(/\s/g, '').length} dígitos (mínimo 9)
+              </p>
+            </div>
+          </div>
+        );
+
+      case "activity":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Categorías de servicio * (selecciona al menos una)</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {categories.map((cat) => (
+                  <div
+                    key={cat}
+                    onClick={() => toggleCategory(cat)}
+                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                      formData.categories.includes(cat)
+                        ? "border-blue-600 bg-blue-50 shadow-sm"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      formData.categories.includes(cat)
+                        ? "bg-blue-600 border-blue-600"
+                        : "border-gray-300"
+                    }`}>
+                      {formData.categories.includes(cat) && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <p className={`text-sm font-medium transition-colors ${
+                      formData.categories.includes(cat) ? "text-blue-900" : "text-gray-700"
+                    }`}>
+                      {cat}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {formData.categories.length} {formData.categories.length === 1 ? 'seleccionada' : 'seleccionadas'}
+              </p>
+            </div>
+
+            <div>
+              <Label>Descripción corta * (máximo 220 caracteres)</Label>
+              <Textarea
+                value={formData.descripcion_corta}
+                onChange={(e) => setFormData({ ...formData, descripcion_corta: e.target.value.slice(0, 220) })}
+                placeholder="Describe brevemente tus servicios..."
+                className="h-24"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                {formData.descripcion_corta.length}/220 caracteres (mínimo 20)
+              </p>
+            </div>
+
+            <div>
+              <Label>Descripción detallada (opcional)</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Añade más detalles sobre tu experiencia, servicios específicos, etc."
+                className="h-32"
+              />
+            </div>
+          </div>
+        );
+
+      case "location_availability":
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                📍 Indica tu ubicación principal y zona de trabajo. Los clientes podrán encontrarte en estas áreas.
+              </p>
+            </div>
+
+            <div>
+              <Label>Provincia *</Label>
+              <Select
+                value={formData.provincia}
+                onValueChange={(value) => {
+                  setFormData({
+                    ...formData,
+                    provincia: value,
+                    ciudad: "",
+                    municipio: ""
+                  });
+                }}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Selecciona tu provincia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {provincias.map((prov) => (
+                    <SelectItem key={prov} value={prov}>
+                      {prov}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.provincia && (
+              <div>
+                <Label>Ciudad / Localidad * (selecciona de la lista)</Label>
+                <Select
+                  value={formData.ciudad}
+                  onValueChange={(value) => {
+                    setFormData({
+                      ...formData,
+                      ciudad: value,
+                      municipio: ""
+                    });
+                  }}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Selecciona tu ciudad" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
+                      ciudadesPorProvincia[formData.provincia].map((ciudad) => (
+                        <SelectItem key={ciudad} value={ciudad}>
+                          {ciudad}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value={formData.provincia}>
+                        {formData.provincia} (como ciudad principal)
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  ⚠️ Solo se puede seleccionar de la lista. Si tu localidad no aparece, elige la ciudad más cercana.
+                </p>
+              </div>
+            )}
+
+            {formData.ciudad && (
+              <div>
+                <Label>Barrio / Municipio (opcional - texto libre)</Label>
+                <Input
+                  value={formData.municipio}
+                  onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
+                  placeholder="Ej: Centro, Chamartín, Eixample..."
+                  className="h-12"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Especifica un barrio o zona específica si quieres ser más preciso (opcional)
+                </p>
+              </div>
+            )}
+
+            {formData.service_area && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Tu ubicación principal:</p>
+                <p className="font-semibold text-gray-900">{formData.service_area}</p>
+              </div>
+            )}
+
+            <div>
+              <Label>Radio de servicio *</Label>
+              <Select
+                value={formData.radio_servicio_km.toString()}
+                onValueChange={(value) => setFormData({ ...formData, radio_servicio_km: parseInt(value) })}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 km - Solo mi zona</SelectItem>
+                  <SelectItem value="10">10 km - Ciudad y alrededores</SelectItem>
+                  <SelectItem value="25">25 km - Área metropolitana</SelectItem>
+                  <SelectItem value="50">50 km - Provincia</SelectItem>
+                  <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-gray-500 mt-1">
+                ¿Hasta qué distancia estás dispuesto a desplazarte?
+              </p>
+            </div>
+
+            <div>
+              <Label>Días de disponibilidad *</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {diasSemana.map((dia) => (
+                  <div
+                    key={dia.value}
+                    onClick={() => toggleDia(dia.value)}
+                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                      formData.horario_dias.includes(dia.value)
+                        ? "border-green-600 bg-green-50 shadow-sm"
+                        : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      formData.horario_dias.includes(dia.value)
+                        ? "bg-green-600 border-green-600"
+                        : "border-gray-300"
+                    }`}>
+                      {formData.horario_dias.includes(dia.value) && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <p className={`text-sm font-medium transition-colors ${
+                      formData.horario_dias.includes(dia.value) ? "text-green-900" : "text-gray-700"
+                    }`}>
+                      {dia.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {formData.horario_dias.length} {formData.horario_dias.length === 1 ? 'día seleccionado' : 'días seleccionados'}
+              </p>
+            </div>
+
+            {formData.horario_dias.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Hora de apertura</Label>
+                  <Select
+                    value={formData.horario_apertura}
+                    onValueChange={(value) => setFormData({ ...formData, horario_apertura: value })}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {horarios.filter(hora => hora < formData.horario_cierre).map((hora) => (
+                        <SelectItem key={hora} value={hora}>
+                          {hora}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Hora de cierre</Label>
+                  <Select
+                    value={formData.horario_cierre}
+                    onValueChange={(value) => setFormData({ ...formData, horario_cierre: value })}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {horarios.filter(hora => hora > formData.horario_apertura).map((hora) => (
+                        <SelectItem key={hora} value={hora}>
+                          {hora}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {formData.horario_dias.length > 0 && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-900">
+                  ✓ Horario: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}
+                  {' '}{formData.horario_apertura} - {formData.horario_cierre}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+
+      case "prices_work_method":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Tarifa base * (€/hora o por servicio)</Label>
+              <Input
+                type="number"
+                value={formData.tarifa_base}
+                onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
+                placeholder="Ej: 35"
+                min="0"
+                step="0.01"
+                className="h-12"
+              />
+            </div>
+
+            <div>
+              <Label>Tipo de facturación *</Label>
+              <Select
+                value={formData.facturacion}
+                onValueChange={(value) => setFormData({ ...formData, facturacion: value })}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="autonomo">Autónomo</SelectItem>
+                  <SelectItem value="sociedad">Sociedad</SelectItem>
+                  <SelectItem value="otros">Otros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-base font-semibold">Formas de pago aceptadas *</Label>
+              <p className="text-sm text-gray-500 mt-1 mb-3">
+                Selecciona al menos una forma de pago
+              </p>
+              <div className="space-y-2">
+                {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
+                  <div
+                    key={forma}
+                    onClick={() => toggleFormaPago(forma)}
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                      formData.formas_pago.includes(forma)
+                        ? "border-purple-600 bg-purple-50 shadow-md"
+                        : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                      formData.formas_pago.includes(forma)
+                        ? "bg-purple-600 border-purple-600"
+                        : "border-gray-300"
+                    }`}>
+                      {formData.formas_pago.includes(forma) && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-base font-medium flex-1 transition-colors ${
+                      formData.formas_pago.includes(forma) ? "text-purple-900" : "text-gray-700"
+                    }`}>
+                      {forma}
+                    </span>
+                    {formData.formas_pago.includes(forma) && (
+                      <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm font-medium text-blue-900">
+                  {formData.formas_pago.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
+                  {formData.formas_pago.length === 1 && `✓ 1 forma de pago seleccionada`}
+                  {formData.formas_pago.length > 1 && `✓ ${formData.formas_pago.length} formas de pago seleccionadas`}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "portfolio":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Fotos de trabajos realizados * (mínimo 1)</Label>
+              <div className="mt-2">
+                <label className="cursor-pointer">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoUpload}
+                      disabled={uploadingPhoto}
+                    />
+                    {uploadingPhoto ? (
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-600">Haz clic para añadir una foto</p>
+                      </>
+                    )}
+                  </div>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                {formData.photos.map((photo, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Foto ${idx + 1}`}
+                      className="w-full h-32 object-cover rounded-lg shadow-md"
+                    />
+                    <button
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    {idx === 0 && (
+                      <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                        Principal
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {formData.photos.length} foto(s) subida(s)
+              </p>
+            </div>
+          </div>
+        );
+
+      case "legal_verification":
+        return (
+          <div className="space-y-4">
+            <div
+              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                formData.acepta_terminos
+                  ? 'bg-green-50 border-green-400 shadow-sm'
+                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
+              }`}
+              onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
+            >
+              <div className="relative flex-shrink-0 mt-1">
+                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                  formData.acepta_terminos
+                    ? "bg-green-600 border-green-600"
+                    : "bg-white border-gray-300"
+                }`}>
+                  {formData.acepta_terminos && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <strong className={`text-base block mb-2 transition-colors ${
+                  formData.acepta_terminos ? "text-green-900" : "text-gray-900"
+                }`}>
+                  ✅ Acepto los términos y condiciones *
+                </strong>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
+                </p>
+                {formData.acepta_terminos && (
+                  <div className="mt-2 text-sm font-semibold text-green-700">
+                    ✓ Aceptado
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                formData.acepta_politica_privacidad
+                  ? 'bg-green-50 border-green-400 shadow-sm'
+                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
+              }`}
+              onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
+            >
+              <div className="relative flex-shrink-0 mt-1">
+                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                  formData.acepta_politica_privacidad
+                    ? "bg-green-600 border-green-600"
+                    : "bg-white border-gray-300"
+                }`}>
+                  {formData.acepta_politica_privacidad && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <strong className={`text-base block mb-2 transition-colors ${
+                  formData.acepta_politica_privacidad ? "text-green-900" : "text-gray-900"
+                }`}>
+                  ✅ Acepto la política de privacidad *
+                </strong>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
+                </p>
+                {formData.acepta_politica_privacidad && (
+                  <div className="mt-2 text-sm font-semibold text-green-700">
+                    ✓ Aceptado
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                formData.consiente_contacto_clientes
+                  ? 'bg-green-50 border-green-400 shadow-sm'
+                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
+              }`}
+              onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
+            >
+              <div className="relative flex-shrink-0 mt-1">
+                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                  formData.consiente_contacto_clientes
+                    ? "bg-green-600 border-green-600"
+                    : "bg-white border-gray-300"
+                }`}>
+                  {formData.consiente_contacto_clientes && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <strong className={`text-base block mb-2 transition-colors ${
+                  formData.consiente_contacto_clientes ? "text-green-900" : "text-gray-900"
+                }`}>
+                  ✅ Consiento el contacto de clientes *
+                </strong>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
+                </p>
+                {formData.consiente_contacto_clientes && (
+                  <div className="mt-2 text-sm font-semibold text-green-700">
+                    ✓ Aceptado
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm font-medium text-blue-900">
+                {[formData.acepta_terminos, formData.acepta_politica_privacidad, formData.consiente_contacto_clientes].filter(Boolean).length} de 3 consentimientos aceptados
+              </p>
+            </div>
+          </div>
+        );
+
+      case "review":
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+              <p className="text-sm text-blue-900">
+                📋 Revisa toda tu información antes de publicar tu perfil profesional.
+                Podrás editarla después desde tu panel de usuario.
+              </p>
+            </div>
+
+            {/* Identity Section */}
+            <div className="border-b pb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Identidad</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep(0)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p><strong>Nombre:</strong> {formData.business_name}</p>
+                <p><strong>NIF:</strong> {formData.cif_nif}</p>
+                <p><strong>Email:</strong> {formData.email_contacto || user?.email}</p>
+                <p><strong>Teléfono:</strong> {formData.telefono_contacto}</p>
+              </div>
+            </div>
+
+            {/* Activity Section */}
+            <div className="border-b pb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Actividad</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep(1)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p><strong>Categorías:</strong> {formData.categories.join(", ") || "Sin especificar"}</p>
+                <p><strong>Descripción:</strong> {formData.descripcion_corta || "Sin descripción"}</p>
+              </div>
+            </div>
+
+            {/* Location Section */}
+            <div className="border-b pb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Ubicación</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep(2)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p><strong>Provincia:</strong> {formData.provincia}</p>
+                <p><strong>Ciudad:</strong> {formData.ciudad}</p>
+                <p><strong>Municipio:</strong> {formData.municipio || "No especificado"}</p>
+                <p><strong>Radio de servicio:</strong> {formData.radio_servicio_km} km</p>
+              </div>
+            </div>
+
+            {/* Schedule and Rates Section */}
+            <div className="border-b pb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Horarios y Tarifas</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep(3)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p><strong>Días:</strong> {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ') || "No especificado"}</p>
+                <p><strong>Horario:</strong> {formData.horario_apertura} - {formData.horario_cierre}</p>
+                <p><strong>Tarifa base:</strong> {formData.tarifa_base}€</p>
+                <p><strong>Formas de pago:</strong> {formData.formas_pago.join(", ") || "No especificado"}</p>
+              </div>
+            </div>
+
+            {/* Photos Section */}
+            <div className="pb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Fotos</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep(4)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  Editar
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {formData.photos.length > 0 ? (
+                  formData.photos.map((photo, idx) => (
+                    <img
+                      key={idx}
+                      src={photo}
+                      alt={`Foto ${idx + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 col-span-full">Sin fotos añadidas</p>
+                )}
+              </div>
+            </div>
+
+            {/* Legal Confirmations */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-bold text-sm mb-3">Confirmaciones legales</h3>
+              <div className="space-y-2 text-xs text-gray-700">
+                <p>✓ Acepto los términos y condiciones</p>
+                <p>✓ Acepto la política de privacidad</p>
+                <p>✓ Consiento ser contactado por clientes</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -956,661 +1634,7 @@ Equipo milautonomos`,
               {steps[currentStep].title}
             </h2>
 
-            {/* Step 0: Identidad */}
-            {currentStep === 0 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Nombre profesional *</Label>
-                  <Input
-                    value={formData.business_name}
-                    onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                    placeholder="Ej: Juan Pérez - Electricista"
-                    maxLength={100}
-                    className="h-12"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formData.business_name.length}/100 caracteres
-                  </p>
-                </div>
-
-                <div>
-                  <Label>NIF / CIF *</Label>
-                  <Input
-                    value={formData.cif_nif}
-                    onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
-                    placeholder="12345678A o B12345678"
-                    maxLength={9}
-                    className="h-12"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formData.cif_nif.length}/9 caracteres
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Email de contacto *</Label>
-                  <Input
-                    type="email"
-                    value={formData.email_contacto}
-                    onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
-                    placeholder="tu@email.com"
-                    className="h-12"
-                  />
-                </div>
-
-                <div>
-                  <Label>Teléfono de contacto *</Label>
-                  <Input
-                    type="tel"
-                    value={formData.telefono_contacto}
-                    onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value.replace(/[^\d+]/g, '') })}
-                    placeholder="612345678 o +34612345678"
-                    maxLength={15}
-                    className="h-12"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formData.telefono_contacto.replace(/\s/g, '').length} dígitos (mínimo 9)
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 1: Actividad */}
-            {currentStep === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Categorías de servicio * (selecciona al menos una)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {categories.map((cat) => (
-                      <div
-                        key={cat}
-                        onClick={() => toggleCategory(cat)}
-                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                          formData.categories.includes(cat)
-                            ? "border-blue-600 bg-blue-50 shadow-sm"
-                            : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                            formData.categories.includes(cat)
-                              ? "bg-blue-600 border-blue-600"
-                              : "border-gray-300"
-                          }`}>
-                            {formData.categories.includes(cat) && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <p className={`text-sm font-medium transition-colors ${
-                            formData.categories.includes(cat) ? "text-blue-900" : "text-gray-700"
-                          }`}>
-                            {cat}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {formData.categories.length} {formData.categories.length === 1 ? 'seleccionada' : 'seleccionadas'}
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Descripción corta * (máximo 220 caracteres)</Label>
-                  <Textarea
-                    value={formData.descripcion_corta}
-                    onChange={(e) => setFormData({ ...formData, descripcion_corta: e.target.value.slice(0, 220) })}
-                    placeholder="Describe brevemente tus servicios..."
-                    className="h-24"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formData.descripcion_corta.length}/220 caracteres (mínimo 20)
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Descripción detallada (opcional)</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Añade más detalles sobre tu experiencia, servicios específicos, etc."
-                    className="h-32"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Zona y disponibilidad */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-900">
-                    📍 Indica tu ubicación principal y zona de trabajo. Los clientes podrán encontrarte en estas áreas.
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Provincia *</Label>
-                  <Select
-                    value={formData.provincia}
-                    onValueChange={(value) => {
-                      setFormData({ 
-                        ...formData, 
-                        provincia: value,
-                        ciudad: "",
-                        municipio: ""
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Selecciona tu provincia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {provincias.map((prov) => (
-                        <SelectItem key={prov} value={prov}>
-                          {prov}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.provincia && (
-                  <div>
-                    <Label>Ciudad / Localidad * (selecciona de la lista)</Label>
-                    <Select
-                      value={formData.ciudad}
-                      onValueChange={(value) => {
-                        setFormData({ 
-                          ...formData, 
-                          ciudad: value,
-                          municipio: ""
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Selecciona tu ciudad" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px] overflow-y-auto">
-                        {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
-                          ciudadesPorProvincia[formData.provincia].map((ciudad) => (
-                            <SelectItem key={ciudad} value={ciudad}>
-                              {ciudad}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value={formData.provincia}>
-                            {formData.provincia} (como ciudad principal)
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      ⚠️ Solo se puede seleccionar de la lista. Si tu localidad no aparece, elige la ciudad más cercana.
-                    </p>
-                  </div>
-                )}
-
-                {formData.ciudad && (
-                  <div>
-                    <Label>Barrio / Municipio (opcional - texto libre)</Label>
-                    <Input
-                      value={formData.municipio}
-                      onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
-                      placeholder="Ej: Centro, Chamartín, Eixample..."
-                      className="h-12"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Especifica un barrio o zona específica si quieres ser más preciso (opcional)
-                    </p>
-                  </div>
-                )}
-
-                {formData.service_area && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Tu ubicación principal:</p>
-                    <p className="font-semibold text-gray-900">{formData.service_area}</p>
-                  </div>
-                )}
-
-                <div>
-                  <Label>Radio de servicio *</Label>
-                  <Select
-                    value={formData.radio_servicio_km.toString()}
-                    onValueChange={(value) => setFormData({ ...formData, radio_servicio_km: parseInt(value) })}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 km - Solo mi zona</SelectItem>
-                      <SelectItem value="10">10 km - Ciudad y alrededores</SelectItem>
-                      <SelectItem value="25">25 km - Área metropolitana</SelectItem>
-                      <SelectItem value="50">50 km - Provincia</SelectItem>
-                      <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    ¿Hasta qué distancia estás dispuesto a desplazarte?
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Días de disponibilidad *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                    {diasSemana.map((dia) => (
-                      <div
-                        key={dia.value}
-                        onClick={() => toggleDia(dia.value)}
-                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                          formData.horario_dias.includes(dia.value)
-                            ? "border-green-600 bg-green-50 shadow-sm"
-                            : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                            formData.horario_dias.includes(dia.value)
-                              ? "bg-green-600 border-green-600"
-                              : "border-gray-300"
-                          }`}>
-                            {formData.horario_dias.includes(dia.value) && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <p className={`text-sm font-medium transition-colors ${
-                            formData.horario_dias.includes(dia.value) ? "text-green-900" : "text-gray-700"
-                          }`}>
-                            {dia.label}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {formData.horario_dias.length} {formData.horario_dias.length === 1 ? 'día seleccionado' : 'días seleccionados'}
-                  </p>
-                </div>
-
-                {formData.horario_dias.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Hora de apertura</Label>
-                      <Select
-                        value={formData.horario_apertura}
-                        onValueChange={(value) => setFormData({ ...formData, horario_apertura: value })}
-                      >
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {horarios.filter(hora => hora < formData.horario_cierre).map((hora) => (
-                            <SelectItem key={hora} value={hora}>
-                              {hora}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Hora de cierre</Label>
-                      <Select
-                        value={formData.horario_cierre}
-                        onValueChange={(value) => setFormData({ ...formData, horario_cierre: value })}
-                      >
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {horarios.filter(hora => hora > formData.horario_apertura).map((hora) => (
-                            <SelectItem key={hora} value={hora}>
-                              {hora}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {formData.horario_dias.length > 0 && (
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-900">
-                      ✓ Horario: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}
-                      {' '}{formData.horario_apertura} - {formData.horario_cierre}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 3: Precios */}
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Tarifa base * (€/hora o por servicio)</Label>
-                  <Input
-                    type="number"
-                    value={formData.tarifa_base}
-                    onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
-                    placeholder="Ej: 35"
-                    min="0"
-                    step="0.01"
-                    className="h-12"
-                  />
-                </div>
-
-                <div>
-                  <Label>Tipo de facturación *</Label>
-                  <Select
-                    value={formData.facturacion}
-                    onValueChange={(value) => setFormData({ ...formData, facturacion: value })}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="autonomo">Autónomo</SelectItem>
-                      <SelectItem value="sociedad">Sociedad</SelectItem>
-                      <SelectItem value="otros">Otros</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold">Formas de pago aceptadas *</Label>
-                  <p className="text-sm text-gray-500 mt-1 mb-3">
-                    Selecciona al menos una forma de pago
-                  </p>
-                  <div className="space-y-2">
-                    {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                      <div
-                        key={forma}
-                        onClick={() => toggleFormaPago(forma)}
-                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                          formData.formas_pago.includes(forma)
-                            ? "border-purple-600 bg-purple-50 shadow-md"
-                            : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                          formData.formas_pago.includes(forma)
-                            ? "bg-purple-600 border-purple-600"
-                            : "border-gray-300"
-                        }`}>
-                          {formData.formas_pago.includes(forma) && (
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className={`text-base font-medium flex-1 transition-colors ${
-                          formData.formas_pago.includes(forma) ? "text-purple-900" : "text-gray-700"
-                        }`}>
-                          {forma}
-                        </span>
-                        {formData.formas_pago.includes(forma) && (
-                          <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900">
-                      {formData.formas_pago.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
-                      {formData.formas_pago.length === 1 && `✓ 1 forma de pago seleccionada`}
-                      {formData.formas_pago.length > 1 && `✓ ${formData.formas_pago.length} formas de pago seleccionadas`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Portfolio */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Fotos de trabajos realizados * (mínimo 1)</Label>
-                  <div className="mt-2">
-                    <label className="cursor-pointer">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
-                        {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Haz clic para añadir una foto</p>
-                          </>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePhotoUpload}
-                        disabled={uploadingPhoto}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    {formData.photos.map((photo, idx) => (
-                      <div key={idx} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Foto ${idx + 1}`}
-                          className="w-full h-32 object-cover rounded-lg shadow-md"
-                        />
-                        <button
-                          onClick={() => removePhoto(idx)}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        {idx === 0 && (
-                          <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                            Principal
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {formData.photos.length} foto(s) subida(s)
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 5: Legales */}
-            {currentStep === 5 && (
-              <div className="space-y-4">
-                <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                    formData.acepta_terminos 
-                      ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
-                  }`}
-                  onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
-                >
-                  <div className="relative flex-shrink-0 mt-1">
-                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                      formData.acepta_terminos
-                        ? "bg-green-600 border-green-600"
-                        : "bg-white border-gray-300"
-                    }`}>
-                      {formData.acepta_terminos && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <strong className={`text-base block mb-2 transition-colors ${
-                      formData.acepta_terminos ? "text-green-900" : "text-gray-900"
-                    }`}>
-                      ✅ Acepto los términos y condiciones *
-                    </strong>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
-                    </p>
-                    {formData.acepta_terminos && (
-                      <div className="mt-2 text-sm font-semibold text-green-700">
-                        ✓ Aceptado
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                    formData.acepta_politica_privacidad 
-                      ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
-                  }`}
-                  onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
-                >
-                  <div className="relative flex-shrink-0 mt-1">
-                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                      formData.acepta_politica_privacidad
-                        ? "bg-green-600 border-green-600"
-                        : "bg-white border-gray-300"
-                    }`}>
-                      {formData.acepta_politica_privacidad && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <strong className={`text-base block mb-2 transition-colors ${
-                      formData.acepta_politica_privacidad ? "text-green-900" : "text-gray-900"
-                    }`}>
-                      ✅ Acepto la política de privacidad *
-                    </strong>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
-                    </p>
-                    {formData.acepta_politica_privacidad && (
-                      <div className="mt-2 text-sm font-semibold text-green-700">
-                        ✓ Aceptado
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                    formData.consiente_contacto_clientes 
-                      ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
-                  }`}
-                  onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
-                >
-                  <div className="relative flex-shrink-0 mt-1">
-                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                      formData.consiente_contacto_clientes
-                        ? "bg-green-600 border-green-600"
-                        : "bg-white border-gray-300"
-                    }`}>
-                      {formData.consiente_contacto_clientes && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <strong className={`text-base block mb-2 transition-colors ${
-                      formData.consiente_contacto_clientes ? "text-green-900" : "text-gray-900"
-                    }`}>
-                      ✅ Consiento el contacto de clientes *
-                    </strong>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
-                    </p>
-                    {formData.consiente_contacto_clientes && (
-                      <div className="mt-2 text-sm font-semibold text-green-700">
-                        ✓ Aceptado
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm font-medium text-blue-900">
-                    {[formData.acepta_terminos, formData.acepta_politica_privacidad, formData.consiente_contacto_clientes].filter(Boolean).length} de 3 consentimientos aceptados
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 6: Revisión final */}
-            {currentStep === 6 && (
-              <div className="space-y-6">
-                <Alert className="bg-blue-50 border-blue-200">
-                  <AlertDescription>
-                    Revisa toda tu información antes de publicar tu perfil. Podrás editarla después desde tu panel.
-                  </AlertDescription>
-                </Alert>
-
-                {steps.slice(0, -1).map((step, idx) => (
-                  <div key={idx} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">{step.title}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentStep(idx)}
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      {idx === 0 && (
-                        <>
-                          <p>• Nombre: {formData.business_name}</p>
-                          <p>• NIF: {formData.cif_nif}</p>
-                          <p>• Email: {formData.email_contacto}</p>
-                          <p>• Teléfono: {formData.telefono_contacto}</p>
-                        </>
-                      )}
-                      {idx === 1 && (
-                        <>
-                          <p>• Categorías: {formData.categories.join(', ')}</p>
-                          <p>• Descripción: {formData.descripcion_corta.substring(0, Math.min(formData.descripcion_corta.length, 100))}...</p>
-                        </>
-                      )}
-                      {idx === 2 && (
-                        <>
-                          <p>• Ubicación: {formData.service_area}</p>
-                          <p>• Radio: {formData.radio_servicio_km} km</p>
-                          <p>• Días: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}</p>
-                          <p>• Horario: {formData.horario_apertura} - {formData.horario_cierre}</p>
-                        </>
-                      )}
-                      {idx === 3 && (
-                        <>
-                          <p>• Tarifa: {formData.tarifa_base}€</p>
-                          <p>• Formas de pago: {formData.formas_pago.join(', ')}</p>
-                        </>
-                      )}
-                      {idx === 4 && (
-                        <p>• Fotos subidas: {formData.photos.length}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {renderStep()}
 
             {/* Navigation */}
             <div className="flex gap-4 mt-8">
@@ -1619,13 +1643,13 @@ Equipo milautonomos`,
                   variant="outline"
                   onClick={handleBack}
                   className="flex-1 h-12"
-                  disabled={isSaving || isSubmitting}
+                  disabled={isSubmitting}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Atrás
                 </Button>
               )}
-              
+
               {currentStep < steps.length - 1 ? (
                 <Button
                   type="button"
@@ -1635,9 +1659,9 @@ Equipo milautonomos`,
                     handleNext();
                   }}
                   className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
-                  disabled={isSaving || isSubmitting}
+                  disabled={isSubmitting}
                 >
-                  {isSaving ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Guardando...
@@ -1653,9 +1677,9 @@ Equipo milautonomos`,
                 <Button
                   onClick={handleSubmit}
                   className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                  disabled={isSubmitting || isSaving}
+                  disabled={isSubmitting}
                 >
-                  {isSubmitting || isSaving ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Publicando...
