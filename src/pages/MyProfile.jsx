@@ -92,6 +92,8 @@ export default function MyProfilePage() {
   // ✅ NUEVO: Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingPending = searchParams.get("onboarding");
+  // ✅ Detectar si viene desde onboarding completado
+  const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
   // User data
   const [userData, setUserData] = useState({
@@ -208,6 +210,20 @@ export default function MyProfilePage() {
       }, 2000);
     }
   }, [reactivationSuccess, onboardingPending, queryClient, navigate]);
+
+  // ✅ NUEVO: Mostrar mensaje de éxito si completó onboarding
+  useEffect(() => {
+    if (onboardingCompleted) {
+      toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
+        duration: 8000
+      });
+      
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    }
+  }, [onboardingCompleted, queryClient]);
 
   const loadUser = async () => {
     try {
@@ -718,7 +734,7 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
-        {/* ✅ NUEVO: Card de conversión para clientes */}
+        {/* ✅ Card de conversión para clientes */}
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
             <CardContent className="p-6">
