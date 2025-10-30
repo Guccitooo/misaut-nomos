@@ -1,29 +1,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
-import Stripe from 'npm:stripe@14.10.0';
-
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Verificar autenticación
+        // Verificar autenticación de admin
         const user = await base44.auth.me();
-        if (!user) {
-            return Response.json({ error: 'No autenticado' }, { status: 401 });
+        if (!user || user.role !== 'admin') {
+            return Response.json({ 
+                ok: false, 
+                error: 'Acceso denegado - solo administradores' 
+            }, { status: 403 });
         }
 
-        const { email, forceActivate } = await req.json();
-        const targetEmail = email || user.email;
+        const { email } = await req.json();
 
-        console.log('🔧 Corrigiendo suscripción para:', targetEmail);
-        console.log('🔧 forceActivate:', forceActivate);
+        if (!email) {
+            return Response.json({
+                ok: false,
+                error: 'Email requerido'
+            }, { status: 400 });
+        }
 
-        // 1. Obtener usuario de DB
-        const users = await base44.asServiceRole.entities.User.filter({ 
-            email: targetEmail 
-        });
+        console.log('🔧 Corrigiendo suscripción para:', email);
 
+        // 1. Buscar usuario
+        const users = await base44.asServiceRole.entities.User.filter({ email });
+        
         if (users.length === 0) {
             return Response.json({
                 ok: false,
@@ -31,170 +34,61 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        const dbUser = users[0];
-        const updates = [];
+        const targetUser = users[0];
+        const userId = targetUser.id;
 
-        // 2. Buscar en Stripe
-        const customers = await stripe.customers.list({
-            email: targetEmail,
-            limit: 1
+        // 2. Buscar suscripción
+        const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
+            user_id: userId
         });
 
-        let newStatus = null;
-        let shouldActivate = false;
-
-        if (customers.data.length > 0) {
-            const stripeCustomer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({
-                customer: stripeCustomer.id,
-                limit: 10
-            });
-
-            if (subscriptions.data.length > 0) {
-                const subscription = subscriptions.data[0];
-                console.log('📋 Suscripción encontrada:', subscription.status);
-
-                // Mapear estado de Stripe a nuestro estado
-                switch (subscription.status) {
-                    case 'trialing':
-                        newStatus = 'en_prueba';
-                        shouldActivate = true;
-                        break;
-                    case 'active':
-                        newStatus = 'actif';
-                        shouldActivate = true;
-                        break;
-                    case 'past_due':
-                        newStatus = 'suspendu';
-                        break;
-                    case 'canceled':
-                    case 'unpaid':
-                        newStatus = 'annule';
-                        break;
-                }
-
-                // Calcular fechas
-                const startDate = new Date(subscription.created * 1000);
-                const endDate = subscription.trial_end ? 
-                    new Date(subscription.trial_end * 1000) :
-                    new Date(subscription.current_period_end * 1000);
-
-                // Actualizar usuario
-                const userUpdate = {
-                    user_type: 'professionnel',
-                    subscription_status: newStatus,
-                    subscription_start_date: startDate.toISOString().split('T')[0],
-                    subscription_end_date: endDate.toISOString().split('T')[0],
-                    last_payment_date: startDate.toISOString().split('T')[0]
-                };
-
-                await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
-                updates.push(`✅ Usuario actualizado con subscription_status: ${newStatus}`);
-                console.log('✅ Usuario actualizado:', userUpdate);
-            } else {
-                // Sin suscripción en Stripe
-                if (forceActivate) {
-                    // Activar manualmente con trial de 7 días
-                    const today = new Date();
-                    const trialEnd = new Date(today);
-                    trialEnd.setDate(trialEnd.getDate() + 7);
-
-                    const userUpdate = {
-                        user_type: 'professionnel',
-                        subscription_status: 'en_prueba',
-                        subscription_start_date: today.toISOString().split('T')[0],
-                        subscription_end_date: trialEnd.toISOString().split('T')[0]
-                    };
-
-                    await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
-                    updates.push('✅ Activación manual: trial de 7 días creado');
-                    shouldActivate = true;
-                    newStatus = 'en_prueba';
-                } else {
-                    return Response.json({
-                        ok: false,
-                        error: 'No se encontró suscripción en Stripe',
-                        suggestion: 'Usa forceActivate=true para activar manualmente'
-                    });
-                }
-            }
-        } else {
-            // Sin cliente en Stripe
-            if (forceActivate) {
-                const today = new Date();
-                const trialEnd = new Date(today);
-                trialEnd.setDate(trialEnd.getDate() + 7);
-
-                const userUpdate = {
-                    user_type: 'professionnel',
-                    subscription_status: 'en_prueba',
-                    subscription_start_date: today.toISOString().split('T')[0],
-                    subscription_end_date: trialEnd.toISOString().split('T')[0]
-                };
-
-                await base44.asServiceRole.entities.User.update(dbUser.id, userUpdate);
-                updates.push('✅ Activación manual: trial de 7 días creado (sin Stripe)');
-                shouldActivate = true;
-                newStatus = 'en_prueba';
-            } else {
-                return Response.json({
-                    ok: false,
-                    error: 'Cliente no encontrado en Stripe',
-                    suggestion: 'Usa forceActivate=true para activar manualmente'
-                });
-            }
+        if (subscriptions.length === 0) {
+            return Response.json({
+                ok: false,
+                error: 'No se encontró suscripción para este usuario'
+            }, { status: 404 });
         }
 
-        // 3. Activar perfil si corresponde
-        if (shouldActivate) {
-            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
-                user_id: dbUser.id
-            });
+        const subscription = subscriptions[0];
 
-            if (profiles.length > 0) {
-                const profile = profiles[0];
-                
-                // Solo activar si el onboarding está completado
-                if (profile.onboarding_completed) {
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                        estado_perfil: 'activo',
-                        visible_en_busqueda: true
-                    });
-                    updates.push('✅ Perfil profesional activado y visible');
-                } else {
-                    updates.push('⚠️ Perfil existe pero onboarding NO completado - se mantiene invisible');
-                }
-            } else {
-                updates.push('⚠️ No se encontró perfil profesional');
-            }
-        }
-
-        // 4. Enviar email de confirmación
-        await base44.asServiceRole.integrations.Core.SendEmail({
-            to: targetEmail,
-            subject: '✅ Tu suscripción ha sido activada - milautonomos',
-            body: `Hola,
-
-Tu suscripción a milautonomos ha sido activada correctamente.
-
-Estado actual: ${newStatus}
-
-${shouldActivate ? 'Tu perfil ya está visible en las búsquedas.' : 'Para aparecer en búsquedas, completa tu perfil profesional.'}
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-Gracias,
-Equipo milautonomos`,
-            from_name: 'milautonomos'
+        // 3. ✅ Corregir renovación automática a TRUE
+        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
+            renovacion_automatica: true
         });
 
-        updates.push('✅ Email de confirmación enviado');
+        console.log('✅ Suscripción corregida - renovacion_automatica: true');
+
+        // 4. Actualizar usuario
+        await base44.asServiceRole.entities.User.update(userId, {
+            subscription_status: subscription.estado
+        });
+
+        // 5. Asegurar que el perfil esté visible si la suscripción está activa
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+            user_id: userId
+        });
+
+        if (profiles.length > 0) {
+            const today = new Date();
+            const expiration = new Date(subscription.fecha_expiracion);
+            const isActive = expiration >= today;
+
+            await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                visible_en_busqueda: isActive,
+                estado_perfil: isActive ? 'activo' : 'inactivo'
+            });
+            
+            console.log(`✅ Perfil profesional ${isActive ? 'activado' : 'desactivado'}`);
+        }
 
         return Response.json({
             ok: true,
-            message: 'Suscripción corregida exitosamente',
-            new_status: newStatus,
-            updates
+            message: `Suscripción corregida para ${email}`,
+            subscription: {
+                estado: subscription.estado,
+                renovacion_automatica: true,
+                fecha_expiracion: subscription.fecha_expiracion
+            }
         });
 
     } catch (error) {
