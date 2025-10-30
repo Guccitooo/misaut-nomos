@@ -349,85 +349,69 @@ export default function SearchPage() {
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
       
-      // ✅ CRÍTICO: Filtrar SOLO perfiles con onboarding completado, visibles y activos
-      const visibleProfilesStage1 = allProfiles.filter(profile => {
+      // ✅ NUEVA LÓGICA: Filtrar SOLO perfiles con suscripción válida
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
+      
+      const visibleProfiles = allProfiles.filter(profile => {
         // 1. Debe tener onboarding completado
         if (!profile.onboarding_completed) {
-          // console.log(`❌ Perfil ${profile.business_name} - Onboarding NO completado`);
           return false;
         }
         
-        // 2. Debe estar marcado como visible
+        // 2. Debe estar marcado como visible (esto se actualiza automáticamente por webhook)
         if (!profile.visible_en_busqueda) {
-          // console.log(`❌ Perfil ${profile.business_name} - NO visible_en_busqueda`);
           return false;
         }
         
         // 3. Debe estar en estado activo
         if (profile.estado_perfil !== "activo") {
-          // console.log(`❌ Perfil ${profile.business_name} - Estado: ${profile.estado_perfil}`);
           return false;
         }
         
+        // 4. ✅ VALIDACIÓN ADICIONAL: Verificar que tiene suscripción válida
+        const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
+        
+        if (!userSub) {
+          console.log(`❌ ${profile.business_name} - Sin suscripción`);
+          return false;
+        }
+        
+        // ✅ Verificar estado de suscripción
+        const expirationDate = new Date(userSub.fecha_expiracion);
+        expirationDate.setHours(0, 0, 0, 0); // Normalize expiration date to midnight
+        
+        const isExpired = expirationDate < today;
+        
+        // Estados válidos para visibilidad:
+        // - "activo": Suscripción pagada activa
+        // - "en_prueba": Periodo de prueba (7 días gratis)
+        // - "cancelado" con fecha futura: Canceló pero aún tiene tiempo pagado
+        const validStates = ["activo", "en_prueba"];
+        const isCanceledWithTime = userSub.estado === "cancelado" && !isExpired;
+        
+        const isVisible = validStates.includes(userSub.estado) || isCanceledWithTime;
+        
+        if (!isVisible) {
+          console.log(`❌ ${profile.business_name} - Suscripción ${userSub.estado} ${isExpired ? '(expirada)' : ''}`);
+          return false;
+        }
+        
+        console.log(`✅ ${profile.business_name} - Suscripción ${userSub.estado} ${isCanceledWithTime ? '(cancelada con tiempo)' : '(activa)'}`);
         return true;
       });
       
-      // console.log(`✅ Perfiles visibles (Stage 1): ${visibleProfilesStage1.length} de ${allProfiles.length}`);
-      
-      return visibleProfilesStage1 || [];
+      console.log(`📊 Perfiles visibles: ${visibleProfiles.length} de ${allProfiles.length}`);
+      return visibleProfiles || [];
     },
     staleTime: 0,
     initialData: [],
     retry: false,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+    // ✅ Depender también de subscriptions para recalcular cuando cambian
+    enabled: subscriptions.length >= 0,
   });
-
-  // ✅ NUEVO: Verificar suscripciones activas en tiempo real
-  const profilesWithActiveSubscriptions = useMemo(() => {
-    if (!subscriptions || subscriptions.length === 0) {
-      // If subscriptions array is empty, it means there are no subscriptions in the system.
-      // Therefore, no profiles can have an active subscription, so return an empty array.
-      // console.log('⚠️ No hay suscripciones cargadas o el array de suscripciones está vacío. Se devolverán 0 perfiles con suscripción activa.');
-      return [];
-    }
-    
-    return profiles.filter(profile => {
-      // Buscar suscripción del usuario
-      const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-      
-      if (!userSub) {
-        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Sin suscripción`);
-        return false;
-      }
-      
-      // Verificar estado de la suscripción
-      const activeStates = ["activo", "en_prueba", "trialing"];
-      const isActive = activeStates.includes(userSub.estado);
-      
-      if (!isActive) {
-        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción ${userSub.estado}`);
-        return false;
-      }
-      
-      // Verificar que no haya expirado
-      const expirationDate = new Date(userSub.fecha_expiracion);
-      const today = new Date();
-      // Set hours, minutes, seconds, milliseconds to 0 for a fair day comparison
-      today.setHours(0, 0, 0, 0);
-      expirationDate.setHours(0, 0, 0, 0);
-
-      const isExpired = expirationDate < today;
-      
-      if (isExpired) {
-        // console.log(`❌ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción expirada (${userSub.fecha_expiracion})`);
-        return false;
-      }
-      
-      // console.log(`✅ ${profile.business_name} (ID: ${profile.user_id}) - Suscripción activa (${userSub.estado})`);
-      return true;
-    });
-  }, [profiles, subscriptions]);
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -443,9 +427,9 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ CAMBIO: Usar profilesWithActiveSubscriptions en lugar de profiles
+  // ✅ CAMBIO: Ahora filteredProfiles usa 'profiles' directamente
   const filteredProfiles = useMemo(() => {
-    return profilesWithActiveSubscriptions.filter(profile => {
+    return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -469,12 +453,13 @@ export default function SearchPage() {
       }
       return 0;
     });
-  }, [profilesWithActiveSubscriptions, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
 
   // ✅ NUEVO: Extraer solo ciudades estructuradas únicas (campo "ciudad")
+  // Ahora cities usa 'profiles' directamente
   const cities = useMemo(() => {
     const citySet = new Set();
-    profilesWithActiveSubscriptions.forEach(p => {
+    profiles.forEach(p => {
       // ✅ Solo añadir si existe el campo "ciudad" (campo estructurado)
       if (p.ciudad && p.ciudad.trim() !== "") {
         citySet.add(p.ciudad);
@@ -485,7 +470,7 @@ export default function SearchPage() {
       }
     });
     return Array.from(citySet).sort();
-  }, [profilesWithActiveSubscriptions]);
+  }, [profiles]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -511,7 +496,8 @@ export default function SearchPage() {
           return newSet;
         });
       } else {
-        const profile = profiles.find(p => p.user_id === professionalId); // This should probably be profilesWithActiveSubscriptions
+        // Now 'profiles' already contains the filtered, visible profiles.
+        const profile = profiles.find(p => p.user_id === professionalId); 
         await base44.entities.Favorite.create({
           client_id: user.id,
           professional_id: professionalId,
