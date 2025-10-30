@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,18 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Users,
-  Briefcase,
-  CreditCard,
-  Loader2,
-  Eye,
+import { 
+  Users, 
+  Briefcase, 
+  CreditCard, 
+  Loader2, 
+  Eye, 
   EyeOff,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Calendar,
-  Search,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,39 +25,38 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) {
     return false;
   }
-
+  
   const normalizedState = estado.toLowerCase().trim();
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
-
+  
   if (validStates.includes(normalizedState)) {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
-
+      
       const isValid = expiration >= today;
       return isValid;
     } catch (error) {
       console.error('Error parseando fecha:', error);
-      return true; // Si hay error pero estado es válido, asumir activo (this might be too generous, but following outline)
+      return true;
     }
   }
-
+  
   if (normalizedState === "cancelado" || normalizedState === "canceled") {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
-
+      
       return expiration >= today;
     } catch (error) {
-      // If parsing fails for a cancelled subscription, it's safer to assume it's not active.
       return false;
     }
   }
-
+  
   return false;
 };
 
@@ -68,7 +65,6 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("profiles");
   const [searchTerm, setSearchTerm] = useState("");
-  // Removed selectedProfile, deletingUser, deletingReview states as their related functionality is removed by the outline.
 
   useEffect(() => {
     loadUser();
@@ -79,7 +75,6 @@ export default function AdminDashboardPage() {
       const currentUser = await base44.auth.me();
       if (currentUser.role !== 'admin') {
         toast.error('Acceso denegado');
-        // Original had window.location.href = "/"; new outline removes this.
         return;
       }
       setUser(currentUser);
@@ -88,18 +83,16 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Activar trial manualmente
   const handleActivateTrial = async (email) => {
     try {
       console.log('🔧 Activando trial para:', email);
-
+      
       const response = await base44.functions.invoke('activateUserTrial', {
         email: email
       });
-
+      
       if (response.data.ok) {
         toast.success(`Trial activado correctamente para ${email}`);
-        // Recargar perfiles y suscripciones with new query keys
         queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
         queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
       } else {
@@ -111,10 +104,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Updated query keys and query functions as per outline
   const { data: users = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: async () => { // Outline uses async wrapper, keep it.
+    queryFn: async () => {
       const allUsers = await base44.entities.User.list();
       return allUsers;
     },
@@ -123,18 +115,16 @@ export default function AdminDashboardPage() {
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
-    queryFn: async () => { // Outline uses async wrapper, keep it.
+    queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       return allProfiles;
     },
     enabled: !!user,
   });
 
-  // Removed adminMessages and adminReviews queries as per outline.
-
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
-    queryFn: async () => { // Outline uses async wrapper, keep it.
+    queryFn: async () => {
       const allSubs = await base44.entities.Subscription.list();
       return allSubs;
     },
@@ -147,16 +137,11 @@ export default function AdminDashboardPage() {
         visible_en_busqueda: newVisibility
       });
     },
-    onSuccess: () => { // Updated success message from outline.
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
       toast.success('Visibilidad actualizada');
     },
-    onError: () => { // Retaining error message for robustness.
-      toast.error("Error al cambiar la visibilidad");
-    }
   });
-
-  // Removed deleteUserMutation, deleteReviewMutation, toggleReviewVisibilityMutation as per outline.
 
   const handleToggleVisibility = (profile) => {
     toggleVisibilityMutation.mutate({
@@ -166,21 +151,12 @@ export default function AdminDashboardPage() {
   };
 
   const filteredProfiles = profiles.filter(profile => {
-    const userForProfile = users.find(u => u.id === profile.user_id);
-    const matchesSearch = !searchTerm ||
+    const matchesSearch = !searchTerm || 
       profile.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      userForProfile?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || // Check user email
-      profile.email_contacto?.toLowerCase().includes(searchTerm.toLowerCase()); // Check profile contact email
+      profile.email_contacto?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  // Filtered users for the Users tab, similar to original but using 'allUsers' data.
-  const filteredUsers = users.filter(u =>
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Helper function for profile status badges (updated as per outline).
   const getEstadoBadge = (estado) => {
     const colors = {
       activo: "bg-green-100 text-green-800",
@@ -195,7 +171,6 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // Helper function for profile visibility badges (updated as per outline).
   const getVisibilidadBadge = (visible) => {
     return (
       <Badge className={visible ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
@@ -204,7 +179,6 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // ✅ MEJORADO: Obtener badge de suscripción con lógica correcta
   const getSubscriptionBadge = (userSub) => {
     if (!userSub) {
       return (
@@ -217,7 +191,6 @@ export default function AdminDashboardPage() {
     const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
     const normalizedState = userSub.estado?.toLowerCase().trim();
 
-    // Colores según estado
     let colorClass = "bg-gray-100 text-gray-800";
     let statusText = userSub.estado;
     
@@ -304,24 +277,21 @@ export default function AdminDashboardPage() {
                     Gestión de Perfiles Profesionales
                   </CardTitle>
                   <Badge variant="outline" className="text-sm">
-                    {filteredProfiles.length} perfiles
+                    {profiles.length} perfiles
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Buscar por nombre, email o empresa..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-md pl-10" // Added pl-10 for search icon
-                    />
-                  </div>
+                  <Input
+                    placeholder="Buscar por nombre, email o empresa..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
                 </div>
 
-                {loadingProfiles || loadingSubscriptions || loadingUsers ? ( // Added loadingUsers
+                {loadingProfiles || loadingSubscriptions ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
                   </div>
@@ -342,7 +312,6 @@ export default function AdminDashboardPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {filteredProfiles.map((profile) => {
-                          const userForProfile = users.find(u => u.id === profile.user_id);
                           const userSub = subscriptions.find(s => s.user_id === profile.user_id);
                           const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
 
@@ -352,10 +321,10 @@ export default function AdminDashboardPage() {
                                 {profile.business_name || 'Sin nombre'}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-700">
-                                {userForProfile?.full_name || 'Sin nombre'}
+                                {users.find(u => u.id === profile.user_id)?.full_name || 'Sin nombre'}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-700">
-                                {profile.email_contacto || userForProfile?.email || 'Sin email'}
+                                {profile.email_contacto || users.find(u => u.id === profile.user_id)?.email || 'Sin email'}
                               </td>
                               <td className="px-4 py-3 text-sm">
                                 {profile.categories?.length > 0 ? profile.categories[0] : 'Sin categoría'}
@@ -374,7 +343,7 @@ export default function AdminDashboardPage() {
                                   <Button
                                     size="sm"
                                     onClick={() => {
-                                      const userEmail = profile.email_contacto || userForProfile?.email;
+                                      const userEmail = profile.email_contacto || users.find(u => u.id === profile.user_id)?.email;
                                       if (userEmail) {
                                         handleActivateTrial(userEmail);
                                       } else {
@@ -391,7 +360,6 @@ export default function AdminDashboardPage() {
                                     variant="ghost"
                                     onClick={() => handleToggleVisibility(profile)}
                                     className="text-xs"
-                                    disabled={toggleVisibilityMutation.isPending} // Disable if mutation is in progress
                                   >
                                     {profile.visible_en_busqueda ? (
                                       <><EyeOff className="w-3 h-3 mr-1" />Ocultar</>
@@ -412,33 +380,15 @@ export default function AdminDashboardPage() {
             </Card>
           </TabsContent>
 
-          {/* Users Tab - adapted from original code, stripped of delete functionality */}
           <TabsContent value="users">
-            <Card className="border-0 shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-700" />
-                    Gestión de Usuarios
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-900">
-                    {filteredUsers.length} usuarios
-                  </Badge>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-700" />
+                  Gestión de Usuarios
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mb-6">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Buscar por nombre o email..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
                 {loadingUsers ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -451,33 +401,34 @@ export default function AdminDashboardPage() {
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Nombre</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Email</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Tipo</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Suscripción</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fecha alta</th>
-                          {/* <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Acciones</th> */}
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Rol</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fecha registro</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {filteredUsers.map((usr) => {
-                          const userSub = subscriptions.find(s => s.user_id === usr.id);
-                          return (
-                            <tr key={usr.id}>
-                              <td className="px-4 py-3 text-sm font-medium">{usr.full_name || "Sin nombre"}</td>
-                              <td className="px-4 py-3 text-sm">{usr.email}</td>
-                              <td className="px-4 py-3 text-sm">
-                                <Badge className={usr.user_type === "professionnel" ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}>
-                                  {usr.user_type === "professionnel" ? "Autónomo" : "Cliente"}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-sm">
-                                {getSubscriptionBadge(userSub)}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                {new Date(usr.created_date).toLocaleDateString('es-ES')}
-                              </td>
-                              {/* Removed delete button */}
-                            </tr>
-                          );
-                        })}
+                        {users.map((u) => (
+                          <tr key={u.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              {u.full_name || 'Sin nombre'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {u.email}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge className={u.user_type === 'professionnel' ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                                {u.user_type === 'professionnel' ? 'Profesional' : u.user_type || 'Cliente'}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge className={u.role === 'admin' ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"}>
+                                {u.role || 'user'}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {new Date(u.created_date).toLocaleDateString('es-ES')}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -495,7 +446,7 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loadingSubscriptions || loadingUsers ? (
+                {loadingSubscriptions ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
                   </div>
@@ -514,8 +465,9 @@ export default function AdminDashboardPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {subscriptions.map((sub) => {
+                          const isActive = isSubscriptionActive(sub.estado, sub.fecha_expiracion);
                           return (
-                            <tr key={sub.id} className={!isSubscriptionActive(sub.estado, sub.fecha_expiracion) ? 'bg-red-50' : ''}>
+                            <tr key={sub.id} className={!isActive ? 'bg-red-50' : ''}>
                               <td className="px-4 py-3 text-sm">
                                 {users.find(u => u.id === sub.user_id)?.email || sub.user_id}
                               </td>
@@ -547,7 +499,6 @@ export default function AdminDashboardPage() {
             </Card>
           </TabsContent>
         </Tabs>
-        {/* Removed Profile Detail Dialog, Delete User Confirmation, Delete Review Confirmation */}
       </div>
     </div>
   );
