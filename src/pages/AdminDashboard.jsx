@@ -121,16 +121,22 @@ export default function AdminDashboardPage() {
       });
       
       if (response.data.ok) {
-        toast.success(`Usuario ${selectedUser.email} eliminado correctamente`);
+        toast.success(`Usuario ${selectedUser.email} eliminado de la base de datos`);
         
-        // ⚠️ Mostrar nota importante sobre eliminación manual
-        if (response.data.note) {
-          setTimeout(() => {
-            toast.info(response.data.note, {
-              duration: 10000
+        // ⚠️ Mostrar advertencia importante en un modal más visible
+        setTimeout(() => {
+          const warningMessage = response.data.warning || response.data.next_step;
+          if (warningMessage) {
+            toast.warning(warningMessage, {
+              duration: 15000,
+              style: {
+                background: '#FEF3C7',
+                color: '#92400E',
+                border: '2px solid #F59E0B'
+              }
             });
-          }, 2000);
-        }
+          }
+        }, 1000);
         
         queryClient.invalidateQueries({ queryKey: ['allUsers'] });
         queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
@@ -275,7 +281,8 @@ export default function AdminDashboardPage() {
       activo: "bg-green-100 text-green-800",
       pendiente: "bg-yellow-100 text-yellow-800",
       inactivo: "bg-gray-100 text-gray-800",
-      suspendido: "bg-red-100 text-red-800"
+      suspendido: "bg-yellow-100 text-yellow-800",
+      eliminado: "bg-red-100 text-red-800"
     };
     return (
       <Badge className={colors[estado] || "bg-gray-100 text-gray-800"}>
@@ -307,7 +314,7 @@ export default function AdminDashboardPage() {
     let colorClass = "bg-gray-100 text-gray-800";
     let statusText = userSub.estado;
     
-    if (normalizedState === "en_prueba" || normalizedState === "trialing") {
+    if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
       colorClass = isActive ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "en_prueba" : "prueba expirada";
     } else if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
@@ -316,23 +323,32 @@ export default function AdminDashboardPage() {
     } else if (normalizedState === "cancelado" || normalizedState === "canceled") {
       colorClass = isActive ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "cancelado (activo)" : "cancelado";
+    } else if (normalizedState === "suspendu" || normalizedState === "suspendido") {
+      colorClass = "bg-yellow-100 text-yellow-800";
+      statusText = "Suspendido";
+    } else if (normalizedState === "eliminado") {
+      colorClass = "bg-red-100 text-red-800";
+      statusText = "Eliminado";
     }
+
 
     return (
       <div className="space-y-1">
         <Badge className={colorClass}>
           {statusText}
         </Badge>
-        {isActive ? (
-          <div className="text-xs text-green-600 flex items-center gap-1">
-            <CheckCircle className="w-3 h-3" />
-            Visible
-          </div>
-        ) : (
-          <div className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            No visible
-          </div>
+        {(normalizedState !== "eliminado" && normalizedState !== "suspendu" && normalizedState !== "suspendido") && (
+          isActive ? (
+            <div className="text-xs text-green-600 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" />
+              Visible
+            </div>
+          ) : (
+            <div className="text-xs text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              No visible
+            </div>
+          )
         )}
         {userSub.fecha_expiracion && (
           <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -432,7 +448,7 @@ export default function AdminDashboardPage() {
                           const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
 
                           return (
-                            <tr key={profile.id} className={`hover:bg-gray-50 ${!isActive ? 'bg-red-50' : ''}`}>
+                            <tr key={profile.id} className={`hover:bg-gray-50 ${!isActive && userSub && userSub.estado?.toLowerCase().trim() !== 'eliminado' && userSub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}`}>
                               <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                 {profile.business_name || 'Sin nombre'}
                               </td>
@@ -661,7 +677,7 @@ export default function AdminDashboardPage() {
                         {subscriptions.map((sub) => {
                           const isActive = isSubscriptionActive(sub.estado, sub.fecha_expiracion);
                           return (
-                            <tr key={sub.id} className={!isActive ? 'bg-red-50' : ''}>
+                            <tr key={sub.id} className={!isActive && sub.estado?.toLowerCase().trim() !== 'eliminado' && sub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}>
                               <td className="px-4 py-3 text-sm">
                                 {users.find(u => u.id === sub.user_id)?.email || sub.user_id}
                               </td>
@@ -695,42 +711,61 @@ export default function AdminDashboardPage() {
         </Tabs>
 
         {showDeleteDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="max-w-md w-full mx-4">
-              <CardHeader>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-lg w-full">
+              <CardHeader className="bg-red-50 border-b border-red-200">
                 <CardTitle className="flex items-center gap-2 text-red-600">
                   <AlertCircle className="w-5 h-5" />
-                  Eliminar usuario
+                  Eliminar usuario definitivamente
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-gray-700">
-                  ⚠️ ¿Estás seguro de que quieres eliminar este usuario y todo su contenido?
-                </p>
-                <p className="text-sm font-semibold text-gray-900">
-                  Usuario: {selectedUser?.email}
-                </p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Se eliminará:</strong>
+              <CardContent className="space-y-4 pt-6">
+                <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                  <p className="text-sm font-semibold text-red-800">
+                    ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
                   </p>
-                  <ul className="text-xs text-yellow-700 list-disc ml-4 mt-1">
-                    <li>Perfil profesional</li>
-                    <li>Suscripción y pagos</li>
-                    <li>Mensajes enviados/recibidos</li>
-                    <li>Reseñas y favoritos</li>
-                    <li>Todos los datos relacionados</li>
+                  <p className="text-xs text-red-700 mt-1">
+                    El usuario desaparecerá completamente de la base de datos.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                    Usuario a eliminar:
+                  </p>
+                  <div className="bg-gray-100 p-3 rounded-lg">
+                    <p className="text-sm font-medium text-gray-900">{selectedUser?.full_name || 'Sin nombre'}</p>
+                    <p className="text-sm text-gray-600">{selectedUser?.email}</p>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-yellow-900 mb-2">
+                    📋 Se eliminará de la base de datos:
+                  </p>
+                  <ul className="text-xs text-yellow-800 space-y-1 ml-4 list-disc">
+                    <li>Perfil profesional y configuración</li>
+                    <li>Suscripción activa y historial de pagos</li>
+                    <li>Mensajes enviados y recibidos</li>
+                    <li>Reseñas realizadas y recibidas</li>
+                    <li>Lista de favoritos</li>
+                    <li>Registro completo del usuario</li>
                   </ul>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                  <p className="text-xs font-semibold text-blue-900 mb-2">
+                    🔐 PASO ADICIONAL REQUERIDO:
+                  </p>
                   <p className="text-xs text-blue-800">
-                    <strong>📝 Nota:</strong> El usuario quedará marcado como eliminado en la base de datos, pero para eliminar completamente la cuenta de autenticación deberás hacerlo manualmente desde el Dashboard de Base44.
+                    Después de confirmar, debes ir manualmente a <strong>Base44 Dashboard &rarr; Users</strong> y eliminar la cuenta de autenticación con email <strong className="underline">{selectedUser?.email}</strong>
+                  </p>
+                  <p className="text-xs text-blue-700 mt-2">
+                    ⚠️ Si no lo haces, el usuario podrá iniciar sesión pero no tendrá datos.
                   </p>
                 </div>
-                <p className="text-sm text-red-600 font-semibold">
-                  Esta acción no se puede deshacer.
-                </p>
-                <div className="flex gap-3 justify-end">
+
+                <div className="flex gap-3 justify-end pt-4 border-t">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -743,8 +778,10 @@ export default function AdminDashboardPage() {
                   <Button
                     variant="destructive"
                     onClick={handleDeleteUser}
+                    className="bg-red-600 hover:bg-red-700"
                   >
-                    Eliminar permanentemente
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Eliminar definitivamente
                   </Button>
                 </div>
               </CardContent>

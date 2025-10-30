@@ -138,26 +138,26 @@ Deno.serve(async (req) => {
             deletedItems.push('Reseñas');
         }
 
-        // 8. ✅ NUEVO: Marcar usuario como eliminado en la base de datos
+        // 8. ✅ ELIMINAR COMPLETAMENTE el registro de User de la base de datos
         try {
-            await base44.asServiceRole.entities.User.update(userId, {
-                subscription_status: 'eliminado',
-                full_name: `[ELIMINADO] ${targetUser.full_name || targetUser.email}`,
-                phone: '',
-                city: '',
-                user_type: 'client'
-            });
-            console.log('✅ Usuario marcado como eliminado en BD');
-            deletedItems.push('Usuario marcado como eliminado');
+            await base44.asServiceRole.entities.User.delete(userId);
+            console.log('✅ Registro de usuario eliminado de la base de datos');
+            deletedItems.push('Registro de usuario en BD');
         } catch (error) {
-            console.log('⚠️ No se pudo marcar usuario como eliminado:', error.message);
+            console.error('❌ Error eliminando registro de usuario:', error.message);
+            return Response.json({
+                ok: false,
+                error: 'No se pudo eliminar el registro del usuario',
+                details: error.message
+            }, { status: 500 });
         }
         
         return Response.json({
             ok: true,
-            message: `Usuario ${targetUser.email} eliminado correctamente`,
+            message: `Usuario ${targetUser.email} eliminado completamente de la base de datos`,
             deleted_items: deletedItems,
-            note: 'IMPORTANTE: Para eliminar completamente la cuenta de autenticación, ve a Base44 Dashboard → Users → Busca el email → Eliminar manualmente'
+            warning: '⚠️ IMPORTANTE: Debes eliminar la cuenta de autenticación manualmente desde Base44 Dashboard → Users → Buscar email → Eliminar. De lo contrario, el usuario podrá iniciar sesión pero no tendrá datos.',
+            next_step: `Ve a Base44 Dashboard y elimina el usuario con email: ${targetUser.email}`
         });
 
     } catch (error) {
