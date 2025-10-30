@@ -40,6 +40,36 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+const isSubscriptionActive = (estado, fechaExpiracion) => {
+  if (!estado) return false;
+  
+  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active"];
+  
+  // Si está en un estado válido
+  if (validStates.includes(estado)) {
+    // Verificar que no haya expirado
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiration = new Date(fechaExpiracion);
+    expiration.setHours(0, 0, 0, 0);
+    
+    return expiration >= today;
+  }
+  
+  // Si está cancelado pero aún tiene tiempo
+  if (estado === "cancelado" || estado === "canceled") {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiration = new Date(fechaExpiracion);
+    expiration.setHours(0, 0, 0, 0);
+    
+    return expiration >= today;
+  }
+  
+  return false;
+};
+
 // ✅ Categorías con iconos
 const CATEGORY_ICONS = {
   "Electricista": Zap,
@@ -338,78 +368,78 @@ export default function SearchPage() {
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
       const subs = await base44.entities.Subscription.list();
+      console.log(`📊 Total suscripciones cargadas: ${subs.length}`);
       return subs;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // ✅ No cachear
+    refetchOnMount: true,
     initialData: [],
   });
 
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
-    queryKey: ['profiles'],
+    queryKey: ['profiles', subscriptions.length], // ✅ Depender de subscriptions
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
+      console.log(`📊 Total perfiles en BD: ${allProfiles.length}`);
       
       // ✅ NUEVA LÓGICA: Filtrar SOLO perfiles con suscripción válida
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
+      today.setHours(0, 0, 0, 0);
       
       const visibleProfiles = allProfiles.filter(profile => {
+        const businessName = profile.business_name || `ID:${profile.user_id}`;
+        
         // 1. Debe tener onboarding completado
         if (!profile.onboarding_completed) {
+          console.log(`❌ ${businessName} - Onboarding incompleto`);
           return false;
         }
         
         // 2. Debe estar marcado como visible (esto se actualiza automáticamente por webhook)
         if (!profile.visible_en_busqueda) {
+          console.log(`❌ ${businessName} - Marcado como no visible`);
           return false;
         }
         
         // 3. Debe estar en estado activo
         if (profile.estado_perfil !== "activo") {
+          console.log(`❌ ${businessName} - Estado perfil: ${profile.estado_perfil}`);
           return false;
         }
         
-        // 4. ✅ VALIDACIÓN ADICIONAL: Verificar que tiene suscripción válida
+        // 4. ✅ VALIDACIÓN CLAVE: Verificar que tiene suscripción válida
         const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
         
         if (!userSub) {
-          console.log(`❌ ${profile.business_name} - Sin suscripción`);
+          console.log(`❌ ${businessName} - Sin registro de suscripción`);
           return false;
         }
         
-        // ✅ Verificar estado de suscripción
-        const expirationDate = new Date(userSub.fecha_expiracion);
-        expirationDate.setHours(0, 0, 0, 0); // Normalize expiration date to midnight
+        // ✅ USAR HELPER PARA VERIFICAR SI ESTÁ ACTIVO
+        const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
         
-        const isExpired = expirationDate < today;
-        
-        // Estados válidos para visibilidad:
-        // - "activo": Suscripción pagada activa
-        // - "en_prueba": Periodo de prueba (7 días gratis)
-        // - "cancelado" con fecha futura: Canceló pero aún tiene tiempo pagado
-        const validStates = ["activo", "en_prueba"];
-        const isCanceledWithTime = userSub.estado === "cancelado" && !isExpired;
-        
-        const isVisible = validStates.includes(userSub.estado) || isCanceledWithTime;
-        
-        if (!isVisible) {
-          console.log(`❌ ${profile.business_name} - Suscripción ${userSub.estado} ${isExpired ? '(expirada)' : ''}`);
+        if (!isActive) {
+          console.log(`❌ ${businessName} - Suscripción ${userSub.estado} (inactiva o expirada)`);
           return false;
         }
         
-        console.log(`✅ ${profile.business_name} - Suscripción ${userSub.estado} ${isCanceledWithTime ? '(cancelada con tiempo)' : '(activa)'}`);
+        console.log(`✅ ${businessName} - Suscripción ${userSub.estado} (activa) - Expira: ${new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')}`);
         return true;
       });
       
-      console.log(`📊 Perfiles visibles: ${visibleProfiles.length} de ${allProfiles.length}`);
+      console.log(`\n📊 RESUMEN VISIBILIDAD:`);
+      console.log(`   Total perfiles: ${allProfiles.length}`);
+      console.log(`   Perfiles visibles: ${visibleProfiles.length}`);
+      console.log(`   Perfiles ocultos: ${allProfiles.length - visibleProfiles.length}`);
+      
       return visibleProfiles || [];
     },
-    staleTime: 0,
+    staleTime: 0, // ✅ No cachear
     initialData: [],
     retry: false,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    // ✅ Depender también de subscriptions para recalcular cuando cambian
+    // ✅ Solo ejecutar cuando haya suscripciones cargadas
     enabled: subscriptions.length >= 0,
   });
 
