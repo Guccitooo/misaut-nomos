@@ -91,10 +91,14 @@ export default function MyProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ✅ NUEVO: Detectar diferentes estados de retorno
+  // ✅ NUEVO: Estado para verificación de suscripción
+  const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 10; // 10 intentos = 20 segundos
+
+  // Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingPending = searchParams.get("onboarding");
-  // ✅ Detectar si viene desde onboarding completado
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
   // User data
@@ -184,38 +188,15 @@ export default function MyProfilePage() {
     }
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
-  // ✅ NUEVO: Detectar estados de retorno y mostrar mensajes apropiados
+  // ✅ NUEVO: Detectar estados de retorno y verificar suscripción
   useEffect(() => {
-    if (reactivationSuccess === "success") {
-      toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
-        duration: 6000
-      });
-      
+    if (reactivationSuccess === "success" || onboardingPending === "pending") {
+      console.log('🔍 Usuario viene de checkout/reactivación, verificando suscripción...');
+      setIsVerifyingSubscription(true);
+      startSubscriptionPolling();
+      // Clear search params immediately to prevent re-triggering
       window.history.replaceState({}, document.title, window.location.pathname);
-      
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-    } else if (reactivationSuccess === "canceled") {
-      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (onboardingPending === "pending") {
-      // ✅ NUEVO: Usuario completó pago, necesita completar perfil
-      toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional para aparecer en búsquedas.", {
-        duration: 8000
-      });
-      
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Redirigir a ProfileOnboarding después de 2 segundos
-      setTimeout(() => {
-        navigate(createPageUrl("ProfileOnboarding"));
-      }, 2000);
-    }
-  }, [reactivationSuccess, onboardingPending, queryClient, navigate]);
-
-  // ✅ NUEVO: Mostrar mensaje de éxito si completó onboarding
-  useEffect(() => {
-    if (onboardingCompleted) {
+    } else if (onboardingCompleted) {
       toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
         duration: 8000
       });
@@ -224,8 +205,89 @@ export default function MyProfilePage() {
       
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    } else if (reactivationSuccess === "canceled") { // Handle canceled reactivation
+      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [onboardingCompleted, queryClient]);
+  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
+
+  // ✅ NUEVO: Polling para verificar suscripción
+  const startSubscriptionPolling = async () => {
+    console.log('🔄 Iniciando polling de suscripción...');
+    
+    // Clear search params if they are still present from a previous render
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
+      setPollingAttempts(attempt);
+      console.log(`🔍 Intento ${attempt}/${MAX_POLLING_ATTEMPTS} - Verificando suscripción...`);
+      
+      try {
+        // Recargar usuario
+        const currentUser = await loadUser();
+        if (!currentUser) throw new Error("User not loaded during polling");
+        
+        // Invalidar y refetch la suscripción para obtener el estado más reciente
+        await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
+        const result = await queryClient.fetchQuery({
+          queryKey: ['subscription', currentUser.id],
+          queryFn: async () => {
+            const subs = await base44.entities.Subscription.filter({
+              user_id: currentUser.id
+            });
+            return subs[0] || null;
+          },
+          staleTime: 0,
+          gcTime: 0,
+        });
+        
+        if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
+          console.log('✅ Suscripción encontrada y activa:', result.estado);
+          setIsVerifyingSubscription(false);
+          setPollingAttempts(0); // Reset attempts
+          
+          // Mostrar mensaje de éxito apropiado
+          if (reactivationSuccess === "success") {
+            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
+              duration: 6000
+            });
+          } else if (onboardingPending === "pending") {
+            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
+              duration: 8000
+            });
+            
+            // Redirigir a ProfileOnboarding
+            setTimeout(() => {
+              navigate(createPageUrl("ProfileOnboarding"));
+            }, 2000);
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+          return; // Éxito, salir del polling
+        }
+        
+        // Si no encontró suscripción o no está activa, esperar 2 segundos antes del siguiente intento
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          console.log('⏳ Suscripción no encontrada o no activa, esperando 2 segundos...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`❌ Error en intento ${attempt}:`, error);
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    
+    // Si llegamos aquí, no se encontró la suscripción después de todos los intentos
+    console.log('⚠️ No se encontró suscripción después de todos los intentos');
+    setIsVerifyingSubscription(false);
+    setPollingAttempts(0); // Reset attempts
+    
+    toast.error('No se pudo verificar tu suscripción. Recarga la página en unos segundos o contacta a soporte.', {
+      duration: 8000
+    });
+  };
 
   const loadUser = async () => {
     try {
@@ -242,9 +304,11 @@ export default function MyProfilePage() {
         phone: currentUser.phone || "",
         city: currentUser.city || "",
       });
+      return currentUser;
     } catch (error) {
       console.error("Error loading user:", error);
       base44.auth.redirectToLogin();
+      return null;
     }
   };
 
@@ -264,7 +328,7 @@ export default function MyProfilePage() {
       
       // Esperar un momento y refetch
       await new Promise(resolve => setTimeout(resolve, 1000));
-      queryClient.refetchQueries({ queryKey: ['subscription'] });
+      await queryClient.refetchQueries({ queryKey: ['subscription'] });
       
       toast.success('Datos sincronizados correctamente');
     } catch (error) {
@@ -310,7 +374,7 @@ export default function MyProfilePage() {
         throw error;
       }
     },
-    enabled: !!user,
+    enabled: !!user && !isVerifyingSubscription, // ✅ Deshabilitar durante el polling
     retry: 1,
     staleTime: 0,
     refetchOnMount: true,
@@ -616,10 +680,51 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user || loadingProfile || loadingSubscription) {
+  // ✅ NUEVO: Mostrar loading mientras verifica suscripción
+  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      </div>
+    );
+  }
+
+  // ✅ NUEVO: Mostrar pantalla de verificación
+  if (isVerifyingSubscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-xl">
+          <CardContent className="p-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Verificando tu suscripción
+              </h2>
+              <p className="text-gray-600">
+                Estamos confirmando tu pago y activando tu cuenta...
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-900">
+                  <strong>Intento {pollingAttempts}/{MAX_POLLING_ATTEMPTS}</strong>
+                </p>
+                <p className="text-xs text-blue-700 mt-2">
+                  Esto puede tardar unos segundos mientras procesamos tu pago.
+                </p>
+              </div>
+              {pollingAttempts >= 5 && (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-800 text-sm">
+                    El proceso está tardando más de lo esperado. Si el problema persiste, 
+                    puedes recargar la página en unos segundos.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
