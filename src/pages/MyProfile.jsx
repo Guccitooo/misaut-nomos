@@ -43,7 +43,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       // Si la fecha de expiración no es válida (incluyendo null, undefined, o string no parseable)
       // y el estado es de un tipo "activo", asumir que está activo según la lógica de la integración
       if (isNaN(expiration.getTime())) {
-          console.warn('Fecha de expiración inválida o ausente para un estado activo:', estado, 'Fecha:', fechaExpiracion);
+          console.warn('Fecha de expiración inválida o ausente para un estado activo, asumiendo activo:', estado, 'Fecha:', fechaExpiracion);
           return true; // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
       }
       
@@ -90,6 +90,7 @@ export default function MyProfilePage() {
   const [forcingSync, setForcingSync] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [manualSyncing, setManualSyncing] = useState(false);
 
   // ✅ NUEVO: Estado para verificación de suscripción
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
@@ -190,6 +191,12 @@ export default function MyProfilePage() {
 
   // ✅ NUEVO: Detectar estados de retorno y verificar suscripción
   useEffect(() => {
+    console.log('🔍 Verificando parámetros URL en useEffect:', {
+      reactivation: reactivationSuccess,
+      onboarding: onboardingPending,
+      onboardingCompleted
+    });
+
     if (reactivationSuccess === "success" || onboardingPending === "pending") {
       console.log('🔍 Usuario viene de checkout/reactivación, verificando suscripción...');
       setIsVerifyingSubscription(true);
@@ -216,7 +223,7 @@ export default function MyProfilePage() {
     console.log('🔄 Iniciando polling de suscripción...');
     
     // Clear search params if they are still present from a previous render
-    window.history.replaceState({}, document.title, window.location.pathname);
+    // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect for immediate clear
 
     for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
       setPollingAttempts(attempt);
@@ -262,7 +269,7 @@ export default function MyProfilePage() {
             }, 2000);
           }
           
-          window.history.replaceState({}, document.title, window.location.pathname);
+          // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect
           queryClient.invalidateQueries({ queryKey: ['myProfile'] });
           return; // Éxito, salir del polling
         }
@@ -299,7 +306,7 @@ export default function MyProfilePage() {
               }
               
               setIsVerifyingSubscription(false);
-              window.history.replaceState({}, document.title, window.location.pathname);
+              // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect
               return; // Exit polling as subscription is active
             } else if (syncResponse.data.error === 'no_stripe_customer' || 
                        syncResponse.data.error === 'no_subscription') {
@@ -367,19 +374,64 @@ export default function MyProfilePage() {
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Forzar sincronización
+  // ✅ NUEVA FUNCIÓN: Botón manual de sincronización
+  const handleManualSync = async () => {
+    setManualSyncing(true);
+    try {
+      console.log('🔄 Sincronización manual iniciada...');
+      const currentUser = await loadUser();
+      if (!currentUser) throw new Error("User not loaded for manual sync");
+      
+      const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
+        user_id: currentUser.id
+      });
+      console.log('📥 Respuesta de sincronización manual:', syncResponse.data);
+      
+      if (syncResponse.data.ok) {
+        toast.success('✅ ¡Suscripción encontrada y activada!', {
+          duration: 5000
+        });
+        
+        await loadUser(); // Refresh user state
+        await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        await queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+        await queryClient.refetchQueries({ queryKey: ['subscription'] });
+        
+        if (syncResponse.data.needs_onboarding) {
+          setTimeout(() => {
+            navigate(createPageUrl("ProfileOnboarding"));
+          }, 2000);
+        }
+      } else {
+        if (syncResponse.data.error === 'no_stripe_customer') {
+          toast.error('No se encontró tu cuenta en Stripe. Asegúrate de haber completado el pago.');
+        } else if (syncResponse.data.error === 'no_subscription') {
+          toast.error('No se encontró ninguna suscripción activa. ¿Has contratado un plan?');
+        } else {
+          toast.error(`Error al verificar: ${syncResponse.data.message || syncResponse.data.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error en sincronización manual:', error);
+      toast.error('Error al verificar suscripción manualmente');
+    } finally {
+      setManualSyncing(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Forzar sincronización (para admin)
   const handleForceSync = async () => {
     setForcingSync(true);
     try {
-      console.log('🔄 Forzando sincronización...');
+      console.log('🔄 Forzando sincronización (admin)...');
       
       // Recargar usuario
       await loadUser();
       
       // Invalidar todas las queries
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['plan'] });
+      await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      await queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      await queryClient.invalidateQueries({ queryKey: ['plan'] });
       
       // Esperar un momento y refetch
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -387,7 +439,7 @@ export default function MyProfilePage() {
       
       toast.success('Datos sincronizados correctamente');
     } catch (error) {
-      console.error('Error sincronizando:', error);
+      console.error('Error sincronizando (admin):', error);
       toast.error('Error al sincronizar');
     } finally {
       setForcingSync(false);
@@ -418,10 +470,7 @@ export default function MyProfilePage() {
           return subs[0];
         } else {
           console.log('❌ [MyProfile] No se encontró suscripción para este user_id');
-          console.log('🔍 [MyProfile] Intentando buscar por email como fallback...');
-          
-          // ❌ NO PODEMOS BUSCAR POR EMAIL EN SUBSCRIPTION
-          // La suscripción DEBE tener el user_id correcto
+          // No hay fallback por email, la suscripción debe estar ligada al user_id
           return null;
         }
       } catch (error) {
@@ -446,7 +495,6 @@ export default function MyProfilePage() {
     expirationDate.setHours(0, 0, 0, 0);
     
     const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
-    const isExpired = daysLeft <= 0;
     
     // ✅ USAR HELPER PARA DETERMINAR SI ESTÁ ACTIVO
     const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
@@ -454,7 +502,6 @@ export default function MyProfilePage() {
     console.log('📊 Estado de suscripción:', {
       estado: subscription.estado,
       daysLeft,
-      isExpired,
       isActive
     });
     
@@ -466,7 +513,7 @@ export default function MyProfilePage() {
         text: "Periodo de prueba",
         badge: "🟡",
         color: "bg-blue-100 text-blue-800 border border-blue-300",
-        details: isExpired ? "Prueba finalizada" : `${daysLeft} días de prueba restantes`,
+        details: isActive ? `${daysLeft} días de prueba restantes` : "Prueba finalizada",
         isActive: isActive,
         showUpgrade: true,
         showReactivate: false
@@ -487,14 +534,14 @@ export default function MyProfilePage() {
     
     if (normalizedState === "cancelado" || normalizedState === "canceled") {
       return {
-        text: isExpired ? "Suscripción finalizada" : "Suscripción cancelada",
-        badge: isExpired ? "🔴" : "⚪",
-        color: isExpired 
-          ? "bg-red-100 text-red-800 border border-red-300" 
-          : "bg-yellow-100 text-yellow-800 border border-yellow-300",
-        details: isExpired 
-          ? "Tu perfil está oculto" 
-          : `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`,
+        text: isActive ? "Suscripción cancelada" : "Suscripción finalizada",
+        badge: isActive ? "⚪" : "🔴",
+        color: isActive 
+          ? "bg-yellow-100 text-yellow-800 border border-yellow-300" 
+          : "bg-red-100 text-red-800 border border-red-300",
+        details: isActive 
+          ? `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`
+          : "Tu perfil está oculto",
         isActive: isActive,
         showUpgrade: false,
         showReactivate: true
@@ -808,6 +855,7 @@ export default function MyProfilePage() {
                 <div>Subscription Found: <code className="bg-purple-100 px-1 rounded">{subscription ? 'YES' : 'NO'}</code></div>
                 {subscription && (
                   <>
+                    <div>Subscription ID: <code className="bg-purple-100 px-1 rounded">{subscription.id}</code></div>
                     <div>Subscription Estado: <code className="bg-purple-100 px-1 rounded">{subscription.estado}</code></div>
                     <div>Subscription User ID: <code className="bg-purple-100 px-1 rounded">{subscription.user_id}</code></div>
                   </>
@@ -1067,12 +1115,33 @@ export default function MyProfilePage() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  Ver planes
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    Ver planes
+                  </Button>
+                  <Button
+                    onClick={handleManualSync}
+                    disabled={manualSyncing}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
+                  >
+                    {manualSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Verificar suscripción
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1330,6 +1399,7 @@ export default function MyProfilePage() {
                               </SelectItem>
                             ))
                           ) : profileData.provincia ? (
+                            // Fallback if no specific cities listed for the province, use province name as city
                             <SelectItem value={profileData.provincia}>
                               {profileData.provincia}
                             </SelectItem>
