@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -6,16 +5,18 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
 Deno.serve(async (req) => {
+    console.log('🔔 Webhook recibido de Stripe');
+    
     try {
         const base44 = createClientFromRequest(req);
         
+        const body = await req.text();
         const signature = req.headers.get('stripe-signature');
         
         if (!signature) {
-            return Response.json({ error: 'No signature provided' }, { status: 400 });
+            console.error('❌ Sin firma de Stripe');
+            return Response.json({ error: 'Missing signature' }, { status: 400 });
         }
-
-        const body = await req.text();
 
         let event;
         try {
@@ -24,544 +25,341 @@ Deno.serve(async (req) => {
                 signature,
                 webhookSecret
             );
+            console.log('✅ Evento verificado:', event.type);
         } catch (err) {
-            console.error('Webhook signature verification failed:', err.message);
+            console.error('❌ Error verificando firma:', err.message);
             return Response.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
-        console.log('🔔 Webhook recibido:', event.type);
+        const subscription = event.data.object;
+        const metadata = subscription.metadata || {};
+        const email = metadata.email || subscription.customer_email;
 
-        // ✅ Handle checkout.session.completed (trial y pagos normales)
-        if (event.type === 'checkout.session.completed') {
-            const session = event.data.object;
-            const metadata = session.metadata;
-            const customerEmail = session.customer_email || metadata.email;
-            
-            console.log('✅ Checkout completado para:', customerEmail);
-            console.log('📋 Metadata:', metadata);
+        console.log('📧 Email del usuario:', email);
+        console.log('📊 Metadata:', metadata);
 
+        // ✅ NUEVA LÓGICA: Función helper para calcular visibilidad
+        const calculateProfileStatus = (subscriptionStatus, endDate) => {
             const today = new Date();
-            const activityText = metadata.activity || "Sin especificar";
-            const activityCategory = activityText.includes(":") 
-                ? activityText.split(":")[0] 
-                : activityText;
-
-            // ✅ Verificar si es trial
-            const isTrial = metadata.isTrial === "true" || 
-                           session.subscription_data?.trial_period_days > 0;
-
-            // ✅ NUEVO: Verificar si es reactivación
-            const isReactivation = metadata.isReactivation === "true";
-
-            // ✅ Obtener ID del plan desde metadata o usar default
-            const planId = metadata.planId || "plan_monthly_trial";
-
-            // Buscar el plan en la base de datos
-            const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
-                plan_id: planId
-            });
-            const plan = plans[0];
-
-            // Fecha de expiración según trial o no
-            let expirationDate;
-            let subscriptionStatus;
+            const expirationDate = new Date(endDate * 1000);
             
-            if (isTrial) {
-                expirationDate = new Date(today);
-                expirationDate.setDate(expirationDate.getDate() + 7);
-                subscriptionStatus = "en_prueba";
-                console.log('🎁 Trial detectado - 7 días gratis');
-            } else {
-                expirationDate = new Date(today);
-                
-                if (plan) {
-                    if (plan.duracion_dias === 30) {
-                        expirationDate.setDate(expirationDate.getDate() + 30);
-                    } else if (plan.duracion_dias === 90) {
-                        expirationDate.setDate(expirationDate.getDate() + 90);
-                    } else if (plan.duracion_dias === 365) {
-                        expirationDate.setDate(expirationDate.getDate() + 365);
-                    } else {
-                        expirationDate.setMonth(expirationDate.getMonth() + 1);
-                    }
-                } else {
-                    expirationDate.setMonth(expirationDate.getMonth() + 1);
-                }
-                
-                subscriptionStatus = "actif";
-                console.log('💳 Pago normal');
+            console.log('🔍 Calculando estado:');
+            console.log('  - Status Stripe:', subscriptionStatus);
+            console.log('  - Fecha expiración:', expirationDate.toISOString());
+            console.log('  - Hoy:', today.toISOString());
+            
+            // 🟢 Activo con pago
+            if (subscriptionStatus === 'active') {
+                return {
+                    estado: 'activo',
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    mensaje: 'Suscripción activa'
+                };
             }
+            
+            // 🟡 En periodo de prueba
+            if (subscriptionStatus === 'trialing') {
+                return {
+                    estado: 'en_prueba',
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    mensaje: 'Periodo de prueba activo'
+                };
+            }
+            
+            // ⚪ Cancelado pero con tiempo restante
+            if (subscriptionStatus === 'canceled' && expirationDate > today) {
+                return {
+                    estado: 'cancelado',
+                    visible_en_busqueda: true, // ✅ Mantener visible hasta el final
+                    estado_perfil: 'activo',
+                    mensaje: 'Cancelado - activo hasta fin de periodo'
+                };
+            }
+            
+            // 🔴 Expirado, sin pago, o cancelado sin tiempo
+            return {
+                estado: 'finalizada',
+                visible_en_busqueda: false,
+                estado_perfil: 'inactivo',
+                mensaje: 'Suscripción finalizada'
+            };
+        };
 
-            // Buscar usuario existente
-            const existingUsers = await base44.asServiceRole.entities.User.filter({ 
-                email: customerEmail 
-            });
+        // ✅ MANEJAR TODOS LOS EVENTOS DE STRIPE
+        switch (event.type) {
+            // ═══════════════════════════════════════════════════════
+            // SUSCRIPCIÓN CREADA (checkout completado o trial inicio)
+            // ═══════════════════════════════════════════════════════
+            case 'customer.subscription.created':
+            case 'checkout.session.completed': {
+                console.log('🎉 Suscripción creada/checkout completado');
+                
+                if (!email) {
+                    console.error('❌ Sin email en metadata');
+                    return Response.json({ error: 'Missing email' }, { status: 400 });
+                }
 
-            let userId;
-            if (existingUsers.length > 0) {
-                userId = existingUsers[0].id;
-                
-                console.log(`📝 ${isReactivation ? 'REACTIVANDO' : 'Actualizando'} usuario ${customerEmail} con suscripción:`, subscriptionStatus);
-                
-                // ✅ Actualizar usuario
-                await base44.asServiceRole.entities.User.update(existingUsers[0].id, {
-                    full_name: metadata.fullName || existingUsers[0].full_name,
-                    user_type: "professionnel",
-                    phone: metadata.phone || existingUsers[0].phone,
-                    city: metadata.address?.split(',').slice(-1)[0].trim() || existingUsers[0].city || "",
-                    subscription_status: subscriptionStatus,
-                    subscription_start_date: today.toISOString().split('T')[0],
-                    subscription_end_date: expirationDate.toISOString().split('T')[0],
-                    last_payment_date: today.toISOString().split('T')[0],
+                // Buscar o crear usuario
+                let users = await base44.asServiceRole.entities.User.filter({ email });
+                let userId;
+
+                if (users.length === 0) {
+                    console.log('➕ Creando nuevo usuario');
+                    const newUser = await base44.asServiceRole.entities.User.create({
+                        email,
+                        full_name: metadata.fullName || email.split('@')[0],
+                        phone: metadata.phone || '',
+                        city: metadata.address || '',
+                        user_type: 'professionnel',
+                        subscription_status: subscription.status === 'trialing' ? 'en_prueba' : 'activo'
+                    });
+                    userId = newUser.id;
+                    console.log('✅ Usuario creado:', userId);
+                } else {
+                    userId = users[0].id;
+                    console.log('✅ Usuario encontrado:', userId);
+                    
+                    // Actualizar tipo y estado
+                    await base44.asServiceRole.entities.User.update(userId, {
+                        user_type: 'professionnel',
+                        subscription_status: subscription.status === 'trialing' ? 'en_prueba' : 'activo'
+                    });
+                }
+
+                // Calcular estado del perfil
+                const profileStatus = calculateProfileStatus(
+                    subscription.status,
+                    subscription.current_period_end
+                );
+
+                console.log('📋 Estado calculado:', profileStatus);
+
+                // Buscar plan
+                const planId = metadata.planId || 'plan_monthly_trial';
+                const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
+                    plan_id: planId
                 });
-                
-                console.log(`✅ Usuario actualizado con subscription_status: ${subscriptionStatus}`);
+                const plan = plans[0];
 
-                // ✅ CRÍTICO: Crear o actualizar registro en Subscription
-                const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
+                if (!plan) {
+                    console.error('❌ Plan no encontrado:', planId);
+                    return Response.json({ error: 'Plan not found' }, { status: 404 });
+                }
+
+                // Buscar suscripción existente
+                const existingSubs = await base44.asServiceRole.entities.Subscription.filter({
                     user_id: userId
                 });
 
                 const subscriptionData = {
                     user_id: userId,
                     plan_id: planId,
-                    plan_nombre: plan?.nombre || "Plan Mensual",
-                    plan_precio: plan?.precio || 49,
-                    fecha_inicio: today.toISOString(),
-                    fecha_expiracion: expirationDate.toISOString(),
-                    estado: isTrial ? "en_prueba" : "activo",
-                    renovacion_automatica: true,
-                    metodo_pago: "stripe",
-                    fecha_ultima_renovacion: today.toISOString(),
-                    stripe_subscription_id: session.subscription || "",
-                    stripe_customer_id: session.customer || ""
+                    plan_nombre: plan.nombre,
+                    plan_precio: plan.precio,
+                    fecha_inicio: new Date(subscription.current_period_start * 1000).toISOString(),
+                    fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
+                    estado: profileStatus.estado,
+                    renovacion_automatica: subscription.cancel_at_period_end === false,
+                    metodo_pago: 'stripe',
+                    stripe_subscription_id: subscription.id,
+                    stripe_customer_id: subscription.customer
                 };
 
-                if (existingSubscriptions.length > 0) {
+                if (existingSubs.length > 0) {
+                    console.log('🔄 Actualizando suscripción existente');
                     await base44.asServiceRole.entities.Subscription.update(
-                        existingSubscriptions[0].id,
+                        existingSubs[0].id,
                         subscriptionData
                     );
-                    console.log(`✅ Suscripción ${isReactivation ? 'REACTIVADA' : 'actualizada'} para user_id: ${userId}`);
                 } else {
+                    console.log('➕ Creando nueva suscripción');
                     await base44.asServiceRole.entities.Subscription.create(subscriptionData);
-                    console.log(`✅ Suscripción creada para user_id: ${userId}`);
                 }
-                
-            } else {
-                console.log(`⚠️ Usuario no existe: ${customerEmail}`);
-                await base44.asServiceRole.integrations.Core.SendEmail({
-                    to: "admin@milautonomos.com",
-                    subject: "✅ Pago confirmado - Crear cuenta milautonomos",
-                    body: `Pago confirmado para nueva suscripción:
 
-Email: ${customerEmail}
-Nombre: ${metadata.fullName}
-NIF/CIF: ${metadata.cifNif}
-Teléfono: ${metadata.phone}
-Actividad: ${activityText}
-Dirección: ${metadata.address}
-Es trial: ${isTrial ? 'SÍ - 7 días gratis' : 'NO - Pago directo'}
-Estado suscripción: ${subscriptionStatus}
-
-Stripe Customer ID: ${session.customer}
-Stripe Subscription ID: ${session.subscription}`,
-                    from_name: "milautonomos"
-                });
-            }
-
-            // ✅ MEJORADO: Gestión de perfil profesional
-            if (userId) {
-                const existingProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                // ✅ ACTUALIZAR PERFIL PROFESIONAL
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
-                if (existingProfiles.length === 0) {
-                    // ✅ NUEVO USUARIO: Crear perfil en pendiente (debe completar quiz)
-                    await base44.asServiceRole.entities.ProfessionalProfile.create({
-                        user_id: userId,
-                        business_name: metadata.fullName,
-                        description: `Profesional recién registrado.`,
-                        categories: [activityCategory],
-                        service_area: metadata.address?.split(',').slice(-1)[0].trim() || "",
-                        opening_hours: "A convenir",
-                        cif_nif: metadata.cifNif || "",
-                        telefono_contacto: metadata.phone || "",
-                        email_contacto: customerEmail,
-                        photos: [],
-                        price_range: "€€",
-                        average_rating: 0,
-                        total_reviews: 0,
-                        website: "",
-                        social_links: {
-                            facebook: "",
-                            instagram: "",
-                            linkedin: ""
-                        },
-                        estado_perfil: "pendiente",
-                        visible_en_busqueda: false,  // ✅ NO visible hasta completar quiz
-                        onboarding_completed: false
+                if (profiles.length > 0) {
+                    console.log('🔄 Actualizando visibilidad del perfil');
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: profileStatus.visible_en_busqueda,
+                        estado_perfil: profileStatus.estado_perfil
                     });
-                    console.log(`✅ Perfil profesional creado en PENDIENTE (debe completar quiz)`);
+                    console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
                 } else {
-                    const profile = existingProfiles[0];
-                    
-                    // ✅ REACTIVACIÓN: Si ya completó el quiz, REACTIVAR perfil
-                    if (profile.onboarding_completed) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                            estado_perfil: "activo",
-                            visible_en_busqueda: true  // ✅ REACTIVAR visibilidad
-                        });
-                        console.log(`✅ ♻️ PERFIL REACTIVADO - Visible en búsquedas`);
-                    } else {
-                        // ✅ Perfil existe pero NO completado → Mantener pendiente
-                        console.log(`⚠️ Perfil existe pero NO completado - Mantener pendiente`);
-                    }
+                    console.log('⚠️ Perfil aún no existe (se creará en onboarding)');
                 }
+
+                console.log('✅ Suscripción procesada:', profileStatus.mensaje);
+                break;
             }
 
-            // ✅ Email de confirmación
-            const reactivationEmailBody = `Hola ${metadata.fullName},
-
-¡Bienvenido de vuelta a milautonomos!
-
-Tu suscripción ha sido reactivada correctamente.
-
-📋 Detalles de tu suscripción:
-- Plan: ${plan?.nombre || 'Plan Mensual'}
-- Estado: ✅ ACTIVA
-- Precio: ${plan?.precio || 49}€
-- Fecha de renovación: ${expirationDate.toLocaleDateString('es-ES')}
-
-✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS
-Los clientes pueden encontrarte y contactarte desde ahora mismo.
-
-Puedes gestionar tu suscripción desde "Mi Perfil" > "Mi Suscripción".
-
-Gracias por confiar en nosotros,
-Equipo milautonomos`;
-
-            const trialEmailBody = `Hola ${metadata.fullName},
-
-¡Bienvenido${isReactivation ? ' de vuelta' : ''} a milautonomos!
-
-Tu prueba gratuita de 7 días ha sido activada correctamente.
-
-📋 Detalles de tu suscripción:
-- Plan: Mensual (7 días gratis)
-- Estado: ✅ ACTIVA - En periodo de prueba
-- Duración de prueba: 7 días GRATIS
-- Inicio: ${today.toLocaleDateString('es-ES')}
-- Fin de prueba: ${expirationDate.toLocaleDateString('es-ES')}
-- Tarjeta registrada: ✅ (NO se cobrará durante la prueba)
-
-${isReactivation ? 
-  '✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS\nLos clientes pueden encontrarte desde ahora mismo.' :
-  `⚠️ IMPORTANTE PRÓXIMO PASO:
-Tu perfil NO está visible aún. Debes completar el quiz profesional para aparecer en búsquedas.
-
-🚀 COMPLETA TU PERFIL AHORA:
-1. Accede a tu panel de autónomo
-2. Completa el quiz (5 minutos):
-   - Datos profesionales
-   - Ubicación y zona de trabajo
-   - Fotos de tus trabajos
-   - Tarifas y forma de pago
-3. ¡Tu perfil se publicará automáticamente!`}
-
-💰 Información de pago:
-Si NO cancelas antes del ${expirationDate.toLocaleDateString('es-ES')}, se cobrará automáticamente 49€/mes.
-Puedes cancelar en cualquier momento desde "Mi Suscripción" sin coste alguno durante el periodo de prueba.
-
-Gracias por ${isReactivation ? 'volver a' : ''} unirte,
-Equipo milautonomos`;
-
-            const normalEmailBody = `Hola ${metadata.fullName},
-
-¡Bienvenido${isReactivation ? ' de vuelta' : ''} a milautonomos!
-
-Tu suscripción ha sido activada correctamente.
-
-📋 Detalles de tu suscripción:
-- Plan: ${plan?.nombre || 'Plan Mensual'}
-- Estado: ✅ ACTIVA
-- Precio: ${plan?.precio || 49}€
-- Inicio: ${today.toLocaleDateString('es-ES')}
-- Renovación: ${expirationDate.toLocaleDateString('es-ES')}
-
-${isReactivation ? 
-  '✅ TU PERFIL YA ESTÁ VISIBLE EN BÚSQUEDAS\nLos clientes pueden encontrarte y contactarte desde ahora mismo.' :
-  `⚠️ IMPORTANTE: Tu perfil aún NO está visible.
-
-🚀 PRÓXIMO PASO:
-Completa tu perfil profesional (5 minutos) para aparecer en las búsquedas de clientes.
-
-Una vez completes el quiz, tu perfil se publicará automáticamente y empezarás a recibir contactos.`}
-
-Gracias,
-Equipo milautonomos`;
-
-            // ✅ Seleccionar email según tipo de activación
-            let emailBody;
-            let emailSubject;
-
-            if (isReactivation) {
-                emailBody = reactivationEmailBody;
-                emailSubject = "✅ Tu suscripción ha sido reactivada - milautonomos";
-            } else if (isTrial) {
-                emailBody = trialEmailBody;
-                emailSubject = "✅ Tu prueba gratuita está activa - Completa tu perfil";
-            } else {
-                emailBody = normalEmailBody;
-                emailSubject = "✅ Bienvenido a milautonomos - Completa tu perfil";
-            }
-
-            await base44.asServiceRole.integrations.Core.SendEmail({
-                to: customerEmail,
-                subject: emailSubject,
-                body: emailBody,
-                from_name: "milautonomos"
-            });
-
-            console.log(`✅ Flujo completado para ${customerEmail} - ${isReactivation ? 'REACTIVACIÓN' : 'NUEVA SUSCRIPCIÓN'} - Estado: ${subscriptionStatus}`);
-        }
-
-        // ✅ Handle invoice.payment_succeeded (renovaciones mensuales)
-        if (event.type === 'invoice.payment_succeeded') {
-            const invoice = event.data.object;
-            const customerEmail = invoice.customer_email;
-
-            if (customerEmail) {
-                const users = await base44.asServiceRole.entities.User.filter({ 
-                    email: customerEmail 
+            // ═══════════════════════════════════════════════════════
+            // SUSCRIPCIÓN ACTUALIZADA (renovación, cambio de plan)
+            // ═══════════════════════════════════════════════════════
+            case 'customer.subscription.updated': {
+                console.log('🔄 Suscripción actualizada');
+                
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: subscription.id
                 });
 
-                if (users.length > 0) {
-                    const userId = users[0].id;
+                if (subs.length === 0) {
+                    console.log('⚠️ Suscripción no encontrada en BD');
+                    return Response.json({ received: true });
+                }
+
+                const dbSub = subs[0];
+                const profileStatus = calculateProfileStatus(
+                    subscription.status,
+                    subscription.current_period_end
+                );
+
+                console.log('📋 Nuevo estado:', profileStatus);
+
+                // Actualizar suscripción
+                await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                    estado: profileStatus.estado,
+                    fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
+                    renovacion_automatica: subscription.cancel_at_period_end === false
+                });
+
+                // Actualizar perfil
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: dbSub.user_id
+                });
+
+                if (profiles.length > 0) {
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: profileStatus.visible_en_busqueda,
+                        estado_perfil: profileStatus.estado_perfil
+                    });
+                    console.log(`✅ Visibilidad actualizada: ${profileStatus.visible_en_busqueda}`);
+                }
+
+                // Actualizar estado del usuario
+                await base44.asServiceRole.entities.User.update(dbSub.user_id, {
+                    subscription_status: profileStatus.estado
+                });
+
+                console.log('✅ Suscripción actualizada:', profileStatus.mensaje);
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // TRIAL TERMINADO (fin de prueba)
+            // ═══════════════════════════════════════════════════════
+            case 'customer.subscription.trial_will_end': {
+                console.log('⏰ Trial terminará pronto (3 días antes)');
+                // Aquí podrías enviar email de recordatorio
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // SUSCRIPCIÓN ELIMINADA/EXPIRADA
+            // ═══════════════════════════════════════════════════════
+            case 'customer.subscription.deleted': {
+                console.log('🔴 Suscripción eliminada/expirada');
+                
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: subscription.id
+                });
+
+                if (subs.length === 0) {
+                    console.log('⚠️ Suscripción no encontrada en BD');
+                    return Response.json({ received: true });
+                }
+
+                const dbSub = subs[0];
+                
+                // Marcar como finalizada
+                await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                    estado: 'finalizada',
+                    renovacion_automatica: false
+                });
+
+                // ✅ OCULTAR PERFIL INMEDIATAMENTE
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: dbSub.user_id
+                });
+
+                if (profiles.length > 0) {
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: false,
+                        estado_perfil: 'inactivo'
+                    });
+                    console.log('❌ Perfil ocultado de búsquedas');
+                }
+
+                // Actualizar usuario
+                await base44.asServiceRole.entities.User.update(dbSub.user_id, {
+                    subscription_status: 'finalizada'
+                });
+
+                console.log('✅ Suscripción finalizada y perfil oculto');
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // PAGO FALLIDO
+            // ═══════════════════════════════════════════════════════
+            case 'invoice.payment_failed': {
+                console.log('❌ Pago fallido');
+                
+                if (!subscription?.id) {
+                    console.log('⚠️ Sin ID de suscripción en invoice');
+                    return Response.json({ received: true });
+                }
+
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: subscription.id
+                });
+
+                if (subs.length > 0) {
+                    const dbSub = subs[0];
+                    
+                    // Si ya expiró, ocultar
+                    const expirationDate = new Date(dbSub.fecha_expiracion);
                     const today = new Date();
-                    const nextMonth = new Date(today);
-                    nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-                    await base44.asServiceRole.entities.User.update(userId, {
-                        subscription_status: "actif",
-                        subscription_end_date: nextMonth.toISOString().split('T')[0],
-                        last_payment_date: today.toISOString().split('T')[0],
-                    });
-
-                    // ✅ Actualizar también Subscription
-                    const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
-                        user_id: userId
-                    });
-
-                    if (subscriptions.length > 0) {
-                        await base44.asServiceRole.entities.Subscription.update(subscriptions[0].id, {
-                            estado: "activo",
-                            fecha_expiracion: nextMonth.toISOString(),
-                            fecha_ultima_renovacion: today.toISOString()
-                        });
-                    }
-
-                    console.log(`✅ Suscripción renovada para ${customerEmail}`);
-                }
-            }
-        }
-
-        // ✅ Handle customer.subscription.updated (cambios de estado)
-        if (event.type === 'customer.subscription.updated') {
-            const subscription = event.data.object;
-            const customer = await stripe.customers.retrieve(subscription.customer);
-            const customerEmail = customer.email;
-
-            console.log('🔄 Suscripción actualizada:', subscription.status, 'para', customerEmail);
-
-            if (customerEmail) {
-                const users = await base44.asServiceRole.entities.User.filter({ 
-                    email: customerEmail 
-                });
-
-                if (users.length > 0) {
-                    const userId = users[0].id;
-                    let newStatus;
-                    let subscriptionEstado;
                     
-                    switch (subscription.status) {
-                        case 'trialing':
-                            newStatus = 'en_prueba';
-                            subscriptionEstado = 'en_prueba';
-                            break;
-                        case 'active':
-                            newStatus = 'actif';
-                            subscriptionEstado = 'activo';
-                            break;
-                        case 'past_due':
-                            newStatus = 'suspendu';
-                            subscriptionEstado = 'suspendu';
-                            break;
-                        case 'canceled':
-                        case 'unpaid':
-                            newStatus = 'annule';
-                            subscriptionEstado = 'cancelado';
-                            break;
-                        default:
-                            newStatus = subscription.status;
-                            subscriptionEstado = subscription.status;
-                    }
-
-                    await base44.asServiceRole.entities.User.update(userId, {
-                        subscription_status: newStatus,
-                    });
-
-                    // ✅ Actualizar también Subscription
-                    const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
-                        user_id: userId
-                    });
-
-                    if (subscriptions.length > 0) {
-                        await base44.asServiceRole.entities.Subscription.update(subscriptions[0].id, {
-                            estado: subscriptionEstado
+                    if (expirationDate <= today) {
+                        await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                            estado: 'finalizada'
                         });
-                    }
 
-                    console.log(`✅ Estado actualizado a: ${newStatus}`);
+                        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                            user_id: dbSub.user_id
+                        });
+
+                        if (profiles.length > 0) {
+                            await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                                visible_en_busqueda: false,
+                                estado_perfil: 'inactivo'
+                            });
+                            console.log('❌ Perfil ocultado por fallo de pago');
+                        }
+                    }
                 }
+
+                console.log('⚠️ Pago fallido procesado');
+                break;
             }
+
+            default:
+                console.log('ℹ️ Evento no manejado:', event.type);
         }
 
-        // ✅ Handle customer.subscription.deleted (cancelaciones)
-        if (event.type === 'customer.subscription.deleted') {
-            const subscription = event.data.object;
-            const customer = await stripe.customers.retrieve(subscription.customer);
-            const customerEmail = customer.email;
+        return Response.json({ received: true, processed: true });
 
-            if (customerEmail) {
-                const users = await base44.asServiceRole.entities.User.filter({ 
-                    email: customerEmail 
-                });
-
-                if (users.length > 0) {
-                    const userId = users[0].id;
-                    
-                    await base44.asServiceRole.entities.User.update(userId, {
-                        subscription_status: "annule",
-                    });
-
-                    // ✅ Actualizar Subscription
-                    const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
-                        user_id: userId
-                    });
-
-                    if (subscriptions.length > 0) {
-                        await base44.asServiceRole.entities.Subscription.update(subscriptions[0].id, {
-                            estado: "cancelado",
-                            renovacion_automatica: false
-                        });
-                    }
-
-                    // Ocultar perfil profesional
-                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
-                        user_id: userId
-                    });
-
-                    if (profiles.length > 0) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: false,
-                            estado_perfil: "inactivo"
-                        });
-                        console.log(`❌ Perfil ocultado por cancelación de suscripción`);
-                    }
-
-                    await base44.asServiceRole.integrations.Core.SendEmail({
-                        to: customerEmail,
-                        subject: "Tu suscripción ha sido cancelada - milautonomos",
-                        body: `Hola,
-
-Tu suscripción a milautonomos ha sido cancelada.
-
-Tu perfil ya no será visible en el listado de "Buscar Autónomos".
-
-Si deseas reactivar tu suscripción, puedes hacerlo en cualquier momento desde tu panel de usuario.
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-Gracias,
-Equipo milautonomos`,
-                        from_name: "milautonomos"
-                    });
-
-                    console.log(`❌ Suscripción cancelada para ${customerEmail}`);
-                }
-            }
-        }
-
-        // ✅ Handle invoice.payment_failed (pagos fallidos)
-        if (event.type === 'invoice.payment_failed') {
-            const invoice = event.data.object;
-            const customerEmail = invoice.customer_email;
-
-            if (customerEmail) {
-                const users = await base44.asServiceRole.entities.User.filter({ 
-                    email: customerEmail 
-                });
-
-                if (users.length > 0) {
-                    const userId = users[0].id;
-                    
-                    await base44.asServiceRole.entities.User.update(userId, {
-                        subscription_status: "suspendu",
-                    });
-
-                    // ✅ Actualizar Subscription
-                    const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
-                        user_id: userId
-                    });
-
-                    if (subscriptions.length > 0) {
-                        await base44.asServiceRole.entities.Subscription.update(subscriptions[0].id, {
-                            estado: "suspendu"
-                        });
-                    }
-
-                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
-                        user_id: userId
-                    });
-
-                    if (profiles.length > 0) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: false,
-                            estado_perfil: "suspendido"
-                        });
-                        console.log(`⚠️ Perfil ocultado por pago fallido`);
-                    }
-
-                    await base44.asServiceRole.integrations.Core.SendEmail({
-                        to: customerEmail,
-                        subject: "⚠️ Problema con tu pago - milautonomos",
-                        body: `Hola,
-
-Hemos tenido un problema al procesar tu pago mensual de milautonomos.
-
-Tu suscripción ha sido suspendida temporalmente y tu perfil ya no es visible.
-
-Por favor, actualiza tu método de pago para reactivarla.
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-Gracias,
-Equipo milautonomos`,
-                        from_name: "milautonomos"
-                    });
-
-                    console.log(`⚠️ Pago fallido para ${customerEmail}`);
-                }
-            }
-        }
-
-        return Response.json({ received: true });
     } catch (error) {
-        console.error('Webhook error:', error);
-        return Response.json({
-            error: 'Webhook processing failed',
-            details: error.message
+        console.error('❌ Error procesando webhook:', error);
+        return Response.json({ 
+            error: error.message,
+            stack: error.stack 
         }, { status: 500 });
     }
 });
