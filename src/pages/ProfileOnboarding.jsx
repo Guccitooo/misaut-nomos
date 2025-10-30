@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, useSearchParams } from "react-router-dom"; // ✅ MODIFIED: Added useSearchParams
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,15 +25,15 @@ import { toast } from "sonner";
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams(); // ✅ NUEVO
-  const [currentStep, setCurrentStep] = useState(0); // ✅ MODIFIED: Initial state of currentStep to 0, if it was intended to be 1, the outline is misleading or requires extra logic not present. Sticking to initial 0 for safety.
+  const [searchParams] = useSearchParams();
+  const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFixingSubscription, setIsFixingSubscription] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true); // ✅ NUEVO
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // ✅ NUEVO: Detectar si viene desde checkout
   const fromCheckout = searchParams.get("from") === "checkout";
@@ -232,7 +232,7 @@ export default function ProfileOnboardingPage() {
 
   useEffect(() => {
     loadUser();
-  }, []); // ✅ MODIFIED: Called loadUser
+  }, []);
 
   useEffect(() => {
     // ✅ NUEVO: Mostrar mensaje si viene desde checkout
@@ -244,7 +244,7 @@ export default function ProfileOnboardingPage() {
       // Limpiar URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [fromCheckout, user]); // ✅ NUEVO: Dependency array updated
+  }, [fromCheckout, user]);
 
   // Update service_area when location changes
   useEffect(() => {
@@ -785,7 +785,7 @@ Equipo milautonomos`,
     }
   };
 
-  if (isLoadingUser) { // ✅ MODIFIED: Use isLoadingUser instead of !user
+  if (isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -1097,18 +1097,35 @@ Equipo milautonomos`,
                       <div
                         key={cat}
                         onClick={() => toggleCategory(cat)}
-                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                           formData.categories.includes(cat)
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300"
+                            ? "border-blue-600 bg-blue-50 shadow-sm"
+                            : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                         }`}
                       >
-                        <p className="text-sm font-medium">{cat}</p>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                            formData.categories.includes(cat)
+                              ? "bg-blue-600 border-blue-600"
+                              : "border-gray-300"
+                          }`}>
+                            {formData.categories.includes(cat) && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className={`text-sm font-medium transition-colors ${
+                            formData.categories.includes(cat) ? "text-blue-900" : "text-gray-700"
+                          }`}>
+                            {cat}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    {formData.categories.length} seleccionadas
+                    {formData.categories.length} {formData.categories.length === 1 ? 'seleccionada' : 'seleccionadas'}
                   </p>
                 </div>
 
@@ -1259,18 +1276,35 @@ Equipo milautonomos`,
                       <div
                         key={dia.value}
                         onClick={() => toggleDia(dia.value)}
-                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                           formData.horario_dias.includes(dia.value)
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300"
+                            ? "border-green-600 bg-green-50 shadow-sm"
+                            : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
                         }`}
                       >
-                        <p className="text-sm font-medium">{dia.label}</p>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                            formData.horario_dias.includes(dia.value)
+                              ? "bg-green-600 border-green-600"
+                              : "border-gray-300"
+                          }`}>
+                            {formData.horario_dias.includes(dia.value) && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className={`text-sm font-medium transition-colors ${
+                            formData.horario_dias.includes(dia.value) ? "text-green-900" : "text-gray-700"
+                          }`}>
+                            {dia.label}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    {formData.horario_dias.length} día(s) seleccionado(s)
+                    {formData.horario_dias.length} {formData.horario_dias.length === 1 ? 'día seleccionado' : 'días seleccionados'}
                   </p>
                 </div>
 
@@ -1361,23 +1395,50 @@ Equipo milautonomos`,
                 </div>
 
                 <div>
-                  <Label>Formas de pago aceptadas * (selecciona al menos una)</Label>
-                  <div className="space-y-2 mt-2">
+                  <Label className="text-base font-semibold">Formas de pago aceptadas *</Label>
+                  <p className="text-sm text-gray-500 mt-1 mb-3">
+                    Selecciona al menos una forma de pago
+                  </p>
+                  <div className="space-y-2">
                     {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                      <div key={forma} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                        <Checkbox
-                          checked={formData.formas_pago.includes(forma)}
-                          onCheckedChange={() => toggleFormaPago(forma)}
-                        />
-                        <label className="text-sm font-medium cursor-pointer flex-1" onClick={() => toggleFormaPago(forma)}>
+                      <div
+                        key={forma}
+                        onClick={() => toggleFormaPago(forma)}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                          formData.formas_pago.includes(forma)
+                            ? "border-purple-600 bg-purple-50 shadow-md"
+                            : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                          formData.formas_pago.includes(forma)
+                            ? "bg-purple-600 border-purple-600"
+                            : "border-gray-300"
+                        }`}>
+                          {formData.formas_pago.includes(forma) && (
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-base font-medium flex-1 transition-colors ${
+                          formData.formas_pago.includes(forma) ? "text-purple-900" : "text-gray-700"
+                        }`}>
                           {forma}
-                        </label>
+                        </span>
+                        {formData.formas_pago.includes(forma) && (
+                          <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
+                        )}
                       </div>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {formData.formas_pago.length} seleccionadas
-                  </p>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-900 font-medium">
+                      {formData.formas_pago.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
+                      {formData.formas_pago.length === 1 && `✓ 1 forma de pago seleccionada`}
+                      {formData.formas_pago.length > 1 && `✓ ${formData.formas_pago.length} formas de pago seleccionadas`}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -1441,132 +1502,124 @@ Equipo milautonomos`,
             {/* Step 5: Legales */}
             {currentStep === 5 && (
               <div className="space-y-4">
-                {/* ✅ MEJORADO: Checkbox con check visible */}
                 <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
                     formData.acepta_terminos 
                       ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
                   }`}
+                  onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
                 >
                   <div className="relative flex-shrink-0 mt-1">
-                    <input
-                      type="checkbox"
-                      id="acepta_terminos"
-                      checked={formData.acepta_terminos}
-                      onChange={(e) => setFormData({ ...formData, acepta_terminos: e.target.checked })}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
-                    />
-                    {/* ✅ NUEVO: Check visible personalizado */}
-                    <svg
-                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="3"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                      formData.acepta_terminos
+                        ? "bg-green-600 border-green-600"
+                        : "bg-white border-gray-300"
+                    }`}>
+                      {formData.acepta_terminos && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                  <label 
-                    htmlFor="acepta_terminos"
-                    className="text-sm cursor-pointer flex-1"
-                  >
-                    <strong className="text-gray-900 text-base">
+                  <div className="flex-1">
+                    <strong className={`text-base block mb-2 transition-colors ${
+                      formData.acepta_terminos ? "text-green-900" : "text-gray-900"
+                    }`}>
                       ✅ Acepto los términos y condiciones *
                     </strong>
-                    <p className="text-gray-600 mt-2 leading-relaxed">
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
                     </p>
-                  </label>
+                    {formData.acepta_terminos && (
+                      <div className="mt-2 text-sm font-semibold text-green-700">
+                        ✓ Aceptado
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
                     formData.acepta_politica_privacidad 
                       ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
                   }`}
+                  onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
                 >
                   <div className="relative flex-shrink-0 mt-1">
-                    <input
-                      type="checkbox"
-                      id="acepta_politica"
-                      checked={formData.acepta_politica_privacidad}
-                      onChange={(e) => setFormData({ ...formData, acepta_politica_privacidad: e.target.checked })}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
-                    />
-                    <svg
-                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="3"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                      formData.acepta_politica_privacidad
+                        ? "bg-green-600 border-green-600"
+                        : "bg-white border-gray-300"
+                    }`}>
+                      {formData.acepta_politica_privacidad && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                  <label 
-                    htmlFor="acepta_politica"
-                    className="text-sm cursor-pointer flex-1"
-                  >
-                    <strong className="text-gray-900 text-base">
+                  <div className="flex-1">
+                    <strong className={`text-base block mb-2 transition-colors ${
+                      formData.acepta_politica_privacidad ? "text-green-900" : "text-gray-900"
+                    }`}>
                       ✅ Acepto la política de privacidad *
                     </strong>
-                    <p className="text-gray-600 mt-2 leading-relaxed">
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
                     </p>
-                  </label>
+                    {formData.acepta_politica_privacidad && (
+                      <div className="mt-2 text-sm font-semibold text-green-700">
+                        ✓ Aceptado
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div 
-                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
                     formData.consiente_contacto_clientes 
                       ? 'bg-green-50 border-green-400 shadow-sm' 
-                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
+                      : 'bg-gray-50 border-gray-200 hover:border-green-300'
                   }`}
+                  onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
                 >
                   <div className="relative flex-shrink-0 mt-1">
-                    <input
-                      type="checkbox"
-                      id="consiente_contacto"
-                      checked={formData.consiente_contacto_clientes}
-                      onChange={(e) => setFormData({ ...formData, consiente_contacto_clientes: e.target.checked })}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
-                    />
-                    <svg
-                      className="absolute top-0.5 left-0.5 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="3"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                      formData.consiente_contacto_clientes
+                        ? "bg-green-600 border-green-600"
+                        : "bg-white border-gray-300"
+                    }`}>
+                      {formData.consiente_contacto_clientes && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                  <label 
-                    htmlFor="consiente_contacto"
-                    className="text-sm cursor-pointer flex-1"
-                  >
-                    <strong className="text-gray-900 text-base">
+                  <div className="flex-1">
+                    <strong className={`text-base block mb-2 transition-colors ${
+                      formData.consiente_contacto_clientes ? "text-green-900" : "text-gray-900"
+                    }`}>
                       ✅ Consiento el contacto de clientes *
                     </strong>
-                    <p className="text-gray-600 mt-2 leading-relaxed">
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
                     </p>
-                  </label>
+                    {formData.consiente_contacto_clientes && (
+                      <div className="mt-2 text-sm font-semibold text-green-700">
+                        ✓ Aceptado
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-900">
+                    {[formData.acepta_terminos, formData.acepta_politica_privacidad, formData.consiente_contacto_clientes].filter(Boolean).length} de 3 consentimientos aceptados
+                  </p>
                 </div>
               </div>
             )}
