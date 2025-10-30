@@ -820,33 +820,33 @@ Equipo milautonomos`,
               </div>
             </div>
 
-            {/* ✅ Título principal */}
+            {/* ✅ Título principal - MEJORADO CONTRASTE */}
             <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
               ✅ ¡Tu perfil profesional está activo!
             </h1>
 
-            {/* ✅ Subtítulo */}
-            <p className="text-lg md:text-xl text-center text-gray-600 mb-3 max-w-2xl mx-auto">
-              Ya eres visible en las búsquedas de <span className="font-semibold text-blue-700">milautonomos</span>
+            {/* ✅ Subtítulo - MEJORADO CONTRASTE */}
+            <p className="text-lg md:text-xl text-center text-gray-800 font-semibold mb-3 max-w-2xl mx-auto">
+              Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">milautonomos</span>
             </p>
 
-            <p className="text-base text-center text-gray-500 mb-8 max-w-xl mx-auto">
+            <p className="text-base text-center text-gray-700 mb-8 max-w-xl mx-auto">
               Empieza a recibir contactos de clientes interesados en tus servicios profesionales.
             </p>
 
             {/* ✅ Estadísticas rápidas */}
             <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl mx-auto">
-              <div className="text-center p-4 bg-blue-50 rounded-xl">
+              <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <div className="text-2xl font-bold text-blue-700">✓</div>
-                <div className="text-xs text-gray-600 mt-1">Perfil activo</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Perfil activo</div>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-xl">
+              <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
                 <div className="text-2xl font-bold text-green-700">👁️</div>
-                <div className="text-xs text-gray-600 mt-1">Visible en búsquedas</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Visible en búsquedas</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-xl">
+              <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
                 <div className="text-2xl font-bold text-purple-700">🚀</div>
-                <div className="text-xs text-gray-600 mt-1">Listo para clientes</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Listo para clientes</div>
               </div>
             </div>
 
@@ -867,7 +867,7 @@ Equipo milautonomos`,
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-blue-600 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6"
+                className="border-2 border-blue-600 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6 bg-white"
                 onClick={() => navigate(createPageUrl("Search"))}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -881,7 +881,7 @@ Equipo milautonomos`,
             <div className="text-center mb-8">
               <Button
                 variant="ghost"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => navigate(createPageUrl("MyProfile"))}
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -902,7 +902,7 @@ Equipo milautonomos`,
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-2">💡 Consejos para destacar</h3>
-                  <ul className="text-sm text-gray-600 space-y-2">
+                  <ul className="text-sm text-gray-700 space-y-2">
                     <li className="flex items-start gap-2">
                       <span className="text-green-600 font-bold mt-0.5">✓</span>
                       <span>Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
@@ -922,9 +922,9 @@ Equipo milautonomos`,
 
             {/* ✅ Próximos pasos */}
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-600">
                 ¿Necesitas ayuda? Contacta con soporte:{" "}
-                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium">
+                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium underline">
                   admin@milautonomos.com
                 </a>
               </p>
@@ -1433,7 +1433,7 @@ Equipo milautonomos`,
                     ))}
                   </div>
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-900 font-medium">
+                    <p className="text-sm font-medium text-blue-900">
                       {formData.formas_pago.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
                       {formData.formas_pago.length === 1 && `✓ 1 forma de pago seleccionada`}
                       {formData.formas_pago.length > 1 && `✓ ${formData.formas_pago.length} formas de pago seleccionadas`}
