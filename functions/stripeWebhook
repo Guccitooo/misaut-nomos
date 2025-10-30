@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -169,6 +170,7 @@ Deno.serve(async (req) => {
                     user_id: userId
                 });
 
+                // ✅ CRÍTICO: Renovación automática TRUE si NO está explícitamente cancelado
                 const subscriptionData = {
                     user_id: userId,
                     plan_id: planId,
@@ -177,11 +179,13 @@ Deno.serve(async (req) => {
                     fecha_inicio: new Date(subscription.current_period_start * 1000).toISOString(),
                     fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
                     estado: profileStatus.estado,
-                    renovacion_automatica: subscription.cancel_at_period_end === false,
+                    renovacion_automatica: subscription.cancel_at_period_end === false, // ✅ TRUE si no está marcado para cancelar
                     metodo_pago: 'stripe',
                     stripe_subscription_id: subscription.id,
                     stripe_customer_id: subscription.customer
                 };
+
+                console.log('💳 Renovación automática:', subscriptionData.renovacion_automatica);
 
                 if (existingSubs.length > 0) {
                     console.log('🔄 Actualizando suscripción existente');
@@ -235,11 +239,14 @@ Deno.serve(async (req) => {
                 console.log('📋 Nuevo estado:', profileStatus);
 
                 // Actualizar suscripción
+                // ✅ Actualizar renovación automática según Stripe
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: profileStatus.estado,
                     fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
-                    renovacion_automatica: subscription.cancel_at_period_end === false
+                    renovacion_automatica: subscription.cancel_at_period_end === false // ✅ Sincronizar con Stripe
                 });
+
+                console.log('💳 Renovación automática actualizada:', subscription.cancel_at_period_end === false);
 
                 // Actualizar perfil
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({

@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
         console.log('🔧 Activando trial para:', email);
 
-        // 1. Buscar usuario por email (usando auth, no entities)
+        // 1. Buscar usuario por email
         const users = await base44.asServiceRole.entities.User.filter({ email });
 
         if (users.length === 0) {
@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
         const trialEnd = new Date(today);
         trialEnd.setDate(trialEnd.getDate() + 7); // 7 días de prueba
 
+        // ✅ CRÍTICO: Siempre con renovación automática para trials
         const subscriptionData = {
             user_id: userId,
             plan_id: plan.plan_id,
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
             fecha_inicio: today.toISOString(),
             fecha_expiracion: trialEnd.toISOString(),
             estado: 'en_prueba',
-            renovacion_automatica: false,
+            renovacion_automatica: true, // ✅ SIEMPRE TRUE para trials
             metodo_pago: 'manual'
         };
 
@@ -88,7 +89,7 @@ Deno.serve(async (req) => {
             subscription = await base44.asServiceRole.entities.Subscription.create(subscriptionData);
         }
 
-        console.log('✅ Suscripción creada/actualizada:', subscription.id);
+        console.log('✅ Suscripción creada/actualizada con renovación automática:', subscription.id);
 
         // 6. Actualizar usuario
         await base44.asServiceRole.entities.User.update(userId, {
@@ -126,7 +127,11 @@ Tu periodo de prueba gratuito de 7 días ha sido activado correctamente.
 
 Ahora tu perfil es visible en las búsquedas y puedes empezar a recibir contactos de clientes.
 
+⚠️ IMPORTANTE: Al finalizar los 7 días de prueba, tu suscripción se renovará automáticamente al plan mensual (49€/mes) a menos que canceles antes.
+
 El periodo de prueba finaliza el: ${trialEnd.toLocaleDateString('es-ES')}
+
+Puedes cancelar en cualquier momento desde tu panel de usuario.
 
 Si tienes alguna pregunta, no dudes en contactarnos.
 
@@ -142,6 +147,7 @@ Equipo milautonomos`,
             message: `Prueba gratuita activada correctamente para ${email}`,
             subscription: {
                 estado: 'en_prueba',
+                renovacion_automatica: true,
                 fecha_inicio: today.toISOString(),
                 fecha_expiracion: trialEnd.toISOString()
             },

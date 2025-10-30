@@ -1,0 +1,160 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.10.0';
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+
+Deno.serve(async (req) => {
+    try {
+        const base44 = createClientFromRequest(req);
+        
+        // Verificar autenticación de admin
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+            return Response.json({ 
+                ok: false, 
+                error: 'Acceso denegado - solo administradores' 
+            }, { status: 403 });
+        }
+
+        const { userId } = await req.json();
+
+        if (!userId) {
+            return Response.json({
+                ok: false,
+                error: 'userId requerido'
+            }, { status: 400 });
+        }
+
+        console.log('🗑️ Eliminando usuario:', userId);
+
+        // 1. Buscar usuario
+        const users = await base44.asServiceRole.entities.User.filter({ id: userId });
+        if (users.length === 0) {
+            return Response.json({
+                ok: false,
+                error: 'Usuario no encontrado'
+            }, { status: 404 });
+        }
+
+        const targetUser = users[0];
+        const deletedItems = [];
+
+        // 2. Cancelar suscripción en Stripe si existe
+        const subscriptions = await base44.asServiceRole.entities.Subscription.filter({
+            user_id: userId
+        });
+
+        if (subscriptions.length > 0 && subscriptions[0].stripe_subscription_id) {
+            try {
+                await stripe.subscriptions.cancel(subscriptions[0].stripe_subscription_id);
+                console.log('✅ Suscripción de Stripe cancelada');
+                deletedItems.push('Suscripción Stripe');
+            } catch (error) {
+                console.log('⚠️ Error cancelando Stripe (puede no existir):', error.message);
+            }
+        }
+
+        // 3. Eliminar suscripción de BD
+        for (const sub of subscriptions) {
+            await base44.asServiceRole.entities.Subscription.delete(sub.id);
+            console.log('✅ Suscripción BD eliminada');
+            deletedItems.push('Suscripción BD');
+        }
+
+        // 4. Eliminar perfil profesional
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+            user_id: userId
+        });
+
+        for (const profile of profiles) {
+            await base44.asServiceRole.entities.ProfessionalProfile.delete(profile.id);
+            console.log('✅ Perfil profesional eliminado');
+            deletedItems.push('Perfil profesional');
+        }
+
+        // 5. Eliminar favoritos
+        const favorites = await base44.asServiceRole.entities.Favorite.filter({
+            client_id: userId
+        });
+
+        for (const fav of favorites) {
+            await base44.asServiceRole.entities.Favorite.delete(fav.id);
+        }
+
+        const professionalFavorites = await base44.asServiceRole.entities.Favorite.filter({
+            professional_id: userId
+        });
+
+        for (const fav of professionalFavorites) {
+            await base44.asServiceRole.entities.Favorite.delete(fav.id);
+        }
+
+        if (favorites.length > 0 || professionalFavorites.length > 0) {
+            console.log('✅ Favoritos eliminados');
+            deletedItems.push('Favoritos');
+        }
+
+        // 6. Eliminar mensajes
+        const sentMessages = await base44.asServiceRole.entities.Message.filter({
+            sender_id: userId
+        });
+
+        for (const msg of sentMessages) {
+            await base44.asServiceRole.entities.Message.delete(msg.id);
+        }
+
+        const receivedMessages = await base44.asServiceRole.entities.Message.filter({
+            recipient_id: userId
+        });
+
+        for (const msg of receivedMessages) {
+            await base44.asServiceRole.entities.Message.delete(msg.id);
+        }
+
+        if (sentMessages.length > 0 || receivedMessages.length > 0) {
+            console.log('✅ Mensajes eliminados');
+            deletedItems.push('Mensajes');
+        }
+
+        // 7. Eliminar reseñas
+        const clientReviews = await base44.asServiceRole.entities.Review.filter({
+            client_id: userId
+        });
+
+        for (const review of clientReviews) {
+            await base44.asServiceRole.entities.Review.delete(review.id);
+        }
+
+        const professionalReviews = await base44.asServiceRole.entities.Review.filter({
+            professional_id: userId
+        });
+
+        for (const review of professionalReviews) {
+            await base44.asServiceRole.entities.Review.delete(review.id);
+        }
+
+        if (clientReviews.length > 0 || professionalReviews.length > 0) {
+            console.log('✅ Reseñas eliminadas');
+            deletedItems.push('Reseñas');
+        }
+
+        // 8. Eliminar usuario (esto lo hace Base44, no podemos eliminar directamente)
+        // En Base44, los usuarios se gestionan por el sistema de auth
+        console.log('⚠️ Usuario marcado para limpieza, contactar soporte para eliminación completa de auth');
+        
+        return Response.json({
+            ok: true,
+            message: `Usuario ${targetUser.email} eliminado correctamente`,
+            deleted_items: deletedItems,
+            note: 'Usuario de autenticación requiere eliminación manual desde Base44 dashboard'
+        });
+
+    } catch (error) {
+        console.error('❌ Error eliminando usuario:', error);
+        return Response.json({
+            ok: false,
+            error: error.message,
+            details: error.toString()
+        }, { status: 500 });
+    }
+});
