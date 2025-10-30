@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label"; // New import
 import { 
   Users, 
   Briefcase, 
@@ -65,6 +67,10 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("profiles");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
+  const [extendDays, setExtendDays] = useState(7);
 
   useEffect(() => {
     loadUser();
@@ -95,12 +101,89 @@ export default function AdminDashboardPage() {
         toast.success(`Trial activado correctamente para ${email}`);
         queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
         queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       } else {
         toast.error(`Error: ${response.data.error}`);
       }
     } catch (error) {
       console.error('Error activando trial:', error);
       toast.error('Error al activar trial');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      console.log('🗑️ Eliminando usuario:', selectedUser.id);
+      
+      const response = await base44.functions.invoke('deleteUser', {
+        userId: selectedUser.id
+      });
+      
+      if (response.data.ok) {
+        toast.success(`Usuario ${selectedUser.email} eliminado correctamente`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        setShowDeleteDialog(false);
+        setSelectedUser(null);
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      toast.error('Error al eliminar usuario');
+    }
+  };
+
+  const handleSuspendUser = async (userId, suspend) => {
+    try {
+      console.log(`${suspend ? '🔒' : '🔓'} ${suspend ? 'Suspendiendo' : 'Reactivando'} usuario:`, userId);
+      
+      const response = await base44.functions.invoke('suspendUser', {
+        userId: userId,
+        suspend: suspend
+      });
+      
+      if (response.data.ok) {
+        toast.success(`Usuario ${suspend ? 'suspendido' : 'reactivado'} correctamente`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error cambiando estado:', error);
+      toast.error('Error al cambiar estado del usuario');
+    }
+  };
+
+  const handleExtendTrial = async () => {
+    if (!selectedUser || !extendDays) return;
+
+    try {
+      console.log(`⏰ Extendiendo prueba ${extendDays} días para:`, selectedUser.id);
+      
+      const response = await base44.functions.invoke('extendTrial', {
+        userId: selectedUser.id,
+        days: parseInt(extendDays)
+      });
+      
+      if (response.data.ok) {
+        toast.success(`Prueba extendida ${extendDays} días correctamente`);
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        setShowExtendDialog(false);
+        setSelectedUser(null);
+        setExtendDays(7);
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error extendiendo trial:', error);
+      toast.error('Error al extender prueba');
     }
   };
 
@@ -401,34 +484,93 @@ export default function AdminDashboardPage() {
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Nombre</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Email</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Tipo</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Rol</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Estado</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fecha registro</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {users.map((u) => (
-                          <tr key={u.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                              {u.full_name || 'Sin nombre'}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">
-                              {u.email}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge className={u.user_type === 'professionnel' ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
-                                {u.user_type === 'professionnel' ? 'Profesional' : u.user_type || 'Cliente'}
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge className={u.role === 'admin' ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"}>
-                                {u.role || 'user'}
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">
-                              {new Date(u.created_date).toLocaleDateString('es-ES')}
-                            </td>
-                          </tr>
-                        ))}
+                        {users.map((u) => {
+                          const userSub = subscriptions.find(s => s.user_id === u.id);
+                          const isSuspended = u.subscription_status === 'suspendu';
+                          
+                          return (
+                            <tr key={u.id} className={`hover:bg-gray-50 ${isSuspended ? 'bg-yellow-50' : ''}`}>
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                {u.full_name || 'Sin nombre'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {u.email}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge className={u.user_type === 'professionnel' ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                                  {u.user_type === 'professionnel' ? 'Profesional' : u.user_type || 'Cliente'}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                {isSuspended ? (
+                                  <Badge className="bg-yellow-100 text-yellow-800">Suspendido</Badge>
+                                ) : userSub ? (
+                                  getSubscriptionBadge(userSub)
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-800">Sin suscripción</Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {new Date(u.created_date).toLocaleDateString('es-ES')}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-1">
+                                  {isSuspended ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSuspendUser(u.id, false)}
+                                      className="text-xs"
+                                    >
+                                      Reactivar
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSuspendUser(u.id, true)}
+                                      className="text-xs"
+                                    >
+                                      Suspender
+                                    </Button>
+                                  )}
+                                  
+                                  {userSub && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedUser(u);
+                                        setShowExtendDialog(true);
+                                      }}
+                                      className="text-xs text-purple-600"
+                                    >
+                                      Extender
+                                    </Button>
+                                  )}
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      setSelectedUser(u);
+                                      setShowDeleteDialog(true);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    Eliminar
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -499,6 +641,94 @@ export default function AdminDashboardPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {showDeleteDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="max-w-md w-full mx-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5" />
+                  Eliminar usuario
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-700">
+                  ⚠️ ¿Estás seguro de que quieres eliminar este usuario y todo su perfil asociado?
+                </p>
+                <p className="text-sm font-semibold text-gray-900">
+                  Usuario: {selectedUser?.email}
+                </p>
+                <p className="text-sm text-red-600">
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteDialog(false);
+                      setSelectedUser(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteUser}
+                  >
+                    Eliminar permanentemente
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {showExtendDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="max-w-md w-full mx-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-600">
+                  <Calendar className="w-5 h-5" />
+                  Extender periodo de prueba
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-700">
+                  Usuario: <strong>{selectedUser?.email}</strong>
+                </p>
+                <div>
+                  <Label>Días a extender</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={extendDays}
+                    onChange={(e) => setExtendDays(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowExtendDialog(false);
+                      setSelectedUser(null);
+                      setExtendDays(7);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="bg-purple-600 hover:bg-purple-700"
+                    onClick={handleExtendTrial}
+                  >
+                    Extender {extendDays} días
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
