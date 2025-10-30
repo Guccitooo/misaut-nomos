@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query"; // Removed useMutation as per changes
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,17 +26,16 @@ export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const fromCheckout = searchParams.get("from") === "checkout";
+
   const [currentStep, setCurrentStep] = useState(0);
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(null); // This will hold the professional profile once loaded/created
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isFixingSubscription, setIsFixingSubscription] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // For intermediate step saves
+  const [isSubmitting, setIsSubmitting] = useState(false); // For final step submission
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-  // ✅ NUEVO: Detectar si viene desde checkout
-  const fromCheckout = searchParams.get("from") === "checkout";
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -61,6 +60,9 @@ export default function ProfileOnboardingPage() {
     acepta_terminos: false,
     acepta_politica_privacidad: false,
     consiente_contacto_clientes: false,
+    // NUEVOS CAMPOS
+    website: "",
+    social_links: { facebook: "", instagram: "", linkedin: "" },
   });
 
   // Provincias de España
@@ -76,7 +78,7 @@ export default function ProfileOnboardingPage() {
     "Vizcaya", "Zamora", "Zaragoza"
   ].sort();
 
-  // ✅ NUEVA: Lista AMPLIADA de ciudades principales por provincia
+  // Lista AMPLIADA de ciudades principales por provincia
   const ciudadesPorProvincia = {
     "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
     "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Ripollet", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges", "Montgat", "Calella", "Berga"],
@@ -143,57 +145,40 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const reloadCurrentUser = async () => {
+  const loadUser = async () => {
+    setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
+      console.log('👤 Usuario cargado:', currentUser.email);
       setUser(currentUser);
-      return currentUser; // Return fresh user data
-    } catch (err) {
-      console.error("Error reloading current user:", err);
+    } catch (error) {
+      console.error("Error loading user:", error);
       base44.auth.redirectToLogin();
-      return null;
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
-  const loadUser = async () => { // Renamed from loadUserAndProfile
-    setIsLoadingUser(true); // ✅ NUEVO: Start loading
+  const loadProfileDataWhenUserIsSet = async () => {
+    if (!user || user.user_type !== "professionnel") return; // Only load profile for professionals
+
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-
-      // ✅ CRÍTICO: Solo profesionales pueden acceder
-      if (!currentUser.user_type) {
-        // Sin tipo → elegir tipo primero
-        navigate(createPageUrl("UserTypeSelection"));
-        return;
-      }
-      
-      if (currentUser.user_type === "client") {
-        // Cliente → ir a búsqueda
-        navigate(createPageUrl("Search"));
-        return;
-      }
-
       const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: currentUser.id
+        user_id: user.id
       });
 
       if (profiles[0]) {
+        console.log('✅ Perfil existente encontrado');
         const existingProfile = profiles[0];
-        setProfile(existingProfile);
+        setProfile(existingProfile); // Set the profile state
 
-        // ✅ Si ya está completo Y visible, ir al perfil
-        if (existingProfile.onboarding_completed && existingProfile.visible_en_busqueda) {
-          navigate(createPageUrl("MyProfile"));
-          return;
-        }
-
-        // ✅ CARGAR datos existentes para continuar donde lo dejó
+        // Pre-llenar formulario con datos existentes
         setFormData({
+          ...formData, // Keep initial state for website/social_links if not present in existingProfile
           business_name: existingProfile.business_name || "",
           cif_nif: existingProfile.cif_nif || "",
-          email_contacto: existingProfile.email_contacto || currentUser.email,
-          telefono_contacto: existingProfile.telefono_contacto || currentUser.phone || "",
+          email_contacto: existingProfile.email_contacto || user.email,
+          telefono_contacto: existingProfile.telefono_contacto || user.phone || "",
           categories: existingProfile.categories || [],
           descripcion_corta: existingProfile.descripcion_corta || "",
           description: existingProfile.description || "",
@@ -209,23 +194,73 @@ export default function ProfileOnboardingPage() {
           facturacion: existingProfile.facturacion || "autonomo",
           formas_pago: existingProfile.formas_pago || [],
           photos: existingProfile.photos || [],
+          website: existingProfile.website || "",
+          social_links: existingProfile.social_links || { facebook: "", instagram: "", linkedin: "" },
           acepta_terminos: existingProfile.acepta_terminos || false,
           acepta_politica_privacidad: existingProfile.acepta_politica_privacidad || false,
           consiente_contacto_clientes: existingProfile.consiente_contacto_clientes || false,
         });
+
+        // If profile is already completed and visible, navigate to MyProfile
+        if (existingProfile.onboarding_completed && existingProfile.visible_en_busqueda) {
+          navigate(createPageUrl("MyProfile"));
+        }
+
       } else {
-        // ✅ NUEVO: Pre-cargar datos del usuario
+        // If no profile, pre-fill contact info from user
         setFormData(prev => ({
           ...prev,
-          email_contacto: currentUser.email,
-          telefono_contacto: currentUser.phone || "",
+          email_contacto: user.email,
+          telefono_contacto: user.phone || "",
         }));
       }
     } catch (error) {
-      console.error("Error loading user and profile:", error);
-      base44.auth.redirectToLogin();
-    } finally {
-      setIsLoadingUser(false); // ✅ NUEVO: Ensure loading state is reset
+      console.error("Error loading profile:", error);
+    }
+  };
+
+  // ✅ NUEVO: Función para verificar y activar suscripción automáticamente
+  const checkAndActivateSubscription = async () => {
+    if (!user) return;
+    try {
+      console.log('🔍 Verificando suscripción...');
+      
+      const subscriptions = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+
+      if (subscriptions.length === 0) {
+        console.log('❌ No se encontró suscripción');
+        toast.error('No se encontró tu suscripción. Por favor, contacta con soporte: admin@milautonomos.com');
+        return;
+      }
+
+      const subscription = subscriptions[0];
+      const today = new Date();
+      const expiration = new Date(subscription.fecha_expiracion);
+      const isActive = expiration >= today;
+
+      console.log('📊 Suscripción:', {
+        estado: subscription.estado,
+        fecha_expiracion: subscription.fecha_expiracion,
+        isActive
+      });
+
+      if (isActive) {
+        console.log('✅ Suscripción activa, usuario puede continuar con quiz');
+        toast.success('Suscripción verificada correctamente. Completa tu perfil para aparecer en búsquedas.', {
+          duration: 6000
+        });
+      } else {
+        console.log('❌ Suscripción no activa');
+        toast.error('Tu suscripción ha expirado. Por favor, renueva tu plan.');
+        setTimeout(() => {
+          navigate(createPageUrl("PricingPlans"));
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error verificando suscripción:', error);
+      toast.error('Error al verificar tu suscripción. Contacta con soporte: admin@milautonomos.com');
     }
   };
 
@@ -235,16 +270,21 @@ export default function ProfileOnboardingPage() {
   }, []);
 
   useEffect(() => {
-    // ✅ NUEVO: Mostrar mensaje si viene desde checkout
-    if (fromCheckout && user) {
-      toast.success("✅ ¡Pago confirmado! Completa tu perfil para aparecer en búsquedas.", {
-        duration: 6000
-      });
-      
-      // Limpiar URL
+    if (user && user.user_type === "professionnel") {
+      loadProfileDataWhenUserIsSet();
+    }
+  }, [user]);
+
+  // ✅ NUEVO: Activar automáticamente si llega desde checkout
+  useEffect(() => {
+    if (fromCheckout && user && !isLoadingUser) {
+      console.log('✅ Usuario viene desde checkout, verificando suscripción...');
+      checkAndActivateSubscription();
+      // Limpiar URL después de la verificación inicial
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [fromCheckout, user]);
+  }, [fromCheckout, user, isLoadingUser]);
+
 
   // Update service_area when location changes
   useEffect(() => {
@@ -259,166 +299,6 @@ export default function ProfileOnboardingPage() {
       setFormData(prev => ({ ...prev, service_area: "" }));
     }
   }, [formData.provincia, formData.ciudad, formData.municipio]);
-
-  // ✅ NUEVA: Función mejorada para verificar y corregir suscripción
-  const handleFixSubscription = async () => {
-    setIsFixingSubscription(true);
-    setError(null);
-    
-    try {
-      console.log('🔧 Intentando corregir suscripción...');
-      
-      const fixResponse = await base44.functions.invoke('fixUserSubscription', {
-        email: user.email,
-        forceActivate: true  // ✅ Activar manualmente si es necesario
-      });
-
-      console.log('📥 Respuesta:', fixResponse.data);
-
-      if (fixResponse.data.ok) {
-        toast.success('✅ Suscripción activada correctamente');
-        
-        // Recargar usuario para obtener el estado fresco
-        const freshUser = await reloadCurrentUser();
-        
-        // Si ya tenemos un perfil y la suscripción está activa, actualizarlo a "activo" y publicar
-        if (profile && freshUser.subscription_status && ["actif", "activo", "en_prueba", "trialing"].includes(freshUser.subscription_status)) {
-          const now = new Date().toISOString();
-          const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
-          
-          await base44.entities.ProfessionalProfile.update(profile.id, {
-            ...formData,
-            imagen_principal: formData.photos[0] || "",
-            estado_perfil: "activo",
-            visible_en_busqueda: true,
-            onboarding_completed: true,
-            fecha_publicacion: now,
-            slug_publico: slug
-          });
-          toast.success("🎉 ¡Perfil publicado exitosamente!");
-          setCurrentStep(steps.length); // Go to success page
-        } else {
-          // If no profile yet, or subscription is still not valid after fix, just let user know to try publishing again.
-          toast.info('Suscripción activada. Ahora puedes intentar publicar tu perfil.');
-          setError(null); // Clear previous error
-        }
-      } else {
-        // If not successful, display specific error from backend or a generic one.
-        setError(fixResponse.data.error || "No se pudo activar la suscripción. Contacta con soporte: admin@milautonomos.com");
-        toast.error('Error al activar suscripción');
-      }
-    } catch (error) {
-      console.error('❌ Error:', error);
-      setError('Error al verificar la suscripción. Contacta con soporte: admin@milautonomos.com');
-      toast.error('Error al verificar la suscripción');
-    } finally {
-      setIsFixingSubscription(false);
-    }
-  };
-
-  const publishProfileMutation = useMutation({
-    mutationFn: async () => {
-      console.log('🔒 Verificando suscripción antes de publicar perfil...');
-      
-      // ✅ CRÍTICO: Recargar usuario para obtener estado más reciente
-      console.log('🔄 Recargando usuario para verificar suscripción...');
-      const freshUser = await base44.auth.me();
-      console.log('👤 Usuario recargado:', {
-        email: freshUser.email,
-        subscription_status: freshUser.subscription_status,
-        user_type: freshUser.user_type
-      });
-      
-      // ✅ CAMBIO CRÍTICO: Aceptar múltiples estados válidos
-      const validStatuses = ["actif", "activo", "en_prueba", "trialing"];
-      
-      if (!freshUser.subscription_status) {
-        console.error('❌ subscription_status no existe en el usuario');
-        throw new Error("subscription_invalid"); // Changed from "subscription_not_found" for consistency
-      }
-      
-      if (!validStatuses.includes(freshUser.subscription_status)) {
-        console.error('❌ Estado de suscripción inválido:', freshUser.subscription_status);
-        throw new Error("subscription_invalid");
-      }
-
-      console.log('✅ Suscripción válida detectada:', freshUser.subscription_status);
-
-      const now = new Date().toISOString();
-      const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile.id.slice(-6)}`;
-      
-      // ✅ IMPORTANTE: Guardar perfil como ACTIVO y VISIBLE solo si tiene suscripción
-      return base44.entities.ProfessionalProfile.update(profile.id, {
-        ...formData,
-        imagen_principal: formData.photos[0] || "",
-        estado_perfil: "activo",
-        visible_en_busqueda: true,
-        onboarding_completed: true,
-        fecha_publicacion: now,
-        slug_publico: slug
-      });
-    },
-    onSuccess: async (data) => {
-      // ✅ IMPORTANTE: Actualizar también el usuario para asegurar subscription_status
-      try {
-        await base44.auth.updateMe({
-          user_type: "professionnel"
-        });
-      } catch (error) {
-        console.error("Error updating user type:", error);
-      }
-
-      // ✅ Email de confirmación con notificación de activación
-      await base44.integrations.Core.SendEmail({
-        to: user.email,
-        subject: "✅ Tu perfil ya está publicado en milautonomos",
-        body: `Hola ${formData.business_name},
-
-¡Enhorabuena! Tu perfil profesional ya está activo y visible en milautonomos.
-
-🎉 PERFIL ACTIVADO EXITOSAMENTE
-
-Los clientes pueden encontrarte buscando por:
-- Tu nombre: ${formData.business_name}
-- Tu actividad: ${formData.categories.join(', ')}
-- Tu zona: ${formData.service_area}
-
-📊 Estado de tu perfil:
-✅ Visible en búsquedas: SÍ
-✅ Onboarding completado: SÍ
-✅ Suscripción: ACTIVA
-✅ Fotos subidas: ${formData.photos.length}
-✅ Categorías: ${formData.categories.length}
-
-Próximos pasos para maximizar tu visibilidad:
-1. Añade más fotos de tus trabajos
-2. Completa tu descripción con palabras clave
-3. Responde rápido a los mensajes de clientes
-4. Pide valoraciones a tus clientes satisfechos
-
-Ver mi perfil público: https://milautonomos.com/perfil/${data.slug_publico}
-
-Gracias por unirte a milautonomos,
-Equipo milautonomos`,
-        from_name: "milautonomos"
-      });
-
-      toast.success("🎉 ¡Perfil publicado! Los clientes ya pueden encontrarte");
-      setCurrentStep(steps.length);
-    },
-    onError: (error) => {
-      console.error('❌ Error al publicar perfil:', error);
-      
-      // ✅ NUEVO: Mensajes de error específicos
-      if (error.message === "subscription_invalid") { // Both subscription_not_found and subscription_invalid now throw this.
-        setError("Tu suscripción no está activa. Haz click en 'Activar suscripción' para continuar.");
-      } else {
-        setError(error.message || "Error al publicar el perfil. Verifica que tengas una suscripción activa.");
-      }
-      
-      toast.error("Error al publicar el perfil");
-    }
-  });
 
   const steps = [
     {
@@ -524,10 +404,6 @@ Equipo milautonomos`,
         }
       }
       
-      // Removed old service_area validation as it's now derived.
-      // If `service_area` validation is still needed, it should refer to the derived field.
-      // But based on the new steps, it's covered by provincia/ciudad.
-
       if (field === "horario_dias") {
         if (!value || value.length === 0) {
           setError("Selecciona al menos un día de disponibilidad");
@@ -587,7 +463,7 @@ Equipo milautonomos`,
     
     setError(null);
 
-    // Validar
+    // Validar el paso actual
     if (!validateStep(currentStep)) {
       console.log("❌ Validación falló");
       return;
@@ -595,86 +471,61 @@ Equipo milautonomos`,
 
     console.log("✅ Validación pasó");
 
-    // ✅ CAMBIO: Solo guardar campos relevantes del paso actual
+    // Solo guardar campos relevantes del paso actual
     const stepFields = steps[currentStep].fields;
     const dataToSave = {};
     
-    // Solo incluir campos del paso actual
+    // Incluir campos del paso actual en dataToSave
     stepFields.forEach(field => {
       if (formData[field] !== undefined) {
         dataToSave[field] = formData[field];
       }
     });
 
-    // ✅ Siempre incluir campos base necesarios
+    // Siempre incluir campos base necesarios si no están en el paso actual
     dataToSave.user_id = user.id;
-    dataToSave.business_name = formData.business_name || "";
+    dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
 
     // Guardar en background
     setIsSaving(true);
     try {
       if (profile) {
-        // ✅ IMPORTANTE: NO activar perfil hasta el final
-        await base44.entities.ProfessionalProfile.update(profile.id, {
+        // Actualizar perfil existente con el estado "pendiente"
+        const updatedProfile = await base44.entities.ProfessionalProfile.update(profile.id, {
           ...dataToSave,
           estado_perfil: "pendiente",
           visible_en_busqueda: false,
           onboarding_completed: false
         });
-        console.log("💾 Guardado exitoso (actualización)");
+        setProfile(updatedProfile); // Update profile state with latest data
+        console.log("💾 Guardado exitoso (actualización de paso)");
       } else {
-        // ✅ Crear con estado PENDIENTE (no visible hasta completar)
+        // Crear un nuevo perfil con estado "pendiente"
         const newProfile = await base44.entities.ProfessionalProfile.create({
+          ...formData, // Use full formData for initial creation
           user_id: user.id,
-          business_name: formData.business_name || "Nuevo autónomo",
-          cif_nif: formData.cif_nif || "",
-          email_contacto: formData.email_contacto || user.email,
-          telefono_contacto: formData.telefono_contacto || user.phone || "",
-          categories: formData.categories || [],
-          descripcion_corta: formData.descripcion_corta || "",
-          description: formData.description || "",
-          service_area: formData.service_area || "",
-          provincia: formData.provincia || "",
-          ciudad: formData.ciudad || "",
-          municipio: formData.municipio || "",
-          radio_servicio_km: formData.radio_servicio_km || 10,
-          horario_dias: formData.horario_dias || [],
-          horario_apertura: formData.horario_apertura || "09:00",
-          horario_cierre: formData.horario_cierre || "18:00",
-          tarifa_base: parseFloat(formData.tarifa_base) || 0, // Ensure numeric default
-          facturacion: formData.facturacion || "autonomo",
-          formas_pago: formData.formas_pago || [],
-          photos: formData.photos || [],
           estado_perfil: "pendiente",
           visible_en_busqueda: false,
           onboarding_completed: false,
-          acepta_terminos: false,
-          acepta_politica_privacidad: false,
-          consiente_contacto_clientes: false
+          // Ensure defaults for numbers/objects
+          radio_servicio_km: formData.radio_servicio_km || 10,
+          tarifa_base: parseFloat(formData.tarifa_base) || 0,
+          social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" }
         });
         setProfile(newProfile);
-        console.log("💾 Guardado exitoso (creación en estado PENDIENTE)");
+        console.log("💾 Guardado exitoso (creación de perfil en estado PENDIENTE)");
       }
     } catch (error) {
-      console.error("⚠️ Error guardando:", error);
-      // ✅ CAMBIO: Mostrar error específico pero permitir continuar si es solo un warning
+      console.error("⚠️ Error guardando paso:", error);
       const errorMessage = error.message || error.toString();
-      console.log("Error completo:", errorMessage);
-      
-      // Si es un error crítico (no puede crear/actualizar), mostrar y detener
-      if (errorMessage.includes('required') || errorMessage.includes('violates')) {
-        setError("Error al guardar: " + errorMessage + ". Por favor, verifica los datos.");
-        setIsSaving(false);
-        return;
-      }
-      
-      // Si es otro tipo de error, log pero continuar
-      console.warn("⚠️ Error no crítico, continuando...");
+      setError("Error al guardar este paso: " + errorMessage + ". Por favor, verifica los datos.");
+      setIsSaving(false);
+      return; // Stop progression on critical save error
     }
     setIsSaving(false);
 
-    // SIEMPRE avanzar si la validación pasó
+    // Avanzar al siguiente paso
     console.log("➡️ Avanzando al siguiente paso");
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
@@ -690,44 +541,163 @@ Equipo milautonomos`,
     }
   };
 
-  const handlePublish = async () => {
-    // Validate all steps from 0 to 5 (excluding final review)
-    for (let i = 0; i < steps.length - 1; i++) {
-      if (!validateStep(i)) {
-        toast.error(`Completa el paso ${i + 1}: ${steps[i].title} antes de publicar.`);
-        setCurrentStep(i);
-        return;
-      }
-    }
+  // Replaces handlePublish and publishProfileMutation
+  const handleSubmit = async () => {
+    console.log('💾 Iniciando proceso de guardado final...');
+    setIsSubmitting(true);
+    setError(null);
 
-    // Save final data before publishing
-    setIsSaving(true);
     try {
-      if (profile) {
-        await base44.entities.ProfessionalProfile.update(profile.id, formData);
-        console.log("💾 Guardado final antes de publicar.");
-      } else {
-        // This case should ideally not happen if create is handled on first step.
-        // But as a fallback, if profile somehow isn't created.
-        const newProfile = await base44.entities.ProfessionalProfile.create({
-          ...formData,
-          user_id: user.id,
-          estado_perfil: "pendiente",
-          visible_en_busqueda: false,
-          onboarding_completed: false
-        });
-        setProfile(newProfile);
-        console.log("💾 Perfil creado antes de publicar.");
+      // ✅ Primero verificar que todos los pasos estén validados
+      for (let i = 0; i < steps.length - 1; i++) {
+        if (!validateStep(i)) {
+          toast.error(`Completa el paso ${i + 1}: ${steps[i].title} antes de publicar.`);
+          setCurrentStep(i);
+          setIsSubmitting(false);
+          return;
+        }
       }
-    } catch (error) {
-      console.error("⚠️ Error guardando antes de publicar:", error);
-      setError("Error al guardar la información final. Por favor, inténtalo de nuevo.");
-      setIsSaving(false);
-      return;
-    }
-    setIsSaving(false); // Reset saving state before actual publish mutation
 
-    await publishProfileMutation.mutateAsync();
+      // ✅ Segundo verificar suscripción
+      const subscriptions = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+
+      if (subscriptions.length === 0) {
+        throw new Error('No se encontró tu suscripción. Por favor, contacta con soporte: admin@milautonomos.com');
+      }
+
+      const subscription = subscriptions[0];
+      const today = new Date();
+      const expiration = new Date(subscription.fecha_expiracion);
+      const isSubscriptionActive = expiration >= today;
+
+      if (!isSubscriptionActive) {
+        throw new Error('Tu suscripción ha expirado. Por favor, renueva tu plan.');
+      }
+
+      console.log('✅ Suscripción verificada como activa');
+
+      // Preparar datos del perfil
+      const now = new Date().toISOString();
+      const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${profile?.id ? profile.id.slice(-6) : Math.random().toString(36).substring(2, 8)}`;
+
+      const profileData = {
+        user_id: user.id,
+        business_name: formData.business_name,
+        cif_nif: formData.cif_nif,
+        email_contacto: formData.email_contacto || user.email,
+        telefono_contacto: formData.telefono_contacto || user.phone,
+        categories: formData.categories,
+        descripcion_corta: formData.descripcion_corta,
+        description: formData.description,
+        provincia: formData.provincia,
+        ciudad: formData.ciudad,
+        municipio: formData.municipio,
+        service_area: formData.service_area,
+        radio_servicio_km: formData.radio_servicio_km,
+        tarifa_base: parseFloat(formData.tarifa_base) || 0,
+        horario_dias: formData.horario_dias,
+        horario_apertura: formData.horario_apertura,
+        horario_cierre: formData.horario_cierre,
+        formas_pago: formData.formas_pago,
+        photos: formData.photos,
+        imagen_principal: formData.photos[0] || "",
+        website: formData.website,
+        social_links: formData.social_links,
+        price_range: "€€", // Default, can be refined
+        average_rating: 0,
+        total_reviews: 0,
+        // ✅ CRÍTICO: Marcar como completado y visible automáticamente
+        onboarding_completed: true,
+        visible_en_busqueda: true,
+        estado_perfil: "activo",
+        acepta_terminos: formData.acepta_terminos,
+        acepta_politica_privacidad: formData.acepta_politica_privacidad,
+        consiente_contacto_clientes: formData.consiente_contacto_clientes,
+        fecha_publicacion: now,
+        slug_publico: slug
+      };
+
+      console.log('📝 Datos del perfil a guardar:', profileData);
+
+      let savedProfile;
+      if (profile) { // Using 'profile' state variable
+        console.log('🔄 Actualizando perfil existente...');
+        savedProfile = await base44.entities.ProfessionalProfile.update(
+          profile.id,
+          profileData
+        );
+      } else {
+        console.log('➕ Creando nuevo perfil...');
+        savedProfile = await base44.entities.ProfessionalProfile.create(profileData);
+      }
+
+      console.log('✅ Perfil guardado:', savedProfile);
+      setProfile(savedProfile); // Update the profile state with the saved data
+
+      // ✅ Actualizar usuario (user_type, phone, city)
+      await base44.auth.updateMe({
+        user_type: "professionnel",
+        phone: formData.telefono_contacto || user.phone,
+        city: formData.ciudad || user.city
+      });
+      setUser(prevUser => ({ ...prevUser, user_type: "professionnel", phone: formData.telefono_contacto || prevUser.phone, city: formData.ciudad || prevUser.city }));
+      console.log('✅ Usuario actualizado');
+
+      // ✅ Email de confirmación con notificación de activación
+      await base44.integrations.Core.SendEmail({
+        to: user.email,
+        subject: "✅ Tu perfil ya está publicado en milautonomos",
+        body: `Hola ${formData.business_name},
+
+¡Enhorabuena! Tu perfil profesional ya está activo y visible en milautonomos.
+
+🎉 PERFIL ACTIVADO EXITOSAMENTE
+
+Los clientes pueden encontrarte buscando por:
+- Tu nombre: ${formData.business_name}
+- Tu actividad: ${formData.categories.join(', ')}
+- Tu zona: ${formData.service_area}
+
+📊 Estado de tu perfil:
+✅ Visible en búsquedas: SÍ
+✅ Onboarding completado: SÍ
+✅ Suscripción: ACTIVA
+✅ Fotos subidas: ${formData.photos.length}
+✅ Categorías: ${formData.categories.length}
+
+Próximos pasos para maximizar tu visibilidad:
+1. Añade más fotos de tus trabajos
+2. Completa tu descripción con palabras clave
+3. Responde rápido a los mensajes de clientes
+4. Pide valoraciones a tus clientes satisfechos
+
+Ver mi perfil público: https://milautonomos.com/perfil/${savedProfile.slug_publico}
+
+Gracias por unirte a milautonomos,
+Equipo milautonomos`,
+        from_name: "milautonomos"
+      });
+
+      // ✅ Mostrar mensaje de éxito
+      toast.success('¡Perfil completado y publicado correctamente!', {
+        duration: 5000
+      });
+
+      // ✅ Invalidar queries
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+
+      setCurrentStep(steps.length); // Go to success page
+
+    } catch (err) {
+      console.error("❌ Error guardando perfil:", err);
+      setError(err.message || 'Error al guardar el perfil');
+      toast.error(err.message || 'Error al guardar el perfil');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -794,67 +764,90 @@ Equipo milautonomos`,
     );
   }
 
+  // Handle cases where user is not logged in or not a professional
+  if (!user || user.user_type !== "professionnel") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Acceso restringido</h2>
+            <p className="text-gray-600 mb-6">
+              Esta página es solo para profesionales. Si deseas ofrecer tus servicios, primero debes seleccionar un plan.
+            </p>
+            <Button
+              onClick={() => navigate(createPageUrl("PricingPlans"))}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Ver planes disponibles
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Success screen
   if (currentStep === steps.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50 to-white flex items-center justify-center p-4">
-        {/* ✅ Elementos decorativos de fondo sutiles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-700"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex items-center justify-center p-4">
+        {/* ✅ Elementos decorativos de fondo */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
         </div>
 
-        <Card className="max-w-4xl w-full border-0 shadow-xl relative z-10 overflow-hidden bg-white">
-          {/* ✅ Barra de éxito decorativa */}
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-green-400 via-blue-500 to-green-400"></div>
+        <Card className="max-w-3xl w-full border-0 shadow-2xl relative z-10 overflow-hidden">
+          {/* ✅ Barra de confetti decorativa */}
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"></div>
           
           <CardContent className="p-8 md:p-12">
             {/* ✅ Icono de éxito con animación */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-xl animate-bounce">
-                  <CheckCircle className="w-14 h-14 text-white" strokeWidth={2.5} />
+                <div className="w-28 h-28 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                  <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
                 </div>
-                {/* ✅ Anillo animado */}
-                <div className="absolute inset-0 w-24 h-24 rounded-full border-4 border-green-400 animate-ping opacity-40"></div>
+                {/* ✅ Anillo animado alrededor */}
+                <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
               </div>
             </div>
 
-            {/* ✅ Título principal con contraste mejorado */}
-            <h1 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-4 leading-tight">
+            {/* ✅ Título principal - MEJORADO CONTRASTE */}
+            <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
               ✅ ¡Tu perfil profesional está activo!
             </h1>
 
-            {/* ✅ Subtítulos con mejor jerarquía */}
-            <p className="text-lg md:text-xl text-center text-slate-700 font-semibold mb-3 max-w-2xl mx-auto">
+            {/* ✅ Subtítulo - MEJORADO CONTRASTE */}
+            <p className="text-lg md:text-xl text-center text-gray-800 font-semibold mb-3 max-w-2xl mx-auto">
               Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">milautonomos</span>
             </p>
 
-            <p className="text-base text-center text-slate-600 mb-10 max-w-xl mx-auto">
+            <p className="text-base text-center text-gray-700 mb-8 max-w-xl mx-auto">
               Empieza a recibir contactos de clientes interesados en tus servicios profesionales.
             </p>
 
-            {/* ✅ Estadísticas con fondo blanco y borde */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto">
-              <div className="text-center p-4 bg-white rounded-xl border-2 border-green-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-3xl font-bold text-green-600 mb-1">✓</div>
-                <div className="text-sm text-slate-700 font-medium">Perfil activo</div>
+            {/* ✅ Estadísticas rápidas */}
+            <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl mx-auto">
+              <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <div className="text-2xl font-bold text-blue-700">✓</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Perfil activo</div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border-2 border-blue-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-3xl font-bold text-blue-600 mb-1">👁️</div>
-                <div className="text-sm text-slate-700 font-medium">Visible en búsquedas</div>
+              <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+                <div className="text-2xl font-bold text-green-700">👁️</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Visible en búsquedas</div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border-2 border-purple-200 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-3xl font-bold text-purple-600 mb-1">🚀</div>
-                <div className="text-sm text-slate-700 font-medium">Listo para clientes</div>
+              <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
+                <div className="text-2xl font-bold text-purple-700">🚀</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">Listo para clientes</div>
               </div>
             </div>
 
-            {/* ✅ Botones de acción con contraste mejorado */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
+            {/* ✅ Botones de acción principales */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-base px-8 py-6 font-semibold"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-base px-8 py-6"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${user.id}`)}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -867,7 +860,7 @@ Equipo milautonomos`,
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-blue-600 text-blue-700 bg-white hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6 font-semibold"
+                className="border-2 border-blue-600 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 text-base px-8 py-6 bg-white"
                 onClick={() => navigate(createPageUrl("Search"))}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -878,10 +871,10 @@ Equipo milautonomos`,
             </div>
 
             {/* ✅ Botón secundario - Editar perfil */}
-            <div className="text-center mb-10">
+            <div className="text-center mb-8">
               <Button
                 variant="ghost"
-                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                 onClick={() => navigate(createPageUrl("MyProfile"))}
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -889,114 +882,46 @@ Equipo milautonomos`,
               </Button>
             </div>
 
-            {/* ✅ Separador sutil */}
-            <div className="border-t border-slate-200 my-10"></div>
+            {/* ✅ Separador */}
+            <div className="border-t border-gray-200 my-8"></div>
 
-            {/* ✅ Consejos con mejor contraste y estructura */}
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <div className="flex items-start gap-4">
+            {/* ✅ Mensaje motivacional */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg text-slate-900 mb-4">💡 Consejos para destacar más en MilAutónomos</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <span className="text-slate-700 leading-relaxed">Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
+                  <h3 className="font-semibold text-gray-900 mb-2">💡 Consejos para destacar</h3>
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <span className="text-slate-700 leading-relaxed">Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <span className="text-slate-700 leading-relaxed">Pide valoraciones a tus clientes satisfechos</span>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 font-bold mt-0.5">✓</span>
+                      <span>Pide valoraciones a tus clientes satisfechos</span>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* ✅ Soporte con mejor contraste */}
+            {/* ✅ Próximos pasos */}
             <div className="mt-8 text-center">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-gray-600">
                 ¿Necesitas ayuda? Contacta con soporte:{" "}
-                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-semibold underline">
+                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium underline">
                   admin@milautonomos.com
                 </a>
               </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // ✅ MENSAJE si no tiene tipo de usuario
-  if (!user.user_type) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md border-0 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Selecciona tu tipo de cuenta
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Primero debes elegir si eres autónomo o cliente.
-            </p>
-            <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate(createPageUrl("UserTypeSelection"))}
-            >
-              Elegir tipo de cuenta
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // ✅ MENSAJE si no es profesional
-  if (user.user_type === "client") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md border-0 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Esta página es solo para autónomos
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Como cliente, puedes buscar y contactar profesionales directamente.
-            </p>
-            <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate(createPageUrl("Search"))}
-            >
-              Ir a buscar profesionales
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -1021,23 +946,6 @@ Equipo milautonomos`,
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-col gap-3">
               <p>{error}</p>
-              {error.includes('suscripción') && (
-                <Button
-                  onClick={handleFixSubscription}
-                  disabled={isFixingSubscription}
-                  size="sm"
-                  className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
-                >
-                  {isFixingSubscription ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Activando...
-                    </>
-                  ) : (
-                    '🔧 Activar suscripción ahora'
-                  )}
-                </Button>
-              )}
             </AlertDescription>
           </Alert>
         )}
@@ -1711,7 +1619,7 @@ Equipo milautonomos`,
                   variant="outline"
                   onClick={handleBack}
                   className="flex-1 h-12"
-                  disabled={isSaving || publishProfileMutation.isPending || isFixingSubscription}
+                  disabled={isSaving || isSubmitting}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Atrás
@@ -1727,7 +1635,7 @@ Equipo milautonomos`,
                     handleNext();
                   }}
                   className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 ${currentStep === 0 ? 'w-full' : ''}`}
-                  disabled={isSaving || publishProfileMutation.isPending || isFixingSubscription}
+                  disabled={isSaving || isSubmitting}
                 >
                   {isSaving ? (
                     <>
@@ -1743,11 +1651,11 @@ Equipo milautonomos`,
                 </Button>
               ) : (
                 <Button
-                  onClick={handlePublish}
+                  onClick={handleSubmit}
                   className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                  disabled={publishProfileMutation.isPending || isSaving || isFixingSubscription}
+                  disabled={isSubmitting || isSaving}
                 >
-                  {publishProfileMutation.isPending || isSaving ? (
+                  {isSubmitting || isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Publicando...
