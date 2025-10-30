@@ -1,0 +1,159 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+Deno.serve(async (req) => {
+    try {
+        const base44 = createClientFromRequest(req);
+        
+        // Verificar autenticación
+        const user = await base44.auth.me();
+        if (!user || user.role !== 'admin') {
+            return Response.json({ 
+                ok: false, 
+                error: 'Acceso denegado - solo administradores' 
+            }, { status: 403 });
+        }
+
+        const { email } = await req.json();
+
+        if (!email) {
+            return Response.json({
+                ok: false,
+                error: 'Email requerido'
+            }, { status: 400 });
+        }
+
+        console.log('🔧 Activando trial para:', email);
+
+        // 1. Buscar usuario por email (usando auth, no entities)
+        const users = await base44.asServiceRole.entities.User.filter({ email });
+
+        if (users.length === 0) {
+            return Response.json({
+                ok: false,
+                error: 'Usuario no encontrado'
+            }, { status: 404 });
+        }
+
+        const targetUser = users[0];
+        const userId = targetUser.id;
+
+        console.log('✅ Usuario encontrado:', userId);
+
+        // 2. Buscar si ya tiene suscripción
+        const existingSubs = await base44.asServiceRole.entities.Subscription.filter({
+            user_id: userId
+        });
+
+        // 3. Buscar plan de prueba
+        const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
+            plan_id: 'plan_monthly_trial'
+        });
+
+        if (plans.length === 0) {
+            return Response.json({
+                ok: false,
+                error: 'Plan de prueba no encontrado'
+            }, { status: 404 });
+        }
+
+        const plan = plans[0];
+
+        // 4. Crear fechas
+        const today = new Date();
+        const trialEnd = new Date(today);
+        trialEnd.setDate(trialEnd.getDate() + 7); // 7 días de prueba
+
+        const subscriptionData = {
+            user_id: userId,
+            plan_id: plan.plan_id,
+            plan_nombre: plan.nombre,
+            plan_precio: plan.precio,
+            fecha_inicio: today.toISOString(),
+            fecha_expiracion: trialEnd.toISOString(),
+            estado: 'en_prueba',
+            renovacion_automatica: false,
+            metodo_pago: 'manual'
+        };
+
+        // 5. Crear o actualizar suscripción
+        let subscription;
+        if (existingSubs.length > 0) {
+            console.log('🔄 Actualizando suscripción existente');
+            subscription = await base44.asServiceRole.entities.Subscription.update(
+                existingSubs[0].id,
+                subscriptionData
+            );
+        } else {
+            console.log('➕ Creando nueva suscripción');
+            subscription = await base44.asServiceRole.entities.Subscription.create(subscriptionData);
+        }
+
+        console.log('✅ Suscripción creada/actualizada:', subscription.id);
+
+        // 6. Actualizar usuario
+        await base44.asServiceRole.entities.User.update(userId, {
+            user_type: 'professionnel',
+            subscription_status: 'en_prueba',
+            subscription_start_date: today.toISOString().split('T')[0],
+            subscription_end_date: trialEnd.toISOString().split('T')[0]
+        });
+
+        console.log('✅ Usuario actualizado');
+
+        // 7. Buscar y activar perfil profesional
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+            user_id: userId
+        });
+
+        if (profiles.length > 0) {
+            const profile = profiles[0];
+            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                estado_perfil: 'activo',
+                visible_en_busqueda: true
+            });
+            console.log('✅ Perfil profesional activado');
+        } else {
+            console.log('⚠️ No se encontró perfil profesional');
+        }
+
+        // 8. Enviar email de confirmación
+        await base44.asServiceRole.integrations.Core.SendEmail({
+            to: email,
+            subject: '✅ Tu prueba gratuita ha sido activada - milautonomos',
+            body: `Hola ${targetUser.full_name || ''},
+
+Tu periodo de prueba gratuito de 7 días ha sido activado correctamente.
+
+Ahora tu perfil es visible en las búsquedas y puedes empezar a recibir contactos de clientes.
+
+El periodo de prueba finaliza el: ${trialEnd.toLocaleDateString('es-ES')}
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Gracias,
+Equipo milautonomos`,
+            from_name: 'milautonomos'
+        });
+
+        console.log('✅ Email de confirmación enviado');
+
+        return Response.json({
+            ok: true,
+            message: `Prueba gratuita activada correctamente para ${email}`,
+            subscription: {
+                estado: 'en_prueba',
+                fecha_inicio: today.toISOString(),
+                fecha_expiracion: trialEnd.toISOString()
+            },
+            profile_activated: profiles.length > 0
+        });
+
+    } catch (error) {
+        console.error('❌ Error activando trial:', error);
+        return Response.json({
+            ok: false,
+            error: error.message,
+            details: error.toString()
+        }, { status: 500 });
+    }
+});
