@@ -4,6 +4,26 @@ import Stripe from 'npm:stripe@14.10.0';
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
+// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+const isSubscriptionActive = (subscriptionStatus, endDate) => {
+    const today = new Date();
+    const expirationDate = new Date(endDate * 1000);
+    
+    const validStates = ["active", "trialing"];
+    
+    // Si está en un estado válido y no ha expirado
+    if (validStates.includes(subscriptionStatus)) {
+        return expirationDate >= today;
+    }
+    
+    // Si está cancelado pero aún tiene tiempo
+    if (subscriptionStatus === "canceled") {
+        return expirationDate >= today;
+    }
+    
+    return false;
+};
+
 Deno.serve(async (req) => {
     console.log('🔔 Webhook recibido de Stripe');
     
@@ -37,16 +57,15 @@ Deno.serve(async (req) => {
 
         console.log('📧 Email del usuario:', email);
         console.log('📊 Metadata:', metadata);
+        console.log('📊 Status Stripe:', subscription.status);
 
-        // ✅ NUEVA LÓGICA: Función helper para calcular visibilidad
+        // ✅ FUNCIÓN HELPER: Calcular estado del perfil
         const calculateProfileStatus = (subscriptionStatus, endDate) => {
-            const today = new Date();
-            const expirationDate = new Date(endDate * 1000);
-            
-            console.log('🔍 Calculando estado:');
-            console.log('  - Status Stripe:', subscriptionStatus);
-            console.log('  - Fecha expiración:', expirationDate.toISOString());
-            console.log('  - Hoy:', today.toISOString());
+            console.log('🔍 Calculando estado:', {
+                subscriptionStatus,
+                endDate: new Date(endDate * 1000).toISOString(),
+                isActive: isSubscriptionActive(subscriptionStatus, endDate)
+            });
             
             // 🟢 Activo con pago
             if (subscriptionStatus === 'active') {
@@ -69,16 +88,16 @@ Deno.serve(async (req) => {
             }
             
             // ⚪ Cancelado pero con tiempo restante
-            if (subscriptionStatus === 'canceled' && expirationDate > today) {
+            if (subscriptionStatus === 'canceled' && isSubscriptionActive(subscriptionStatus, endDate)) {
                 return {
                     estado: 'cancelado',
-                    visible_en_busqueda: true, // ✅ Mantener visible hasta el final
+                    visible_en_busqueda: true,
                     estado_perfil: 'activo',
                     mensaje: 'Cancelado - activo hasta fin de periodo'
                 };
             }
             
-            // 🔴 Expirado, sin pago, o cancelado sin tiempo
+            // 🔴 Expirado
             return {
                 estado: 'finalizada',
                 visible_en_busqueda: false,
@@ -89,9 +108,6 @@ Deno.serve(async (req) => {
 
         // ✅ MANEJAR TODOS LOS EVENTOS DE STRIPE
         switch (event.type) {
-            // ═══════════════════════════════════════════════════════
-            // SUSCRIPCIÓN CREADA (checkout completado o trial inicio)
-            // ═══════════════════════════════════════════════════════
             case 'customer.subscription.created':
             case 'checkout.session.completed': {
                 console.log('🎉 Suscripción creada/checkout completado');
@@ -121,7 +137,7 @@ Deno.serve(async (req) => {
                     userId = users[0].id;
                     console.log('✅ Usuario encontrado:', userId);
                     
-                    // Actualizar tipo y estado
+                    // ✅ ACTUALIZAR USUARIO CON ESTADO NORMALIZADO
                     await base44.asServiceRole.entities.User.update(userId, {
                         user_type: 'professionnel',
                         subscription_status: subscription.status === 'trialing' ? 'en_prueba' : 'activo'
@@ -189,7 +205,7 @@ Deno.serve(async (req) => {
                         visible_en_busqueda: profileStatus.visible_en_busqueda,
                         estado_perfil: profileStatus.estado_perfil
                     });
-                    console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
+                    console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}, Estado: ${profileStatus.estado_perfil}`);
                 } else {
                     console.log('⚠️ Perfil aún no existe (se creará en onboarding)');
                 }
@@ -198,9 +214,6 @@ Deno.serve(async (req) => {
                 break;
             }
 
-            // ═══════════════════════════════════════════════════════
-            // SUSCRIPCIÓN ACTUALIZADA (renovación, cambio de plan)
-            // ═══════════════════════════════════════════════════════
             case 'customer.subscription.updated': {
                 console.log('🔄 Suscripción actualizada');
                 
@@ -250,18 +263,11 @@ Deno.serve(async (req) => {
                 break;
             }
 
-            // ═══════════════════════════════════════════════════════
-            // TRIAL TERMINADO (fin de prueba)
-            // ═══════════════════════════════════════════════════════
             case 'customer.subscription.trial_will_end': {
                 console.log('⏰ Trial terminará pronto (3 días antes)');
-                // Aquí podrías enviar email de recordatorio
                 break;
             }
 
-            // ═══════════════════════════════════════════════════════
-            // SUSCRIPCIÓN ELIMINADA/EXPIRADA
-            // ═══════════════════════════════════════════════════════
             case 'customer.subscription.deleted': {
                 console.log('🔴 Suscripción eliminada/expirada');
                 
@@ -304,9 +310,6 @@ Deno.serve(async (req) => {
                 break;
             }
 
-            // ═══════════════════════════════════════════════════════
-            // PAGO FALLIDO
-            // ═══════════════════════════════════════════════════════
             case 'invoice.payment_failed': {
                 console.log('❌ Pago fallido');
                 
@@ -323,10 +326,7 @@ Deno.serve(async (req) => {
                     const dbSub = subs[0];
                     
                     // Si ya expiró, ocultar
-                    const expirationDate = new Date(dbSub.fecha_expiracion);
-                    const today = new Date();
-                    
-                    if (expirationDate <= today) {
+                    if (!isSubscriptionActive(subscription.status, subscription.current_period_end)) {
                         await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                             estado: 'finalizada'
                         });
