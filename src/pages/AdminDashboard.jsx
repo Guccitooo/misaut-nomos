@@ -78,6 +78,29 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // ✅ NUEVA FUNCIÓN: Activar trial manualmente
+  const handleActivateTrial = async (email) => {
+    try {
+      console.log('🔧 Activando trial para:', email);
+      
+      const response = await base44.functions.invoke('activateUserTrial', {
+        email: email
+      });
+      
+      if (response.data.ok) {
+        toast.success(`Trial activado correctamente para ${email}`);
+        // Recargar perfiles y suscripciones
+        queryClient.invalidateQueries({ queryKey: ['adminProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['adminSubscriptions'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error activando trial:', error);
+      toast.error('Error al activar trial');
+    }
+  };
+
   const { data: users = [] } = useQuery({
     queryKey: ['adminUsers'],
     queryFn: () => base44.entities.User.list(),
@@ -197,6 +220,44 @@ export default function AdminDashboardPage() {
     }
   });
 
+  // Helper function to determine if a subscription is active
+  const isSubscriptionActive = (status, expirationDate) => {
+    if (status === "actif") {
+      return new Date(expirationDate) > new Date();
+    }
+    return false; // Only "actif" subscriptions with a future expiration are considered active
+  };
+
+  // Helper function for profile status badges
+  const getEstadoBadge = (estado) => {
+    switch (estado) {
+      case "activo":
+        return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
+      case "pendiente":
+        return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
+      case "inactivo":
+        return <Badge className="bg-gray-100 text-gray-800">Inactivo</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{estado || "Desconocido"}</Badge>;
+    }
+  };
+
+  // Helper function for profile visibility badges
+  const getVisibilidadBadge = (isVisible) => {
+    return isVisible ? (
+      <Badge className="bg-green-100 text-green-800">
+        <Eye className="w-3 h-3 mr-1" />
+        Visible
+      </Badge>
+    ) : (
+      <Badge className="bg-gray-100 text-gray-800">
+        <EyeOff className="w-3 h-3 mr-1" />
+        Oculto
+      </Badge>
+    );
+  };
+
+
   const professionals = users.filter(u => u.user_type === "professionnel");
   const clients = users.filter(u => u.user_type === "client");
   const activeProfiles = profiles.filter(p => p.visible_en_busqueda === true);
@@ -243,30 +304,11 @@ export default function AdminDashboardPage() {
 
   const profilesWithUserData = profiles.map(profile => {
     const userData = users.find(u => u.id === profile.user_id);
-    
-    // ✅ MAPEAR subscription_status correctamente
-    let displayStatus = "desconocido";
-    if (userData?.subscription_status) {
-      const status = userData.subscription_status;
-      // Mapear todos los posibles valores
-      if (status === "actif" || status === "activo") {
-        displayStatus = "actif";
-      } else if (status === "en_prueba" || status === "trial" || status === "en_attente") {
-        displayStatus = "en_prueba";
-      } else if (status === "suspendu" || status === "suspendido") {
-        displayStatus = "suspendu";
-      } else if (status === "annule" || status === "cancelado" || status === "inactivo") {
-        displayStatus = "annule";
-      } else {
-        displayStatus = status; // Usar el valor original si no está en el mapeo
-      }
-    }
-    
     return {
       ...profile,
       user_email: userData?.email || "Sin email",
       user_name: userData?.full_name || "Sin nombre",
-      subscription_status: displayStatus
+      // subscription_status: userData?.subscription_status || "desconocido" // This is derived from actual subscriptions now
     };
   });
 
@@ -310,6 +352,13 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
+
+  const handleToggleVisibility = (profile) => {
+    toggleVisibilityMutation.mutate({
+      profileId: profile.id,
+      newVisibility: !profile.visible_en_busqueda
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
@@ -394,85 +443,94 @@ export default function AdminDashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProfiles.map((profile) => (
-                        <TableRow key={profile.id}>
-                          <TableCell className="font-medium">
-                            {profile.business_name}
-                          </TableCell>
-                          <TableCell>{profile.user_name}</TableCell>
-                          <TableCell className="text-sm text-gray-600">
-                            {profile.user_email}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {profile.categories?.slice(0, 2).map((cat, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {cat}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={
-                              profile.estado_perfil === "activo" ? "bg-green-100 text-green-800" :
-                              profile.estado_perfil === "pendiente" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-gray-100 text-gray-800"
-                            }>
-                              {profile.estado_perfil}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {profile.visible_en_busqueda ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <Eye className="w-3 h-3 mr-1" />
-                                Visible
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">
-                                <EyeOff className="w-3 h-3 mr-1" />
-                                Oculto
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={
-                              profile.subscription_status === "actif" ? "bg-green-100 text-green-800" :
-                              profile.subscription_status === "en_prueba" ? "bg-blue-100 text-blue-800" :
-                              profile.subscription_status === "annule" ? "bg-red-100 text-red-800" :
-                              profile.subscription_status === "suspendu" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-gray-100 text-gray-800"
-                            }>
-                              {profile.subscription_status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant={profile.visible_en_busqueda ? "outline" : "default"}
-                                onClick={() => toggleVisibilityMutation.mutate({
-                                  profileId: profile.id,
-                                  newVisibility: !profile.visible_en_busqueda
-                                })}
-                                disabled={toggleVisibilityMutation.isPending}
-                              >
-                                {profile.visible_en_busqueda ? (
-                                  <><EyeOff className="w-3 h-3 mr-1" /> Ocultar</>
-                                ) : (
-                                  <><Eye className="w-3 h-3 mr-1" /> Mostrar</>
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setSelectedProfile(profile)}
-                              >
-                                Ver
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredProfiles.map((profile) => {
+                        const userSub = subscriptions.find(s => s.user_id === profile.user_id);
+                        const isActive = userSub ? isSubscriptionActive(userSub.estado, userSub.fecha_expiracion) : false;
+
+                        return (
+                          <TableRow key={profile.id} className={`${!isActive ? 'bg-red-50' : ''}`}>
+                            <TableCell className="font-medium">
+                              {profile.business_name}
+                            </TableCell>
+                            <TableCell>{profile.user_name}</TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {profile.user_email}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {profile.categories?.slice(0, 2).map((cat, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {cat}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getEstadoBadge(profile.estado_perfil)}
+                            </TableCell>
+                            <TableCell>
+                              {getVisibilidadBadge(profile.visible_en_busqueda)}
+                            </TableCell>
+                            <TableCell>
+                              {userSub ? (
+                                <div className="space-y-1">
+                                  <Badge className={isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                                    {userSub.estado}
+                                  </Badge>
+                                  {!isActive && (
+                                    <div className="text-xs text-red-600">
+                                      ⚠️ No visible
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <Badge className="bg-gray-100 text-gray-800">Sin suscripción</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {!userSub || !isActive ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    const userEmail = profile.user_email; // Using user_email from profilesWithUserData
+                                    if (userEmail && userEmail !== "Sin email") {
+                                      handleActivateTrial(userEmail);
+                                    } else {
+                                      toast.error('No se encontró email del usuario');
+                                    }
+                                  }}
+                                  className="bg-green-600 hover:bg-green-700 text-xs"
+                                >
+                                  Activar trial
+                                </Button>
+                              ) : (
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleToggleVisibility(profile)}
+                                    className="text-xs"
+                                    disabled={toggleVisibilityMutation.isPending}
+                                  >
+                                    {profile.visible_en_busqueda ? (
+                                      <><EyeOff className="w-3 h-3 mr-1" /> Ocultar</>
+                                    ) : (
+                                      <><Eye className="w-3 h-3 mr-1" /> Mostrar</>
+                                    )}
+                                  </Button>
+                                   <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedProfile(profile)}
+                                  >
+                                    Ver
+                                  </Button>
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -803,7 +861,7 @@ export default function AdminDashboardPage() {
                   <li>El usuario <strong>{deletingUser?.email}</strong></li>
                   <li>Su perfil profesional (si existe)</li>
                   <li>Todos sus mensajes</li>
-                  <li>Todos sus reseñas</li>
+                  <li>Todas sus reseñas</li>
                   <li>Su suscripción</li>
                 </ul>
                 <p className="mt-3 text-red-600 font-semibold">
