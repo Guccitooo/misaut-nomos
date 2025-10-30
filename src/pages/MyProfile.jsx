@@ -25,24 +25,55 @@ import { toast } from "sonner";
 
 // ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado || !fechaExpiracion) return false;
+  if (!estado) return false;
   
-  const normalizedState = estado.toLowerCase();
-  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active"];
+  // ✅ Normalizar estado (minúsculas, sin espacios)
+  const normalizedState = estado.toLowerCase().trim();
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiration = new Date(fechaExpiracion);
-  expiration.setHours(0, 0, 0, 0);
+  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
-  // Si está en un estado válido Y no ha expirado
+  // Si está en un estado válido
   if (validStates.includes(normalizedState)) {
-    return expiration >= today;
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiration = new Date(fechaExpiracion);
+      expiration.setHours(0, 0, 0, 0);
+      
+      // Si la fecha de expiración no es válida (incluyendo null, undefined, o string no parseable)
+      // y el estado es de un tipo "activo", asumir que está activo según la lógica de la integración
+      if (isNaN(expiration.getTime())) {
+          console.warn('Fecha de expiración inválida o ausente para un estado activo:', estado, 'Fecha:', fechaExpiracion);
+          return true; // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
+      }
+      
+      return expiration >= today;
+    } catch (error) {
+      console.error('Error parseando fecha para estado activo:', error, 'Fecha:', fechaExpiracion);
+      // Si hay error parseando fecha (ej: tipo de dato inesperado), pero el estado es válido, asumir que está activo
+      return true;
+    }
   }
   
   // Si está cancelado pero aún tiene tiempo
   if (normalizedState === "cancelado" || normalizedState === "canceled") {
-    return expiration >= today;
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiration = new Date(fechaExpiracion);
+      expiration.setHours(0, 0, 0, 0);
+      
+      // Si la fecha de expiración no es válida para un estado cancelado, se considera no activo
+      if (isNaN(expiration.getTime())) {
+          console.warn('Fecha de expiración inválida o ausente para estado cancelado:', fechaExpiracion);
+          return false;
+      }
+
+      return expiration >= today;
+    } catch (error) {
+      console.error('Error parseando fecha para estado cancelado:', error, 'Fecha:', fechaExpiracion);
+      return false;
+    }
   }
   
   return false;
@@ -264,7 +295,7 @@ export default function MyProfilePage() {
       };
     }
     
-    if (normalizedState === "activo" || normalizedState === "active") {
+    if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
       return {
         text: "Suscripción activa",
         badge: "🟢",
