@@ -71,6 +71,7 @@ export default function AdminDashboardPage() {
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDays, setExtendDays] = useState(7);
   const [isCleaningUsers, setIsCleaningUsers] = useState(false);
+  const [isCleaningProfiles, setIsCleaningProfiles] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -247,6 +248,38 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleCleanOrphanProfiles = async () => {
+    try {
+      setIsCleaningProfiles(true);
+      console.log('🧹 Limpiando perfiles huérfanos...');
+      
+      const response = await base44.functions.invoke('cleanOrphanProfiles');
+      
+      if (response.data.ok) {
+        toast.success(response.data.message);
+        
+        // Mostrar detalles
+        if (response.data.cleaned_profiles && response.data.cleaned_profiles.length > 0) {
+          setTimeout(() => {
+            const profileNames = response.data.cleaned_profiles.map(p => p.business_name || p.id).join(', ');
+            toast.info(`Perfiles eliminados: ${profileNames}`, {
+              duration: 10000
+            });
+          }, 1000);
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error limpiando perfiles:', error);
+      toast.error('Error al limpiar perfiles huérfanos');
+    } finally {
+      setIsCleaningProfiles(false);
+    }
+  };
+
   const { data: users = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
@@ -409,23 +442,42 @@ export default function AdminDashboardPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
               <p className="text-gray-600">Gestiona usuarios, perfiles y suscripciones</p>
             </div>
-            <Button
-              onClick={handleCleanDeletedUsers}
-              disabled={isCleaningUsers}
-              variant="outline"
-              className="text-orange-600 border-orange-300 hover:bg-orange-50"
-            >
-              {isCleaningUsers ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Limpiando...
-                </>
-              ) : (
-                <>
-                  🧹 Limpiar eliminados
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCleanDeletedUsers}
+                disabled={isCleaningUsers}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                {isCleaningUsers ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Limpiando...
+                  </>
+                ) : (
+                  <>
+                    🧹 Limpiar eliminados
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleCleanOrphanProfiles}
+                disabled={isCleaningProfiles}
+                variant="outline"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                {isCleaningProfiles ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Limpiando...
+                  </>
+                ) : (
+                  <>
+                    🗑️ Limpiar perfiles huérfanos
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
