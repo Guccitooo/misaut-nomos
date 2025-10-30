@@ -16,54 +16,11 @@ import {
   EyeOff,
   CheckCircle,
   XCircle,
-  AlertCircle, // New import
-  Calendar, // New import
-  Search, // Existing, ensure it's still needed (yes, for input)
-  AlertTriangle, // Existing, removing as stats removed
-  Trash2, // Existing, removing as user/review deletion removed
-} from "lucide-react";
-import { toast } from "sonner";
-import { // Retaining these imports as they were in original and might be implicitly used, though outline doesn't show explicit usage of dialogs. Removing based on self-correction.
-  Dialog, // Removing
-  DialogContent, // Removing
-  DialogHeader, // Removing
-  DialogTitle, // Removing
-  DialogDescription, // Removing
-  DialogFooter, // Removing
-} from "@/components/ui/dialog"; // Removing
-import { // Retaining these imports as they were in original and might be implicitly used, though outline doesn't show explicit usage of alert-dialogs. Removing based on self-correction.
-  AlertDialog, // Removing
-  AlertDialogAction, // Removing
-  AlertDialogCancel, // Removing
-  AlertDialogContent, // Removing
-  AlertDialogDescription, // Removing
-  AlertDialogFooter, // Removing
-  AlertDialogHeader, // Removing
-  AlertDialogTitle, // Removing
-} from "@/components/ui/alert-dialog"; // Removing
-
-// Self-correction: Remove dialog and alert-dialog imports if they are not explicitly used in the *new* structure.
-// Based on the outline's content, selectedProfile, deletingUser, deletingReview states and their associated dialogs are removed.
-// So, removing these imports.
-// Also remove `MessageSquare`, `Star`, `TrendingUp`, `Shield`, `FileText` from lucide-react as stats/reviews are gone.
-
-// Corrected imports after self-correction:
-// Updated lucide-react imports
-// Removed all dialog/alert-dialog imports
-import {
-  Users,
-  Briefcase,
-  CreditCard,
-  Loader2,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  XCircle,
   AlertCircle,
   Calendar,
   Search,
 } from "lucide-react";
-
+import { toast } from "sonner";
 
 // ✅ HELPER: Verificar si suscripción está activa (MISMA LÓGICA QUE EN SEARCH)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -247,7 +204,7 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // ✅ MEJORADO: Obtener badge de suscripción con lógica correcta (New function from outline)
+  // ✅ MEJORADO: Obtener badge de suscripción con lógica correcta
   const getSubscriptionBadge = (userSub) => {
     if (!userSub) {
       return (
@@ -263,7 +220,7 @@ export default function AdminDashboardPage() {
     // Colores según estado
     let colorClass = "bg-gray-100 text-gray-800";
     let statusText = userSub.estado;
-
+    
     if (normalizedState === "en_prueba" || normalizedState === "trialing") {
       colorClass = isActive ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "en_prueba" : "prueba expirada";
@@ -271,7 +228,6 @@ export default function AdminDashboardPage() {
       colorClass = isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "activo" : "expirado";
     } else if (normalizedState === "cancelado" || normalizedState === "canceled") {
-      // A cancelled subscription can still be active until its expiration date.
       colorClass = isActive ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800";
       statusText = isActive ? "cancelado (activo)" : "cancelado";
     } else {
