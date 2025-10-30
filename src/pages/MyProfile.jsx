@@ -581,7 +581,7 @@ export default function MyProfilePage() {
                           <strong>Renovación:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
                         </p>
                       )}
-                      {subscription.estado === "en_prueba" && (
+                      {subscription.plan_id === "plan_monthly_trial" && subscription.estado === "en_prueba" && (
                         <p>
                           <strong>Próximo cobro:</strong> {subscription.plan_precio}€/mes
                         </p>
@@ -1009,28 +1009,62 @@ export default function MyProfilePage() {
                   </div>
 
                   <div>
-                    <Label>Formas de pago aceptadas</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Label className="text-base font-semibold">Formas de pago aceptadas</Label>
+                    {isEditing && (
+                      <p className="text-sm text-gray-500 mt-1 mb-3">
+                        Selecciona las formas de pago que aceptas
+                      </p>
+                    )}
+                    <div className={`space-y-2 ${!isEditing ? 'flex flex-wrap gap-2' : ''}`}>
                       {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                        <div
-                          key={forma}
-                          onClick={() => isEditing && toggleFormaPago(forma)}
-                          className={`flex items-center gap-2 p-2 rounded-lg border-2 transition-all ${
-                            isEditing ? 'cursor-pointer' : 'cursor-default'
-                          } ${
-                            profileData.formas_pago?.includes(forma)
-                              ? "border-blue-600 bg-blue-50"
-                              : "border-gray-200"
-                          }`}
-                        >
-                          <Checkbox
-                            checked={profileData.formas_pago?.includes(forma)}
-                            disabled={!isEditing}
-                          />
-                          <span className="text-sm">{forma}</span>
-                        </div>
+                        isEditing ? (
+                          <div
+                            key={forma}
+                            onClick={() => toggleFormaPago(forma)}
+                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                              profileData.formas_pago?.includes(forma)
+                                ? "border-purple-600 bg-purple-50 shadow-md"
+                                : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                              profileData.formas_pago?.includes(forma)
+                                ? "bg-purple-600 border-purple-600"
+                                : "border-gray-300"
+                            }`}>
+                              {profileData.formas_pago?.includes(forma) && (
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <span className={`text-base font-medium flex-1 transition-colors ${
+                              profileData.formas_pago?.includes(forma) ? "text-purple-900" : "text-gray-700"
+                            }`}>
+                              {forma}
+                            </span>
+                            {profileData.formas_pago?.includes(forma) && (
+                              <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
+                            )}
+                          </div>
+                        ) : (
+                          profileData.formas_pago?.includes(forma) && (
+                            <Badge key={forma} className="bg-purple-100 text-purple-900 text-sm px-3 py-1">
+                              {forma}
+                            </Badge>
+                          )
+                        )
                       ))}
                     </div>
+                    {isEditing && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-900 font-medium">
+                          {profileData.formas_pago?.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
+                          {profileData.formas_pago?.length === 1 && `✓ 1 forma de pago seleccionada`}
+                          {profileData.formas_pago?.length > 1 && `✓ ${profileData.formas_pago.length} formas de pago seleccionadas`}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
