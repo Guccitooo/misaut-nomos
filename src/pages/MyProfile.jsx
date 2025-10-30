@@ -88,6 +88,8 @@ export default function MyProfilePage() {
   const [success, setSuccess] = useState(false);
   const [searchParams] = useSearchParams();
   const [forcingSync, setForcingSync] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ✅ NUEVO: Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
@@ -584,6 +586,36 @@ export default function MyProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      console.log('🗑️ Iniciando eliminación de cuenta...');
+      
+      const response = await base44.functions.invoke('deleteUser', {
+        userId: user.id,
+        isSelfDelete: true
+      });
+      
+      if (response.data.ok) {
+        toast.success('Tu cuenta ha sido eliminada correctamente', {
+          duration: 5000
+        });
+        
+        // Esperar 2 segundos y cerrar sesión
+        setTimeout(() => {
+          base44.auth.logout();
+        }, 2000);
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+        setIsDeleting(false);
+      }
+    } catch (error) {
+      console.error('Error eliminando cuenta:', error);
+      toast.error('Error al eliminar tu cuenta');
+      setIsDeleting(false);
+    }
+  };
+
   if (!user || loadingProfile || loadingSubscription) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -935,6 +967,24 @@ export default function MyProfilePage() {
                 {isProfessional ? "Autónomo" : "Cliente"}
               </Badge>
             </div>
+
+            {/* ✅ NUEVO: Zona de peligro - Eliminar cuenta */}
+            {!isEditing && (
+              <div className="mt-8 pt-6 border-t border-red-200">
+                <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ Zona de peligro</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Esta acción eliminará permanentemente tu cuenta, perfil, mensajes, favoritos, reseñas y cancelará tu suscripción activa.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Eliminar mi cuenta
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -986,10 +1036,10 @@ export default function MyProfilePage() {
                   <div>
                     <Label>Teléfono de contacto</Label>
                     <Input
-                      value={profileData.telefono_contacto}
-                      onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="+34 612 345 678"
+                        value={profileData.telefono_contacto}
+                        onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="+34 612 345 678"
                     />
                   </div>
                 </div>
@@ -1400,6 +1450,78 @@ export default function MyProfilePage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* ✅ NUEVO: Dialog de confirmación de eliminación */}
+        {showDeleteDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-lg w-full">
+              <CardHeader className="bg-red-50 border-b border-red-200">
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5" />
+                  ¿Eliminar tu cuenta definitivamente?
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                  <p className="text-sm font-semibold text-red-800">
+                    ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p className="font-semibold">Se eliminará permanentemente:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>Tu cuenta y perfil completo</li>
+                    <li>Todos tus mensajes y conversaciones</li>
+                    <li>Tus favoritos y reseñas</li>
+                    {isProfessional && (
+                      <>
+                        <li>Tu perfil profesional y fotos</li>
+                        <li>Tu suscripción activa (se cancelará inmediatamente)</li>
+                        <li>Tu visibilidad en las búsquedas</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                  <p className="text-sm text-blue-900">
+                    💡 <strong>Alternativa:</strong> Si solo quieres pausar tu cuenta temporalmente,
+                    puedes cancelar tu suscripción desde "Gestión de Suscripción" sin eliminar tu cuenta.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 justify-end pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteDialog(false)}
+                    disabled={isDeleting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Eliminando...
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        Sí, eliminar definitivamente
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

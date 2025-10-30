@@ -313,6 +313,14 @@ Deno.serve(async (req) => {
                     subscription_status: 'finalizada'
                 });
 
+                // ✅ NUEVO: Ejecutar limpieza automática
+                console.log('🧹 Ejecutando limpieza automática...');
+                try {
+                    await base44.asServiceRole.functions.invoke('cleanOrphanData');
+                } catch (cleanupError) {
+                    console.log('⚠️ Error en limpieza automática:', cleanupError.message);
+                }
+
                 console.log('✅ Suscripción finalizada y perfil oculto');
                 break;
             }

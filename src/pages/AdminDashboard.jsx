@@ -70,8 +70,6 @@ export default function AdminDashboardPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDays, setExtendDays] = useState(7);
-  const [isCleaningUsers, setIsCleaningUsers] = useState(false);
-  const [isCleaningProfiles, setIsCleaningProfiles] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -119,17 +117,17 @@ export default function AdminDashboardPage() {
       console.log('🗑️ Eliminando usuario:', selectedUser.id);
       
       const response = await base44.functions.invoke('deleteUser', {
-        userId: selectedUser.id
+        userId: selectedUser.id,
+        isSelfDelete: false
       });
       
       if (response.data.ok) {
-        toast.success(`Usuario ${selectedUser.email} eliminado de la base de datos`);
+        toast.success(`Usuario ${selectedUser.email} eliminado completamente`);
         
-        // ⚠️ Mostrar advertencia importante en un modal más visible
-        setTimeout(() => {
-          const warningMessage = response.data.warning || response.data.next_step;
-          if (warningMessage) {
-            toast.warning(warningMessage, {
+        // ⚠️ Mostrar advertencia importante
+        if (response.data.warning) {
+          setTimeout(() => {
+            toast.warning(response.data.warning, {
               duration: 15000,
               style: {
                 background: '#FEF3C7',
@@ -137,8 +135,8 @@ export default function AdminDashboardPage() {
                 border: '2px solid #F59E0B'
               }
             });
-          }
-        }, 1000);
+          }, 1000);
+        }
         
         queryClient.invalidateQueries({ queryKey: ['allUsers'] });
         queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
@@ -222,61 +220,6 @@ export default function AdminDashboardPage() {
     } catch (error) {
       console.error('Error extendiendo trial:', error);
       toast.error('Error al extender prueba');
-    }
-  };
-
-  const handleCleanDeletedUsers = async () => {
-    try {
-      setIsCleaningUsers(true);
-      console.log('🧹 Limpiando usuarios eliminados...');
-      
-      const response = await base44.functions.invoke('cleanDeletedUsers');
-      
-      if (response.data.ok) {
-        toast.success(response.data.message);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
-        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
-      } else {
-        toast.error(`Error: ${response.data.error}`);
-      }
-    } catch (error) {
-      console.error('Error limpiando usuarios:', error);
-      toast.error('Error al limpiar usuarios eliminados');
-    } finally {
-      setIsCleaningUsers(false);
-    }
-  };
-
-  const handleCleanOrphanProfiles = async () => {
-    try {
-      setIsCleaningProfiles(true);
-      console.log('🧹 Limpiando perfiles huérfanos...');
-      
-      const response = await base44.functions.invoke('cleanOrphanProfiles');
-      
-      if (response.data.ok) {
-        toast.success(response.data.message);
-        
-        // Mostrar detalles
-        if (response.data.cleaned_profiles && response.data.cleaned_profiles.length > 0) {
-          setTimeout(() => {
-            const profileNames = response.data.cleaned_profiles.map(p => p.business_name || p.id).join(', ');
-            toast.info(`Perfiles eliminados: ${profileNames}`, {
-              duration: 10000
-            });
-          }, 1000);
-        }
-        
-        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
-      } else {
-        toast.error(`Error: ${response.data.error}`);
-      }
-    } catch (error) {
-      console.error('Error limpiando perfiles:', error);
-      toast.error('Error al limpiar perfiles huérfanos');
-    } finally {
-      setIsCleaningProfiles(false);
     }
   };
 
@@ -441,42 +384,9 @@ export default function AdminDashboardPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
               <p className="text-gray-600">Gestiona usuarios, perfiles y suscripciones</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleCleanDeletedUsers}
-                disabled={isCleaningUsers}
-                variant="outline"
-                className="text-orange-600 border-orange-300 hover:bg-orange-50"
-              >
-                {isCleaningUsers ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Limpiando...
-                  </>
-                ) : (
-                  <>
-                    🧹 Limpiar eliminados
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleCleanOrphanProfiles}
-                disabled={isCleaningProfiles}
-                variant="outline"
-                className="text-red-600 border-red-300 hover:bg-red-50"
-              >
-                {isCleaningProfiles ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Limpiando...
-                  </>
-                ) : (
-                  <>
-                    🗑️ Limpiar perfiles huérfanos
-                  </>
-                )}
-              </Button>
+              <p className="text-sm text-green-600 mt-2">
+                ✅ Limpieza automática activada - Los datos huérfanos se eliminan automáticamente
+              </p>
             </div>
           </div>
         </div>
@@ -821,9 +731,6 @@ export default function AdminDashboardPage() {
                   <p className="text-sm font-semibold text-red-800">
                     ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
                   </p>
-                  <p className="text-xs text-red-700 mt-1">
-                    El usuario desaparecerá completamente de la base de datos.
-                  </p>
                 </div>
 
                 <div>
@@ -838,16 +745,19 @@ export default function AdminDashboardPage() {
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm font-semibold text-yellow-900 mb-2">
-                    📋 Se eliminará de la base de datos:
+                    📋 Se eliminará automáticamente:
                   </p>
                   <ul className="text-xs text-yellow-800 space-y-1 ml-4 list-disc">
-                    <li>Perfil profesional y configuración</li>
-                    <li>Suscripción activa y historial de pagos</li>
+                    <li>Suscripción (cancelación inmediata en Stripe)</li>
+                    <li>Perfil profesional y fotos</li>
                     <li>Mensajes enviados y recibidos</li>
                     <li>Reseñas realizadas y recibidas</li>
                     <li>Lista de favoritos</li>
                     <li>Registro completo del usuario</li>
                   </ul>
+                  <p className="text-xs text-yellow-700 mt-2 font-semibold">
+                    ✅ Los datos huérfanos se limpiarán automáticamente
+                  </p>
                 </div>
 
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
@@ -855,10 +765,7 @@ export default function AdminDashboardPage() {
                     🔐 PASO ADICIONAL REQUERIDO:
                   </p>
                   <p className="text-xs text-blue-800">
-                    Después de confirmar, debes ir manualmente a <strong>Base44 Dashboard &rarr; Users</strong> y eliminar la cuenta de autenticación con email <strong className="underline">{selectedUser?.email}</strong>
-                  </p>
-                  <p className="text-xs text-blue-700 mt-2">
-                    ⚠️ Si no lo haces, el usuario podrá iniciar sesión pero no tendrá datos.
+                    Después de confirmar, debes ir manualmente a <strong>Base44 Dashboard → Users</strong> y eliminar la cuenta de autenticación con email <strong className="underline">{selectedUser?.email}</strong>
                   </p>
                 </div>
 
