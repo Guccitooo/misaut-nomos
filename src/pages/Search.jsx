@@ -36,7 +36,8 @@ import {
   Key,
   Wind,
   Settings,
-  AlertCircle
+  AlertCircle,
+  User // Added User icon import
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -553,45 +554,46 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
+      {/* ✅ Hero Section - SOLO SIN USUARIO */}
+      {!isLoadingUser && !user && (
+        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
+          <div className="max-w-6xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
               Encuentra el autónomo perfecto
             </h1>
-            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
               Profesionales cualificados y verificados en toda España
             </p>
             
-            {!isLoadingUser && !user && (
-              <div className="space-y-4">
-                <p className="text-base text-blue-100 font-medium">
-                  Elige cómo quieres empezar:
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
-                  <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
-                    >
-                      🧰 Soy autónomo
-                    </Button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
-                    >
-                      👤 Soy cliente
-                    </Button>
-                  </Link>
-                </div>
+            <div className="space-y-4">
+              <p className="text-base text-blue-100 font-medium">
+                Elige cómo quieres empezar:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+                <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
+                  >
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    Soy autónomo
+                  </Button>
+                </Link>
+                
+                <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
+                  >
+                    <User className="w-5 h-5 mr-2" />
+                    Soy cliente
+                  </Button>
+                </Link>
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Card className="mb-8 shadow-lg border-0">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -401,12 +402,12 @@ export default function Layout({ children, currentPageName }) {
           
           /* ✅ Menú inferior móvil - SOLO EN MÓVIL Y CON USUARIO LOGUEADO */
           .mobile-bottom-nav {
-            display: none; /* ❌ Oculto por defecto */
+            display: none;
           }
           
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
-              display: grid; /* ✅ Visible solo en móvil */
+              display: grid;
               position: fixed;
               bottom: 0;
               left: 0;
@@ -456,10 +457,9 @@ export default function Layout({ children, currentPageName }) {
             text-align: center;
           }
           
-          /* ✅ Ajustar padding del contenido en móvil SOLO SI HAY USUARIO */
           @media (max-width: 1023px) {
             .main-content-with-bottom-nav {
-              padding-bottom: 80px; /* Espacio para menú inferior */
+              padding-bottom: 80px;
             }
           }
         `}
@@ -641,6 +641,50 @@ export default function Layout({ children, currentPageName }) {
           )}
 
           <main className="flex-1 flex flex-col overflow-hidden">
+            {/* ✅ Desktop Header - SOLO SIN USUARIO */}
+            {!user && (
+              <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                  <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                      <img 
+                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
+                        alt="MilAutónomos"
+                        className="w-full h-full object-cover"
+                        loading="eager"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <h1 className="font-bold text-xl text-gray-900">MilAutónomos</h1>
+                      <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
+                    </div>
+                  </Link>
+                  
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={handleLogin}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Iniciar sesión
+                    </Button>
+                    <Link to={createPageUrl("PricingPlans")}>
+                      <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-md">
+                        <Briefcase className="w-4 h-4 mr-2" />
+                        Hazte Autónomo
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </header>
+            )}
+
             {/* ✅ Mobile Header - SOLO EN MÓVIL */}
             <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
               <div className="flex items-center justify-between">
@@ -657,7 +701,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </header>
 
-            {/* ✅ Contenido principal - padding condicional */}
+            {/* ✅ Contenido principal */}
             <div className={`flex-1 overflow-auto ${user ? 'main-content-with-bottom-nav' : ''}`}>
               {children}
             </div>
