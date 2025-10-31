@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,10 +28,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
 import PhotoGallery from "../components/profile/PhotoGallery.jsx";
 import OptimizedImage from "../components/ui/OptimizedImage";
+import TranslatedText from "../components/ui/TranslatedText";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get('id');
   const [user, setUser] = useState(null);
@@ -192,12 +194,10 @@ export default function ProfessionalProfilePage() {
       console.log('🔍 [REVIEWS] User actual:', user?.email || 'SIN LOGIN');
       
       try {
-        // Intentar cargar TODAS las reviews sin filtro primero para debug
         const allReviewsInDB = await base44.entities.Review.list();
         console.log('📊 [REVIEWS] Total reviews en DB:', allReviewsInDB.length);
         console.log('📊 [REVIEWS] Todas las reviews:', allReviewsInDB);
         
-        // Ahora filtrar por professional_id
         const filteredReviews = allReviewsInDB.filter(r => r.professional_id === professionalId);
         console.log('✅ [REVIEWS] Reviews filtradas para este profesional:', filteredReviews.length);
         console.log('✅ [REVIEWS] Datos:', filteredReviews);
@@ -210,7 +210,7 @@ export default function ProfessionalProfilePage() {
     },
     enabled: !!professionalId,
     initialData: [],
-    staleTime: 0, // Sin caché para debug
+    staleTime: 0,
     cacheTime: 0,
     refetchOnMount: true,
   });
@@ -278,6 +278,7 @@ export default function ProfessionalProfilePage() {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                   <div>
+                    {/* ✅ Nombre NO se traduce (nombre propio) */}
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
                       {profile.business_name}
                     </h1>
@@ -363,10 +364,11 @@ export default function ProfessionalProfilePage() {
                   </div>
                 </div>
 
+                {/* ✅ Categorías SÍ se traducen (usando diccionario) */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {profile.categories?.map((cat, idx) => (
                     <Badge key={idx} className="bg-blue-100 text-blue-900">
-                      {cat}
+                      {t(cat)}
                     </Badge>
                   ))}
                   {profile.price_range && (
@@ -376,8 +378,12 @@ export default function ProfessionalProfilePage() {
                   )}
                 </div>
 
+                {/* ✅ Descripción SÍ se traduce con TranslatedText */}
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  {profile.description}
+                  <TranslatedText 
+                    text={profile.description}
+                    showLoader={true}
+                  />
                 </p>
               </div>
             </div>
@@ -417,6 +423,7 @@ export default function ProfessionalProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* ✅ Zona de servicio NO se traduce (nombres de lugares) */}
                 {profile.service_area && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
@@ -508,6 +515,7 @@ export default function ProfessionalProfilePage() {
               </CardContent>
             </Card>
 
+            {/* ✅ CIF/NIF NO se traduce (dato técnico) */}
             {profile.cif_nif && (
               <Card className="shadow-lg border-0 bg-gray-50">
                 <CardContent className="p-4 text-center">
