@@ -40,6 +40,7 @@ import {
   User // Added User icon import
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 // ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -308,6 +309,7 @@ ProfileCard.displayName = 'ProfileCard';
 export default function SearchPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -559,15 +561,15 @@ export default function SearchPage() {
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
           <div className="max-w-6xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
-              Encuentra el autónomo perfecto
+              {t('heroTitle')}
             </h1>
             <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
-              Profesionales cualificados y verificados en toda España
+              {t('heroSubtitle')}
             </p>
             
             <div className="space-y-4">
               <p className="text-base text-blue-100 font-medium">
-                Elige cómo quieres empezar:
+                {t('chooseHow')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
                 <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
@@ -576,7 +578,7 @@ export default function SearchPage() {
                     className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
                   >
                     <Briefcase className="w-5 h-5 mr-2" />
-                    Soy autónomo
+                    {t('imFreelancer')}
                   </Button>
                 </Link>
                 
@@ -586,7 +588,7 @@ export default function SearchPage() {
                     className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
                   >
                     <User className="w-5 h-5 mr-2" />
-                    Soy cliente
+                    {t('imClient')}
                   </Button>
                 </Link>
               </div>
@@ -600,14 +602,14 @@ export default function SearchPage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-5 h-5 text-blue-700" />
-              <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
+              <h2 className="font-semibold text-lg text-gray-900">{t('filters')}</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar servicio, empresa..."
+                  placeholder={t('search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-12"
@@ -616,13 +618,13 @@ export default function SearchPage() {
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las categorías" />
+                  <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <Briefcase className="w-4 h-4" />
-                      <span>Todas las categorías</span>
+                      <span>{t('allCategories')}</span>
                     </div>
                   </SelectItem>
                   {availableCategories.map((cat) => {
@@ -647,13 +649,13 @@ export default function SearchPage() {
                 }}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las provincias" />
+                  <SelectValue placeholder={t('allProvinces')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>Todas las provincias</span>
+                      <span>{t('allProvinces')}</span>
                     </div>
                   </SelectItem>
                   {availableProvincias.map((provincia) => (
@@ -672,13 +674,13 @@ export default function SearchPage() {
                 onValueChange={setSelectedCiudad}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las ciudades" />
+                  <SelectValue placeholder={t('allCities')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>Todas las ciudades</span>
+                      <span>{t('allCities')}</span>
                     </div>
                   </SelectItem>
                   {availableCiudades.map((ciudad) => (
@@ -697,10 +699,10 @@ export default function SearchPage() {
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {loadingProfiles || loadingSubscriptions ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
+            {loadingProfiles || loadingSubscriptions ? t('loading') : `${filteredProfiles.length} ${t('freelancersAvailable')}`}
           </h2>
           <p className="text-sm text-gray-600">
-            Profesionales verificados en toda España
+            {t('verifiedProfessionals')}
           </p>
         </div>
 
@@ -744,16 +746,10 @@ export default function SearchPage() {
           <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
             <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {selectedCategory !== "all" 
-                ? `🚧 Todavía no hay profesionales en "${selectedCategory}"`
-                : "No se encontraron resultados"}
+              {t('noResults')}
             </h3>
             <p className="text-gray-600 max-w-md mx-auto mb-6">
-              {profiles.length === 0 
-                ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
-                  ? 'Prueba con otros filtros o elimina los filtros activos.'
-                  : 'Intenta modificar tus criterios de búsqueda.'}
+              {t('tryDifferentFilters')}
             </p>
             {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
               <Button
@@ -765,7 +761,7 @@ export default function SearchPage() {
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Ver todos los autónomos
+                {t('viewAll')}
               </Button>
             )}
           </Card>

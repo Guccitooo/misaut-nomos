@@ -2,8 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { MapPin, Mail, Phone, Briefcase } from "lucide-react";
+import { useLanguage } from "./LanguageSwitcher";
 
 export default function Footer() {
+  const { t } = useLanguage();
+  
   return (
     <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-gray-300 pt-12 pb-6">
       <div className="max-w-7xl mx-auto px-4">
@@ -17,11 +20,11 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="text-white font-bold text-lg">MilAutónomos</h3>
-                <p className="text-xs text-gray-400">Tu autónomo de confianza</p>
+                <p className="text-xs text-gray-400">{t('tagline')}</p>
               </div>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
-              La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.
+              {t('platformDescription')}
             </p>
             <div className="flex gap-3">
               <a 
@@ -59,26 +62,26 @@ export default function Footer() {
 
           {/* Column 2: Para Profesionales */}
           <div>
-            <h4 className="text-white font-semibold text-base mb-4">Para Profesionales</h4>
+            <h4 className="text-white font-semibold text-base mb-4">{t('forProfessionals')}</h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to={createPageUrl("PricingPlans")} className="hover:text-white transition-colors">
-                  Planes y Precios
+                  {t('plansAndPricing')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("ProfileOnboarding")} className="hover:text-white transition-colors">
-                  Crear Perfil
+                  {t('createProfile')}
                 </Link>
               </li>
               <li>
                 <a href="#ventajas" className="hover:text-white transition-colors">
-                  Ventajas de Unirse
+                  {t('joinAdvantages')}
                 </a>
               </li>
               <li>
                 <a href="#ayuda" className="hover:text-white transition-colors">
-                  Centro de Ayuda
+                  {t('helpCenter')}
                 </a>
               </li>
             </ul>
@@ -86,26 +89,26 @@ export default function Footer() {
 
           {/* Column 3: Para Clientes */}
           <div>
-            <h4 className="text-white font-semibold text-base mb-4">Para Clientes</h4>
+            <h4 className="text-white font-semibold text-base mb-4">{t('forClients')}</h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to={createPageUrl("Search")} className="hover:text-white transition-colors">
-                  Buscar Autónomos
+                  {t('searchFreelancers')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("ClientOnboarding")} className="hover:text-white transition-colors">
-                  Crear Cuenta Gratis
+                  {t('createFreeAccount')}
                 </Link>
               </li>
               <li>
                 <a href="#categorias" className="hover:text-white transition-colors">
-                  Todas las Categorías
+                  {t('allCategories')}
                 </a>
               </li>
               <li>
                 <a href="#faq" className="hover:text-white transition-colors">
-                  Preguntas Frecuentes
+                  {t('faq')}
                 </a>
               </li>
             </ul>
@@ -113,7 +116,7 @@ export default function Footer() {
 
           {/* Column 4: Contacto */}
           <div>
-            <h4 className="text-white font-semibold text-base mb-4">Contacto</h4>
+            <h4 className="text-white font-semibold text-base mb-4">{t('contact')}</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
@@ -141,23 +144,23 @@ export default function Footer() {
         {/* Bottom Footer */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <div className="text-gray-400 text-center md:text-left">
-            © {new Date().getFullYear()} MilAutónomos. Todos los derechos reservados.
+            © {new Date().getFullYear()} MilAutónomos. {t('allRightsReserved')}.
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             <a href="#privacidad" className="hover:text-white transition-colors">
-              Política de Privacidad
+              {t('privacyPolicy')}
             </a>
             <span className="text-gray-600">•</span>
             <a href="#terminos" className="hover:text-white transition-colors">
-              Términos y Condiciones
+              {t('termsConditions')}
             </a>
             <span className="text-gray-600">•</span>
             <a href="#cookies" className="hover:text-white transition-colors">
-              Política de Cookies
+              {t('cookiePolicy')}
             </a>
             <span className="text-gray-600">•</span>
             <a href="#legal" className="hover:text-white transition-colors">
-              Aviso Legal
+              {t('legalNotice')}
             </a>
           </div>
         </div>

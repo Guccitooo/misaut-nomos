@@ -1,0 +1,185 @@
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export const translations = {
+  es: {
+    // Header
+    login: "Iniciar sesión",
+    becomeFreelancer: "Hazte Autónomo",
+    
+    // Hero
+    heroTitle: "Encuentra el autónomo perfecto",
+    heroSubtitle: "Profesionales cualificados y verificados en toda España",
+    chooseHow: "Elige cómo quieres empezar:",
+    imFreelancer: "Soy autónomo",
+    imClient: "Soy cliente",
+    
+    // Navigation
+    searchFreelancers: "Buscar Autónomos",
+    messages: "Mensajes",
+    favorites: "Favoritos",
+    myProfile: "Mi Perfil",
+    viewPlans: "Ver Planes",
+    mySubscription: "Mi Suscripción",
+    administration: "Administración",
+    logout: "Cerrar sesión",
+    
+    // Search & Filters
+    filters: "Filtros",
+    search: "Buscar servicio, empresa...",
+    allCategories: "Todas las categorías",
+    allProvinces: "Todas las provincias",
+    allCities: "Todas las ciudades",
+    freelancersAvailable: "autónomos disponibles",
+    verifiedProfessionals: "Profesionales verificados en toda España",
+    
+    // Footer
+    aboutUs: "Sobre Nosotros",
+    tagline: "Tu autónomo de confianza",
+    platformDescription: "La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.",
+    forProfessionals: "Para Profesionales",
+    plansAndPricing: "Planes y Precios",
+    createProfile: "Crear Perfil",
+    joinAdvantages: "Ventajas de Unirse",
+    helpCenter: "Centro de Ayuda",
+    forClients: "Para Clientes",
+    createFreeAccount: "Crear Cuenta Gratis",
+    allCategories: "Todas las Categorías",
+    faq: "Preguntas Frecuentes",
+    contact: "Contacto",
+    allRightsReserved: "Todos los derechos reservados",
+    privacyPolicy: "Política de Privacidad",
+    termsConditions: "Términos y Condiciones",
+    cookiePolicy: "Política de Cookies",
+    legalNotice: "Aviso Legal",
+    
+    // Cookie Banner
+    cookieTitle: "Usamos cookies para mejorar tu experiencia",
+    cookieText: "Utilizamos cookies propias y de terceros para analizar el tráfico, mejorar nuestros servicios y mostrarte publicidad relevante. Al hacer clic en",
+    acceptAll: "Aceptar todas",
+    cookieAccept: "aceptas el uso de todas las cookies. Puedes gestionar tus preferencias en nuestra",
+    onlyNecessary: "Solo necesarias",
+    
+    // Common
+    loading: "Cargando...",
+    noResults: "No se encontraron resultados",
+    tryDifferentFilters: "Prueba con otros filtros o elimina los filtros activos.",
+    viewAll: "Ver todos los autónomos",
+  },
+  en: {
+    // Header
+    login: "Login",
+    becomeFreelancer: "Become a Freelancer",
+    
+    // Hero
+    heroTitle: "Find the perfect freelancer",
+    heroSubtitle: "Qualified and verified professionals throughout Spain",
+    chooseHow: "Choose how you want to start:",
+    imFreelancer: "I'm a freelancer",
+    imClient: "I'm a client",
+    
+    // Navigation
+    searchFreelancers: "Search Freelancers",
+    messages: "Messages",
+    favorites: "Favorites",
+    myProfile: "My Profile",
+    viewPlans: "View Plans",
+    mySubscription: "My Subscription",
+    administration: "Administration",
+    logout: "Logout",
+    
+    // Search & Filters
+    filters: "Filters",
+    search: "Search service, company...",
+    allCategories: "All categories",
+    allProvinces: "All provinces",
+    allCities: "All cities",
+    freelancersAvailable: "freelancers available",
+    verifiedProfessionals: "Verified professionals throughout Spain",
+    
+    // Footer
+    aboutUs: "About Us",
+    tagline: "Your trusted freelancer",
+    platformDescription: "The leading platform to connect clients with verified freelance professionals throughout Spain.",
+    forProfessionals: "For Professionals",
+    plansAndPricing: "Plans & Pricing",
+    createProfile: "Create Profile",
+    joinAdvantages: "Join Advantages",
+    helpCenter: "Help Center",
+    forClients: "For Clients",
+    createFreeAccount: "Create Free Account",
+    allCategories: "All Categories",
+    faq: "FAQ",
+    contact: "Contact",
+    allRightsReserved: "All rights reserved",
+    privacyPolicy: "Privacy Policy",
+    termsConditions: "Terms & Conditions",
+    cookiePolicy: "Cookie Policy",
+    legalNotice: "Legal Notice",
+    
+    // Cookie Banner
+    cookieTitle: "We use cookies to improve your experience",
+    cookieText: "We use our own and third-party cookies to analyze traffic, improve our services and show you relevant advertising. By clicking",
+    acceptAll: "Accept all",
+    cookieAccept: "you accept the use of all cookies. You can manage your preferences in our",
+    onlyNecessary: "Only necessary",
+    
+    // Common
+    loading: "Loading...",
+    noResults: "No results found",
+    tryDifferentFilters: "Try different filters or remove active filters.",
+    viewAll: "View all freelancers",
+  }
+};
+
+export const useLanguage = () => {
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'es';
+  });
+
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  const t = (key) => {
+    return translations[language]?.[key] || translations['es'][key] || key;
+  };
+
+  return { language, changeLanguage, t };
+};
+
+export default function LanguageSwitcher() {
+  const { language, changeLanguage } = useLanguage();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+          <Globe className="w-5 h-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem 
+          onClick={() => changeLanguage('es')}
+          className={language === 'es' ? 'bg-blue-50 font-semibold' : ''}
+        >
+          🇪🇸 Español
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => changeLanguage('en')}
+          className={language === 'en' ? 'bg-blue-50 font-semibold' : ''}
+        >
+          🇬🇧 English
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Cookie } from "lucide-react";
+import { useLanguage } from "./LanguageSwitcher";
 
 export default function CookieBanner() {
+  const { t } = useLanguage();
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Verificar si el usuario ya aceptó las cookies
     const cookiesAccepted = localStorage.getItem('cookies_accepted');
     if (!cookiesAccepted) {
-      // Mostrar banner después de 1 segundo (para no ser intrusivo)
       setTimeout(() => {
         setShowBanner(true);
       }, 1000);
@@ -45,14 +45,12 @@ export default function CookieBanner() {
             {/* Content */}
             <div className="flex-1">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                🍪 Usamos cookies para mejorar tu experiencia
+                🍪 {t('cookieTitle')}
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Utilizamos cookies propias y de terceros para analizar el tráfico, mejorar nuestros servicios 
-                y mostrarte publicidad relevante. Al hacer clic en <strong>"Aceptar todas"</strong>, aceptas 
-                el uso de todas las cookies. Puedes gestionar tus preferencias en nuestra{" "}
+                {t('cookieText')} <strong>"{t('acceptAll')}"</strong>, {t('cookieAccept')}{" "}
                 <a href="#cookies" className="text-blue-600 hover:text-blue-700 font-medium underline">
-                  Política de Cookies
+                  {t('cookiePolicy')}
                 </a>.
               </p>
             </div>
@@ -64,13 +62,13 @@ export default function CookieBanner() {
                 onClick={handleReject}
                 className="whitespace-nowrap hover:bg-gray-100"
               >
-                Solo necesarias
+                {t('onlyNecessary')}
               </Button>
               <Button
                 onClick={handleAccept}
                 className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Aceptar todas
+                {t('acceptAll')}
               </Button>
             </div>
 

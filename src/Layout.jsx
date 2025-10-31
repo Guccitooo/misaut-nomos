@@ -32,12 +32,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import Footer from "@/components/ui/Footer"; // Added import
-import CookieBanner from "@/components/ui/CookieBanner"; // Added import
+import Footer from "@/components/ui/Footer";
+import CookieBanner from "@/components/ui/CookieBanner";
+import LanguageSwitcher, { useLanguage } from "@/components/ui/LanguageSwitcher";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -210,23 +212,23 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
     {
-      title: "Buscar Autónomos",
+      title: t('searchFreelancers'),
       url: createPageUrl("Search"),
       icon: Search,
     },
     {
-      title: "Mensajes",
+      title: t('messages'),
       url: createPageUrl("Messages"),
       icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : null
     },
     {
-      title: "Favoritos",
+      title: t('favorites'),
       url: createPageUrl("Favorites"),
       icon: Heart,
     },
     {
-      title: "Mi Perfil",
+      title: t('myProfile'),
       url: createPageUrl("MyProfile"),
       icon: User,
     },
@@ -235,20 +237,20 @@ export default function Layout({ children, currentPageName }) {
   if (user?.user_type === "professionnel") {
     if (hasActiveSubscription) {
       navigationItems.push({
-        title: "Mi Suscripción",
+        title: t('mySubscription'),
         url: createPageUrl("SubscriptionManagement"),
         icon: Briefcase,
       });
     } else {
       navigationItems.push({
-        title: "Ver Planes",
+        title: t('viewPlans'),
         url: createPageUrl("PricingPlans"),
         icon: CreditCard,
       });
     }
   } else if (!user || user?.user_type === "client") {
     navigationItems.push({
-      title: "Ver Planes",
+      title: t('viewPlans'),
       url: createPageUrl("PricingPlans"),
       icon: CreditCard,
     });
@@ -256,7 +258,7 @@ export default function Layout({ children, currentPageName }) {
 
   if (user?.role === "admin") {
     navigationItems.push({
-      title: "Administración",
+      title: t('administration'),
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
@@ -492,7 +494,7 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
-                      <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
+                      <p className="text-xs text-gray-500">{t('tagline')}</p>
                     </div>
                   </Link>
                 </SidebarHeader>
@@ -549,7 +551,7 @@ export default function Layout({ children, currentPageName }) {
                       onClick={handleLogout}
                     >
                       <LogOut className="w-4 h-4 mr-2" />
-                      Cerrar sesión
+                      {t('logout')}
                     </Button>
                   </div>
                 </SidebarFooter>
@@ -614,6 +616,10 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     ))}
                     
+                    <div className="mt-4 mb-4">
+                      <LanguageSwitcher />
+                    </div>
+                    
                     {!user ? (
                       <div className="mt-4 space-y-2">
                         <Button
@@ -621,12 +627,12 @@ export default function Layout({ children, currentPageName }) {
                           onClick={handleLogin}
                         >
                           <User className="w-4 h-4 mr-2" />
-                          Iniciar sesión
+                          {t('login')}
                         </Button>
                         <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                             <CreditCard className="w-4 h-4 mr-2" />
-                            Hazte Autónomo
+                            {t('becomeFreelancer')}
                           </Button>
                         </Link>
                       </div>
@@ -637,7 +643,7 @@ export default function Layout({ children, currentPageName }) {
                         onClick={handleLogout}
                       >
                         <LogOut className="w-4 h-4 mr-2" />
-                        Cerrar sesión
+                        {t('logout')}
                       </Button>
                     )}
                   </div>
@@ -666,23 +672,24 @@ export default function Layout({ children, currentPageName }) {
                       </div>
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">MilAutónomos</h1>
-                        <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
+                        <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
                     
                     <div className="flex items-center gap-3">
+                      <LanguageSwitcher />
                       <Button
                         variant="ghost"
                         className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                         onClick={handleLogin}
                       >
                         <User className="w-4 h-4 mr-2" />
-                        Iniciar sesión
+                        {t('login')}
                       </Button>
                       <Link to={createPageUrl("PricingPlans")}>
                         <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" />
-                          Hazte Autónomo
+                          {t('becomeFreelancer')}
                         </Button>
                       </Link>
                     </div>
@@ -702,7 +709,7 @@ export default function Layout({ children, currentPageName }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                   <h1 className="font-bold text-lg text-gray-900">MilAutónomos</h1>
-                  <div className="w-10" />
+                  <LanguageSwitcher />
                 </div>
               </header>
 
