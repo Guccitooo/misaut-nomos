@@ -35,6 +35,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
@@ -49,8 +50,11 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => {
     loadUser();
-    loadUnreadCount();
   }, []);
+
+  useEffect(() => {
+    loadUnreadCount();
+  }, [user]);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -468,6 +472,9 @@ function LayoutContent({ children, currentPageName }) {
           }
         `}
       </style>
+
+      {/* ✅ Scroll to top on route change */}
+      <ScrollToTop />
 
       <SidebarProvider>
         {/* Changed to flex-col to stack main content and cookie banner */}
