@@ -322,7 +322,8 @@ export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedProvincia, setSelectedProvincia] = useState("all");
+  const [selectedCiudad, setSelectedCiudad] = useState("all");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [userFavorites, setUserFavorites] = useState(new Set());
@@ -383,16 +384,12 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
-  // ✅ PASO 1: Cargar TODAS las suscripciones
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
       console.log('\n💳 ========== CARGANDO SUSCRIPCIONES ==========');
       const subs = await base44.entities.Subscription.list();
       console.log(`📊 Total suscripciones: ${subs.length}`);
-      subs.forEach(sub => {
-        console.log(`   - User ${sub.user_id.substring(0, 8)}...: ${sub.estado} (expira: ${new Date(sub.fecha_expiracion).toLocaleDateString('es-ES')})`);
-      });
       return subs;
     },
     staleTime: 0,
@@ -401,7 +398,6 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  // ✅ PASO 2: Cargar TODOS los perfiles y filtrar
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
@@ -409,7 +405,6 @@ export default function SearchPage() {
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
       console.log(`📊 Total perfiles en BD: ${allProfiles.length}\n`);
       
-      // ✅ Verificar que tenemos suscripciones cargadas
       if (subscriptions.length === 0 && !loadingSubscriptions) {
         console.log('⚠️ AÚN NO HAY SUSCRIPCIONES CARGADAS, esperando...');
         return [];
@@ -422,28 +417,24 @@ export default function SearchPage() {
         const businessName = profile.business_name || 'Sin nombre';
         console.log(`\n🔍 Evaluando: ${businessName} (user_id: ${profile.user_id})`);
         
-        // 1. Debe tener onboarding completado
         if (!profile.onboarding_completed) {
           console.log(`   ❌ Onboarding incompleto`);
           return false;
         }
         console.log(`   ✅ Onboarding completado`);
         
-        // 2. Debe estar marcado como visible
         if (!profile.visible_en_busqueda) {
           console.log(`   ❌ Marcado como NO visible`);
           return false;
         }
         console.log(`   ✅ Marcado como visible`);
         
-        // 3. Debe estar en estado activo
         if (profile.estado_perfil !== "activo") {
           console.log(`   ❌ Estado perfil: ${profile.estado_perfil}`);
           return false;
         }
         console.log(`   ✅ Estado perfil: activo`);
         
-        // 4. ✅ VALIDACIÓN CLAVE: Verificar suscripción
         const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
         
         if (!userSub) {
@@ -453,7 +444,6 @@ export default function SearchPage() {
         
         console.log(`   📋 Suscripción encontrada: ${userSub.estado} (expira: ${new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')})`);
         
-        // ✅ USAR HELPER
         const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
         
         if (!isActive) {
@@ -468,7 +458,6 @@ export default function SearchPage() {
       console.log(`\n📊 ========== RESUMEN FINAL ==========`);
       console.log(`   Total perfiles: ${allProfiles.length}`);
       console.log(`   Perfiles visibles: ${visibleProfiles.length}`);
-      console.log(`   Perfiles ocultos: ${allProfiles.length - visibleProfiles.length}`);
       console.log(`========================================\n`);
       
       return visibleProfiles;
@@ -477,7 +466,6 @@ export default function SearchPage() {
     cacheTime: 0,
     refetchOnMount: 'always',
     initialData: [],
-    // ✅ CRUCIAL: Solo ejecutar DESPUÉS de cargar suscripciones
     enabled: !loadingSubscriptions && subscriptions.length > 0,
   });
 
@@ -495,27 +483,51 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ NUEVO: Query para obtener ubicaciones únicas (ciudades reales)
-  const { data: availableLocations = [] } = useQuery({
-    queryKey: ['availableLocations'],
+  // ✅ Query para obtener PROVINCIAS únicas
+  const { data: availableProvincias = [] } = useQuery({
+    queryKey: ['availableProvincias'],
     queryFn: async () => {
-      const profiles = await base44.entities.ProfessionalProfile.list();
-      const locations = new Set();
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      const provincias = new Set();
       
-      profiles.forEach(profile => {
-        // Extraer ciudad principal del service_area o ciudad
-        if (profile.ciudad && profile.ciudad.trim() !== "") {
-          locations.add(profile.ciudad);
+      allProfiles.forEach(profile => {
+        if (profile.provincia && profile.provincia.trim() !== "") {
+          provincias.add(profile.provincia);
         }
       });
 
-      return Array.from(locations).sort();
+      return Array.from(provincias).sort();
     },
     staleTime: 1000 * 60 * 10,
     initialData: [],
   });
 
-  // ✅ Filtrado simplificado
+  // ✅ Query para obtener CIUDADES de la provincia seleccionada
+  const { data: availableCiudades = [] } = useQuery({
+    queryKey: ['availableCiudades', selectedProvincia],
+    queryFn: async () => {
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      const ciudades = new Set();
+      
+      allProfiles.forEach(profile => {
+        // Si hay provincia seleccionada, filtrar por ella
+        if (selectedProvincia !== "all" && profile.provincia !== selectedProvincia) {
+          return;
+        }
+        
+        // Añadir ciudad si existe
+        if (profile.ciudad && profile.ciudad.trim() !== "") {
+          ciudades.add(profile.ciudad);
+        }
+      });
+
+      return Array.from(ciudades).sort();
+    },
+    staleTime: 1000 * 60 * 10,
+    initialData: [],
+  });
+
+  // ✅ Filtrado con provincia Y ciudad
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -526,15 +538,17 @@ export default function SearchPage() {
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
       
-      // ✅ Filtrar por ciudad
-      const matchesLocation = selectedLocation === "all" || 
-        profile.ciudad === selectedLocation;
+      const matchesProvincia = selectedProvincia === "all" || 
+        profile.provincia === selectedProvincia;
       
-      return matchesSearch && matchesCategory && matchesLocation;
+      const matchesCiudad = selectedCiudad === "all" || 
+        profile.ciudad === selectedCiudad;
+      
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
     }).sort((a, b) => {
       return (b.average_rating || 0) - (a.average_rating || 0);
     });
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedLocation]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -662,8 +676,8 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             
-            {/* ✅ SIMPLIFICADO: 3 filtros en UNA SOLA FILA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* ✅ 4 FILTROS: Búsqueda, Categoría, Provincia, Ciudad */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -701,26 +715,55 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* ✅ NUEVO: Ubicación (solo ciudades) */}
+              {/* Provincia */}
               <Select 
-                value={selectedLocation} 
-                onValueChange={setSelectedLocation}
+                value={selectedProvincia} 
+                onValueChange={(value) => {
+                  setSelectedProvincia(value);
+                  setSelectedCiudad("all"); // Reset city when province changes
+                }}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las ubicaciones" />
+                  <SelectValue placeholder="Todas las provincias" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>Todas las ubicaciones</span>
+                      <span>Todas las provincias</span>
                     </div>
                   </SelectItem>
-                  {availableLocations.map((location) => (
-                    <SelectItem key={location} value={location}>
+                  {availableProvincias.map((provincia) => (
+                    <SelectItem key={provincia} value={provincia}>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4" />
-                        <span>{location}</span>
+                        <span>{provincia}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Ciudad */}
+              <Select 
+                value={selectedCiudad} 
+                onValueChange={setSelectedCiudad}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Todas las ciudades" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>Todas las ciudades</span>
+                    </div>
+                  </SelectItem>
+                  {availableCiudades.map((ciudad) => (
+                    <SelectItem key={ciudad} value={ciudad}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{ciudad}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -786,15 +829,16 @@ export default function SearchPage() {
             <p className="text-gray-600 max-w-md mx-auto mb-6">
               {profiles.length === 0 
                 ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                : (selectedCategory !== "all" || selectedLocation !== "all")
-                  ? 'Estamos trabajando para incorporar nuevos autónomos en esta categoría o ubicación. Prueba con otras categorías/ubicaciones o elimina los filtros.'
-                  : 'Intenta modificar tus criterios de búsqueda o elimina los filtros activos.'}
+                : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
+                  ? 'Prueba con otros filtros o elimina los filtros activos.'
+                  : 'Intenta modificar tus criterios de búsqueda.'}
             </p>
-            {(selectedCategory !== "all" || selectedLocation !== "all" || searchTerm) && (
+            {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
               <Button
                 onClick={() => {
                   setSelectedCategory("all");
-                  setSelectedLocation("all");
+                  setSelectedProvincia("all");
+                  setSelectedCiudad("all");
                   setSearchTerm("");
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
