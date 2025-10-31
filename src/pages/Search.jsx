@@ -37,7 +37,7 @@ import {
   Wind,
   Settings,
   AlertCircle,
-  User // Added User icon import
+  User 
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
@@ -148,17 +148,19 @@ function useDebounce(value, delay) {
 }
 
 const CategoryBadge = ({ category }) => {
+  const { t } = useLanguage(); // Added useLanguage hook
   const Icon = CATEGORY_ICONS[category] || Briefcase;
+  
   return (
     <Badge variant="outline" className="text-xs flex items-center gap-1">
       <Icon className="w-3 h-3" />
-      {category}
+      {t(category)} {/* Translated category name */}
     </Badge>
   );
 };
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -225,7 +227,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ Categorías NO se traducen (son nombres técnicos) */}
+        {/* ✅ Categorías SÍ se traducen */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -259,7 +261,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
-          {/* ✅ Descripción SÍ se traduce */}
+          {/* ✅ Descripción SÍ se traduce dinámicamente */}
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
               text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
@@ -642,7 +644,7 @@ export default function SearchPage() {
                       <SelectItem key={cat} value={cat}>
                         <div className="flex items-center gap-2">
                           <Icon className="w-4 h-4" />
-                          <span>{cat}</span>
+                          <span>{t(cat)}</span> {/* Translated category name */}
                         </div>
                       </SelectItem>
                     );

@@ -545,6 +545,12 @@ function LayoutContent({ children, currentPageName }) {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* ✅ Selector de idioma en sidebar */}
+                    <div className="px-2">
+                      <LanguageSwitcher variant="compact" />
+                    </div>
+                    
                     <Button
                       variant="outline"
                       className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
@@ -616,8 +622,9 @@ function LayoutContent({ children, currentPageName }) {
                       </Link>
                     ))}
                     
-                    <div className="mt-4 mb-4">
-                      <LanguageSwitcher />
+                    {/* ✅ Selector de idioma en menú móvil */}
+                    <div className="mt-4 mb-4 px-2">
+                      <LanguageSwitcher variant="compact" />
                     </div>
                     
                     {!user ? (

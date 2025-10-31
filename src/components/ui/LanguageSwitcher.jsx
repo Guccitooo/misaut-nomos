@@ -40,6 +40,19 @@ export const translations = {
     freelancersAvailable: "autónomos disponibles",
     verifiedProfessionals: "Profesionales verificados en toda España",
     
+    // Categories (for translation)
+    "Electricista": "Electricista",
+    "Carpintero": "Carpintero",
+    "Fontanero": "Fontanero",
+    "Albañil / Reformas": "Albañil / Reformas",
+    "Pintor": "Pintor",
+    "Jardinero": "Jardinero",
+    "Transportista": "Transportista",
+    "Autónomo de limpieza": "Autónomo de limpieza",
+    "Cerrajero": "Cerrajero",
+    "Instalador de aire acondicionado": "Instalador de aire acondicionado",
+    "Mantenimiento general": "Mantenimiento general",
+    
     // Footer
     aboutUs: "Sobre Nosotros",
     tagline: "Tu autónomo de confianza",
@@ -103,6 +116,19 @@ export const translations = {
     allCities: "All cities",
     freelancersAvailable: "freelancers available",
     verifiedProfessionals: "Verified professionals throughout Spain",
+    
+    // Categories (translated)
+    "Electricista": "Electrician",
+    "Carpintero": "Carpenter",
+    "Fontanero": "Plumber",
+    "Albañil / Reformas": "Mason / Renovations",
+    "Pintor": "Painter",
+    "Jardinero": "Gardener",
+    "Transportista": "Carrier",
+    "Autónomo de limpieza": "Cleaning Professional",
+    "Cerrajero": "Locksmith",
+    "Instalador de aire acondicionado": "Air Conditioning Installer",
+    "Mantenimiento general": "General Maintenance",
     
     // Footer
     aboutUs: "About Us",
