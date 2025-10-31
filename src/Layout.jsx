@@ -327,26 +327,6 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Scrollbar personalizada */
-          ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-          }
-          
-          ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-          }
-          
-          ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-          }
-          
-          ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-          }
-          
           /* ✅ ESTILOS GLOBALES PARA MODALES */
           [role="dialog"],
           [role="alertdialog"],
@@ -420,14 +400,14 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil */
+          /* ✅ Menú inferior móvil - SOLO EN MÓVIL Y CON USUARIO LOGUEADO */
           .mobile-bottom-nav {
-            display: none;
+            display: none; /* ❌ Oculto por defecto */
           }
           
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
-              display: grid;
+              display: grid; /* ✅ Visible solo en móvil */
               position: fixed;
               bottom: 0;
               left: 0;
@@ -477,10 +457,10 @@ export default function Layout({ children, currentPageName }) {
             text-align: center;
           }
           
-          /* ✅ Ajustar padding del contenido en móvil */
+          /* ✅ Ajustar padding del contenido en móvil SOLO SI HAY USUARIO */
           @media (max-width: 1023px) {
             .main-content-with-bottom-nav {
-              padding-bottom: 80px;
+              padding-bottom: 80px; /* Espacio para menú inferior */
             }
           }
         `}
@@ -488,15 +468,15 @@ export default function Layout({ children, currentPageName }) {
 
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
-          {/* ✅ Desktop Sidebar MEJORADO */}
-          <Sidebar className="border-r border-gray-200 bg-gradient-to-b from-white to-slate-50 shadow-lg hidden lg:flex">
-            <SidebarHeader className="border-b border-gray-200 p-6 bg-white">
-              <Link to={createPageUrl("Search")} className="flex items-center gap-3 group">
-                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
+          {/* ✅ Desktop Sidebar */}
+          <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
+            <SidebarHeader className="border-b border-gray-100 p-6">
+              <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                   <img 
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
                     alt="MilAutónomos"
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-cover"
                     loading="eager"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -506,7 +486,7 @@ export default function Layout({ children, currentPageName }) {
                   />
                 </div>
                 <div>
-                  <h2 className="font-bold text-xl text-gray-900 group-hover:text-blue-700 transition-colors">MilAutónomos</h2>
+                  <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
                   <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
                 </div>
               </Link>
@@ -520,21 +500,15 @@ export default function Layout({ children, currentPageName }) {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton 
                           asChild 
-                          className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative group/item ${
-                            location.pathname === item.url 
-                              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg scale-105' 
-                              : 'hover:scale-102'
+                          className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
+                            location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
                           }`}
                         >
-                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3.5">
-                            <item.icon className={`w-5 h-5 ${
-                              location.pathname === item.url 
-                                ? '' 
-                                : 'group-hover/item:scale-110 transition-transform'
-                            }`} />
+                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className="w-5 h-5" />
                             <span className="font-medium">{item.title}</span>
                             {item.badge && (
-                              <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2.5 py-0.5 font-bold animate-pulse">
+                              <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                                 {item.badge}
                               </span>
                             )}
@@ -549,7 +523,7 @@ export default function Layout({ children, currentPageName }) {
               {!user && (
                 <div className="mt-auto p-3">
                   <Link to={createPageUrl("UserTypeSelection")}>
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
                       <CreditCard className="w-4 h-4 mr-2" />
                       Hazte Autónomo
                     </Button>
@@ -558,12 +532,12 @@ export default function Layout({ children, currentPageName }) {
               )}
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-gray-200 p-4 bg-white">
+            <SidebarFooter className="border-t border-gray-100 p-4">
               {user ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                    <Avatar className="w-11 h-11 border-2 border-blue-600 shadow-sm">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold text-lg">
+                  <div className="flex items-center gap-3 px-2">
+                    <Avatar className="w-10 h-10 border-2 border-blue-600">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                         {getDisplayName().charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -578,7 +552,7 @@ export default function Layout({ children, currentPageName }) {
                   </div>
                   <Button
                     variant="outline"
-                    className="w-full hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all"
+                    className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -586,9 +560,9 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all hover:scale-105"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleLogin}
                   >
                     <User className="w-4 h-4 mr-2" />
@@ -708,7 +682,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </header>
 
-            {/* ✅ Contenido principal */}
+            {/* ✅ Contenido principal - padding condicional */}
             <div className={`flex-1 overflow-auto ${user ? 'main-content-with-bottom-nav' : ''}`}>
               {children}
             </div>

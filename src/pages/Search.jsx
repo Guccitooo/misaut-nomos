@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,16 +36,20 @@ import {
   Key,
   Wind,
   Settings,
-  AlertCircle,
-  TrendingUp
+  AlertCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) return false;
+  if (!estado) {
+    console.log('❌ Sin estado de suscripción');
+    return false;
+  }
   
   const normalizedState = estado.toLowerCase().trim();
+  console.log(`🔍 Estado normalizado: "${normalizedState}"`);
+  
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
   if (validStates.includes(normalizedState)) {
@@ -53,8 +58,12 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       today.setHours(0, 0, 0, 0);
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
-      return expiration >= today;
+      
+      const isValid = expiration >= today;
+      console.log(`   ✅ Estado "${normalizedState}" es válido, fecha expira: ${expiration.toISOString().split('T')[0]}, ¿vigente?: ${isValid}`);
+      return isValid;
     } catch (error) {
+      console.error('   ⚠️ Error parseando fecha, asumiendo activo:', error);
       return true;
     }
   }
@@ -65,12 +74,17 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       today.setHours(0, 0, 0, 0);
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
-      return expiration >= today;
+      
+      const isValid = expiration >= today;
+      console.log(`   ⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}`);
+      return isValid;
     } catch (error) {
+      console.error('   ❌ Error parseando fecha de cancelación:', error);
       return false;
     }
   }
   
+  console.log(`   ❌ Estado "${normalizedState}" no es válido`);
   return false;
 };
 
@@ -133,39 +147,12 @@ function useDebounce(value, delay) {
 const CategoryBadge = ({ category }) => {
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   return (
-    <Badge variant="outline" className="text-xs flex items-center gap-1 bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100 transition-colors">
+    <Badge variant="outline" className="text-xs flex items-center gap-1">
       <Icon className="w-3 h-3" />
       {category}
     </Badge>
   );
 };
-
-// ✅ SKELETON LOADER MEJORADO
-const ProfileCardSkeleton = () => (
-  <Card className="overflow-hidden border border-gray-200 bg-white h-full">
-    <CardContent className="p-4 space-y-3">
-      <div className="flex items-start justify-between">
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <Skeleton className="h-10 w-10 rounded-full" />
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-6 w-20" />
-        <Skeleton className="h-6 w-16" />
-      </div>
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-2/3" />
-      <Skeleton className="h-16 w-full" />
-      <div className="grid grid-cols-3 gap-2">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    </CardContent>
-  </Card>
-);
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
   const formatPhoneForCall = (phone) => {
@@ -187,42 +174,34 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   };
 
   return (
-    <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-200 hover:border-blue-300 bg-white h-full flex flex-col cursor-pointer transform hover:-translate-y-1">
-      <CardContent className="p-5 flex flex-col flex-1">
-        {/* Header con nombre y rating */}
-        <div className="flex items-start justify-between mb-3 min-h-[56px]">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
-            <h3 
-              className="font-bold text-lg text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer leading-tight"
-              onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
-            >
+            <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
+                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
               {profile.business_name}
             </h3>
             {profile.average_rating > 0 ? (
-              <div className="flex items-center gap-1 mt-1.5">
+              <div className="flex items-center gap-1 mt-1">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 <span className="text-sm font-semibold text-gray-700">
                   {profile.average_rating.toFixed(1)}
                 </span>
                 <span className="text-xs text-gray-500">
-                  ({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})
+                  ({profile.total_reviews})
                 </span>
               </div>
             ) : (
-              <div className="h-5 mt-1.5"></div>
+              <div className="h-5 mt-1"></div>
             )}
           </div>
           
-          {/* Botón de favorito */}
-          <div className="flex flex-col items-end gap-1 ml-3">
+          <div className="flex flex-col items-end gap-1 ml-2">
             <Button
               size="icon"
               variant="ghost"
-              className={`h-10 w-10 rounded-full transition-all duration-200 ${
-                isFavorite 
-                  ? 'text-red-500 bg-red-50 hover:bg-red-100' 
-                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-              }`}
+              className={`h-10 w-10 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFavorite(profile.user_id);
@@ -230,70 +209,67 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             >
               <Heart 
                 className={`w-5 h-5 transition-all ${
-                  isFavorite ? 'fill-red-500 scale-110' : ''
+                  isFavorite ? 'fill-red-500' : ''
                 }`}
               />
             </Button>
             {favoriteCount > 0 && (
-              <span className="text-xs text-gray-500 font-medium">{favoriteCount}</span>
+              <span className="text-xs text-gray-500">{favoriteCount}</span>
             )}
           </div>
         </div>
 
-        {/* Categorías */}
         <div 
-          className="flex flex-wrap gap-1.5 mb-3 min-h-[28px] cursor-pointer"
+          className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           {profile.categories?.slice(0, 2).map((cat, idx) => (
             <CategoryBadge key={idx} category={cat} />
           ))}
           {profile.categories?.length > 2 && (
-            <Badge variant="outline" className="text-xs bg-gray-50 border-gray-300 text-gray-700">
+            <Badge variant="outline" className="text-xs">
               +{profile.categories.length - 2}
             </Badge>
           )}
         </div>
 
-        {/* Ubicación */}
         <div 
-          className="mb-3 min-h-[20px] cursor-pointer"
+          className="mb-2 h-5 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           {profile.service_area ? (
-            <div className="flex items-center gap-1.5 text-sm text-gray-600">
-              <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
-              <span className="truncate font-medium">{profile.service_area}</span>
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{profile.service_area}</span>
             </div>
           ) : (
             <div></div>
           )}
         </div>
 
-        {/* Descripción */}
         <div 
-          className="mb-4 min-h-[44px] cursor-pointer flex-grow"
+          className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
-          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-            {profile.descripcion_corta || profile.description || "Profesional disponible para tus proyectos"}
+          <p className="text-sm text-gray-600 line-clamp-2 leading-5">
+            {profile.descripcion_corta || profile.description || "Profesional disponible"}
           </p>
         </div>
 
-        {/* Botones de acción */}
+        <div className="flex-1"></div>
+
         {profile.telefono_contacto && (
-          <div className="grid grid-cols-3 gap-2 mt-auto">
+          <div className="grid grid-cols-3 gap-1.5">
             <a
               href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
               onClick={(e) => e.stopPropagation()}
-              className="block"
             >
               <Button 
                 variant="outline" 
                 size="sm"
-                className="w-full h-11 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600 transition-all group/btn"
+                className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
               >
-                <Phone className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                <Phone className="w-4 h-4" />
               </Button>
             </a>
             <a
@@ -301,24 +277,23 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="block"
             >
               <Button 
                 size="sm"
-                className="w-full h-11 bg-green-600 hover:bg-green-700 transition-all shadow-sm hover:shadow-md group/btn"
+                className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
               >
-                <MessageCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                <MessageCircle className="w-4 h-4" />
               </Button>
             </a>
             <Button
               size="sm"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md group/btn"
+              className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
               onClick={(e) => {
                 e.stopPropagation();
                 onStartChat(profile.user_id, profile.business_name);
               }}
             >
-              <MessageSquare className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+              <MessageSquare className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -403,8 +378,9 @@ export default function SearchPage() {
       const subs = await base44.entities.Subscription.list();
       return subs;
     },
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 10,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
     initialData: [],
   });
 
@@ -431,8 +407,9 @@ export default function SearchPage() {
       
       return visibleProfiles;
     },
-    staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 10,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
     initialData: [],
     enabled: !loadingSubscriptions && subscriptions.length > 0,
   });
@@ -451,6 +428,7 @@ export default function SearchPage() {
     initialData: {},
   });
 
+  // ✅ Query para obtener PROVINCIAS de perfiles VISIBLES
   const availableProvincias = useMemo(() => {
     const provincias = new Set();
     profiles.forEach(profile => {
@@ -461,6 +439,7 @@ export default function SearchPage() {
     return Array.from(provincias).sort();
   }, [profiles]);
 
+  // ✅ Query para obtener CIUDADES de perfiles VISIBLES
   const availableCiudades = useMemo(() => {
     const ciudades = new Set();
     profiles.forEach(profile => {
@@ -573,29 +552,27 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
-        <div className="max-w-7xl mx-auto relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-12 px-4 shadow-xl">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
               Encuentra el autónomo perfecto
             </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-6">
               Profesionales cualificados y verificados en toda España
             </p>
             
             {!isLoadingUser && !user && (
-              <div className="space-y-4 mt-8">
+              <div className="space-y-4">
                 <p className="text-base text-blue-100 font-medium">
                   Elige cómo quieres empezar:
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
                   <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
-                      className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400 h-14 text-base"
+                      className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
                     >
                       🧰 Soy autónomo
                     </Button>
@@ -604,7 +581,7 @@ export default function SearchPage() {
                   <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
-                      className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400 h-14 text-base"
+                      className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
                     >
                       👤 Soy cliente
                     </Button>
@@ -616,30 +593,27 @@ export default function SearchPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Filtros mejorados */}
-        <Card className="mb-8 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <Card className="mb-8 shadow-lg border-0">
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Filter className="w-5 h-5 text-blue-700" />
-              </div>
-              <h2 className="font-semibold text-xl text-gray-900">Filtros de búsqueda</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-blue-700" />
+              <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Buscar servicio, empresa..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-11 h-12 border-2 focus:border-blue-500 transition-all"
+                  className="pl-10 h-12"
                 />
               </div>
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-12 border-2 focus:border-blue-500">
+                <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
@@ -670,7 +644,7 @@ export default function SearchPage() {
                   setSelectedCiudad("all");
                 }}
               >
-                <SelectTrigger className="h-12 border-2 focus:border-blue-500">
+                <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las provincias" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
@@ -695,7 +669,7 @@ export default function SearchPage() {
                 value={selectedCiudad} 
                 onValueChange={setSelectedCiudad}
               >
-                <SelectTrigger className="h-12 border-2 focus:border-blue-500">
+                <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las ciudades" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
@@ -719,122 +693,82 @@ export default function SearchPage() {
           </CardContent>
         </Card>
 
-        {/* Contador de resultados */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              {loadingProfiles || loadingSubscriptions ? (
-                <>
-                  <Skeleton className="h-7 w-32" />
-                </>
-              ) : (
-                <>
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                  {filteredProfiles.length} autónomos disponibles
-                </>
-              )}
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Profesionales verificados en toda España
-            </p>
-          </div>
-          
-          {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedCategory("all");
-                setSelectedProvincia("all");
-                setSelectedCiudad("all");
-                setSearchTerm("");
-              }}
-              className="hover:bg-blue-50 hover:border-blue-600"
-            >
-              Limpiar filtros
-            </Button>
-          )}
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            {loadingProfiles || loadingSubscriptions ? 'Cargando...' : `${filteredProfiles.length} autónomos disponibles`}
+          </h2>
+          <p className="text-sm text-gray-600">
+            Profesionales verificados en toda España
+          </p>
         </div>
 
-        {/* Grid de perfiles */}
         {(loadingProfiles || loadingSubscriptions) ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <ProfileCardSkeleton key={i} />
+              <Card key={i} className="overflow-hidden h-full">
+                <CardContent className="p-4 flex flex-col h-full">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <div className="flex gap-1 mb-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-2/3 mb-2" />
+                  <Skeleton className="h-10 w-full mb-3" />
+                  <div className="flex-1"></div>
+                  <Skeleton className="h-8 w-full" />
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProfiles.map((profile, index) => (
-              <div
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+            {filteredProfiles.map((profile) => (
+              <ProfileCard
                 key={profile.id}
-                style={{
-                  animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`
-                }}
-              >
-                <ProfileCard
-                  profile={profile}
-                  user={user}
-                  onToggleFavorite={handleToggleFavorite}
-                  onStartChat={handleStartChat}
-                  navigate={navigate}
-                  isFavorite={userFavorites.has(profile.user_id)}
-                  favoriteCount={favoriteCounts[profile.user_id] || 0}
-                />
-              </div>
+                profile={profile}
+                user={user}
+                onToggleFavorite={handleToggleFavorite}
+                onStartChat={handleStartChat}
+                navigate={navigate}
+                isFavorite={userFavorites.has(profile.user_id)}
+                favoriteCount={favoriteCounts[profile.user_id] || 0}
+              />
             ))}
           </div>
         )}
 
-        {/* Empty state mejorado */}
         {!loadingProfiles && !loadingSubscriptions && filteredProfiles.length === 0 && (
-          <Card className="p-16 text-center border-0 shadow-2xl bg-gradient-to-br from-orange-50 to-yellow-50">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-10 h-10 text-orange-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                {selectedCategory !== "all" 
-                  ? `🚧 Todavía no hay profesionales en "${selectedCategory}"`
-                  : "No se encontraron resultados"}
-              </h3>
-              <p className="text-gray-600 mb-8 text-lg">
-                {profiles.length === 0 
-                  ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                  : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
-                    ? 'Prueba con otros filtros o elimina los filtros activos.'
-                    : 'Intenta modificar tus criterios de búsqueda.'}
-              </p>
-              {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
-                <Button
-                  onClick={() => {
-                    setSelectedCategory("all");
-                    setSelectedProvincia("all");
-                    setSelectedCiudad("all");
-                    setSearchTerm("");
-                  }}
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 shadow-lg h-12 px-8"
-                >
-                  Ver todos los autónomos
-                </Button>
-              )}
-            </div>
+          <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
+            <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {selectedCategory !== "all" 
+                ? `🚧 Todavía no hay profesionales en "${selectedCategory}"`
+                : "No se encontraron resultados"}
+            </h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-6">
+              {profiles.length === 0 
+                ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
+                : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
+                  ? 'Prueba con otros filtros o elimina los filtros activos.'
+                  : 'Intenta modificar tus criterios de búsqueda.'}
+            </p>
+            {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
+              <Button
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setSelectedProvincia("all");
+                  setSelectedCiudad("all");
+                  setSearchTerm("");
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Ver todos los autónomos
+              </Button>
+            )}
           </Card>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }
