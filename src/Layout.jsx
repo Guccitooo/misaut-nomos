@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -171,22 +172,41 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  // ✅ NUEVO: Obtener nombre a mostrar (prioridad: nombre profesional > nombre completo)
+  // ✅ MEJORADO: Obtener nombre a mostrar con fallback inteligente
   const getDisplayName = () => {
     if (!user) return "";
     
-    // Si es profesional y tiene nombre de negocio
+    // Prioridad 1: Nombre del negocio (si es profesional)
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
     
-    // Si no, usar nombre completo
-    if (user.full_name) {
+    // Prioridad 2: Nombre completo del usuario
+    if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
     
-    // Fallback al email sin dominio
-    return user.email?.split('@')[0] || "";
+    // Prioridad 3: Limpiar email y hacer más amigable
+    if (user.email) {
+      const username = user.email.split('@')[0];
+      
+      // Quitar números del final (ej: "benchellal16" -> "benchellal")
+      const cleaned = username.replace(/\d+$/g, '');
+      
+      // Si tiene guiones o puntos, separar y capitalizar cada palabra
+      if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
+        return cleaned
+          .split(/[-._]/)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      }
+      
+      // Si es una sola palabra, capitalizar primera letra
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+    }
+    
+    // Último fallback
+    return "Usuario";
   };
 
   const navigationItems = [
@@ -447,7 +467,7 @@ export default function Layout({ children, currentPageName }) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    {/* ✅ MOSTRAR NOMBRE EN LUGAR DE EMAIL */}
+                    {/* ✅ MOSTRAR NOMBRE MEJORADO */}
                     <p className="font-semibold text-gray-900 text-sm truncate">
                       {getDisplayName()}
                     </p>
