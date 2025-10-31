@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -39,6 +38,7 @@ export default function Layout({ children, currentPageName }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [professionalProfile, setProfessionalProfile] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -54,6 +54,16 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      
+      // ✅ NUEVO: Cargar perfil profesional para obtener nombre del negocio
+      if (currentUser && currentUser.user_type === "professionnel") {
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: currentUser.id
+        });
+        if (profiles[0]) {
+          setProfessionalProfile(profiles[0]);
+        }
+      }
     } catch (error) {
       console.error("Error loading user:", error);
       setUser(null);
@@ -94,7 +104,6 @@ export default function Layout({ children, currentPageName }) {
                        activeStates.includes(subscriptions[0].estado);
       
       setHasActiveSubscription(hasActive);
-      console.log('💳 Suscripción activa:', hasActive);
     } catch (error) {
       console.error("Error checking subscription:", error);
       setHasActiveSubscription(false);
@@ -160,6 +169,24 @@ export default function Layout({ children, currentPageName }) {
       console.error('❌ Error al intentar login:', error);
       alert('Error al iniciar sesión. Intenta recargando la página.');
     }
+  };
+
+  // ✅ NUEVO: Obtener nombre a mostrar (prioridad: nombre profesional > nombre completo)
+  const getDisplayName = () => {
+    if (!user) return "";
+    
+    // Si es profesional y tiene nombre de negocio
+    if (user.user_type === "professionnel" && professionalProfile?.business_name) {
+      return professionalProfile.business_name;
+    }
+    
+    // Si no, usar nombre completo
+    if (user.full_name) {
+      return user.full_name;
+    }
+    
+    // Fallback al email sin dominio
+    return user.email?.split('@')[0] || "";
   };
 
   const navigationItems = [
@@ -250,15 +277,52 @@ export default function Layout({ children, currentPageName }) {
             --card: #ffffff;
           }
           
-          /* Fondo blanco sólido para todos los modales y diálogos */
+          /* ✅ ESTILOS GLOBALES PARA MODALES Y DIÁLOGOS */
           [role="dialog"],
           [role="alertdialog"],
           .modal-content,
           .dialog-content,
-          .popover-content {
+          .popover-content,
+          .confirmation-modal,
+          .dialog-box {
             background-color: #FFFFFF !important;
             color: #222222 !important;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 12px !important;
+          }
+          
+          /* Headers de modales */
+          .modal-header,
+          [role="dialog"] h2,
+          [role="alertdialog"] h2 {
+            background-color: #FFFFFF !important;
+            color: #111827 !important;
+            font-weight: 700 !important;
+            padding: 20px !important;
+            border-bottom: 1px solid #E5E7EB !important;
+          }
+          
+          /* Body y footer de modales */
+          .modal-body,
+          .modal-footer,
+          [role="dialog"] > div,
+          [role="alertdialog"] > div {
+            background-color: #FFFFFF !important;
+            color: #222222 !important;
+            padding: 20px !important;
+          }
+          
+          /* Alertas dentro de modales */
+          .alert-warning,
+          .alert-danger,
+          .alert-info,
+          [role="alert"] {
+            background-color: #FFF6F6 !important;
+            border: 1px solid #F0C0C0 !important;
+            color: #222222 !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
           }
           
           /* Inputs, selects y textareas con fondo blanco */
@@ -266,6 +330,7 @@ export default function Layout({ children, currentPageName }) {
             background-color: #FFFFFF !important;
             color: #222222 !important;
             border: 1px solid #DDD !important;
+            border-radius: 6px !important;
           }
           
           input:disabled, select:disabled, textarea:disabled {
@@ -273,9 +338,39 @@ export default function Layout({ children, currentPageName }) {
             color: #888888 !important;
           }
           
-          /* Labels y textos oscuros */
+          /* Labels oscuros */
           label {
             color: #333333 !important;
+            font-weight: 500 !important;
+          }
+          
+          /* Botones de peligro (delete, cancel) */
+          button.btn-danger,
+          button[class*="destructive"] {
+            background-color: #DC2626 !important;
+            border: none !important;
+            color: #FFFFFF !important;
+            border-radius: 6px !important;
+          }
+          
+          button.btn-danger:hover,
+          button[class*="destructive"]:hover {
+            background-color: #B91C1C !important;
+          }
+          
+          /* Overlay oscuro para modales */
+          [role="dialog"]::backdrop,
+          [role="alertdialog"]::backdrop,
+          .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5) !important;
+          }
+          
+          /* Cards y contenedores */
+          .card, [class*="Card"] {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 12px !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
           }
         `}
       </style>
@@ -348,12 +443,13 @@ export default function Layout({ children, currentPageName }) {
                 <div className="flex items-center gap-3 px-2">
                   <Avatar className="w-10 h-10 border-2 border-blue-600">
                     <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                      {user.full_name?.charAt(0) || user.email?.charAt(0)}
+                      {getDisplayName().charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
+                    {/* ✅ MOSTRAR NOMBRE EN LUGAR DE EMAIL */}
                     <p className="font-semibold text-gray-900 text-sm truncate">
-                      {user.full_name || user.email}
+                      {getDisplayName()}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
