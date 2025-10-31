@@ -34,10 +34,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Footer from "@/components/ui/Footer"; // Added import
 import CookieBanner from "@/components/ui/CookieBanner"; // Added import
+import LanguageSelector, { useTranslation } from "@/components/ui/LanguageSelector";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -210,23 +212,23 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
     {
-      title: "Buscar Autónomos",
+      title: t('search_professionals'),
       url: createPageUrl("Search"),
       icon: Search,
     },
     {
-      title: "Mensajes",
+      title: t('messages'),
       url: createPageUrl("Messages"),
       icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : null
     },
     {
-      title: "Favoritos",
+      title: t('favorites'),
       url: createPageUrl("Favorites"),
       icon: Heart,
     },
     {
-      title: "Mi Perfil",
+      title: t('my_profile'),
       url: createPageUrl("MyProfile"),
       icon: User,
     },
@@ -235,20 +237,20 @@ export default function Layout({ children, currentPageName }) {
   if (user?.user_type === "professionnel") {
     if (hasActiveSubscription) {
       navigationItems.push({
-        title: "Mi Suscripción",
+        title: t('my_subscription'),
         url: createPageUrl("SubscriptionManagement"),
         icon: Briefcase,
       });
     } else {
       navigationItems.push({
-        title: "Ver Planes",
+        title: t('view_plans'),
         url: createPageUrl("PricingPlans"),
         icon: CreditCard,
       });
     }
   } else if (!user || user?.user_type === "client") {
     navigationItems.push({
-      title: "Ver Planes",
+      title: t('view_plans'),
       url: createPageUrl("PricingPlans"),
       icon: CreditCard,
     });
@@ -256,7 +258,7 @@ export default function Layout({ children, currentPageName }) {
 
   if (user?.role === "admin") {
     navigationItems.push({
-      title: "Administración",
+      title: t('administration'),
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
@@ -269,12 +271,12 @@ export default function Layout({ children, currentPageName }) {
           <Alert className="bg-white border-yellow-300 shadow-lg">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-gray-800">
-              <strong>Completa tu perfil profesional</strong>
+              <strong>{t('complete_professional_profile')}</strong>
               <p className="mt-2">
-                Para activar tu cuenta y aparecer en las búsquedas, primero debes completar tu perfil profesional.
+                {t('complete_profile_text')}
               </p>
               <p className="mt-2 text-sm">
-                Redirigiendo al quiz en 2 segundos...
+                {t('redirecting_to_quiz')}
               </p>
             </AlertDescription>
           </Alert>
@@ -539,7 +541,7 @@ export default function Layout({ children, currentPageName }) {
                           {getDisplayName()}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                          {user.user_type === "professionnel" ? t('professional') : t('client')}
                         </p>
                       </div>
                     </div>
@@ -549,7 +551,7 @@ export default function Layout({ children, currentPageName }) {
                       onClick={handleLogout}
                     >
                       <LogOut className="w-4 h-4 mr-2" />
-                      Cerrar sesión
+                      {t('logout')}
                     </Button>
                   </div>
                 </SidebarFooter>
@@ -565,7 +567,7 @@ export default function Layout({ children, currentPageName }) {
                 />
                 <div className="mobile-menu lg:hidden">
                   <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="font-bold text-lg">Menú</h2>
+                    <h2 className="font-bold text-lg">{t('menu')}</h2>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -588,7 +590,7 @@ export default function Layout({ children, currentPageName }) {
                             {getDisplayName()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                            {user.user_type === "professionnel" ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
@@ -621,12 +623,12 @@ export default function Layout({ children, currentPageName }) {
                           onClick={handleLogin}
                         >
                           <User className="w-4 h-4 mr-2" />
-                          Iniciar sesión
+                          {t('login')}
                         </Button>
                         <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                             <CreditCard className="w-4 h-4 mr-2" />
-                            Hazte Autónomo
+                            {t('become_professional')}
                           </Button>
                         </Link>
                       </div>
@@ -637,7 +639,7 @@ export default function Layout({ children, currentPageName }) {
                         onClick={handleLogout}
                       >
                         <LogOut className="w-4 h-4 mr-2" />
-                        Cerrar sesión
+                        {t('logout')}
                       </Button>
                     )}
                   </div>
@@ -671,18 +673,19 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                     
                     <div className="flex items-center gap-3">
+                      <LanguageSelector />
                       <Button
                         variant="ghost"
                         className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                         onClick={handleLogin}
                       >
                         <User className="w-4 h-4 mr-2" />
-                        Iniciar sesión
+                        {t('login')}
                       </Button>
                       <Link to={createPageUrl("PricingPlans")}>
                         <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" />
-                          Hazte Autónomo
+                          {t('become_professional')}
                         </Button>
                       </Link>
                     </div>
@@ -702,7 +705,7 @@ export default function Layout({ children, currentPageName }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                   <h1 className="font-bold text-lg text-gray-900">MilAutónomos</h1>
-                  <div className="w-10" />
+                  <LanguageSelector />
                 </div>
               </header>
 
