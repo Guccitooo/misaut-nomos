@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -366,7 +367,7 @@ export default function Layout({ children, currentPageName }) {
           }
           
           /* ✅ Menú móvil overlay */
-          @media (max-width: 1024px) {
+          @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
               inset: 0;
@@ -399,19 +400,25 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil */
+          /* ✅ Menú inferior móvil - SOLO EN MÓVIL */
           .mobile-bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid #E5E7EB;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            padding: 8px 0;
-            z-index: 30;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            display: none; /* ❌ Oculto por defecto (desktop) */
+          }
+          
+          @media (max-width: 1023px) {
+            .mobile-bottom-nav {
+              display: grid; /* ✅ Visible solo en móvil */
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: white;
+              border-top: 1px solid #E5E7EB;
+              grid-template-columns: repeat(4, 1fr);
+              padding: 8px 0;
+              z-index: 30;
+              box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
           }
           
           .mobile-bottom-nav-item {
@@ -448,6 +455,13 @@ export default function Layout({ children, currentPageName }) {
             border-radius: 10px;
             min-width: 18px;
             text-align: center;
+          }
+          
+          /* ✅ Ajustar padding del contenido en móvil */
+          @media (max-width: 1023px) {
+            .main-content-mobile {
+              padding-bottom: 80px; /* Espacio para menú inferior */
+            }
           }
         `}
       </style>
@@ -652,7 +666,7 @@ export default function Layout({ children, currentPageName }) {
           )}
 
           <main className="flex-1 flex flex-col overflow-hidden">
-            {/* ✅ Mobile Header */}
+            {/* ✅ Mobile Header - SOLO EN MÓVIL */}
             <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
               <div className="flex items-center justify-between">
                 <Button
@@ -668,12 +682,13 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </header>
 
-            <div className="flex-1 overflow-auto pb-20 lg:pb-0">
+            {/* ✅ Contenido principal */}
+            <div className="flex-1 overflow-auto main-content-mobile">
               {children}
             </div>
 
-            {/* ✅ Mobile Bottom Navigation */}
-            <nav className="mobile-bottom-nav lg:hidden">
+            {/* ✅ Mobile Bottom Navigation - SOLO VISIBLE EN MÓVIL (<1024px) */}
+            <nav className="mobile-bottom-nav">
               {navigationItems.slice(0, 4).map((item) => (
                 <Link
                   key={item.title}
