@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,20 +39,18 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+// ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) {
     console.log('❌ Sin estado de suscripción');
     return false;
   }
   
-  // ✅ Normalizar estado (minúsculas, sin espacios)
   const normalizedState = estado.toLowerCase().trim();
   console.log(`🔍 Estado normalizado: "${normalizedState}"`);
   
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
-  // Si está en un estado válido
   if (validStates.includes(normalizedState)) {
     try {
       const today = new Date();
@@ -70,7 +67,6 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
     }
   }
   
-  // Si está cancelado pero aún tiene tiempo
   if (normalizedState === "cancelado" || normalizedState === "canceled") {
     try {
       const today = new Date();
@@ -117,7 +113,6 @@ const CATEGORY_ICONS = {
   "Mantenimiento": Settings
 };
 
-// ✅ Categorías base que siempre aparecen
 const BASE_CATEGORIES = [
   { name: "Electricista", icon: "Zap" },
   { name: "Carpintero", icon: "Hammer" },
@@ -148,7 +143,6 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// ✅ Componente de categoría con icono
 const CategoryBadge = ({ category }) => {
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   return (
@@ -181,7 +175,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col">
       <CardContent className="p-4 flex flex-col flex-1">
-        {/* ✅ Header: Nombre + Rating + Favoritos - ALTURA FIJA 48px */}
         <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
@@ -203,7 +196,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             )}
           </div>
           
-          {/* ✅ Favorito compacto */}
           <div className="flex flex-col items-end gap-1 ml-2">
             <Button
               size="icon"
@@ -226,7 +218,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ Categorías - ALTURA FIJA 28px */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -241,7 +232,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
         </div>
 
-        {/* ✅ Ubicación - ALTURA FIJA 20px */}
         <div 
           className="mb-2 h-5 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -256,7 +246,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
         </div>
 
-        {/* ✅ Descripción - ALTURA FIJA 40px (2 líneas) */}
         <div 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -266,10 +255,8 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </p>
         </div>
 
-        {/* ✅ Espaciador flexible */}
         <div className="flex-1"></div>
 
-        {/* ✅ Botones de contacto - ALTURA FIJA 32px */}
         {profile.telefono_contacto && (
           <div className="grid grid-cols-3 gap-1.5">
             <a
@@ -387,9 +374,7 @@ export default function SearchPage() {
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
-      console.log('\n💳 ========== CARGANDO SUSCRIPCIONES ==========');
       const subs = await base44.entities.Subscription.list();
-      console.log(`📊 Total suscripciones: ${subs.length}`);
       return subs;
     },
     staleTime: 0,
@@ -401,64 +386,23 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      console.log('\n👤 ========== CARGANDO PERFILES ==========');
       const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-      console.log(`📊 Total perfiles en BD: ${allProfiles.length}\n`);
       
       if (subscriptions.length === 0 && !loadingSubscriptions) {
-        console.log('⚠️ AÚN NO HAY SUSCRIPCIONES CARGADAS, esperando...');
         return [];
       }
       
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
       const visibleProfiles = allProfiles.filter(profile => {
-        const businessName = profile.business_name || 'Sin nombre';
-        console.log(`\n🔍 Evaluando: ${businessName} (user_id: ${profile.user_id})`);
-        
-        if (!profile.onboarding_completed) {
-          console.log(`   ❌ Onboarding incompleto`);
-          return false;
-        }
-        console.log(`   ✅ Onboarding completado`);
-        
-        if (!profile.visible_en_busqueda) {
-          console.log(`   ❌ Marcado como NO visible`);
-          return false;
-        }
-        console.log(`   ✅ Marcado como visible`);
-        
-        if (profile.estado_perfil !== "activo") {
-          console.log(`   ❌ Estado perfil: ${profile.estado_perfil}`);
-          return false;
-        }
-        console.log(`   ✅ Estado perfil: activo`);
+        if (!profile.onboarding_completed) return false;
+        if (!profile.visible_en_busqueda) return false;
+        if (profile.estado_perfil !== "activo") return false;
         
         const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-        
-        if (!userSub) {
-          console.log(`   ❌ Sin suscripción registrada`);
-          return false;
-        }
-        
-        console.log(`   📋 Suscripción encontrada: ${userSub.estado} (expira: ${new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')})`);
+        if (!userSub) return false;
         
         const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-        
-        if (!isActive) {
-          console.log(`   ❌ Suscripción NO VÁLIDA`);
-          return false;
-        }
-        
-        console.log(`   ✅✅✅ ${businessName} - VISIBLE EN BÚSQUEDAS`);
-        return true;
+        return isActive;
       });
-      
-      console.log(`\n📊 ========== RESUMEN FINAL ==========`);
-      console.log(`   Total perfiles: ${allProfiles.length}`);
-      console.log(`   Perfiles visibles: ${visibleProfiles.length}`);
-      console.log(`========================================\n`);
       
       return visibleProfiles;
     },
@@ -483,51 +427,31 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ Query para obtener PROVINCIAS únicas
-  const { data: availableProvincias = [] } = useQuery({
-    queryKey: ['availableProvincias'],
-    queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const provincias = new Set();
-      
-      allProfiles.forEach(profile => {
-        if (profile.provincia && profile.provincia.trim() !== "") {
-          provincias.add(profile.provincia);
-        }
-      });
+  // ✅ Query para obtener PROVINCIAS de perfiles VISIBLES
+  const availableProvincias = useMemo(() => {
+    const provincias = new Set();
+    profiles.forEach(profile => {
+      if (profile.provincia && profile.provincia.trim() !== "") {
+        provincias.add(profile.provincia);
+      }
+    });
+    return Array.from(provincias).sort();
+  }, [profiles]);
 
-      return Array.from(provincias).sort();
-    },
-    staleTime: 1000 * 60 * 10,
-    initialData: [],
-  });
+  // ✅ Query para obtener CIUDADES de perfiles VISIBLES
+  const availableCiudades = useMemo(() => {
+    const ciudades = new Set();
+    profiles.forEach(profile => {
+      if (selectedProvincia !== "all" && profile.provincia !== selectedProvincia) {
+        return;
+      }
+      if (profile.ciudad && profile.ciudad.trim() !== "") {
+        ciudades.add(profile.ciudad);
+      }
+    });
+    return Array.from(ciudades).sort();
+  }, [profiles, selectedProvincia]);
 
-  // ✅ Query para obtener CIUDADES de la provincia seleccionada
-  const { data: availableCiudades = [] } = useQuery({
-    queryKey: ['availableCiudades', selectedProvincia],
-    queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const ciudades = new Set();
-      
-      allProfiles.forEach(profile => {
-        // Si hay provincia seleccionada, filtrar por ella
-        if (selectedProvincia !== "all" && profile.provincia !== selectedProvincia) {
-          return;
-        }
-        
-        // Añadir ciudad si existe
-        if (profile.ciudad && profile.ciudad.trim() !== "") {
-          ciudades.add(profile.ciudad);
-        }
-      });
-
-      return Array.from(ciudades).sort();
-    },
-    staleTime: 1000 * 60 * 10,
-    initialData: [],
-  });
-
-  // ✅ Filtrado con provincia Y ciudad
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -676,9 +600,7 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             
-            {/* ✅ 4 FILTROS: Búsqueda, Categoría, Provincia, Ciudad */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -689,7 +611,6 @@ export default function SearchPage() {
                 />
               </div>
 
-              {/* Categoría */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las categorías" />
@@ -715,12 +636,11 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* Provincia */}
               <Select 
                 value={selectedProvincia} 
                 onValueChange={(value) => {
                   setSelectedProvincia(value);
-                  setSelectedCiudad("all"); // Reset city when province changes
+                  setSelectedCiudad("all");
                 }}
               >
                 <SelectTrigger className="h-12">
@@ -744,7 +664,6 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* Ciudad */}
               <Select 
                 value={selectedCiudad} 
                 onValueChange={setSelectedCiudad}
