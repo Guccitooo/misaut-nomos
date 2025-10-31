@@ -322,8 +322,7 @@ export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedProvincia, setSelectedProvincia] = useState("all");
-  const [selectedCiudad, setSelectedCiudad] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [userFavorites, setUserFavorites] = useState(new Set());
@@ -496,50 +495,27 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ NUEVO: Query para obtener provincias únicas
-  const { data: availableProvincias = [] } = useQuery({
-    queryKey: ['availableProvincias'],
+  // ✅ NUEVO: Query para obtener ubicaciones únicas (ciudades reales)
+  const { data: availableLocations = [] } = useQuery({
+    queryKey: ['availableLocations'],
     queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list(); // Use all profiles, not just visible
-      const provincias = new Set();
+      const profiles = await base44.entities.ProfessionalProfile.list();
+      const locations = new Set();
       
-      allProfiles.forEach(profile => {
-        if (profile.provincia && profile.provincia.trim() !== "") {
-          provincias.add(profile.provincia);
+      profiles.forEach(profile => {
+        // Extraer ciudad principal del service_area o ciudad
+        if (profile.ciudad && profile.ciudad.trim() !== "") {
+          locations.add(profile.ciudad);
         }
       });
 
-      return Array.from(provincias).sort();
+      return Array.from(locations).sort();
     },
     staleTime: 1000 * 60 * 10,
     initialData: [],
   });
 
-  // ✅ NUEVO: Query para obtener ciudades de la provincia seleccionada
-  const { data: availableCiudades = [] } = useQuery({
-    queryKey: ['availableCiudades', selectedProvincia],
-    queryFn: async () => {
-      if (selectedProvincia === "all") {
-        return [];
-      }
-
-      const allProfiles = await base44.entities.ProfessionalProfile.list(); // Use all profiles, not just visible
-      const ciudades = new Set();
-      
-      allProfiles.forEach(profile => {
-        if (profile.provincia === selectedProvincia && profile.ciudad && profile.ciudad.trim() !== "") {
-          ciudades.add(profile.ciudad);
-        }
-      });
-
-      return Array.from(ciudades).sort();
-    },
-    enabled: selectedProvincia !== "all",
-    staleTime: 1000 * 60 * 10,
-    initialData: [],
-  });
-
-  // ✅ Filtrado en frontend (SIN sortBy)
+  // ✅ Filtrado simplificado
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -550,18 +526,15 @@ export default function SearchPage() {
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
       
-      const matchesProvincia = selectedProvincia === "all" || 
-        profile.provincia === selectedProvincia;
+      // ✅ Filtrar por ciudad
+      const matchesLocation = selectedLocation === "all" || 
+        profile.ciudad === selectedLocation;
       
-      const matchesCiudad = selectedCiudad === "all" || 
-        profile.ciudad === selectedCiudad;
-      
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+      return matchesSearch && matchesCategory && matchesLocation;
     }).sort((a, b) => {
-      // Siempre ordenar por rating (mejores primero)
       return (b.average_rating || 0) - (a.average_rating || 0);
     });
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedLocation]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -689,8 +662,8 @@ export default function SearchPage() {
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
             
-            {/* ✅ CAMBIO: 4 filtros en UNA SOLA FILA - SIN sortBy */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* ✅ SIMPLIFICADO: 3 filtros en UNA SOLA FILA */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -728,56 +701,26 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* ✅ NUEVO: Provincia */}
+              {/* ✅ NUEVO: Ubicación (solo ciudades) */}
               <Select 
-                value={selectedProvincia} 
-                onValueChange={(value) => {
-                  setSelectedProvincia(value);
-                  setSelectedCiudad("all"); // Reset ciudad cuando cambia provincia
-                }}
+                value={selectedLocation} 
+                onValueChange={setSelectedLocation}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las provincias" />
+                  <SelectValue placeholder="Todas las ubicaciones" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>Todas las provincias</span>
+                      <span>Todas las ubicaciones</span>
                     </div>
                   </SelectItem>
-                  {availableProvincias.map((provincia) => (
-                    <SelectItem key={provincia} value={provincia}>
+                  {availableLocations.map((location) => (
+                    <SelectItem key={location} value={location}>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4" />
-                        <span>{provincia}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* ✅ NUEVO: Ciudad (solo si hay provincia seleccionada) */}
-              <Select 
-                value={selectedCiudad} 
-                onValueChange={setSelectedCiudad}
-                disabled={selectedProvincia === "all"}
-              >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder={selectedProvincia === "all" ? "Selecciona provincia" : "Todas las ciudades"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>Todas las ciudades</span>
-                    </div>
-                  </SelectItem>
-                  {availableCiudades.map((ciudad) => (
-                    <SelectItem key={ciudad} value={ciudad}>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{ciudad}</span>
+                        <span>{location}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -843,16 +786,15 @@ export default function SearchPage() {
             <p className="text-gray-600 max-w-md mx-auto mb-6">
               {profiles.length === 0 
                 ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
+                : (selectedCategory !== "all" || selectedLocation !== "all")
                   ? 'Estamos trabajando para incorporar nuevos autónomos en esta categoría o ubicación. Prueba con otras categorías/ubicaciones o elimina los filtros.'
                   : 'Intenta modificar tus criterios de búsqueda o elimina los filtros activos.'}
             </p>
-            {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
+            {(selectedCategory !== "all" || selectedLocation !== "all" || searchTerm) && (
               <Button
                 onClick={() => {
                   setSelectedCategory("all");
-                  setSelectedProvincia("all");
-                  setSelectedCiudad("all");
+                  setSelectedLocation("all");
                   setSearchTerm("");
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
