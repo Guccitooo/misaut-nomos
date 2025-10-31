@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
+import TranslatedText from "../components/ui/TranslatedText";
 
 // ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -157,6 +158,8 @@ const CategoryBadge = ({ category }) => {
 };
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
+  const { language } = useLanguage();
+  
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
     let cleaned = phone.replace(/[^\d+]/g, '');
@@ -180,6 +183,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
+            {/* ✅ Nombre del negocio NO se traduce (es nombre propio) */}
             <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
               {profile.business_name}
@@ -221,6 +225,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
+        {/* ✅ Categorías NO se traducen (son nombres técnicos) */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -242,6 +247,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           {profile.service_area ? (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
+              {/* ✅ Zona de servicio NO se traduce (son nombres de lugares) */}
               <span className="truncate">{profile.service_area}</span>
             </div>
           ) : (
@@ -253,8 +259,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
+          {/* ✅ Descripción SÍ se traduce */}
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
-            {profile.descripcion_corta || profile.description || "Profesional disponible"}
+            <TranslatedText 
+              text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
+            />
           </p>
         </div>
 

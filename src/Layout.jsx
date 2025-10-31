@@ -34,9 +34,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
-import LanguageSwitcher, { useLanguage } from "@/components/ui/LanguageSwitcher";
+import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
-export default function Layout({ children, currentPageName }) {
+function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -677,7 +677,6 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                     
                     <div className="flex items-center gap-3">
-                      <LanguageSwitcher />
                       <Button
                         variant="ghost"
                         className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
@@ -692,6 +691,8 @@ export default function Layout({ children, currentPageName }) {
                           {t('becomeFreelancer')}
                         </Button>
                       </Link>
+                      {/* ✅ Selector de idioma a la derecha de "Hazte Autónomo" */}
+                      <LanguageSwitcher variant="compact" />
                     </div>
                   </div>
                 </header>
@@ -749,5 +750,14 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </SidebarProvider>
     </>
+  );
+}
+
+// ✅ Wrapper con LanguageProvider para que el contexto esté disponible
+export default function Layout({ children, currentPageName }) {
+  return (
+    <LanguageProvider>
+      <LayoutContent children={children} currentPageName={currentPageName} />
+    </LanguageProvider>
   );
 }

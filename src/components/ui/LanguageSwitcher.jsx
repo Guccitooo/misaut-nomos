@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
 import {
@@ -139,26 +139,77 @@ export const translations = {
   }
 };
 
-export const useLanguage = () => {
+// ✅ Context para que el idioma sea reactivo globalmente
+const LanguageContext = createContext({
+  language: 'es',
+  changeLanguage: () => {},
+  t: () => ''
+});
+
+export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('language') || 'es';
   });
 
   const changeLanguage = (lang) => {
+    console.log('🌍 Cambiando idioma a:', lang);
     setLanguage(lang);
     localStorage.setItem('language', lang);
+    document.documentElement.setAttribute('lang', lang);
   };
 
   const t = (key) => {
     return translations[language]?.[key] || translations['es'][key] || key;
   };
 
-  return { language, changeLanguage, t };
+  return (
+    <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 };
 
-export default function LanguageSwitcher() {
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage debe usarse dentro de LanguageProvider');
+  }
+  return context;
+};
+
+export default function LanguageSwitcher({ variant = "default" }) {
   const { language, changeLanguage } = useLanguage();
 
+  // Variante compacta para header (sin dropdown)
+  if (variant === "compact") {
+    return (
+      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+        <Globe className="w-4 h-4 text-gray-600" />
+        <button
+          onClick={() => changeLanguage('es')}
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+            language === 'es' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          ES
+        </button>
+        <button
+          onClick={() => changeLanguage('en')}
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+            language === 'en' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          EN
+        </button>
+      </div>
+    );
+  }
+
+  // Variante default (dropdown)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
