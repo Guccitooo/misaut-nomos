@@ -199,9 +199,9 @@ export default function ProfileOnboardingPage() {
           photos: existingProfileData.photos || [],
           website: existingProfileData.website || "",
           social_links: existingProfileData.social_links || { facebook: "", instagram: "", linkedin: "" },
-          acepta_terminos: existingProfileData.acepta_terminos || true,
-          acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || true,
-          consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || true,
+          acepta_terminos: existingProfileData.acepta_terminos || false, // Default to false if not explicitly true
+          acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || false, // Default to false
+          consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || false, // Default to false
         });
 
         // If profile is already completed and visible, navigate to MyProfile
@@ -274,7 +274,7 @@ export default function ProfileOnboardingPage() {
     },
     {
       id: "legal_verification",
-      title: "Verificación y legales",
+      title: "Consentimientos y Legales",
       fields: ["acepta_terminos", "acepta_politica_privacidad", "consiente_contacto_clientes"]
     },
     {
@@ -424,18 +424,18 @@ export default function ProfileOnboardingPage() {
 
     console.log("✅ Validación pasó");
 
-    // Solo guardar campos relevantes del paso actual
+    // Only save relevant fields from the current step
     const stepFields = steps[currentStep].fields;
     const dataToSave = {};
 
-    // Incluir campos del paso actual en dataToSave
+    // Include fields from the current step in dataToSave
     stepFields.forEach(field => {
       if (formData[field] !== undefined) {
         dataToSave[field] = formData[field];
       }
     });
 
-    // Siempre incluir campos base necesarios si no están en el paso actual
+    // Always include base fields needed if not in current step
     dataToSave.user_id = user.id;
     dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
@@ -1339,124 +1339,133 @@ Equipo milautonomos`,
 
       case "legal_verification":
         return (
-          <div className="space-y-4">
-            <div
-              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                formData.acepta_terminos
-                  ? 'bg-green-50 border-green-400 shadow-sm'
-                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
-              }`}
-              onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
-            >
-              <div className="relative flex-shrink-0 mt-1">
-                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                  formData.acepta_terminos
-                    ? "bg-green-600 border-green-600"
-                    : "bg-white border-gray-300"
-                }`}>
-                  {formData.acepta_terminos && (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
+          <div className="space-y-6">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+              <p className="text-sm text-blue-900 font-medium">
+                📋 Lee y acepta los consentimientos necesarios para poder publicar tu perfil
+              </p>
+            </div>
+
+            {/* ✅ BOTÓN "ACEPTAR TODO" */}
+            <div className="mb-6">
+              <Button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    acepta_terminos: true,
+                    acepta_politica_privacidad: true,
+                    consiente_contacto_clientes: true
+                  });
+                  toast.success('✅ Todos los consentimientos aceptados');
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
+              >
+                ✅ Aceptar todos los consentimientos
+              </Button>
+            </div>
+
+            {/* ✅ CHECKBOXES SIMPLIFICADOS - Fondo blanco, sin bordes coloridos */}
+            <div className="space-y-4">
+              {/* Términos y Condiciones */}
+              <div 
+                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
+                style={{
+                  borderColor: formData.acepta_terminos ? '#3B82F6' : '#E5E7EB'
+                }}
+                onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
+              >
+                <div className="relative flex-shrink-0 mt-1">
+                  <input
+                    type="checkbox"
+                    id="acepta_terminos"
+                    checked={formData.acepta_terminos}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setFormData({ ...formData, acepta_terminos: e.target.checked });
+                    }}
+                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    style={{ accentColor: '#3B82F6' }}
+                  />
                 </div>
+                <label htmlFor="acepta_terminos" className="cursor-pointer flex-1">
+                  <strong className="text-gray-900 text-base block mb-1">
+                    Términos y Condiciones
+                  </strong>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    He leído y acepto los términos y condiciones de uso de la plataforma MilAutónomos.
+                  </p>
+                </label>
               </div>
-              <div className="flex-1">
-                <strong className={`text-base block mb-2 transition-colors ${
-                  formData.acepta_terminos ? "text-green-900" : "text-gray-900"
-                }`}>
-                  ✅ Acepto los términos y condiciones *
-                </strong>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  He leído y acepto los términos y condiciones de uso de la plataforma milautonomos.
-                </p>
-                {formData.acepta_terminos && (
-                  <div className="mt-2 text-sm font-semibold text-green-700">
-                    ✓ Aceptado
-                  </div>
-                )}
+
+              {/* Política de Privacidad */}
+              <div 
+                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
+                style={{
+                  borderColor: formData.acepta_politica_privacidad ? '#3B82F6' : '#E5E7EB'
+                }}
+                onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
+              >
+                <div className="relative flex-shrink-0 mt-1">
+                  <input
+                    type="checkbox"
+                    id="acepta_politica"
+                    checked={formData.acepta_politica_privacidad}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setFormData({ ...formData, acepta_politica_privacidad: e.target.checked });
+                    }}
+                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    style={{ accentColor: '#3B82F6' }}
+                  />
+                </div>
+                <label htmlFor="acepta_politica" className="cursor-pointer flex-1">
+                  <strong className="text-gray-900 text-base block mb-1">
+                    Política de Privacidad
+                  </strong>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    Acepto la política de privacidad y el tratamiento de mis datos personales según el RGPD.
+                  </p>
+                </label>
+              </div>
+
+              {/* Consentimiento de Contacto */}
+              <div 
+                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
+                style={{
+                  borderColor: formData.consiente_contacto_clientes ? '#3B82F6' : '#E5E7EB'
+                }}
+                onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
+              >
+                <div className="relative flex-shrink-0 mt-1">
+                  <input
+                    type="checkbox"
+                    id="consiente_contacto"
+                    checked={formData.consiente_contacto_clientes}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setFormData({ ...formData, consiente_contacto_clientes: e.target.checked });
+                    }}
+                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    style={{ accentColor: '#3B82F6' }}
+                  />
+                </div>
+                <label htmlFor="consiente_contacto" className="cursor-pointer flex-1">
+                  <strong className="text-gray-900 text-base block mb-1">
+                    Consentimiento de Contacto
+                  </strong>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    Consiento en que los clientes puedan contactarme a través de la plataforma para solicitar presupuestos y servicios.
+                  </p>
+                </label>
               </div>
             </div>
 
-            <div
-              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                formData.acepta_politica_privacidad
-                  ? 'bg-green-50 border-green-400 shadow-sm'
-                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
-              }`}
-              onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
-            >
-              <div className="relative flex-shrink-0 mt-1">
-                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                  formData.acepta_politica_privacidad
-                    ? "bg-green-600 border-green-600"
-                    : "bg-white border-gray-300"
-                }`}>
-                  {formData.acepta_politica_privacidad && (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1">
-                <strong className={`text-base block mb-2 transition-colors ${
-                  formData.acepta_politica_privacidad ? "text-green-900" : "text-gray-900"
-                }`}>
-                  ✅ Acepto la política de privacidad *
-                </strong>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  He leído y acepto la política de privacidad y el tratamiento de mis datos personales.
-                </p>
-                {formData.acepta_politica_privacidad && (
-                  <div className="mt-2 text-sm font-semibold text-green-700">
-                    ✓ Aceptado
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div
-              className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                formData.consiente_contacto_clientes
-                  ? 'bg-green-50 border-green-400 shadow-sm'
-                  : 'bg-gray-50 border-gray-200 hover:border-green-300'
-              }`}
-              onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
-            >
-              <div className="relative flex-shrink-0 mt-1">
-                <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
-                  formData.consiente_contacto_clientes
-                    ? "bg-green-600 border-green-600"
-                    : "bg-white border-gray-300"
-                }`}>
-                  {formData.consiente_contacto_clientes && (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1">
-                <strong className={`text-base block mb-2 transition-colors ${
-                  formData.consiente_contacto_clientes ? "text-green-900" : "text-gray-900"
-                }`}>
-                  ✅ Consiento el contacto de clientes *
-                </strong>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Autorizo a que los clientes registrados en milautonomos puedan contactarme a través de la plataforma.
-                </p>
-                {formData.consiente_contacto_clientes && (
-                  <div className="mt-2 text-sm font-semibold text-green-700">
-                    ✓ Aceptado
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm font-medium text-blue-900">
-                {[formData.acepta_terminos, formData.acepta_politica_privacidad, formData.consiente_contacto_clientes].filter(Boolean).length} de 3 consentimientos aceptados
+            {/* ✅ INFORMACIÓN LEGAL SIMPLIFICADA - Sin contador de color */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mt-6">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Al aceptar estos consentimientos, confirmas que has leído y entendido nuestras políticas. 
+                Puedes retirar tu consentimiento en cualquier momento desde tu panel de usuario.
               </p>
             </div>
           </div>
@@ -1592,9 +1601,9 @@ Equipo milautonomos`,
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-bold text-sm mb-3">Confirmaciones legales</h3>
               <div className="space-y-2 text-xs text-gray-700">
-                <p>✓ Acepto los términos y condiciones</p>
-                <p>✓ Acepto la política de privacidad</p>
-                <p>✓ Consiento ser contactado por clientes</p>
+                <p>{formData.acepta_terminos ? '✓' : '✗'} Acepto los términos y condiciones</p>
+                <p>{formData.acepta_politica_privacidad ? '✓' : '✗'} Acepto la política de privacidad</p>
+                <p>{formData.consiente_contacto_clientes ? '✓' : '✗'} Consiento ser contactado por clientes</p>
               </div>
             </div>
           </div>
