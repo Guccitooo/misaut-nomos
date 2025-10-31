@@ -12,14 +12,21 @@ export const useTranslatedContent = (originalText, skipTranslation = false) => {
   const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
+    // Si no hay texto, no hacer nada
+    if (!originalText || originalText.trim() === '') {
+      setTranslatedText(originalText);
+      setIsTranslating(false);
+      return;
+    }
+
     console.log('🌍 [TranslatedText] Hook ejecutándose:', { 
       originalText: originalText?.substring(0, 50) + '...', 
       language, 
       skipTranslation 
     });
     
-    // Si es español, está vacío o debe omitirse, no traducir
-    if (language === 'es' || !originalText || skipTranslation) {
+    // Si es español o debe omitirse, no traducir
+    if (language === 'es' || skipTranslation) {
       console.log('⏭️ [TranslatedText] Saltando traducción');
       setTranslatedText(originalText);
       setIsTranslating(false);
@@ -75,20 +82,23 @@ export default function TranslatedText({
   className = "",
   showLoader = false
 }) {
-  const { language } = useLanguage();
   const { translatedText, isTranslating } = useTranslatedContent(text, skipTranslation);
 
   console.log('🎨 [TranslatedText] Renderizando:', {
     text: text?.substring(0, 30),
-    language,
     isTranslating,
     translatedText: translatedText?.substring(0, 30)
   });
 
+  // Si no hay texto, no mostrar nada
+  if (!text || text.trim() === '') {
+    return null;
+  }
+
   // Mostrar skeleton mientras traduce
   if (isTranslating && showLoader) {
     return (
-      <span className={`${className} inline-block bg-gray-200 animate-pulse rounded`} style={{ minWidth: '80px', height: '1em' }}>
+      <span className={`${className} inline-block bg-gray-200 animate-pulse rounded`} style={{ minWidth: '100px', height: '1.2em' }}>
         &nbsp;
       </span>
     );
