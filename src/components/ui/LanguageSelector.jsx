@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
 import {
@@ -8,44 +8,73 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Context para compartir el idioma entre componentes
+const LanguageContext = createContext({ lang: 'es', setLang: () => {} });
+
 const languages = [
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' }
 ];
 
-export default function LanguageSelector({ className = "" }) {
-  const [currentLang, setCurrentLang] = useState('es');
+// Hook para usar traducciones
+export function useTranslation() {
+  const context = useContext(LanguageContext);
+  
+  if (!context) {
+    // Fallback si se usa fuera del contexto
+    return { 
+      t: (key) => translations.es[key] || key, 
+      lang: 'es' 
+    };
+  }
+
+  const { lang } = context;
+
+  const t = (key) => {
+    return translations[lang]?.[key] || translations.es[key] || key;
+  };
+
+  return { t, lang };
+}
+
+// Provider para envolver la app
+export function LanguageProvider({ children }) {
+  const [lang, setLang] = useState('es');
 
   useEffect(() => {
-    // Cargar idioma guardado o detectar del navegador
     const savedLang = localStorage.getItem('app_language');
-    if (savedLang) {
-      setCurrentLang(savedLang);
+    if (savedLang && ['es', 'en', 'fr'].includes(savedLang)) {
+      setLang(savedLang);
       document.documentElement.lang = savedLang;
     } else {
-      // Detectar idioma del navegador
       const browserLang = navigator.language.split('-')[0];
       const supportedLang = ['es', 'en', 'fr'].includes(browserLang) ? browserLang : 'es';
-      setCurrentLang(supportedLang);
+      setLang(supportedLang);
       localStorage.setItem('app_language', supportedLang);
       document.documentElement.lang = supportedLang;
     }
   }, []);
 
+  return (
+    <LanguageContext.Provider value={{ lang, setLang }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+// Componente selector de idioma
+export default function LanguageSelector({ className = "" }) {
+  const { lang, setLang } = useContext(LanguageContext);
+
   const handleLanguageChange = (langCode) => {
-    setCurrentLang(langCode);
+    setLang(langCode);
     localStorage.setItem('app_language', langCode);
     document.documentElement.lang = langCode;
-    
-    // Disparar evento personalizado para que otros componentes se actualicen
-    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: langCode } }));
-    
-    // Recargar página para aplicar traducciones
     window.location.reload();
   };
 
-  const currentLanguage = languages.find(lang => lang.code === currentLang) || languages[0];
+  const currentLanguage = languages.find(l => l.code === lang) || languages[0];
 
   return (
     <DropdownMenu>
@@ -61,14 +90,14 @@ export default function LanguageSelector({ className = "" }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
-        {languages.map((lang) => (
+        {languages.map((language) => (
           <DropdownMenuItem
-            key={lang.code}
-            onClick={() => handleLanguageChange(lang.code)}
-            className={`cursor-pointer ${currentLang === lang.code ? 'bg-blue-50' : ''}`}
+            key={language.code}
+            onClick={() => handleLanguageChange(language.code)}
+            className={`cursor-pointer ${lang === language.code ? 'bg-blue-50' : ''}`}
           >
-            <span className="mr-2">{lang.flag}</span>
-            <span>{lang.name}</span>
+            <span className="mr-2">{language.flag}</span>
+            <span>{language.name}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -76,38 +105,12 @@ export default function LanguageSelector({ className = "" }) {
   );
 }
 
-// Hook personalizado para usar traducciones
-export function useTranslation() {
-  const [lang, setLang] = useState('es');
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem('app_language') || 'es';
-    setLang(savedLang);
-
-    const handleLanguageChange = (e) => {
-      setLang(e.detail.language);
-    };
-
-    window.addEventListener('languageChanged', handleLanguageChange);
-    return () => window.removeEventListener('languageChanged', handleLanguageChange);
-  }, []);
-
-  const t = (key) => {
-    return translations[lang]?.[key] || translations.es[key] || key;
-  };
-
-  return { t, lang };
-}
-
 // Diccionario de traducciones
 const translations = {
   es: {
-    // Header
     'login': 'Iniciar sesión',
     'become_professional': 'Hazte Autónomo',
     'menu': 'Menú',
-    
-    // Navigation
     'search_professionals': 'Buscar Autónomos',
     'messages': 'Mensajes',
     'favorites': 'Favoritos',
@@ -116,15 +119,11 @@ const translations = {
     'my_subscription': 'Mi Suscripción',
     'administration': 'Administración',
     'logout': 'Cerrar sesión',
-    
-    // Hero
     'hero_title': 'Encuentra el autónomo perfecto',
     'hero_subtitle': 'Profesionales cualificados y verificados en toda España',
     'hero_choose': 'Elige cómo quieres empezar:',
     'im_professional': 'Soy autónomo',
     'im_client': 'Soy cliente',
-    
-    // Search & Filters
     'filters': 'Filtros',
     'search_placeholder': 'Buscar servicio, empresa...',
     'all_categories': 'Todas las categorías',
@@ -132,13 +131,9 @@ const translations = {
     'all_cities': 'Todas las ciudades',
     'professionals_available': 'autónomos disponibles',
     'verified_professionals': 'Profesionales verificados en toda España',
-    
-    // Profile Card
     'call': 'Llamar',
     'whatsapp': 'WhatsApp',
     'direct_chat': 'Chat directo',
-    
-    // Footer
     'footer_description': 'La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.',
     'for_professionals': 'Para Profesionales',
     'plans_pricing': 'Planes y Precios',
@@ -156,30 +151,24 @@ const translations = {
     'terms_conditions': 'Términos y Condiciones',
     'cookie_policy': 'Política de Cookies',
     'legal_notice': 'Aviso Legal',
-    
-    // Cookies
     'cookies_title': 'Usamos cookies para mejorar tu experiencia',
     'cookies_description': 'Utilizamos cookies propias y de terceros para analizar el tráfico, mejorar nuestros servicios y mostrarte publicidad relevante. Al hacer clic en "Aceptar todas", aceptas el uso de todas las cookies. Puedes gestionar tus preferencias en nuestra',
     'cookies_only_necessary': 'Solo necesarias',
     'cookies_accept_all': 'Aceptar todas',
-    
-    // User types
     'professional': 'Autónomo',
     'client': 'Cliente',
-    
-    // Common
     'loading': 'Cargando...',
     'no_results': 'No se encontraron resultados',
     'try_other_filters': 'Prueba con otros filtros o elimina los filtros activos.',
     'view_all': 'Ver todos los autónomos',
+    'complete_professional_profile': 'Completa tu perfil profesional',
+    'complete_profile_text': 'Para activar tu cuenta y aparecer en las búsquedas, primero debes completar tu perfil profesional.',
+    'redirecting_to_quiz': 'Redirigiendo al quiz en 2 segundos...',
   },
   en: {
-    // Header
     'login': 'Log In',
     'become_professional': 'Become a Professional',
     'menu': 'Menu',
-    
-    // Navigation
     'search_professionals': 'Search Professionals',
     'messages': 'Messages',
     'favorites': 'Favorites',
@@ -188,15 +177,11 @@ const translations = {
     'my_subscription': 'My Subscription',
     'administration': 'Administration',
     'logout': 'Log Out',
-    
-    // Hero
     'hero_title': 'Find the perfect professional',
     'hero_subtitle': 'Qualified and verified professionals throughout Spain',
     'hero_choose': 'Choose how you want to start:',
     'im_professional': "I'm a professional",
     'im_client': "I'm a client",
-    
-    // Search & Filters
     'filters': 'Filters',
     'search_placeholder': 'Search service, company...',
     'all_categories': 'All categories',
@@ -204,13 +189,9 @@ const translations = {
     'all_cities': 'All cities',
     'professionals_available': 'professionals available',
     'verified_professionals': 'Verified professionals throughout Spain',
-    
-    // Profile Card
     'call': 'Call',
     'whatsapp': 'WhatsApp',
     'direct_chat': 'Direct Chat',
-    
-    // Footer
     'footer_description': 'The leading platform to connect clients with verified self-employed professionals throughout Spain.',
     'for_professionals': 'For Professionals',
     'plans_pricing': 'Plans & Pricing',
@@ -228,30 +209,24 @@ const translations = {
     'terms_conditions': 'Terms & Conditions',
     'cookie_policy': 'Cookie Policy',
     'legal_notice': 'Legal Notice',
-    
-    // Cookies
     'cookies_title': 'We use cookies to improve your experience',
     'cookies_description': 'We use our own and third-party cookies to analyze traffic, improve our services and show you relevant advertising. By clicking "Accept all", you accept the use of all cookies. You can manage your preferences in our',
     'cookies_only_necessary': 'Only necessary',
     'cookies_accept_all': 'Accept all',
-    
-    // User types
     'professional': 'Professional',
     'client': 'Client',
-    
-    // Common
     'loading': 'Loading...',
     'no_results': 'No results found',
     'try_other_filters': 'Try other filters or remove active filters.',
     'view_all': 'View all professionals',
+    'complete_professional_profile': 'Complete your professional profile',
+    'complete_profile_text': 'To activate your account and appear in searches, you must first complete your professional profile.',
+    'redirecting_to_quiz': 'Redirecting to quiz in 2 seconds...',
   },
   fr: {
-    // Header
     'login': 'Se connecter',
     'become_professional': 'Devenir Professionnel',
     'menu': 'Menu',
-    
-    // Navigation
     'search_professionals': 'Chercher Professionnels',
     'messages': 'Messages',
     'favorites': 'Favoris',
@@ -260,15 +235,11 @@ const translations = {
     'my_subscription': 'Mon Abonnement',
     'administration': 'Administration',
     'logout': 'Déconnexion',
-    
-    // Hero
     'hero_title': 'Trouvez le professionnel parfait',
     'hero_subtitle': 'Professionnels qualifiés et vérifiés dans toute l\'Espagne',
     'hero_choose': 'Choisissez comment vous voulez commencer:',
     'im_professional': 'Je suis professionnel',
     'im_client': 'Je suis client',
-    
-    // Search & Filters
     'filters': 'Filtres',
     'search_placeholder': 'Rechercher service, entreprise...',
     'all_categories': 'Toutes les catégories',
@@ -276,13 +247,9 @@ const translations = {
     'all_cities': 'Toutes les villes',
     'professionals_available': 'professionnels disponibles',
     'verified_professionals': 'Professionnels vérifiés dans toute l\'Espagne',
-    
-    // Profile Card
     'call': 'Appeler',
     'whatsapp': 'WhatsApp',
     'direct_chat': 'Chat Direct',
-    
-    // Footer
     'footer_description': 'La plateforme leader pour connecter les clients avec des professionnels indépendants vérifiés dans toute l\'Espagne.',
     'for_professionals': 'Pour les Professionnels',
     'plans_pricing': 'Plans et Tarifs',
@@ -300,21 +267,18 @@ const translations = {
     'terms_conditions': 'Termes et Conditions',
     'cookie_policy': 'Politique de Cookies',
     'legal_notice': 'Mention Légale',
-    
-    // Cookies
     'cookies_title': 'Nous utilisons des cookies pour améliorer votre expérience',
     'cookies_description': 'Nous utilisons nos propres cookies et ceux de tiers pour analyser le trafic, améliorer nos services et vous montrer des publicités pertinentes. En cliquant sur "Accepter tout", vous acceptez l\'utilisation de tous les cookies. Vous pouvez gérer vos préférences dans notre',
     'cookies_only_necessary': 'Seulement nécessaires',
     'cookies_accept_all': 'Accepter tout',
-    
-    // User types
     'professional': 'Professionnel',
     'client': 'Client',
-    
-    // Common
     'loading': 'Chargement...',
     'no_results': 'Aucun résultat trouvé',
     'try_other_filters': 'Essayez d\'autres filtres ou supprimez les filtres actifs.',
     'view_all': 'Voir tous les professionnels',
+    'complete_professional_profile': 'Complétez votre profil professionnel',
+    'complete_profile_text': 'Pour activer votre compte et apparaître dans les recherches, vous devez d\'abord compléter votre profil professionnel.',
+    'redirecting_to_quiz': 'Redirection vers le quiz dans 2 secondes...',
   }
 };

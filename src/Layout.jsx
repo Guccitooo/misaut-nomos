@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -32,11 +31,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import Footer from "@/components/ui/Footer"; // Added import
-import CookieBanner from "@/components/ui/CookieBanner"; // Added import
-import LanguageSelector, { useTranslation } from "@/components/ui/LanguageSelector";
+import Footer from "@/components/ui/Footer";
+import CookieBanner from "@/components/ui/CookieBanner";
+import LanguageSelector, { LanguageProvider, useTranslation } from "@/components/ui/LanguageSelector";
 
-export default function Layout({ children, currentPageName }) {
+function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -57,7 +56,6 @@ export default function Layout({ children, currentPageName }) {
     checkSubscriptionStatus();
   }, [user, location.pathname]);
 
-  // ✅ Cerrar menú móvil al cambiar de página
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -165,19 +163,15 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogin = () => {
-    console.log('🔑 Intentando redirigir al login...');
     try {
       if (typeof base44.auth.redirectToLogin === 'function') {
-        console.log('✅ Método redirectToLogin existe, llamando...');
         base44.auth.redirectToLogin();
       } else {
-        console.warn('⚠️ redirectToLogin no existe, usando método alternativo');
         const loginUrl = `https://app.base44.com/login?app_id=${window.location.hostname}&redirect_uri=${encodeURIComponent(window.location.href)}`;
-        console.log('🔗 Redirigiendo a:', loginUrl);
         window.location.href = loginUrl;
       }
     } catch (error) {
-      console.error('❌ Error al intentar login:', error);
+      console.error('Error al intentar login:', error);
       alert('Error al iniciar sesión. Intenta recargando la página.');
     }
   };
@@ -298,17 +292,14 @@ export default function Layout({ children, currentPageName }) {
             --card: #ffffff;
           }
           
-          /* ✅ Optimización de animaciones */
           * {
             -webkit-tap-highlight-color: transparent;
           }
           
-          /* ✅ Smooth scroll optimizado */
           html {
             scroll-behavior: smooth;
           }
           
-          /* ✅ Transiciones performantes */
           button, a, [role="button"] {
             transition: transform 150ms ease, opacity 150ms ease;
             will-change: transform, opacity;
@@ -318,7 +309,6 @@ export default function Layout({ children, currentPageName }) {
             transform: scale(0.98);
           }
           
-          /* ✅ Tamaños táctiles correctos (mínimo 48x48px) */
           @media (max-width: 768px) {
             button, a[role="button"], [role="button"] {
               min-height: 48px;
@@ -331,7 +321,6 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ ESTILOS GLOBALES PARA MODALES */
           [role="dialog"],
           [role="alertdialog"],
           .modal-content,
@@ -370,7 +359,6 @@ export default function Layout({ children, currentPageName }) {
             font-weight: 500 !important;
           }
           
-          /* ✅ Menú móvil overlay */
           @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
@@ -404,7 +392,6 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil - SOLO EN MÓVIL Y CON USUARIO LOGUEADO */
           .mobile-bottom-nav {
             display: none;
           }
@@ -470,11 +457,8 @@ export default function Layout({ children, currentPageName }) {
       </style>
 
       <SidebarProvider>
-        {/* Changed to flex-col to stack main content and cookie banner */}
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
-          {/* New div to contain sidebar and main content, taking up available space */}
           <div className="flex flex-1">
-            {/* ✅ Desktop Sidebar - SOLO SI HAY USUARIO LOGUEADO */}
             {user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
@@ -558,7 +542,6 @@ export default function Layout({ children, currentPageName }) {
               </Sidebar>
             )}
 
-            {/* ✅ Mobile Menu Overlay */}
             {mobileMenuOpen && (
               <>
                 <div 
@@ -648,7 +631,6 @@ export default function Layout({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {/* ✅ Desktop Header - SOLO SIN USUARIO */}
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -693,7 +675,6 @@ export default function Layout({ children, currentPageName }) {
                 </header>
               )}
 
-              {/* ✅ Mobile Header - SOLO EN MÓVIL */}
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
                   <Button
@@ -709,15 +690,12 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </header>
 
-              {/* ✅ Contenido principal */}
               <div className={`flex-1 overflow-auto ${user ? 'main-content-with-bottom-nav' : ''}`}>
                 {children}
               </div>
 
-              {/* ✅ Footer */}
               <Footer />
 
-              {/* ✅ Mobile Bottom Navigation - SOLO SI HAY USUARIO LOGUEADO */}
               {user && (
                 <nav className="mobile-bottom-nav">
                   {navigationItems.slice(0, 4).map((item) => (
@@ -740,10 +718,17 @@ export default function Layout({ children, currentPageName }) {
             </main>
           </div>
 
-          {/* ✅ Cookie Banner */}
           <CookieBanner />
         </div>
       </SidebarProvider>
     </>
+  );
+}
+
+export default function Layout(props) {
+  return (
+    <LanguageProvider>
+      <LayoutContent {...props} />
+    </LanguageProvider>
   );
 }
