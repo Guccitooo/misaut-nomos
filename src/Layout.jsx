@@ -400,9 +400,9 @@ export default function Layout({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil - SOLO EN MÓVIL */
+          /* ✅ Menú inferior móvil - SOLO EN MÓVIL Y CON USUARIO LOGUEADO */
           .mobile-bottom-nav {
-            display: none; /* ❌ Oculto por defecto (desktop) */
+            display: none; /* ❌ Oculto por defecto */
           }
           
           @media (max-width: 1023px) {
@@ -457,9 +457,9 @@ export default function Layout({ children, currentPageName }) {
             text-align: center;
           }
           
-          /* ✅ Ajustar padding del contenido en móvil */
+          /* ✅ Ajustar padding del contenido en móvil SOLO SI HAY USUARIO */
           @media (max-width: 1023px) {
-            .main-content-mobile {
+            .main-content-with-bottom-nav {
               padding-bottom: 80px; /* Espacio para menú inferior */
             }
           }
@@ -682,29 +682,31 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </header>
 
-            {/* ✅ Contenido principal */}
-            <div className="flex-1 overflow-auto main-content-mobile">
+            {/* ✅ Contenido principal - padding condicional */}
+            <div className={`flex-1 overflow-auto ${user ? 'main-content-with-bottom-nav' : ''}`}>
               {children}
             </div>
 
-            {/* ✅ Mobile Bottom Navigation - SOLO VISIBLE EN MÓVIL (<1024px) */}
-            <nav className="mobile-bottom-nav">
-              {navigationItems.slice(0, 4).map((item) => (
-                <Link
-                  key={item.title}
-                  to={item.url}
-                  className={`mobile-bottom-nav-item ${
-                    location.pathname === item.url ? 'active' : ''
-                  }`}
-                >
-                  <item.icon className="w-6 h-6" />
-                  <span>{item.title.split(' ')[0]}</span>
-                  {item.badge && (
-                    <span className="mobile-bottom-nav-badge">{item.badge}</span>
-                  )}
-                </Link>
-              ))}
-            </nav>
+            {/* ✅ Mobile Bottom Navigation - SOLO SI HAY USUARIO LOGUEADO */}
+            {user && (
+              <nav className="mobile-bottom-nav">
+                {navigationItems.slice(0, 4).map((item) => (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    className={`mobile-bottom-nav-item ${
+                      location.pathname === item.url ? 'active' : ''
+                    }`}
+                  >
+                    <item.icon className="w-6 h-6" />
+                    <span>{item.title.split(' ')[0]}</span>
+                    {item.badge && (
+                      <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                    )}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </main>
         </div>
       </SidebarProvider>
