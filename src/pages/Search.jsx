@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import TranslatedText from "../components/ui/TranslatedText";
+import TranslatedText, { preloadTranslation } from "../components/ui/TranslatedText";
 
 // ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -148,19 +148,27 @@ function useDebounce(value, delay) {
 }
 
 const CategoryBadge = ({ category }) => {
-  const { t } = useLanguage(); // Added useLanguage hook
+  const { t } = useLanguage();
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   
   return (
     <Badge variant="outline" className="text-xs flex items-center gap-1">
       <Icon className="w-3 h-3" />
-      {t(category)} {/* Translated category name */}
+      {t(category)}
     </Badge>
   );
 };
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  
+  // ✅ Pre-cargar traducción cuando el componente se monta
+  useEffect(() => {
+    const descriptionToTranslate = profile.descripcion_corta || profile.description;
+    if (language !== 'es' && descriptionToTranslate) {
+      preloadTranslation(descriptionToTranslate, language);
+    }
+  }, [language, profile.descripcion_corta, profile.description]);
   
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -227,7 +235,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ Categorías SÍ se traducen */}
+        {/* ✅ Categorías SÍ se traducen (usando diccionario estático) */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -261,10 +269,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
-          {/* ✅ Descripción SÍ se traduce dinámicamente */}
+          {/* ✅ Descripción SÍ se traduce dinámicamente con skeleton loader */}
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
-              text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
+              text={profile.descripcion_corta || profile.description || t('Professional available')}
+              showLoader={true}
             />
           </p>
         </div>
