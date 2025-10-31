@@ -12,6 +12,11 @@ export default function OptimizedImage({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
+  // ✅ Convertir a WebP si es posible
+  const optimizedSrc = src && !src.includes('.svg') 
+    ? src.replace(/\.(jpg|jpeg|png)$/i, '.webp') 
+    : src;
+
   if (error || !src) {
     return (
       <div className={`${className} ${aspectRatio} bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center ${fallbackClassName}`}>
@@ -26,15 +31,22 @@ export default function OptimizedImage({
         <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-100 animate-pulse" />
       )}
       <img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
+        className={`w-full h-full object-cover transition-opacity duration-200 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
         onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
+        onError={(e) => {
+          // ✅ Fallback a imagen original si WebP falla
+          if (optimizedSrc !== src) {
+            e.target.src = src;
+          } else {
+            setError(true);
+          }
+        }}
       />
     </div>
   );

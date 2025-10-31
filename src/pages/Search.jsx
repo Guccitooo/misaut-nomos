@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -173,7 +174,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
@@ -200,14 +201,14 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             <Button
               size="icon"
               variant="ghost"
-              className={`h-8 w-8 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
+              className={`h-10 w-10 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFavorite(profile.user_id);
               }}
             >
               <Heart 
-                className={`w-4 h-4 transition-all ${
+                className={`w-5 h-5 transition-all ${
                   isFavorite ? 'fill-red-500' : ''
                 }`}
               />
@@ -266,9 +267,9 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               <Button 
                 variant="outline" 
                 size="sm"
-                className="w-full text-xs h-8 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
               >
-                <Phone className="w-3.5 h-3.5" />
+                <Phone className="w-4 h-4" />
               </Button>
             </a>
             <a
@@ -279,20 +280,20 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             >
               <Button 
                 size="sm"
-                className="w-full text-xs h-8 bg-green-600 hover:bg-green-700"
+                className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
+                <MessageCircle className="w-4 h-4" />
               </Button>
             </a>
             <Button
               size="sm"
-              className="w-full text-xs h-8 bg-blue-600 hover:bg-blue-700"
+              className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
               onClick={(e) => {
                 e.stopPropagation();
                 onStartChat(profile.user_id, profile.business_name);
               }}
             >
-              <MessageSquare className="w-3.5 h-3.5" />
+              <MessageSquare className="w-4 h-4" />
             </Button>
           </div>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -13,7 +12,8 @@ import {
   Briefcase,
   LayoutDashboard,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +40,7 @@ export default function Layout({ children, currentPageName }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [professionalProfile, setProfessionalProfile] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -51,12 +52,16 @@ export default function Layout({ children, currentPageName }) {
     checkSubscriptionStatus();
   }, [user, location.pathname]);
 
+  // ✅ Cerrar menú móvil al cambiar de página
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      // ✅ NUEVO: Cargar perfil profesional para obtener nombre del negocio
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
@@ -172,28 +177,21 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  // ✅ MEJORADO: Obtener nombre a mostrar con fallback inteligente
   const getDisplayName = () => {
     if (!user) return "";
     
-    // Prioridad 1: Nombre del negocio (si es profesional)
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
     
-    // Prioridad 2: Nombre completo del usuario
     if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
     
-    // Prioridad 3: Limpiar email y hacer más amigable
     if (user.email) {
       const username = user.email.split('@')[0];
-      
-      // Quitar números del final (ej: "benchellal16" -> "benchellal")
       const cleaned = username.replace(/\d+$/g, '');
       
-      // Si tiene guiones o puntos, separar y capitalizar cada palabra
       if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
         return cleaned
           .split(/[-._]/)
@@ -201,11 +199,9 @@ export default function Layout({ children, currentPageName }) {
           .join(' ');
       }
       
-      // Si es una sola palabra, capitalizar primera letra
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
     }
     
-    // Último fallback
     return "Usuario";
   };
 
@@ -285,7 +281,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <style>
         {`
           :root {
@@ -297,14 +293,44 @@ export default function Layout({ children, currentPageName }) {
             --card: #ffffff;
           }
           
-          /* ✅ ESTILOS GLOBALES PARA MODALES Y DIÁLOGOS */
+          /* ✅ Optimización de animaciones */
+          * {
+            -webkit-tap-highlight-color: transparent;
+          }
+          
+          /* ✅ Smooth scroll optimizado */
+          html {
+            scroll-behavior: smooth;
+          }
+          
+          /* ✅ Transiciones performantes */
+          button, a, [role="button"] {
+            transition: transform 150ms ease, opacity 150ms ease;
+            will-change: transform, opacity;
+          }
+          
+          button:active, a:active, [role="button"]:active {
+            transform: scale(0.98);
+          }
+          
+          /* ✅ Tamaños táctiles correctos (mínimo 48x48px) */
+          @media (max-width: 768px) {
+            button, a[role="button"], [role="button"] {
+              min-height: 48px;
+              min-width: 48px;
+            }
+            
+            input, select, textarea {
+              font-size: 16px !important;
+              padding: 12px !important;
+            }
+          }
+          
+          /* ✅ ESTILOS GLOBALES PARA MODALES */
           [role="dialog"],
           [role="alertdialog"],
           .modal-content,
-          .dialog-content,
-          .popover-content,
-          .confirmation-modal,
-          .dialog-box {
+          .dialog-content {
             background-color: #FFFFFF !important;
             color: #222222 !important;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
@@ -312,7 +338,6 @@ export default function Layout({ children, currentPageName }) {
             border-radius: 12px !important;
           }
           
-          /* Headers de modales */
           .modal-header,
           [role="dialog"] h2,
           [role="alertdialog"] h2 {
@@ -323,29 +348,6 @@ export default function Layout({ children, currentPageName }) {
             border-bottom: 1px solid #E5E7EB !important;
           }
           
-          /* Body y footer de modales */
-          .modal-body,
-          .modal-footer,
-          [role="dialog"] > div,
-          [role="alertdialog"] > div {
-            background-color: #FFFFFF !important;
-            color: #222222 !important;
-            padding: 20px !important;
-          }
-          
-          /* Alertas dentro de modales */
-          .alert-warning,
-          .alert-danger,
-          .alert-info,
-          [role="alert"] {
-            background-color: #FFF6F6 !important;
-            border: 1px solid #F0C0C0 !important;
-            color: #222222 !important;
-            border-radius: 8px !important;
-            padding: 12px !important;
-          }
-          
-          /* Inputs, selects y textareas con fondo blanco */
           input, select, textarea {
             background-color: #FFFFFF !important;
             color: #222222 !important;
@@ -358,166 +360,339 @@ export default function Layout({ children, currentPageName }) {
             color: #888888 !important;
           }
           
-          /* Labels oscuros */
           label {
             color: #333333 !important;
             font-weight: 500 !important;
           }
           
-          /* Botones de peligro (delete, cancel) */
-          button.btn-danger,
-          button[class*="destructive"] {
-            background-color: #DC2626 !important;
-            border: none !important;
-            color: #FFFFFF !important;
-            border-radius: 6px !important;
+          /* ✅ Menú móvil overlay */
+          @media (max-width: 1024px) {
+            .mobile-menu-overlay {
+              position: fixed;
+              inset: 0;
+              background: rgba(0, 0, 0, 0.5);
+              z-index: 40;
+              animation: fadeIn 200ms ease;
+            }
+            
+            .mobile-menu {
+              position: fixed;
+              left: 0;
+              top: 0;
+              bottom: 0;
+              width: 80%;
+              max-width: 320px;
+              background: white;
+              z-index: 50;
+              animation: slideInLeft 200ms ease;
+              overflow-y: auto;
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes slideInLeft {
+              from { transform: translateX(-100%); }
+              to { transform: translateX(0); }
+            }
           }
           
-          button.btn-danger:hover,
-          button[class*="destructive"]:hover {
-            background-color: #B91C1C !important;
+          /* ✅ Menú inferior móvil */
+          .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #E5E7EB;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 8px 0;
+            z-index: 30;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
           }
           
-          /* Overlay oscuro para modales */
-          [role="dialog"]::backdrop,
-          [role="alertdialog"]::backdrop,
-          .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5) !important;
+          .mobile-bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px;
+            color: #6B7280;
+            text-decoration: none;
+            transition: color 150ms ease;
+            position: relative;
           }
           
-          /* Cards y contenedores */
-          .card, [class*="Card"] {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E5E7EB !important;
-            border-radius: 12px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+          .mobile-bottom-nav-item.active {
+            color: #1e40af;
+          }
+          
+          .mobile-bottom-nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+          }
+          
+          .mobile-bottom-nav-badge {
+            position: absolute;
+            top: 4px;
+            right: 20%;
+            background: #f97316;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
           }
         `}
       </style>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
-        <Sidebar className="border-r border-gray-200 bg-white shadow-sm">
-          <SidebarHeader className="border-b border-gray-100 p-6">
-            <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                  alt="MilAutónomos"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                  }}
-                />
-              </div>
-              <div>
-                <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
-                <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
-              </div>
-            </Link>
-          </SidebarHeader>
-          
-          <SidebarContent className="p-3">
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-200 rounded-xl mb-1 relative ${
-                          location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
-                        }`}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                          <item.icon className="w-5 h-5" />
-                          <span className="font-medium">{item.title}</span>
-                          {item.badge && (
-                            <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
-                              {item.badge}
-                            </span>
-                          )}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
 
-            {!user && (
-              <div className="mt-auto p-3">
-                <Link to={createPageUrl("UserTypeSelection")}>
-                  <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Hazte Autónomo
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </SidebarContent>
-
-          <SidebarFooter className="border-t border-gray-100 p-4">
-            {user ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 px-2">
-                  <Avatar className="w-10 h-10 border-2 border-blue-600">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                      {getDisplayName().charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    {/* ✅ MOSTRAR NOMBRE MEJORADO */}
-                    <p className="font-semibold text-gray-900 text-sm truncate">
-                      {getDisplayName()}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
-                    </p>
-                  </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
+          {/* ✅ Desktop Sidebar */}
+          <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
+            <SidebarHeader className="border-b border-gray-100 p-6">
+              <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
+                    alt="MilAutónomos"
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                    }}
+                  />
                 </div>
-                <Button
-                  variant="outline"
-                  className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Cerrar sesión
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={handleLogin}
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Iniciar sesión
-                </Button>
-                <p className="text-xs text-center text-gray-500">
-                  Inicia sesión para acceder a tu cuenta
-                </p>
-              </div>
-            )}
-          </SidebarFooter>
-        </Sidebar>
+                <div>
+                  <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
+                  <p className="text-xs text-gray-500">Tu autónomo de confianza</p>
+                </div>
+              </Link>
+            </SidebarHeader>
+            
+            <SidebarContent className="p-3">
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {navigationItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
+                            location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
+                          }`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className="w-5 h-5" />
+                            <span className="font-medium">{item.title}</span>
+                            {item.badge && (
+                              <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4 lg:hidden sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors">
-                <Menu className="w-6 h-6" />
-              </SidebarTrigger>
-              <h1 className="text-lg font-bold text-gray-900">MilAutónomos</h1>
-              <div className="w-10" />
+              {!user && (
+                <div className="mt-auto p-3">
+                  <Link to={createPageUrl("UserTypeSelection")}>
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Hazte Autónomo
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </SidebarContent>
+
+            <SidebarFooter className="border-t border-gray-100 p-4">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 px-2">
+                    <Avatar className="w-10 h-10 border-2 border-blue-600">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                        {getDisplayName().charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">
+                        {getDisplayName()}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Cerrar sesión
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleLogin}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Iniciar sesión
+                  </Button>
+                  <p className="text-xs text-center text-gray-500">
+                    Inicia sesión para acceder a tu cuenta
+                  </p>
+                </div>
+              )}
+            </SidebarFooter>
+          </Sidebar>
+
+          {/* ✅ Mobile Menu Overlay */}
+          {mobileMenuOpen && (
+            <>
+              <div 
+                className="mobile-menu-overlay lg:hidden" 
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <div className="mobile-menu lg:hidden">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="font-bold text-lg">Menú</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                <div className="p-3">
+                  {user && (
+                    <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
+                      <Avatar className="w-10 h-10 border-2 border-blue-600">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                          {getDisplayName().charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">
+                          {getDisplayName()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {navigationItems.map((item) => (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                        location.pathname === item.url
+                          ? 'bg-blue-600 text-white'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span className="font-medium flex-1">{item.title}</span>
+                      {item.badge && (
+                        <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                  
+                  {!user ? (
+                    <div className="mt-4 space-y-2">
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={handleLogin}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Iniciar sesión
+                      </Button>
+                      <Link to={createPageUrl("UserTypeSelection")} className="block">
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Hazte Autónomo
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar sesión
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          <main className="flex-1 flex flex-col overflow-hidden">
+            {/* ✅ Mobile Header */}
+            <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="hover:bg-gray-100"
+                >
+                  <Menu className="w-6 h-6" />
+                </Button>
+                <h1 className="font-bold text-lg text-gray-900">MilAutónomos</h1>
+                <div className="w-10" />
+              </div>
+            </header>
+
+            <div className="flex-1 overflow-auto pb-20 lg:pb-0">
+              {children}
             </div>
-          </header>
 
-          <div className="flex-1 overflow-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+            {/* ✅ Mobile Bottom Navigation */}
+            <nav className="mobile-bottom-nav lg:hidden">
+              {navigationItems.slice(0, 4).map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`mobile-bottom-nav-item ${
+                    location.pathname === item.url ? 'active' : ''
+                  }`}
+                >
+                  <item.icon className="w-6 h-6" />
+                  <span>{item.title.split(' ')[0]}</span>
+                  {item.badge && (
+                    <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </main>
+        </div>
+      </SidebarProvider>
+    </>
   );
 }
