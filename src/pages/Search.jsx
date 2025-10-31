@@ -322,8 +322,8 @@ export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedCity, setSelectedCity] = useState("all");
-  const [sortBy, setSortBy] = useState("rating");
+  const [selectedProvincia, setSelectedProvincia] = useState("all");
+  const [selectedCiudad, setSelectedCiudad] = useState("all");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [userFavorites, setUserFavorites] = useState(new Set());
@@ -496,7 +496,50 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ Filtrado en frontend
+  // ✅ NUEVO: Query para obtener provincias únicas
+  const { data: availableProvincias = [] } = useQuery({
+    queryKey: ['availableProvincias'],
+    queryFn: async () => {
+      const allProfiles = await base44.entities.ProfessionalProfile.list(); // Use all profiles, not just visible
+      const provincias = new Set();
+      
+      allProfiles.forEach(profile => {
+        if (profile.provincia && profile.provincia.trim() !== "") {
+          provincias.add(profile.provincia);
+        }
+      });
+
+      return Array.from(provincias).sort();
+    },
+    staleTime: 1000 * 60 * 10,
+    initialData: [],
+  });
+
+  // ✅ NUEVO: Query para obtener ciudades de la provincia seleccionada
+  const { data: availableCiudades = [] } = useQuery({
+    queryKey: ['availableCiudades', selectedProvincia],
+    queryFn: async () => {
+      if (selectedProvincia === "all") {
+        return [];
+      }
+
+      const allProfiles = await base44.entities.ProfessionalProfile.list(); // Use all profiles, not just visible
+      const ciudades = new Set();
+      
+      allProfiles.forEach(profile => {
+        if (profile.provincia === selectedProvincia && profile.ciudad && profile.ciudad.trim() !== "") {
+          ciudades.add(profile.ciudad);
+        }
+      });
+
+      return Array.from(ciudades).sort();
+    },
+    enabled: selectedProvincia !== "all",
+    staleTime: 1000 * 60 * 10,
+    initialData: [],
+  });
+
+  // ✅ Filtrado en frontend (SIN sortBy)
   const filteredProfiles = useMemo(() => {
     return profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -507,34 +550,18 @@ export default function SearchPage() {
       const matchesCategory = selectedCategory === "all" || 
         profile.categories?.includes(selectedCategory);
       
-      const matchesCity = selectedCity === "all" || 
-        profile.ciudad === selectedCity ||
-        profile.provincia === selectedCity;
+      const matchesProvincia = selectedProvincia === "all" || 
+        profile.provincia === selectedProvincia;
       
-      return matchesSearch && matchesCategory && matchesCity;
+      const matchesCiudad = selectedCiudad === "all" || 
+        profile.ciudad === selectedCiudad;
+      
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
     }).sort((a, b) => {
-      if (sortBy === "rating") {
-        return (b.average_rating || 0) - (a.average_rating || 0);
-      }
-      if (sortBy === "recent") {
-        return new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime();
-      }
-      return 0;
+      // Siempre ordenar por rating (mejores primero)
+      return (b.average_rating || 0) - (a.average_rating || 0);
     });
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedCity, sortBy]);
-
-  const cities = useMemo(() => {
-    const citySet = new Set();
-    profiles.forEach(p => {
-      if (p.ciudad && p.ciudad.trim() !== "") {
-        citySet.add(p.ciudad);
-      }
-      if (p.provincia && p.provincia.trim() !== "") {
-        citySet.add(p.provincia);
-      }
-    });
-    return Array.from(citySet).sort();
-  }, [profiles]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
@@ -661,8 +688,10 @@ export default function SearchPage() {
               <Filter className="w-5 h-5 text-blue-700" />
               <h2 className="font-semibold text-lg text-gray-900">Filtros</h2>
             </div>
-            {/* ✅ CAMBIO: Filtros en UNA SOLA FILA */}
+            
+            {/* ✅ CAMBIO: 4 filtros en UNA SOLA FILA - SIN sortBy */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Búsqueda */}
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -673,6 +702,7 @@ export default function SearchPage() {
                 />
               </div>
 
+              {/* Categoría */}
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Todas las categorías" />
@@ -698,10 +728,43 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
 
-              {/* ✅ CAMBIO: Filtro de ciudad usando solo valores estructurados */}
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
+              {/* ✅ NUEVO: Provincia */}
+              <Select 
+                value={selectedProvincia} 
+                onValueChange={(value) => {
+                  setSelectedProvincia(value);
+                  setSelectedCiudad("all"); // Reset ciudad cuando cambia provincia
+                }}
+              >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Todas las ciudades" />
+                  <SelectValue placeholder="Todas las provincias" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>Todas las provincias</span>
+                    </div>
+                  </SelectItem>
+                  {availableProvincias.map((provincia) => (
+                    <SelectItem key={provincia} value={provincia}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{provincia}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* ✅ NUEVO: Ciudad (solo si hay provincia seleccionada) */}
+              <Select 
+                value={selectedCiudad} 
+                onValueChange={setSelectedCiudad}
+                disabled={selectedProvincia === "all"}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder={selectedProvincia === "all" ? "Selecciona provincia" : "Todas las ciudades"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">
@@ -710,24 +773,14 @@ export default function SearchPage() {
                       <span>Todas las ciudades</span>
                     </div>
                   </SelectItem>
-                  {cities.map((city) => (
-                    <SelectItem key={city} value={city}>
+                  {availableCiudades.map((ciudad) => (
+                    <SelectItem key={ciudad} value={ciudad}>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4" />
-                        <span>{city}</span>
+                        <span>{ciudad}</span>
                       </div>
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rating">Mejores valorados</SelectItem>
-                  <SelectItem value="recent">Más recientes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -790,15 +843,16 @@ export default function SearchPage() {
             <p className="text-gray-600 max-w-md mx-auto mb-6">
               {profiles.length === 0 
                 ? 'No hay perfiles en la base de datos. Contacta con el administrador.'
-                : selectedCategory !== "all"
-                  ? 'Estamos trabajando para incorporar nuevos autónomos en esta categoría. Prueba con otras categorías o elimina los filtros.'
+                : (selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all")
+                  ? 'Estamos trabajando para incorporar nuevos autónomos en esta categoría o ubicación. Prueba con otras categorías/ubicaciones o elimina los filtros.'
                   : 'Intenta modificar tus criterios de búsqueda o elimina los filtros activos.'}
             </p>
-            {(selectedCategory !== "all" || selectedCity !== "all" || searchTerm) && (
+            {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all" || searchTerm) && (
               <Button
                 onClick={() => {
                   setSelectedCategory("all");
-                  setSelectedCity("all");
+                  setSelectedProvincia("all");
+                  setSelectedCiudad("all");
                   setSearchTerm("");
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
