@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,22 +36,19 @@ import {
   Wind,
   Settings,
   AlertCircle,
-  User 
+  User
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import TranslatedText, { preloadTranslation } from "../components/ui/TranslatedText";
+import TranslatedText from "../components/ui/TranslatedText";
 
 // ✅ HELPER: Verificar si suscripción está activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) {
-    console.log('❌ Sin estado de suscripción');
     return false;
   }
   
   const normalizedState = estado.toLowerCase().trim();
-  console.log(`🔍 Estado normalizado: "${normalizedState}"`);
-  
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
   if (validStates.includes(normalizedState)) {
@@ -62,11 +58,8 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      const isValid = expiration >= today;
-      console.log(`   ✅ Estado "${normalizedState}" es válido, fecha expira: ${expiration.toISOString().split('T')[0]}, ¿vigente?: ${isValid}`);
-      return isValid;
+      return expiration >= today;
     } catch (error) {
-      console.error('   ⚠️ Error parseando fecha, asumiendo activo:', error);
       return true;
     }
   }
@@ -78,16 +71,12 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      const isValid = expiration >= today;
-      console.log(`   ⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}`);
-      return isValid;
+      return expiration >= today;
     } catch (error) {
-      console.error('   ❌ Error parseando fecha de cancelación:', error);
       return false;
     }
   }
   
-  console.log(`   ❌ Estado "${normalizedState}" no es válido`);
   return false;
 };
 
@@ -104,17 +93,6 @@ const CATEGORY_ICONS = {
   "Cerrajero": Key,
   "Instalador de aire acondicionado": Wind,
   "Mantenimiento general": Settings,
-  "Fontanería": Wrench,
-  "Albañilería": Home,
-  "Electricidad": Zap,
-  "Carpintería": Hammer,
-  "Pintura": Paintbrush,
-  "Jardinería": Leaf,
-  "Transporte": Truck,
-  "Limpieza": Trash2,
-  "Cerrajería": Key,
-  "Aire acondicionado": Wind,
-  "Mantenimiento": Settings
 };
 
 const BASE_CATEGORIES = [
@@ -154,21 +132,13 @@ const CategoryBadge = ({ category }) => {
   return (
     <Badge variant="outline" className="text-xs flex items-center gap-1">
       <Icon className="w-3 h-3" />
-      {t(category)}
+      <span>{t(category)}</span>
     </Badge>
   );
 };
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
-  const { t, language } = useLanguage();
-  
-  // ✅ Pre-cargar traducción cuando el componente se monta
-  useEffect(() => {
-    const descriptionToTranslate = profile.descripcion_corta || profile.description;
-    if (language !== 'es' && descriptionToTranslate) {
-      preloadTranslation(descriptionToTranslate, language);
-    }
-  }, [language, profile.descripcion_corta, profile.description]);
+  const { t } = useLanguage();
   
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -193,7 +163,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
-            {/* ✅ Nombre del negocio NO se traduce (es nombre propio) */}
             <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
               {profile.business_name}
@@ -235,7 +204,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ Categorías SÍ se traducen (usando diccionario estático) */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -257,7 +225,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           {profile.service_area ? (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
-              {/* ✅ Zona de servicio NO se traduce (son nombres de lugares) */}
               <span className="truncate">{profile.service_area}</span>
             </div>
           ) : (
@@ -269,10 +236,9 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
-          {/* ✅ Descripción SÍ se traduce dinámicamente con skeleton loader */}
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
-              text={profile.descripcion_corta || profile.description || t('Professional available')}
+              text={profile.descripcion_corta || profile.description || "Profesional disponible"}
               showLoader={true}
             />
           </p>
@@ -451,7 +417,6 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ Query para obtener PROVINCIAS de perfiles VISIBLES
   const availableProvincias = useMemo(() => {
     const provincias = new Set();
     profiles.forEach(profile => {
@@ -462,7 +427,6 @@ export default function SearchPage() {
     return Array.from(provincias).sort();
   }, [profiles]);
 
-  // ✅ Query para obtener CIUDADES de perfiles VISIBLES
   const availableCiudades = useMemo(() => {
     const ciudades = new Set();
     profiles.forEach(profile => {
@@ -576,7 +540,6 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* ✅ Hero Section - SOLO SIN USUARIO */}
       {!isLoadingUser && !user && (
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
           <div className="max-w-6xl mx-auto text-center">
@@ -653,7 +616,7 @@ export default function SearchPage() {
                       <SelectItem key={cat} value={cat}>
                         <div className="flex items-center gap-2">
                           <Icon className="w-4 h-4" />
-                          <span>{t(cat)}</span> {/* Translated category name */}
+                          <span>{t(cat)}</span>
                         </div>
                       </SelectItem>
                     );
