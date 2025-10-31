@@ -34,6 +34,8 @@ const translations = {
     chooseHow: "¿Cómo quieres usar MilAutónomos?",
     imFreelancer: "Soy Autónomo",
     imClient: "Soy Cliente",
+    login: "Iniciar Sesión",
+    becomeFreelancer: "Hazte Autónomo",
     
     // Categorías
     "Electricista": "Electricista",
@@ -97,6 +99,8 @@ const translations = {
     chooseHow: "How do you want to use MilAutónomos?",
     imFreelancer: "I'm a Freelancer",
     imClient: "I'm a Client",
+    login: "Login",
+    becomeFreelancer: "Become a Freelancer",
     
     // Categories
     "Electricista": "Electrician",
@@ -160,6 +164,8 @@ const translations = {
     chooseHow: "Comment voulez-vous utiliser MilAutónomos?",
     imFreelancer: "Je suis Freelance",
     imClient: "Je suis Client",
+    login: "Connexion",
+    becomeFreelancer: "Devenir Freelance",
     
     // Categories
     "Electricista": "Électricien",
@@ -209,12 +215,15 @@ export const LanguageProvider = ({ children }) => {
   });
 
   useEffect(() => {
+    console.log('🌐 [LanguageProvider] Idioma cambiado a:', language);
     localStorage.setItem('language', language);
     document.documentElement.lang = language;
   }, [language]);
 
   const t = (key) => {
-    return translations[language]?.[key] || key;
+    const translation = translations[language]?.[key] || key;
+    console.log(`🔤 [t] Traduciendo "${key}" → "${translation}" (${language})`);
+    return translation;
   };
 
   return (
@@ -234,6 +243,11 @@ export const useLanguage = () => {
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+
+  const handleLanguageChange = (newLang) => {
+    console.log('🔄 [LanguageSwitcher] Cambiando idioma de', language, 'a', newLang);
+    setLanguage(newLang);
+  };
 
   const languages = [
     { code: 'es', name: 'Español', flag: '🇪🇸' },
@@ -256,7 +270,7 @@ export default function LanguageSwitcher() {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => setLanguage(lang.code)}
+            onClick={() => handleLanguageChange(lang.code)}
             className={language === lang.code ? 'bg-blue-50' : ''}
           >
             <span className="mr-2">{lang.flag}</span>
