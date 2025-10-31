@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Cookie } from "lucide-react";
 import { useLanguage } from "./LanguageSwitcher";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function CookieBanner() {
   const { t } = useLanguage();
@@ -31,58 +33,95 @@ export default function CookieBanner() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom duration-300">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Cookie className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
+    <>
+      <style>
+        {`
+          @keyframes slideUpCookie {
+            from {
+              transform: translateY(20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
 
-            {/* Content */}
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                🍪 {t('cookieTitle')}
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {t('cookieText')} <strong>"{t('acceptAll')}"</strong>, {t('cookieAccept')}{" "}
-                <a href="#cookies" className="text-blue-600 hover:text-blue-700 font-medium underline">
-                  {t('cookiePolicy')}
-                </a>.
-              </p>
-            </div>
+          .cookie-banner-compact {
+            animation: slideUpCookie 0.3s ease;
+          }
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <Button
-                variant="outline"
-                onClick={handleReject}
-                className="whitespace-nowrap hover:bg-gray-100"
+          @media (max-width: 768px) {
+            .cookie-banner-compact {
+              max-width: 95% !important;
+              bottom: 10px !important;
+              left: 2.5% !important;
+              right: 2.5% !important;
+              padding: 12px 14px !important;
+            }
+
+            .cookie-banner-buttons {
+              flex-direction: column !important;
+              gap: 6px !important;
+            }
+
+            .cookie-banner-buttons button {
+              width: 100% !important;
+            }
+          }
+        `}
+      </style>
+      
+      <div 
+        className="cookie-banner-compact fixed bottom-5 left-5 right-5 mx-auto max-w-[420px] bg-white border border-gray-300 rounded-xl shadow-lg p-4 z-[9999]"
+      >
+        {/* Close button */}
+        <button
+          onClick={handleReject}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 transition-colors"
+          aria-label="Cerrar"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Icon + Content */}
+        <div className="flex items-start gap-3 mb-3">
+          <Cookie className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 pr-4">
+            <p className="text-[13px] leading-relaxed text-gray-700">
+              🍪 <strong>{t('cookieTitle')}</strong>
+            </p>
+            <p className="text-[12px] leading-relaxed text-gray-600 mt-1">
+              {t('cookieText')}{" "}
+              <Link 
+                to={createPageUrl("CookiePolicy")} 
+                className="text-blue-600 hover:text-blue-700 underline font-medium"
               >
-                {t('onlyNecessary')}
-              </Button>
-              <Button
-                onClick={handleAccept}
-                className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {t('acceptAll')}
-              </Button>
-            </div>
-
-            {/* Close button */}
-            <button
-              onClick={handleReject}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors md:hidden"
-              aria-label="Cerrar"
-            >
-              <X className="w-5 h-5" />
-            </button>
+                {t('cookiePolicy')}
+              </Link>.
+            </p>
           </div>
         </div>
+
+        {/* Buttons */}
+        <div className="cookie-banner-buttons flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReject}
+            className="text-[12px] h-8 px-3 hover:bg-gray-100 text-gray-700"
+          >
+            {t('onlyNecessary')}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleAccept}
+            className="text-[12px] h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {t('acceptAll')}
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
