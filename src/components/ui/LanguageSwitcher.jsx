@@ -40,22 +40,6 @@ export const translations = {
     freelancersAvailable: "autónomos disponibles",
     verifiedProfessionals: "Profesionales verificados en toda España",
     
-    // Profile Page
-    photoGallery: "Galería de fotos",
-    information: "Información",
-    workArea: "Zona de trabajo",
-    email: "Email",
-    phone: "Teléfono",
-    reviews: "Opiniones",
-    noReviewsYet: "Sin opiniones por ahora",
-    reviewsWillAppear: "Las valoraciones aparecerán aquí una vez los clientes dejen su opinión",
-    call: "Llamar",
-    whatsapp: "WhatsApp",
-    directChat: "Chat directo",
-    visitWebsite: "Visitar sitio web",
-    schedule: "Horario",
-    online: "En línea",
-    
     // Categories (for translation)
     "Electricista": "Electricista",
     "Carpintero": "Carpintero",
@@ -132,22 +116,6 @@ export const translations = {
     allCities: "All cities",
     freelancersAvailable: "freelancers available",
     verifiedProfessionals: "Verified professionals throughout Spain",
-    
-    // Profile Page
-    photoGallery: "Photo Gallery",
-    information: "Information",
-    workArea: "Work Area",
-    email: "Email",
-    phone: "Phone",
-    reviews: "Reviews",
-    noReviewsYet: "No reviews yet",
-    reviewsWillAppear: "Reviews will appear here once clients leave their feedback",
-    call: "Call",
-    whatsapp: "WhatsApp",
-    directChat: "Direct Chat",
-    visitWebsite: "Visit Website",
-    schedule: "Schedule",
-    online: "Online",
     
     // Categories (translated)
     "Electricista": "Electrician",
@@ -238,13 +206,14 @@ export const useLanguage = () => {
 export default function LanguageSwitcher({ variant = "default" }) {
   const { language, changeLanguage } = useLanguage();
 
-  // ✅ Variante compacta para sidebar (más estrecha)
+  // Variante compacta para header (sin dropdown)
   if (variant === "compact") {
     return (
-      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1.5 shadow-sm w-fit">
+      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+        <Globe className="w-4 h-4 text-gray-600" />
         <button
           onClick={() => changeLanguage('es')}
-          className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
             language === 'es' 
               ? 'bg-blue-600 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
@@ -254,7 +223,7 @@ export default function LanguageSwitcher({ variant = "default" }) {
         </button>
         <button
           onClick={() => changeLanguage('en')}
-          className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
             language === 'en' 
               ? 'bg-blue-600 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
@@ -266,7 +235,7 @@ export default function LanguageSwitcher({ variant = "default" }) {
     );
   }
 
-  // Variante default (dropdown con globo)
+  // Variante default (dropdown)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

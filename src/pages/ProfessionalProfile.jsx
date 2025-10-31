@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,13 +29,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
 import PhotoGallery from "../components/profile/PhotoGallery.jsx";
 import OptimizedImage from "../components/ui/OptimizedImage";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import TranslatedText from "../components/ui/TranslatedText";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get('id');
   const [user, setUser] = useState(null);
@@ -194,10 +192,12 @@ export default function ProfessionalProfilePage() {
       console.log('🔍 [REVIEWS] User actual:', user?.email || 'SIN LOGIN');
       
       try {
+        // Intentar cargar TODAS las reviews sin filtro primero para debug
         const allReviewsInDB = await base44.entities.Review.list();
         console.log('📊 [REVIEWS] Total reviews en DB:', allReviewsInDB.length);
         console.log('📊 [REVIEWS] Todas las reviews:', allReviewsInDB);
         
+        // Ahora filtrar por professional_id
         const filteredReviews = allReviewsInDB.filter(r => r.professional_id === professionalId);
         console.log('✅ [REVIEWS] Reviews filtradas para este profesional:', filteredReviews.length);
         console.log('✅ [REVIEWS] Datos:', filteredReviews);
@@ -210,7 +210,7 @@ export default function ProfessionalProfilePage() {
     },
     enabled: !!professionalId,
     initialData: [],
-    staleTime: 0,
+    staleTime: 0, // Sin caché para debug
     cacheTime: 0,
     refetchOnMount: true,
   });
@@ -278,7 +278,6 @@ export default function ProfessionalProfilePage() {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                   <div>
-                    {/* ✅ Nombre NO se traduce */}
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
                       {profile.business_name}
                     </h1>
@@ -339,7 +338,7 @@ export default function ProfessionalProfilePage() {
                         <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
                           <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
                             <Phone className="w-5 h-5 mr-2" />
-                            {t('call')}
+                            Llamar
                           </Button>
                         </a>
                         <a
@@ -349,7 +348,7 @@ export default function ProfessionalProfilePage() {
                         >
                           <Button className="bg-green-600 hover:bg-green-700">
                             <MessageCircle className="w-5 h-5 mr-2" />
-                            {t('whatsapp')}
+                            WhatsApp
                           </Button>
                         </a>
                       </>
@@ -359,7 +358,7 @@ export default function ProfessionalProfilePage() {
                       onClick={handleStartChat}
                     >
                       <MessageSquare className="w-5 h-5 mr-2" />
-                      {t('directChat')}
+                      Chat directo
                     </Button>
                   </div>
                 </div>
@@ -367,7 +366,7 @@ export default function ProfessionalProfilePage() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   {profile.categories?.map((cat, idx) => (
                     <Badge key={idx} className="bg-blue-100 text-blue-900">
-                      {t(cat)}
+                      {cat}
                     </Badge>
                   ))}
                   {profile.price_range && (
@@ -377,9 +376,8 @@ export default function ProfessionalProfilePage() {
                   )}
                 </div>
 
-                {/* ✅ Descripción SÍ se traduce */}
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  <TranslatedText text={profile.description} />
+                  {profile.description}
                 </p>
               </div>
             </div>
@@ -396,7 +394,7 @@ export default function ProfessionalProfilePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Loader2 className="w-5 h-5 animate-spin text-blue-700" />
-                    <span>{t('loading')}</span>
+                    <span>Cargando opiniones...</span>
                   </div>
                 </CardContent>
               </Card>
@@ -415,7 +413,7 @@ export default function ProfessionalProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-700" />
-                  {t('information')}
+                  Información
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -423,8 +421,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">{t('workArea')}</p>
-                      {/* ✅ Zona NO se traduce (ubicación) */}
+                      <p className="text-sm text-gray-500">Zona de trabajo</p>
                       <p className="font-medium text-gray-900">{profile.service_area}</p>
                     </div>
                   </div>
@@ -434,7 +431,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">{t('schedule')}</p>
+                      <p className="text-sm text-gray-500">Horario</p>
                       <p className="font-medium text-gray-900">{profile.opening_hours}</p>
                     </div>
                   </div>
@@ -444,7 +441,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">{t('email')}</p>
+                      <p className="text-sm text-gray-500">Email</p>
                       <p className="font-medium text-gray-900">{professionalUser.email}</p>
                     </div>
                   </div>
@@ -454,7 +451,7 @@ export default function ProfessionalProfilePage() {
                   <div className="flex items-start gap-3">
                     <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-500">{t('phone')}</p>
+                      <p className="text-sm text-gray-500">Teléfono</p>
                       <p className="font-medium text-gray-900">{professionalUser.phone}</p>
                     </div>
                   </div>
@@ -470,7 +467,7 @@ export default function ProfessionalProfilePage() {
                     className="flex items-center gap-2 text-blue-700 hover:text-blue-900 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
-                    <span className="font-medium">{t('visitWebsite')}</span>
+                    <span className="font-medium">Visitar sitio web</span>
                   </a>
                 )}
 
