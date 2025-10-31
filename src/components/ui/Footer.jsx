@@ -75,14 +75,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#ventajas" className="hover:text-white transition-colors">
+                <Link to={createPageUrl("PricingPlans")} className="hover:text-white transition-colors">
                   {t('joinAdvantages')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#ayuda" className="hover:text-white transition-colors">
+                <Link to={createPageUrl("HelpCenter")} className="hover:text-white transition-colors">
                   {t('helpCenter')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -102,14 +102,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#categorias" className="hover:text-white transition-colors">
+                <Link to={createPageUrl("Search")} className="hover:text-white transition-colors">
                   {t('allCategories')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="hover:text-white transition-colors">
+                <Link to={createPageUrl("FAQ")} className="hover:text-white transition-colors">
                   {t('faq')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -147,21 +147,21 @@ export default function Footer() {
             © {new Date().getFullYear()} MilAutónomos. {t('allRightsReserved')}.
           </div>
           <div className="flex flex-wrap justify-center gap-4">
-            <a href="#privacidad" className="hover:text-white transition-colors">
+            <Link to={createPageUrl("PrivacyPolicy")} className="hover:text-white transition-colors">
               {t('privacyPolicy')}
-            </a>
+            </Link>
             <span className="text-gray-600">•</span>
-            <a href="#terminos" className="hover:text-white transition-colors">
+            <Link to={createPageUrl("TermsConditions")} className="hover:text-white transition-colors">
               {t('termsConditions')}
-            </a>
+            </Link>
             <span className="text-gray-600">•</span>
-            <a href="#cookies" className="hover:text-white transition-colors">
+            <Link to={createPageUrl("CookiePolicy")} className="hover:text-white transition-colors">
               {t('cookiePolicy')}
-            </a>
+            </Link>
             <span className="text-gray-600">•</span>
-            <a href="#legal" className="hover:text-white transition-colors">
+            <Link to={createPageUrl("LegalNotice")} className="hover:text-white transition-colors">
               {t('legalNotice')}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

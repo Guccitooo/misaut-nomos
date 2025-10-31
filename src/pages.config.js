@@ -10,6 +10,12 @@ import ProfileOnboarding from './pages/ProfileOnboarding';
 import SubscriptionManagement from './pages/SubscriptionManagement';
 import UserTypeSelection from './pages/UserTypeSelection';
 import ClientOnboarding from './pages/ClientOnboarding';
+import HelpCenter from './pages/HelpCenter';
+import FAQ from './pages/FAQ';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
+import CookiePolicy from './pages/CookiePolicy';
+import LegalNotice from './pages/LegalNotice';
 import Layout from './Layout.jsx';
 
 
@@ -26,6 +32,12 @@ export const PAGES = {
     "SubscriptionManagement": SubscriptionManagement,
     "UserTypeSelection": UserTypeSelection,
     "ClientOnboarding": ClientOnboarding,
+    "HelpCenter": HelpCenter,
+    "FAQ": FAQ,
+    "PrivacyPolicy": PrivacyPolicy,
+    "TermsConditions": TermsConditions,
+    "CookiePolicy": CookiePolicy,
+    "LegalNotice": LegalNotice,
 }
 
 export const pagesConfig = {
