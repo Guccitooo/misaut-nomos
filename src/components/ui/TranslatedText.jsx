@@ -12,15 +12,10 @@ export const useTranslatedContent = (originalText, skipTranslation = false) => {
   const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
-    console.log('🌍 [TranslatedText] Hook ejecutándose:', { 
-      originalText: originalText?.substring(0, 50) + '...', 
-      language, 
-      skipTranslation 
-    });
+    console.log('🌍 useTranslatedContent:', { originalText, language, skipTranslation });
     
     // Si es español, está vacío o debe omitirse, no traducir
     if (language === 'es' || !originalText || skipTranslation) {
-      console.log('⏭️ [TranslatedText] Saltando traducción');
       setTranslatedText(originalText);
       setIsTranslating(false);
       return;
@@ -31,18 +26,18 @@ export const useTranslatedContent = (originalText, skipTranslation = false) => {
 
     // Verificar cache
     if (translationCache.has(cacheKey)) {
-      console.log('✅ [TranslatedText] Cache hit:', cacheKey.substring(0, 50));
+      console.log('✅ Cache hit:', cacheKey);
       setTranslatedText(translationCache.get(cacheKey));
       setIsTranslating(false);
       return;
     }
 
     // Traducir
-    console.log('🔄 [TranslatedText] Iniciando traducción:', originalText.substring(0, 100));
+    console.log('🔄 Traduciendo:', originalText);
     setIsTranslating(true);
 
     base44.integrations.Core.InvokeLLM({
-      prompt: `Translate the following text to ${language === 'en' ? 'English' : 'French'}. 
+      prompt: `Translate the following text to ${language === 'en' ? 'English' : language}. 
       IMPORTANT RULES:
       - Only return the translated text, nothing else
       - Do NOT translate proper names (person names, business names, company names)
@@ -54,12 +49,12 @@ export const useTranslatedContent = (originalText, skipTranslation = false) => {
       response_json_schema: null
     }).then(response => {
       const translated = response.data || originalText;
-      console.log('✅ [TranslatedText] Traducción completada:', translated.substring(0, 100));
+      console.log('✅ Traducido:', translated);
       translationCache.set(cacheKey, translated);
       setTranslatedText(translated);
       setIsTranslating(false);
     }).catch(error => {
-      console.error('❌ [TranslatedText] Error traduciendo:', error);
+      console.error('❌ Error traduciendo:', error);
       setTranslatedText(originalText);
       setIsTranslating(false);
     });
@@ -75,15 +70,7 @@ export default function TranslatedText({
   className = "",
   showLoader = false
 }) {
-  const { language } = useLanguage();
   const { translatedText, isTranslating } = useTranslatedContent(text, skipTranslation);
-
-  console.log('🎨 [TranslatedText] Renderizando:', {
-    text: text?.substring(0, 30),
-    language,
-    isTranslating,
-    translatedText: translatedText?.substring(0, 30)
-  });
 
   // Mostrar skeleton mientras traduce
   if (isTranslating && showLoader) {
