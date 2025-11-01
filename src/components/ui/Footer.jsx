@@ -20,9 +20,9 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {/* Column 1: About */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-                  <Briefcase className="w-6 h-6 text-orange-400" />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-7 h-7 text-white" />
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-lg">MilAutónomos</h3>
@@ -177,9 +177,9 @@ export default function Footer() {
       <div className="md:hidden py-6 px-4">
         {/* Logo and Social */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-              <Briefcase className="w-4 h-4 text-orange-400" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
+              <Briefcase className="w-7 h-7 text-white" />
             </div>
             <div>
               <h3 className="text-white font-bold text-base">MilAutónomos</h3>
