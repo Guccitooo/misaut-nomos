@@ -36,6 +36,7 @@ import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
@@ -666,7 +667,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {/* ✅ Desktop Header - SOLO SIN USUARIO */}
+              {/* ✅ Desktop Header - CON NOTIFICACIONES */}
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -712,7 +713,7 @@ function LayoutContent({ children, currentPageName }) {
                 </header>
               )}
 
-              {/* ✅ Mobile Header - SOLO EN MÓVIL */}
+              {/* ✅ Mobile Header - CON NOTIFICACIONES */}
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
                   <Button
@@ -724,7 +725,10 @@ function LayoutContent({ children, currentPageName }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                   <h1 className="font-bold text-lg text-gray-900">MilAutónomos</h1>
-                  <LanguageSwitcher />
+                  <div className="flex items-center gap-2">
+                    {user && <NotificationCenter user={user} />}
+                    <LanguageSwitcher />
+                  </div>
                 </div>
               </header>
 
