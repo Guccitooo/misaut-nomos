@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Send, MessageSquare, Loader2, Star } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -30,6 +30,7 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(initialConversation);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(initialProfessional);
   const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewData, setReviewData] = useState({
     rapidez: 0,
@@ -39,17 +40,21 @@ export default function MessagesPage() {
     comment: ""
   });
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     loadUser();
   }, []);
 
+  // ✅ Autoscroll cada vez que cambian los mensajes
   useEffect(() => {
     scrollToBottom();
   }, [selectedConversation]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   const loadUser = async () => {
@@ -62,6 +67,7 @@ export default function MessagesPage() {
     }
   };
 
+  // ✅ Query optimizada con refetch automático cada 5 segundos
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
@@ -73,12 +79,11 @@ export default function MessagesPage() {
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 10000,
-    staleTime: 1000 * 5,
-    cacheTime: 1000 * 60 * 5,
+    refetchInterval: 5000, // ✅ Actualización automática cada 5 segundos
+    staleTime: 1000,
   });
 
-  // ✅ NUEVA QUERY: Verificar si ya dejó reseña
+  // ✅ Verificar si ya dejó reseña
   const { data: existingReview } = useQuery({
     queryKey: ['review', user?.id, selectedProfessionalId],
     queryFn: async () => {
@@ -124,7 +129,7 @@ export default function MessagesPage() {
       new Date(a.created_date) - new Date(b.created_date)
     ) : [];
 
-  // ✅ NUEVA FUNCIÓN: Verificar si hay conversación bidireccional
+  // ✅ Verificar si hay conversación bidireccional
   const hasBidirectionalConversation = () => {
     if (!selectedConversation || !user || !selectedProfessionalId) return false;
     
@@ -135,19 +140,42 @@ export default function MessagesPage() {
     return userSent && professionalReplied;
   };
 
-  // ✅ NUEVA FUNCIÓN: Verificar si puede dejar reseña
+  // ✅ Verificar si puede dejar reseña
   const canLeaveReview = () => {
     if (!user || user.user_type !== "client") return false;
-    if (existingReview) return false; // Ya dejó reseña
-    if (!hasBidirectionalConversation()) return false; // No hay conversación bidireccional
+    if (existingReview) return false;
+    if (!hasBidirectionalConversation()) return false;
     return true;
   };
 
+  // ✅ Mutación optimizada para enviar mensajes
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData) => {
       return base44.entities.Message.create(messageData);
     },
+    onMutate: async (newMessage) => {
+      // ✅ Optimistic update - mostrar mensaje inmediatamente
+      await queryClient.cancelQueries({ queryKey: ['messages'] });
+      
+      const previousMessages = queryClient.getQueryData(['messages', user?.id]);
+      
+      // Agregar mensaje temporal con ID único
+      const tempMessage = {
+        ...newMessage,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString(),
+        is_read: false,
+        _isOptimistic: true
+      };
+      
+      queryClient.setQueryData(['messages', user?.id], (old = []) => 
+        [...old, tempMessage]
+      );
+      
+      return { previousMessages };
+    },
     onSuccess: async (newMessage) => {
+      // ✅ Enviar email al destinatario
       try {
         const recipient = await base44.entities.User.filter({ id: newMessage.recipient_id });
         if (recipient[0]) {
@@ -162,16 +190,28 @@ export default function MessagesPage() {
         console.error("Error sending notification:", error);
       }
 
+      // ✅ Refetch para obtener datos reales del servidor
       queryClient.invalidateQueries({ queryKey: ['messages'] });
+      
+      // ✅ Scroll automático al nuevo mensaje
+      setTimeout(scrollToBottom, 200);
+    },
+    onError: (err, newMessage, context) => {
+      // ✅ Revertir en caso de error
+      queryClient.setQueryData(['messages', user?.id], context.previousMessages);
+      toast.error("Error al enviar el mensaje. Intenta de nuevo.");
+    },
+    onSettled: () => {
+      setIsSending(false);
       setNewMessage("");
-      setTimeout(scrollToBottom, 100);
+      // ✅ Enfocar de nuevo el textarea
+      textareaRef.current?.focus();
     },
   });
 
-  // ✅ NUEVA MUTACIÓN: Crear reseña
+  // ✅ Crear reseña
   const createReviewMutation = useMutation({
     mutationFn: async (review) => {
-      // Calcular rating promedio
       const avgRating = (review.rapidez + review.comunicacion + review.calidad + review.precio_satisfaccion) / 4;
       
       return base44.entities.Review.create({
@@ -186,7 +226,6 @@ export default function MessagesPage() {
       });
     },
     onSuccess: async () => {
-      // Actualizar profile rating
       const allReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId
       });
@@ -203,7 +242,6 @@ export default function MessagesPage() {
         });
       }
 
-      // Enviar notificación al profesional
       const professionalUser = await base44.entities.User.filter({ id: selectedProfessionalId });
       if (professionalUser[0]) {
         await base44.integrations.Core.SendEmail({
@@ -222,8 +260,6 @@ Has recibido una nueva valoración en tu perfil de milautonomos.
 - Precio/Satisfacción: ${reviewData.precio_satisfaccion} estrellas
 
 💬 Comentario: ${reviewData.comment || 'Sin comentario'}
-
-Puedes ver todas tus valoraciones en tu perfil profesional.
 
 Gracias,
 Equipo milautonomos`,
@@ -249,6 +285,7 @@ Equipo milautonomos`,
     }
   });
 
+  // ✅ Marcar como leído cuando se selecciona conversación
   useEffect(() => {
     if (selectedConversation && currentMessages.length > 0) {
       markAsRead();
@@ -269,9 +306,13 @@ Equipo milautonomos`,
     }
   };
 
+  // ✅ Handler mejorado para enviar mensajes
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+    e?.preventDefault();
+    
+    if (!newMessage.trim() || !selectedConversation || isSending) return;
+
+    setIsSending(true);
 
     const otherUserId = selectedProfessionalId || 
       conversations[selectedConversation]?.otherUserId;
@@ -283,11 +324,11 @@ Equipo milautonomos`,
       await base44.entities.ProfessionalProfile.filter({ user_id: user.id }) : null;
     const currentProfile = currentProfiles && currentProfiles.length > 0 ? currentProfiles[0] : null;
 
-    sendMessageMutation.mutate({
+    const messageData = {
       conversation_id: selectedConversation,
       sender_id: user.id,
       recipient_id: otherUserId,
-      content: newMessage,
+      content: newMessage.trim(),
       professional_name: user.user_type === "professionnel" ? 
         currentProfile?.business_name : 
         conversations[selectedConversation]?.otherUserName,
@@ -295,7 +336,17 @@ Equipo milautonomos`,
         user.full_name || user.email : 
         recipientUser?.full_name || recipientUser?.email,
       is_read: false
-    });
+    };
+
+    sendMessageMutation.mutate(messageData);
+  };
+
+  // ✅ Handler para Enter key
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
   };
 
   const handleSelectConversation = (conversation) => {
@@ -303,7 +354,6 @@ Equipo milautonomos`,
     setSelectedProfessionalId(conversation.otherUserId);
   };
 
-  // ✅ NUEVA FUNCIÓN: Abrir diálogo de reseña
   const handleOpenReviewDialog = () => {
     if (!canLeaveReview()) {
       toast.error("No puedes dejar una valoración todavía");
@@ -312,7 +362,6 @@ Equipo milautonomos`,
     setShowReviewDialog(true);
   };
 
-  // ✅ NUEVA FUNCIÓN: Enviar reseña
   const handleSubmitReview = () => {
     if (reviewData.rapidez === 0 || reviewData.comunicacion === 0 || 
         reviewData.calidad === 0 || reviewData.precio_satisfaccion === 0) {
@@ -322,7 +371,6 @@ Equipo milautonomos`,
     createReviewMutation.mutate(reviewData);
   };
 
-  // ✅ NUEVO COMPONENTE: Selector de estrellas
   const StarRating = ({ value, onChange, label }) => (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
@@ -346,6 +394,13 @@ Equipo milautonomos`,
       </div>
     </div>
   );
+
+  // ✅ Auto-scroll cuando llegan nuevos mensajes
+  useEffect(() => {
+    if (currentMessages.length > 0) {
+      scrollToBottom();
+    }
+  }, [currentMessages.length]);
 
   if (!user) {
     return (
@@ -413,7 +468,7 @@ Equipo milautonomos`,
                         {conv.lastMessage.content}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {format(new Date(conv.lastMessage.created_date), "d MMM")}
+                        {format(new Date(conv.lastMessage.created_date), "d MMM HH:mm")}
                       </p>
                     </div>
                   </div>
@@ -440,11 +495,13 @@ Equipo milautonomos`,
                       <p className="font-semibold text-gray-900">
                         {conversations[selectedConversation]?.otherUserName || "Usuario"}
                       </p>
-                      <p className="text-sm text-gray-500">En línea</p>
+                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        En línea
+                      </p>
                     </div>
                   </div>
 
-                  {/* ✅ NUEVO: Botón de reseña */}
                   {canLeaveReview() && (
                     <Button
                       onClick={handleOpenReviewDialog}
@@ -468,10 +525,14 @@ Equipo milautonomos`,
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {currentMessages.map((message) => {
                   const isMe = message.sender_id === user.id;
+                  const isOptimistic = message._isOptimistic;
+                  
                   return (
                     <div
                       key={message.id}
-                      className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${
+                        isOptimistic ? 'opacity-70' : 'opacity-100'
+                      } transition-opacity`}
                     >
                       <div
                         className={`max-w-md px-4 py-3 rounded-2xl shadow-sm ${
@@ -481,9 +542,20 @@ Equipo milautonomos`,
                         }`}
                       >
                         <p className="leading-relaxed">{message.content}</p>
-                        <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                          {format(new Date(message.created_date), "HH:mm")}
-                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                            {format(new Date(message.created_date), "HH:mm")}
+                          </p>
+                          {isMe && (
+                            isOptimistic ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : message.is_read ? (
+                              <CheckCheck className="w-3 h-3" />
+                            ) : (
+                              <Check className="w-3 h-3" />
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -494,20 +566,30 @@ Equipo milautonomos`,
               {/* Message Input */}
               <div className="bg-white border-t border-gray-200 p-4">
                 <form onSubmit={handleSendMessage} className="flex gap-3">
-                  <Input
+                  <Textarea
+                    ref={textareaRef}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Escribe tu mensaje..."
-                    className="flex-1 h-12"
+                    onKeyDown={handleKeyPress}
+                    placeholder="Escribe un mensaje... (Enter para enviar, Shift+Enter para nueva línea)"
+                    className="flex-1 min-h-[50px] max-h-[120px] resize-none"
+                    disabled={isSending}
                   />
                   <Button
                     type="submit"
-                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                    className="h-12 bg-blue-600 hover:bg-blue-700"
+                    disabled={!newMessage.trim() || isSending}
+                    className="h-[50px] bg-blue-600 hover:bg-blue-700 px-6"
                   >
-                    <Send className="w-5 h-5" />
+                    {isSending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
                   </Button>
                 </form>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  💡 Presiona Enter para enviar • Shift+Enter para nueva línea
+                </p>
               </div>
             </>
           ) : (
@@ -522,7 +604,7 @@ Equipo milautonomos`,
         </div>
       </div>
 
-      {/* ✅ NUEVO: Modal de reseña */}
+      {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
