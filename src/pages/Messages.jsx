@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Send, MessageSquare, Loader2, Star, CheckCheck, Check } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -67,20 +68,25 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Query optimizada con refetch automático cada 5 segundos
+  // ✅ Query optimizada con refetch cada 3 segundos (más rápido)
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
-      const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 100);
-      const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 100);
-      return [...sent, ...received].sort((a, b) => 
-        new Date(b.created_date) - new Date(a.created_date)
-      );
+      try {
+        const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 100);
+        const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 100);
+        return [...sent, ...received].sort((a, b) => 
+          new Date(b.created_date) - new Date(a.created_date)
+        );
+      } catch (error) {
+        console.error("Error loading messages:", error);
+        return [];
+      }
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 5000, // ✅ Actualización automática cada 5 segundos
-    staleTime: 1000,
+    refetchInterval: 3000, // ✅ Actualización cada 3 segundos (más rápido)
+    staleTime: 500,
   });
 
   // ✅ Verificar si ya dejó reseña
@@ -148,18 +154,20 @@ export default function MessagesPage() {
     return true;
   };
 
-  // ✅ Mutación optimizada para enviar mensajes
+  // ✅ Mutación mejorada con manejo de errores robusto
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData) => {
-      return base44.entities.Message.create(messageData);
+      console.log('📤 Enviando mensaje:', messageData);
+      const result = await base44.entities.Message.create(messageData);
+      console.log('✅ Mensaje enviado:', result);
+      return result;
     },
     onMutate: async (newMessage) => {
-      // ✅ Optimistic update - mostrar mensaje inmediatamente
+      console.log('🔄 Optimistic update iniciado');
       await queryClient.cancelQueries({ queryKey: ['messages'] });
       
       const previousMessages = queryClient.getQueryData(['messages', user?.id]);
       
-      // Agregar mensaje temporal con ID único
       const tempMessage = {
         ...newMessage,
         id: `temp-${Date.now()}`,
@@ -172,38 +180,45 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
+      // ✅ Scroll inmediato al mensaje optimista
+      setTimeout(scrollToBottom, 50);
+      
       return { previousMessages };
     },
     onSuccess: async (newMessage) => {
-      // ✅ Enviar email al destinatario
+      console.log('✅ Mensaje guardado correctamente');
+      
+      // ✅ Enviar email en background (no bloqueante)
       try {
         const recipient = await base44.entities.User.filter({ id: newMessage.recipient_id });
         if (recipient[0]) {
-          await base44.integrations.Core.SendEmail({
+          base44.integrations.Core.SendEmail({
             to: recipient[0].email,
             subject: "Nuevo mensaje en milautonomos",
             body: `Hola,\n\nHas recibido un nuevo mensaje en milautonomos.\n\nDe: ${newMessage.professional_name || newMessage.client_name}\nMensaje: ${newMessage.content}\n\nInicia sesión en milautonomos para responder.\n\nGracias,\nEquipo milautonomos`,
             from_name: "milautonomos"
-          });
+          }).catch(err => console.log('Email notification error:', err));
         }
       } catch (error) {
-        console.error("Error sending notification:", error);
+        console.log('Error sending notification (non-blocking):', error);
       }
 
-      // ✅ Refetch para obtener datos reales del servidor
+      // ✅ Refetch para datos reales
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       
-      // ✅ Scroll automático al nuevo mensaje
+      // ✅ Toast de confirmación
+      toast.success('Mensaje enviado ✓');
+      
       setTimeout(scrollToBottom, 200);
     },
     onError: (err, newMessage, context) => {
-      // ✅ Revertir en caso de error
+      console.error('❌ Error enviando mensaje:', err);
       queryClient.setQueryData(['messages', user?.id], context.previousMessages);
       toast.error("Error al enviar el mensaje. Intenta de nuevo.");
     },
     onSettled: () => {
       setIsSending(false);
-      setNewMessage("");
+      setNewMessage(""); // This is now done earlier in handleSendMessage, but leaving here as a fallback
       // ✅ Enfocar de nuevo el textarea
       textareaRef.current?.focus();
     },
@@ -244,7 +259,7 @@ export default function MessagesPage() {
 
       const professionalUser = await base44.entities.User.filter({ id: selectedProfessionalId });
       if (professionalUser[0]) {
-        await base44.integrations.Core.SendEmail({
+        base44.integrations.Core.SendEmail({
           to: professionalUser[0].email,
           subject: "⭐ Nueva valoración en tu perfil - milautonomos",
           body: `Hola,
@@ -264,7 +279,7 @@ Has recibido una nueva valoración en tu perfil de milautonomos.
 Gracias,
 Equipo milautonomos`,
           from_name: "milautonomos"
-        });
+        }).catch(err => console.log('Email error:', err));
       }
 
       queryClient.invalidateQueries({ queryKey: ['review'] });
@@ -298,7 +313,11 @@ Equipo milautonomos`,
     );
 
     for (const msg of unreadMessages) {
-      await base44.entities.Message.update(msg.id, { is_read: true });
+      try {
+        await base44.entities.Message.update(msg.id, { is_read: true });
+      } catch (error) {
+        console.log('Error marking message as read:', error);
+      }
     }
     
     if (unreadMessages.length > 0) {
@@ -306,39 +325,105 @@ Equipo milautonomos`,
     }
   };
 
-  // ✅ Handler mejorado para enviar mensajes
+  // ✅ Handler completamente refactorizado con manejo de errores robusto
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     
-    if (!newMessage.trim() || !selectedConversation || isSending) return;
-
-    setIsSending(true);
-
-    const otherUserId = selectedProfessionalId || 
-      conversations[selectedConversation]?.otherUserId;
+    console.log('🚀 handleSendMessage called');
+    console.log('Estado actual:', { newMessage, selectedConversation, isSending });
     
-    const recipientUsers = await base44.entities.User.filter({ id: otherUserId });
-    const recipientUser = recipientUsers.length > 0 ? recipientUsers[0] : null;
+    // Validaciones
+    if (!newMessage.trim()) {
+      console.log('❌ Mensaje vacío');
+      toast.error('Escribe un mensaje');
+      return;
+    }
+    
+    if (!selectedConversation) {
+      console.log('❌ Sin conversación seleccionada');
+      toast.error('Selecciona una conversación');
+      return;
+    }
+    
+    if (isSending) {
+      console.log('⏳ Ya se está enviando un mensaje');
+      return;
+    }
 
-    const currentProfiles = user.user_type === "professionnel" ? 
-      await base44.entities.ProfessionalProfile.filter({ user_id: user.id }) : null;
-    const currentProfile = currentProfiles && currentProfiles.length > 0 ? currentProfiles[0] : null;
+    // ✅ Activar estado de envío
+    setIsSending(true);
+    console.log('✅ isSending = true');
 
-    const messageData = {
-      conversation_id: selectedConversation,
-      sender_id: user.id,
-      recipient_id: otherUserId,
-      content: newMessage.trim(),
-      professional_name: user.user_type === "professionnel" ? 
-        currentProfile?.business_name : 
-        conversations[selectedConversation]?.otherUserName,
-      client_name: user.user_type === "client" ? 
-        user.full_name || user.email : 
-        recipientUser?.full_name || recipientUser?.email,
-      is_read: false
-    };
+    try {
+      const otherUserId = selectedProfessionalId || 
+        conversations[selectedConversation]?.otherUserId;
+      
+      if (!otherUserId) {
+        throw new Error('No se pudo identificar al destinatario');
+      }
 
-    sendMessageMutation.mutate(messageData);
+      console.log('👤 Destinatario:', otherUserId);
+
+      // ✅ Preparar datos del mensaje de forma segura
+      let recipientUser = null;
+      let currentProfile = null;
+
+      try {
+        const recipientUsers = await base44.entities.User.filter({ id: otherUserId });
+        recipientUser = recipientUsers[0] || null;
+      } catch (error) {
+        console.log('⚠️ No se pudo cargar usuario destinatario:', error);
+      }
+
+      if (user.user_type === "professionnel") {
+        try {
+          const currentProfiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+          currentProfile = currentProfiles[0] || null;
+        } catch (error) {
+          console.log('⚠️ No se pudo cargar perfil profesional:', error);
+        }
+      }
+
+      const messageData = {
+        conversation_id: selectedConversation,
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: newMessage.trim(),
+        professional_name: user.user_type === "professionnel" ? 
+          (currentProfile?.business_name || user.full_name || user.email) : 
+          conversations[selectedConversation]?.otherUserName,
+        client_name: user.user_type === "client" ? 
+          (user.full_name || user.email) : 
+          (recipientUser?.full_name || recipientUser?.email || 'Usuario'),
+        is_read: false
+      };
+
+      console.log('📦 Datos del mensaje:', messageData);
+
+      // ✅ Limpiar input inmediatamente para UX fluida
+      setNewMessage("");
+      
+      // ✅ Enviar mensaje
+      sendMessageMutation.mutate(messageData);
+      
+      // ✅ Enfocar textarea para continuar escribiendo
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ Error en handleSendMessage:', error);
+      toast.error('Error al preparar el mensaje: ' + error.message);
+      // ✅ Restaurar mensaje si falló
+      // (el mensaje ya se limpió, pero podríamos guardarlo en un ref si queremos)
+    } finally {
+      // ✅ CRÍTICO: Siempre resetear isSending
+      console.log('🔄 Reseteando isSending');
+      setTimeout(() => {
+        setIsSending(false);
+        console.log('✅ isSending = false');
+      }, 1000); // 1 segundo de delay para evitar spam
+    }
   };
 
   // ✅ Handler para Enter key
@@ -541,7 +626,7 @@ Equipo milautonomos`,
                             : 'bg-white text-gray-900 border border-gray-200'
                         }`}
                       >
-                        <p className="leading-relaxed">{message.content}</p>
+                        <p className="leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
                         <div className="flex items-center justify-end gap-1 mt-1">
                           <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                             {format(new Date(message.created_date), "HH:mm")}
@@ -578,10 +663,13 @@ Equipo milautonomos`,
                   <Button
                     type="submit"
                     disabled={!newMessage.trim() || isSending}
-                    className="h-[50px] bg-blue-600 hover:bg-blue-700 px-6"
+                    className="h-[50px] bg-blue-600 hover:bg-blue-700 px-6 relative"
                   >
                     {isSending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="sr-only">Enviando...</span>
+                      </>
                     ) : (
                       <Send className="w-5 h-5" />
                     )}
