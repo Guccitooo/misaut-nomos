@@ -45,19 +45,43 @@ export default function MessagesPage() {
   });
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const previousMessagesCountRef = useRef(0);
+  const isInitialLoadRef = useRef(true);
 
   useEffect(() => {
     loadUser();
   }, []);
 
+  // ✅ Solo hacer scroll al cambiar de conversación (inicial)
   useEffect(() => {
-    scrollToBottom();
+    if (selectedConversation) {
+      isInitialLoadRef.current = true;
+      // Pequeño delay para que los mensajes se rendericen
+      setTimeout(() => {
+        scrollToBottom(false); // sin animación para carga inicial
+        isInitialLoadRef.current = false;
+      }, 300);
+    }
   }, [selectedConversation]);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+  // ✅ Scroll mejorado con control
+  const scrollToBottom = (smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? "smooth" : "auto",
+        block: "end"
+      });
+    }
+  };
+
+  // ✅ Función para verificar si el usuario está cerca del final
+  const isNearBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const threshold = 150; // pixels desde el final
+    return scrollHeight - scrollTop - clientHeight < threshold;
   };
 
   const loadUser = async () => {
@@ -70,7 +94,6 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Query para cargar datos del otro usuario (profesional o cliente)
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
@@ -81,7 +104,6 @@ export default function MessagesPage() {
       
       if (!otherUser) return null;
 
-      // Si es profesional, cargar su perfil
       if (otherUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: selectedProfessionalId
@@ -163,6 +185,26 @@ export default function MessagesPage() {
       new Date(a.created_date) - new Date(b.created_date)
     ) : [];
 
+  // ✅ Solo hacer scroll automático si hay mensajes nuevos Y el usuario está cerca del final
+  useEffect(() => {
+    if (currentMessages.length > 0 && !isInitialLoadRef.current) {
+      const currentCount = currentMessages.length;
+      const previousCount = previousMessagesCountRef.current;
+      
+      // Solo si hay mensajes nuevos
+      if (currentCount > previousCount) {
+        // Solo hacer scroll si el usuario está cerca del final
+        if (isNearBottom()) {
+          setTimeout(() => {
+            scrollToBottom(true);
+          }, 100);
+        }
+      }
+      
+      previousMessagesCountRef.current = currentCount;
+    }
+  }, [currentMessages.length]);
+
   const hasBidirectionalConversation = () => {
     if (!selectedConversation || !user || !selectedProfessionalId) return false;
     
@@ -180,7 +222,6 @@ export default function MessagesPage() {
     return true;
   };
 
-  // ✅ Función para obtener el nombre a mostrar
   const getDisplayName = (userId) => {
     if (!userId) return "Usuario";
     
@@ -198,7 +239,6 @@ export default function MessagesPage() {
     return "Usuario";
   };
 
-  // ✅ Función para navegar al perfil
   const handleNavigateToProfile = (userId) => {
     if (userId === user?.id) {
       navigate(createPageUrl("MyProfile"));
@@ -228,7 +268,10 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
-      setTimeout(scrollToBottom, 50);
+      // ✅ Scroll inmediato al enviar mensaje propio
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 50);
       
       return { previousMessages };
     },
@@ -249,7 +292,11 @@ export default function MessagesPage() {
 
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success('Mensaje enviado ✓');
-      setTimeout(scrollToBottom, 200);
+      
+      // ✅ Scroll después de confirmar envío
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 200);
     },
     onError: (err, newMessage, context) => {
       queryClient.setQueryData(['messages', user?.id], context.previousMessages);
@@ -474,12 +521,6 @@ Equipo milautonomos`,
     </div>
   );
 
-  useEffect(() => {
-    if (currentMessages.length > 0) {
-      scrollToBottom();
-    }
-  }, [currentMessages.length]);
-
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -560,7 +601,7 @@ Equipo milautonomos`,
         <div className="flex-1 flex flex-col bg-gray-50">
           {selectedConversation ? (
             <>
-              {/* Messages Header - MEJORADO */}
+              {/* Messages Header */}
               <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -620,8 +661,11 @@ Equipo milautonomos`,
                 </div>
               </div>
 
-              {/* Messages - MEJORADO CON NOMBRES */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Messages - CON REF PARA DETECTAR SCROLL */}
+              <div 
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-6 space-y-4"
+              >
                 {currentMessages.map((message) => {
                   const isMe = message.sender_id === user.id;
                   const isOptimistic = message._isOptimistic;
@@ -635,7 +679,6 @@ Equipo milautonomos`,
                       } transition-opacity`}
                     >
                       <div className="max-w-md">
-                        {/* ✅ Header del mensaje con nombre clickeable */}
                         {!isMe && (
                           <div className="flex items-center gap-2 mb-1 ml-1">
                             <button
