@@ -8,34 +8,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const translations = {
+export const translations = {
   es: {
+    // Header
+    login: "Iniciar sesión",
+    becomeFreelancer: "Hazte Autónomo",
+    
+    // Hero
+    heroTitle: "Encuentra el autónomo perfecto",
+    heroSubtitle: "Profesionales cualificados y verificados en toda España",
+    chooseHow: "Elige cómo quieres empezar:",
+    imFreelancer: "Soy autónomo",
+    imClient: "Soy cliente",
+    
+    // Navigation
     searchFreelancers: "Buscar Autónomos",
     messages: "Mensajes",
     favorites: "Favoritos",
     myProfile: "Mi Perfil",
-    mySubscription: "Mi Suscripción",
     viewPlans: "Ver Planes",
+    mySubscription: "Mi Suscripción",
     administration: "Administración",
-    logout: "Cerrar Sesión",
-    search: "Buscar...",
-    allCategories: "Todas las Categorías",
-    allProvinces: "Todas las Provincias",
-    allCities: "Todas las Ciudades",
-    filters: "Filtros",
-    freelancersAvailable: "autónomos disponibles",
-    verifiedProfessionals: "Profesionales verificados con suscripción activa",
-    loading: "Cargando...",
-    noResults: "No se encontraron resultados",
-    tryDifferentFilters: "Intenta ajustar los filtros o buscar con otros términos",
-    viewAll: "Ver Todos",
-    heroTitle: "Encuentra al Profesional Perfecto",
-    heroSubtitle: "Miles de autónomos verificados listos para ayudarte",
-    chooseHow: "¿Cómo quieres usar MilAutónomos?",
-    imFreelancer: "Soy Autónomo",
-    imClient: "Soy Cliente",
+    logout: "Cerrar sesión",
     
-    // Categorías
+    // Search & Filters
+    filters: "Filtros",
+    search: "Buscar servicio, empresa...",
+    allCategories: "Todas las categorías",
+    allProvinces: "Todas las provincias",
+    allCities: "Todas las ciudades",
+    freelancersAvailable: "autónomos disponibles",
+    verifiedProfessionals: "Profesionales verificados en toda España",
+    
+    // Categories (for translation)
     "Electricista": "Electricista",
     "Carpintero": "Carpintero",
     "Fontanero": "Fontanero",
@@ -49,8 +54,9 @@ const translations = {
     "Mantenimiento general": "Mantenimiento general",
     
     // Footer
+    aboutUs: "Sobre Nosotros",
     tagline: "Tu autónomo de confianza",
-    platformDescription: "Conectamos profesionales autónomos con clientes que necesitan sus servicios.",
+    platformDescription: "La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.",
     forProfessionals: "Para Profesionales",
     plansAndPricing: "Planes y Precios",
     createProfile: "Crear Perfil",
@@ -58,6 +64,7 @@ const translations = {
     helpCenter: "Centro de Ayuda",
     forClients: "Para Clientes",
     createFreeAccount: "Crear Cuenta Gratis",
+    allCategories: "Todas las Categorías",
     faq: "Preguntas Frecuentes",
     contact: "Contacto",
     allRightsReserved: "Todos los derechos reservados",
@@ -66,54 +73,67 @@ const translations = {
     cookiePolicy: "Política de Cookies",
     legalNotice: "Aviso Legal",
     
-    // Cookies
-    cookieTitle: "Usamos cookies",
-    cookieText: "Utilizamos cookies para mejorar tu experiencia. Consulta nuestra",
-    onlyNecessary: "Rechazar",
+    // Cookie Banner
+    cookieTitle: "Usamos cookies para mejorar tu experiencia",
+    cookieText: "Utilizamos cookies propias y de terceros para analizar el tráfico, mejorar nuestros servicios y mostrarte publicidad relevante. Al hacer clic en",
     acceptAll: "Aceptar todas",
+    cookieAccept: "aceptas el uso de todas las cookies. Puedes gestionar tus preferencias en nuestra",
+    onlyNecessary: "Solo necesarias",
+    
+    // Common
+    loading: "Cargando...",
+    noResults: "No se encontraron resultados",
+    tryDifferentFilters: "Prueba con otros filtros o elimina los filtros activos.",
+    viewAll: "Ver todos los autónomos",
   },
   en: {
+    // Header
+    login: "Login",
+    becomeFreelancer: "Become a Freelancer",
+    
+    // Hero
+    heroTitle: "Find the perfect freelancer",
+    heroSubtitle: "Qualified and verified professionals throughout Spain",
+    chooseHow: "Choose how you want to start:",
+    imFreelancer: "I'm a freelancer",
+    imClient: "I'm a client",
+    
+    // Navigation
     searchFreelancers: "Search Freelancers",
     messages: "Messages",
     favorites: "Favorites",
     myProfile: "My Profile",
-    mySubscription: "My Subscription",
     viewPlans: "View Plans",
+    mySubscription: "My Subscription",
     administration: "Administration",
     logout: "Logout",
-    search: "Search...",
-    allCategories: "All Categories",
-    allProvinces: "All Provinces",
-    allCities: "All Cities",
-    filters: "Filters",
-    freelancersAvailable: "freelancers available",
-    verifiedProfessionals: "Verified professionals with active subscription",
-    loading: "Loading...",
-    noResults: "No results found",
-    tryDifferentFilters: "Try adjusting the filters or search with different terms",
-    viewAll: "View All",
-    heroTitle: "Find the Perfect Professional",
-    heroSubtitle: "Thousands of verified freelancers ready to help you",
-    chooseHow: "How do you want to use MilAutónomos?",
-    imFreelancer: "I'm a Freelancer",
-    imClient: "I'm a Client",
     
-    // Categories
+    // Search & Filters
+    filters: "Filters",
+    search: "Search service, company...",
+    allCategories: "All categories",
+    allProvinces: "All provinces",
+    allCities: "All cities",
+    freelancersAvailable: "freelancers available",
+    verifiedProfessionals: "Verified professionals throughout Spain",
+    
+    // Categories (translated)
     "Electricista": "Electrician",
     "Carpintero": "Carpenter",
     "Fontanero": "Plumber",
     "Albañil / Reformas": "Mason / Renovations",
     "Pintor": "Painter",
     "Jardinero": "Gardener",
-    "Transportista": "Driver / Transport",
+    "Transportista": "Carrier",
     "Autónomo de limpieza": "Cleaning Professional",
     "Cerrajero": "Locksmith",
-    "Instalador de aire acondicionado": "AC Installer",
+    "Instalador de aire acondicionado": "Air Conditioning Installer",
     "Mantenimiento general": "General Maintenance",
     
     // Footer
+    aboutUs: "About Us",
     tagline: "Your trusted freelancer",
-    platformDescription: "We connect freelance professionals with clients who need their services.",
+    platformDescription: "The leading platform to connect clients with verified freelance professionals throughout Spain.",
     forProfessionals: "For Professionals",
     plansAndPricing: "Plans & Pricing",
     createProfile: "Create Profile",
@@ -121,6 +141,7 @@ const translations = {
     helpCenter: "Help Center",
     forClients: "For Clients",
     createFreeAccount: "Create Free Account",
+    allCategories: "All Categories",
     faq: "FAQ",
     contact: "Contact",
     allRightsReserved: "All rights reserved",
@@ -129,96 +150,46 @@ const translations = {
     cookiePolicy: "Cookie Policy",
     legalNotice: "Legal Notice",
     
-    // Cookies
-    cookieTitle: "We use cookies",
-    cookieText: "We use cookies to improve your experience. Check our",
-    onlyNecessary: "Reject",
+    // Cookie Banner
+    cookieTitle: "We use cookies to improve your experience",
+    cookieText: "We use our own and third-party cookies to analyze traffic, improve our services and show you relevant advertising. By clicking",
     acceptAll: "Accept all",
-  },
-  fr: {
-    searchFreelancers: "Rechercher des Freelances",
-    messages: "Messages",
-    favorites: "Favoris",
-    myProfile: "Mon Profil",
-    mySubscription: "Mon Abonnement",
-    viewPlans: "Voir les Plans",
-    administration: "Administration",
-    logout: "Déconnexion",
-    search: "Rechercher...",
-    allCategories: "Toutes les Catégories",
-    allProvinces: "Toutes les Provinces",
-    allCities: "Toutes les Villes",
-    filters: "Filtres",
-    freelancersAvailable: "freelances disponibles",
-    verifiedProfessionals: "Professionnels vérifiés avec abonnement actif",
-    loading: "Chargement...",
-    noResults: "Aucun résultat trouvé",
-    tryDifferentFilters: "Essayez d'ajuster les filtres ou de rechercher avec d'autres termes",
-    viewAll: "Voir Tout",
-    heroTitle: "Trouvez le Professionnel Parfait",
-    heroSubtitle: "Des milliers de freelances vérifiés prêts à vous aider",
-    chooseHow: "Comment voulez-vous utiliser MilAutónomos?",
-    imFreelancer: "Je suis Freelance",
-    imClient: "Je suis Client",
+    cookieAccept: "you accept the use of all cookies. You can manage your preferences in our",
+    onlyNecessary: "Only necessary",
     
-    // Categories
-    "Electricista": "Électricien",
-    "Carpintero": "Charpentier",
-    "Fontanero": "Plombier",
-    "Albañil / Reformas": "Maçon / Rénovations",
-    "Pintor": "Peintre",
-    "Jardinero": "Jardinier",
-    "Transportista": "Chauffeur / Transport",
-    "Autónomo de limpieza": "Professionnel du Nettoyage",
-    "Cerrajero": "Serrurier",
-    "Instalador de aire acondicionado": "Installateur de Climatisation",
-    "Mantenimiento general": "Entretien Général",
-    
-    // Footer
-    tagline: "Votre freelance de confiance",
-    platformDescription: "Nous connectons des professionnels freelances avec des clients qui ont besoin de leurs services.",
-    forProfessionals: "Pour les Professionnels",
-    plansAndPricing: "Plans et Tarifs",
-    createProfile: "Créer un Profil",
-    joinAdvantages: "Avantages de Rejoindre",
-    helpCenter: "Centre d'Aide",
-    forClients: "Pour les Clients",
-    createFreeAccount: "Créer un Compte Gratuit",
-    faq: "FAQ",
-    contact: "Contact",
-    allRightsReserved: "Tous droits réservés",
-    privacyPolicy: "Politique de Confidentialité",
-    termsConditions: "Conditions Générales",
-    cookiePolicy: "Politique des Cookies",
-    legalNotice: "Mention Légale",
-    
-    // Cookies
-    cookieTitle: "Nous utilisons des cookies",
-    cookieText: "Nous utilisons des cookies pour améliorer votre expérience. Consultez notre",
-    onlyNecessary: "Rejeter",
-    acceptAll: "Accepter tout",
-  },
+    // Common
+    loading: "Loading...",
+    noResults: "No results found",
+    tryDifferentFilters: "Try different filters or remove active filters.",
+    viewAll: "View all freelancers",
+  }
 };
 
-const LanguageContext = createContext();
+// ✅ Context para que el idioma sea reactivo globalmente
+const LanguageContext = createContext({
+  language: 'es',
+  changeLanguage: () => {},
+  t: () => ''
+});
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    const saved = localStorage.getItem('language');
-    return saved || 'es';
+    return localStorage.getItem('language') || 'es';
   });
 
-  useEffect(() => {
-    localStorage.setItem('language', language);
-    document.documentElement.lang = language;
-  }, [language]);
+  const changeLanguage = (lang) => {
+    console.log('🌍 Cambiando idioma a:', lang);
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+    document.documentElement.setAttribute('lang', lang);
+  };
 
   const t = (key) => {
-    return translations[language]?.[key] || key;
+    return translations[language]?.[key] || translations['es'][key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, changeLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -227,42 +198,64 @@ export const LanguageProvider = ({ children }) => {
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within LanguageProvider');
+    throw new Error('useLanguage debe usarse dentro de LanguageProvider');
   }
   return context;
 };
 
-export default function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage();
+export default function LanguageSwitcher({ variant = "default" }) {
+  const { language, changeLanguage } = useLanguage();
 
-  const languages = [
-    { code: 'es', name: 'Español', flag: '🇪🇸' },
-    { code: 'en', name: 'English', flag: '🇬🇧' },
-    { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  ];
+  // Variante compacta para header (sin dropdown)
+  if (variant === "compact") {
+    return (
+      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
+        <Globe className="w-4 h-4 text-gray-600" />
+        <button
+          onClick={() => changeLanguage('es')}
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+            language === 'es' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          ES
+        </button>
+        <button
+          onClick={() => changeLanguage('en')}
+          className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+            language === 'en' 
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          EN
+        </button>
+      </div>
+    );
+  }
 
-  const currentLang = languages.find(l => l.code === language) || languages[0];
-
+  // Variante default (dropdown)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2">
-          <Globe className="w-4 h-4" />
-          <span className="hidden sm:inline">{currentLang.flag} {currentLang.name}</span>
-          <span className="sm:hidden">{currentLang.flag}</span>
+        <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+          <Globe className="w-5 h-5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {languages.map((lang) => (
-          <DropdownMenuItem
-            key={lang.code}
-            onClick={() => setLanguage(lang.code)}
-            className={language === lang.code ? 'bg-blue-50' : ''}
-          >
-            <span className="mr-2">{lang.flag}</span>
-            <span>{lang.name}</span>
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuItem 
+          onClick={() => changeLanguage('es')}
+          className={language === 'es' ? 'bg-blue-50 font-semibold' : ''}
+        >
+          🇪🇸 Español
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => changeLanguage('en')}
+          className={language === 'en' ? 'bg-blue-50 font-semibold' : ''}
+        >
+          🇬🇧 English
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
