@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -392,6 +393,16 @@ export default function MessagesPage() {
 
   const createReviewMutation = useMutation({
     mutationFn: async (review) => {
+      // ✅ VERIFICAR SI YA EXISTE UNA VALORACIÓN
+      const existingReviews = await base44.entities.Review.filter({
+        professional_id: selectedProfessionalId,
+        client_id: user.id
+      });
+
+      if (existingReviews.length > 0) {
+        throw new Error('Ya has valorado este servicio anteriormente');
+      }
+
       const avgRating = (review.rapidez + review.comunicacion + review.calidad + review.precio_satisfaccion) / 4;
       
       return base44.entities.Review.create({
@@ -406,6 +417,7 @@ export default function MessagesPage() {
       });
     },
     onSuccess: async () => {
+      // ✅ Actualizar media de valoraciones
       const allReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId
       });
@@ -447,8 +459,12 @@ Equipo milautonomos`,
         }).catch(err => console.log('Email error:', err));
       }
 
+      // ✅ Invalidar queries para actualizar UI
       queryClient.invalidateQueries({ queryKey: ['review'] });
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', selectedProfessionalId] });
+      
+      // ✅ SOLO cerrar modal tras éxito confirmado
       setShowReviewDialog(false);
       setReviewData({
         rapidez: 0,
@@ -457,11 +473,20 @@ Equipo milautonomos`,
         precio_satisfaccion: 0,
         comment: ""
       });
+      
       toast.success("✅ ¡Gracias por tu valoración!");
     },
     onError: (error) => {
       console.error("Error creating review:", error);
-      toast.error("Error al enviar la valoración");
+      
+      // ✅ Mensajes de error específicos
+      if (error.message.includes('Ya has valorado')) {
+        toast.error("Ya has valorado este servicio anteriormente");
+      } else {
+        toast.error("Error al enviar la valoración. Inténtalo de nuevo.");
+      }
+      
+      // ✅ NO cerrar modal en caso de error
     }
   });
 
@@ -588,11 +613,19 @@ Equipo milautonomos`,
   };
 
   const handleSubmitReview = () => {
+    // ✅ Validación antes de enviar
     if (reviewData.rapidez === 0 || reviewData.comunicacion === 0 || 
         reviewData.calidad === 0 || reviewData.precio_satisfaccion === 0) {
       toast.error("Por favor, valora todos los aspectos");
+      return; // ✅ Mantener modal abierto
+    }
+    
+    // ✅ Validar comentario (opcional pero recomendado)
+    if (reviewData.comment.trim().length > 0 && reviewData.comment.trim().length < 10) {
+      toast.error("El comentario debe tener al menos 10 caracteres");
       return;
     }
+    
     createReviewMutation.mutate(reviewData);
   };
 
@@ -705,10 +738,9 @@ Equipo milautonomos`,
         }`}>
           {selectedConversation ? (
             <>
-              {/* Header con botón volver en móvil */}
+              {/* Header con botones de contacto - VISIBLE PARA TODOS */}
               <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
                 <div className="flex items-center gap-3">
-                  {/* Botón volver solo móvil */}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -762,13 +794,19 @@ Equipo milautonomos`,
                     </div>
                   </div>
 
-                  {/* Acciones - Solo desktop */}
+                  {/* ✅ Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
                   <div className="hidden md:flex items-center gap-2">
-                    {getProfessionalPhone() && (
+                    {/* ✅ Botones de contacto solo si es profesional */}
+                    {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                       <>
                         <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`}>
-                          <Button variant="outline" size="icon">
-                            <Phone className="w-4 h-4" />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="hover:bg-blue-50 hover:border-blue-600"
+                          >
+                            <Phone className="w-4 h-4 mr-1" />
+                            <span className="hidden lg:inline">Llamar</span>
                           </Button>
                         </a>
                         <a
@@ -776,13 +814,18 @@ Equipo milautonomos`,
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Button size="icon" className="bg-green-600 hover:bg-green-700">
-                            <MessageCircle className="w-4 h-4" />
+                          <Button 
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-1" />
+                            <span className="hidden lg:inline">WhatsApp</span>
                           </Button>
                         </a>
                       </>
                     )}
 
+                    {/* ✅ Botón de valoración solo para clientes */}
                     {canLeaveReview() && (
                       <Button
                         onClick={handleOpenReviewDialog}
@@ -795,13 +838,43 @@ Equipo milautonomos`,
                     )}
                     
                     {existingReview && user?.user_type === "client" && (
-                      <div className="flex items-center gap-2 text-xs text-gray-600 bg-green-50 px-2 py-1 rounded">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 bg-green-50 px-3 py-2 rounded-lg">
                         <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="hidden lg:inline">Ya valorado</span>
+                        <span className="font-medium">Ya valorado</span>
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* ✅ Botones móvil - VISIBLES PARA TODOS */}
+                {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
+                  <div className="flex md:hidden gap-2 mt-3">
+                    <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`} className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="w-full hover:bg-blue-50"
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        Llamar
+                      </Button>
+                    </a>
+                    <a
+                      href={`https://wa.me/${formatPhoneForWhatsApp(getProfessionalPhone())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1"
+                    >
+                      <Button 
+                        size="sm"
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Messages */}
@@ -922,7 +995,7 @@ Equipo milautonomos`,
         </div>
       </div>
 
-      {/* Review Dialog */}
+      {/* ✅ Review Dialog - MEJORADO CON RESPONSIVE Y VALIDACIONES */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -979,18 +1052,28 @@ Equipo milautonomos`,
                 <strong>💡 Tip:</strong> Las valoraciones honestas y detalladas son las más útiles para otros usuarios.
               </p>
             </div>
+
+            {/* ✅ Mostrar error si existe valoración previa */}
+            {existingReview && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-900">
+                  <strong>⚠️ Aviso:</strong> Ya has valorado este servicio anteriormente.
+                </p>
+              </div>
+            )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setShowReviewDialog(false)}
+              disabled={createReviewMutation.isPending}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSubmitReview}
-              disabled={createReviewMutation.isPending}
+              disabled={createReviewMutation.isPending || !!existingReview}
               className="bg-amber-500 hover:bg-amber-600"
             >
               {createReviewMutation.isPending ? (

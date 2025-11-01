@@ -276,6 +276,7 @@ export default function ProfessionalProfilePage() {
               </Avatar>
 
               <div className="flex-1">
+                {/* Name and Rating */}
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -304,63 +305,65 @@ export default function ProfessionalProfilePage() {
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <div className="relative">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleToggleFavorite}
-                        className={`transition-all ${
-                          isFavorite
-                            ? 'bg-red-50 border-red-300 hover:bg-red-100'
-                            : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <Heart
-                          className={`w-5 h-5 transition-all ${
-                            isFavorite
-                              ? 'fill-red-500 text-red-500 scale-110'
-                              : 'text-gray-400'
-                          }`}
-                        />
-                      </Button>
-
-                      {favoriteCount > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-                          {favoriteCount}
-                        </div>
-                      )}
-                    </div>
-
-                    {profile.telefono_contacto && (
-                      <>
-                        <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
-                          <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
-                            <Phone className="w-5 h-5 mr-2" />
-                            Llamar
-                          </Button>
-                        </a>
-                        <a
-                          href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Button className="bg-green-600 hover:bg-green-700">
-                            <MessageCircle className="w-5 h-5 mr-2" />
-                            WhatsApp
-                          </Button>
-                        </a>
-                      </>
-                    )}
+                {/* ✅ Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <div className="relative">
                     <Button
-                      className="bg-blue-600 hover:bg-blue-700"
-                      onClick={handleStartChat}
+                      variant="outline"
+                      size="icon"
+                      onClick={handleToggleFavorite}
+                      className={`transition-all ${
+                        isFavorite
+                          ? 'bg-red-50 border-red-300 hover:bg-red-100'
+                          : 'hover:bg-gray-50'
+                      }`}
                     >
-                      <MessageSquare className="w-5 h-5 mr-2" />
-                      Chat directo
+                      <Heart
+                        className={`w-5 h-5 transition-all ${
+                          isFavorite
+                            ? 'fill-red-500 text-red-500 scale-110'
+                            : 'text-gray-400'
+                        }`}
+                      />
                     </Button>
+
+                    {favoriteCount > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                        {favoriteCount}
+                      </div>
+                    )}
                   </div>
+
+                  {/* ✅ Botones de contacto - SIEMPRE VISIBLES */}
+                  {profile.telefono_contacto && (
+                    <>
+                      <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
+                        <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
+                          <Phone className="w-5 h-5 mr-2" />
+                          Llamar
+                        </Button>
+                      </a>
+                      <a
+                        href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button className="bg-green-600 hover:bg-green-700">
+                          <MessageCircle className="w-5 h-5 mr-2" />
+                          WhatsApp
+                        </Button>
+                      </a>
+                    </>
+                  )}
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={handleStartChat}
+                  >
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    Chat directo
+                  </Button>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
