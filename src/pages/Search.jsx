@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,16 +42,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
 
-// ✅ HELPER: Verificar si suscripción está activa
+// ✅ CACHE KEY para localStorage
+const CACHE_KEY = 'milautonomos_profiles_cache';
+const CACHE_DURATION = 1000 * 60 * 10; // 10 minutos
+
+// ✅ Helper function moved outside component
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) {
-    console.log('❌ Sin estado de suscripción');
-    return false;
-  }
+  if (!estado) return false;
   
   const normalizedState = estado.toLowerCase().trim();
-  console.log(`🔍 Estado normalizado: "${normalizedState}"`);
-  
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
   if (validStates.includes(normalizedState)) {
@@ -62,11 +60,8 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      const isValid = expiration >= today;
-      console.log(`   ✅ Estado "${normalizedState}" es válido, fecha expira: ${expiration.toISOString().split('T')[0]}, ¿vigente?: ${isValid}`);
-      return isValid;
+      return expiration >= today;
     } catch (error) {
-      console.error('   ⚠️ Error parseando fecha, asumiendo activo:', error);
       return true;
     }
   }
@@ -78,20 +73,15 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      const isValid = expiration >= today;
-      console.log(`   ⚪ Cancelado, fecha ${isValid ? 'válida' : 'expirada'}`);
-      return isValid;
+      return expiration >= today;
     } catch (error) {
-      console.error('   ❌ Error parseando fecha de cancelación:', error);
       return false;
     }
   }
   
-  console.log(`   ❌ Estado "${normalizedState}" no es válido`);
   return false;
 };
 
-// ✅ Categorías con iconos
 const CATEGORY_ICONS = {
   "Electricista": Zap,
   "Carpintero": Hammer,
@@ -148,13 +138,13 @@ function useDebounce(value, delay) {
 }
 
 const CategoryBadge = ({ category }) => {
-  const { t } = useLanguage(); // Added useLanguage hook
+  const { t } = useLanguage();
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   
   return (
     <Badge variant="outline" className="text-xs flex items-center gap-1">
       <Icon className="w-3 h-3" />
-      {t(category)} {/* Translated category name */}
+      {t(category)}
     </Badge>
   );
 };
@@ -185,7 +175,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-2 h-12">
           <div className="flex-1 min-w-0">
-            {/* ✅ Nombre del negocio NO se traduce (es nombre propio) */}
             <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
               {profile.business_name}
@@ -227,7 +216,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ Categorías SÍ se traducen */}
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -249,7 +237,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           {profile.service_area ? (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
-              {/* ✅ Zona de servicio NO se traduce (son nombres de lugares) */}
               <span className="truncate">{profile.service_area}</span>
             </div>
           ) : (
@@ -261,7 +248,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           className="mb-3 h-10 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
-          {/* ✅ Descripción SÍ se traduce dinámicamente */}
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
               text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
@@ -363,7 +349,7 @@ export default function SearchPage() {
     }
   };
 
-  const { data: availableCategories = [] } = useQuery({
+  const { data: availableCategories = BASE_CATEGORIES.map(c => c.name) } = useQuery({
     queryKey: ['availableCategories'],
     queryFn: async () => {
       const profiles = await base44.entities.ProfessionalProfile.list();
@@ -386,47 +372,120 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
+  // ✅ OPTIMIZACIÓN: Query de suscripciones con cache
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
+      console.time('⚡ Load subscriptions');
+      
+      // ✅ Cargar desde cache primero
+      const cached = localStorage.getItem('milautonomos_subs_cache');
+      if (cached) {
+        const { data: cachedData, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        if (age < CACHE_DURATION) {
+          console.log('✅ Usando cache de suscripciones');
+          
+          // Actualizar en segundo plano
+          setTimeout(async () => {
+            const fresh = await base44.entities.Subscription.list();
+            localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
+              data: fresh,
+              timestamp: Date.now()
+            }));
+            queryClient.setQueryData(['allSubscriptions'], fresh);
+          }, 100);
+          
+          console.timeEnd('⚡ Load subscriptions');
+          return cachedData;
+        }
+      }
+      
+      // ✅ Cargar desde servidor
       const subs = await base44.entities.Subscription.list();
+      
+      // ✅ Guardar en cache
+      localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
+        data: subs,
+        timestamp: Date.now()
+      }));
+      
+      console.timeEnd('⚡ Load subscriptions');
       return subs;
     },
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 15,
+    refetchOnMount: false,
     initialData: [],
   });
 
+  // ✅ OPTIMIZACIÓN: Query de perfiles con cache e initial placeholder
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
+      console.time('⚡ Load profiles');
       
-      if (subscriptions.length === 0 && !loadingSubscriptions) {
-        return [];
+      // ✅ Cargar desde cache primero
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data: cachedData, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        if (age < CACHE_DURATION) {
+          console.log('✅ Usando cache de perfiles');
+          
+          // Actualizar en segundo plano
+          setTimeout(async () => {
+            const fresh = await fetchAndFilterProfiles();
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              data: fresh,
+              timestamp: Date.now()
+            }));
+            queryClient.setQueryData(['profiles'], fresh);
+          }, 100);
+          
+          console.timeEnd('⚡ Load profiles');
+          return cachedData;
+        }
       }
       
-      const visibleProfiles = allProfiles.filter(profile => {
-        if (!profile.onboarding_completed) return false;
-        if (!profile.visible_en_busqueda) return false;
-        if (profile.estado_perfil !== "activo") return false;
-        
-        const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-        if (!userSub) return false;
-        
-        const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-        return isActive;
-      });
+      // ✅ Cargar desde servidor
+      const fresh = await fetchAndFilterProfiles();
       
-      return visibleProfiles;
+      // ✅ Guardar en cache
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: fresh,
+        timestamp: Date.now()
+      }));
+      
+      console.timeEnd('⚡ Load profiles');
+      return fresh;
     },
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 15,
+    refetchOnMount: false,
     initialData: [],
-    enabled: !loadingSubscriptions && subscriptions.length > 0,
+    enabled: subscriptions.length > 0 || !loadingSubscriptions,
   });
+
+  // ✅ Función auxiliar para fetch y filtrado
+  const fetchAndFilterProfiles = async () => {
+    const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
+    
+    const visibleProfiles = allProfiles.filter(profile => {
+      if (!profile.onboarding_completed) return false;
+      if (!profile.visible_en_busqueda) return false;
+      if (profile.estado_perfil !== "activo") return false;
+      
+      const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
+      if (!userSub) return false;
+      
+      return isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+    });
+    
+    return visibleProfiles;
+  };
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -442,7 +501,6 @@ export default function SearchPage() {
     initialData: {},
   });
 
-  // ✅ Query para obtener PROVINCIAS de perfiles VISIBLES
   const availableProvincias = useMemo(() => {
     const provincias = new Set();
     profiles.forEach(profile => {
@@ -453,7 +511,6 @@ export default function SearchPage() {
     return Array.from(provincias).sort();
   }, [profiles]);
 
-  // ✅ Query para obtener CIUDADES de perfiles VISIBLES
   const availableCiudades = useMemo(() => {
     const ciudades = new Set();
     profiles.forEach(profile => {
@@ -565,9 +622,12 @@ export default function SearchPage() {
     return Icon;
   };
 
+  // ✅ Estado de carga combinado
+  const isLoading = loadingProfiles || loadingSubscriptions;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* ✅ Hero Section - SOLO SIN USUARIO */}
+      {/* Hero Section - SOLO SIN USUARIO */}
       {!isLoadingUser && !user && (
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
           <div className="max-w-6xl mx-auto text-center">
@@ -644,7 +704,7 @@ export default function SearchPage() {
                       <SelectItem key={cat} value={cat}>
                         <div className="flex items-center gap-2">
                           <Icon className="w-4 h-4" />
-                          <span>{t(cat)}</span> {/* Translated category name */}
+                          <span>{t(cat)}</span>
                         </div>
                       </SelectItem>
                     );
@@ -710,14 +770,15 @@ export default function SearchPage() {
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {loadingProfiles || loadingSubscriptions ? t('loading') : `${filteredProfiles.length} ${t('freelancersAvailable')}`}
+            {isLoading ? t('loading') : `${filteredProfiles.length} ${t('freelancersAvailable')}`}
           </h2>
           <p className="text-sm text-gray-600">
             {t('verifiedProfessionals')}
           </p>
         </div>
 
-        {(loadingProfiles || loadingSubscriptions) ? (
+        {isLoading ? (
+          /* ✅ Skeleton loader */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
@@ -753,7 +814,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!loadingProfiles && !loadingSubscriptions && filteredProfiles.length === 0 && (
+        {!isLoading && filteredProfiles.length === 0 && (
           <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
             <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
