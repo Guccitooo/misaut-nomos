@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +37,8 @@ import {
   Wind,
   Settings,
   AlertCircle,
-  User 
+  User,
+  Loader2 // Imported for loading spinner
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
@@ -62,7 +64,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       
       return expiration >= today;
     } catch (error) {
-      return true;
+      return true; // If date parsing fails, assume active to not block users
     }
   }
   
@@ -73,9 +75,9 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      return expiration >= today;
+      return expiration >= today; // If canceled, still active until expiration date
     } catch (error) {
-      return false;
+      return false; // If date parsing fails, assume inactive for canceled subs
     }
   }
   
@@ -137,7 +139,7 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-const CategoryBadge = ({ category }) => {
+const CategoryBadge = React.memo(({ category }) => {
   const { t } = useLanguage();
   const Icon = CATEGORY_ICONS[category] || Briefcase;
   
@@ -147,7 +149,7 @@ const CategoryBadge = ({ category }) => {
       {t(category)}
     </Badge>
   );
-};
+});
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
   const { t } = useLanguage();
@@ -372,13 +374,12 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
-  // ✅ OPTIMIZACIÓN: Query de suscripciones con cache
-  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
+  // ✅ Query de suscripciones (independiente)
+  const { data: subscriptions = [] } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
       console.time('⚡ Load subscriptions');
       
-      // ✅ Cargar desde cache primero
       const cached = localStorage.getItem('milautonomos_subs_cache');
       if (cached) {
         const { data: cachedData, timestamp } = JSON.parse(cached);
@@ -387,7 +388,6 @@ export default function SearchPage() {
         if (age < CACHE_DURATION) {
           console.log('✅ Usando cache de suscripciones');
           
-          // Actualizar en segundo plano
           setTimeout(async () => {
             const fresh = await base44.entities.Subscription.list();
             localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
@@ -402,10 +402,8 @@ export default function SearchPage() {
         }
       }
       
-      // ✅ Cargar desde servidor
       const subs = await base44.entities.Subscription.list();
       
-      // ✅ Guardar en cache
       localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
         data: subs,
         timestamp: Date.now()
@@ -416,17 +414,15 @@ export default function SearchPage() {
     },
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 15,
-    refetchOnMount: false,
     initialData: [],
   });
 
-  // ✅ OPTIMIZACIÓN: Query de perfiles con cache e initial placeholder
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
-    queryKey: ['profiles'],
+  // ✅ Query de perfiles (carga independientemente)
+  const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
+    queryKey: ['allProfiles'],
     queryFn: async () => {
       console.time('⚡ Load profiles');
       
-      // ✅ Cargar desde cache primero
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const { data: cachedData, timestamp } = JSON.parse(cached);
@@ -435,14 +431,13 @@ export default function SearchPage() {
         if (age < CACHE_DURATION) {
           console.log('✅ Usando cache de perfiles');
           
-          // Actualizar en segundo plano
           setTimeout(async () => {
-            const fresh = await fetchAndFilterProfiles();
+            const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
             localStorage.setItem(CACHE_KEY, JSON.stringify({
               data: fresh,
               timestamp: Date.now()
             }));
-            queryClient.setQueryData(['profiles'], fresh);
+            queryClient.setQueryData(['allProfiles'], fresh);
           }, 100);
           
           console.timeEnd('⚡ Load profiles');
@@ -450,10 +445,8 @@ export default function SearchPage() {
         }
       }
       
-      // ✅ Cargar desde servidor
-      const fresh = await fetchAndFilterProfiles();
+      const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
       
-      // ✅ Guardar en cache
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         data: fresh,
         timestamp: Date.now()
@@ -464,28 +457,47 @@ export default function SearchPage() {
     },
     staleTime: 1000 * 60 * 5,
     cacheTime: 1000 * 60 * 15,
-    refetchOnMount: false,
     initialData: [],
-    enabled: subscriptions.length > 0 || !loadingSubscriptions,
   });
 
-  // ✅ Función auxiliar para fetch y filtrado
-  const fetchAndFilterProfiles = async () => {
-    const allProfiles = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-    
+  // ✅ Filtrar perfiles visibles (calculado)
+  const profiles = useMemo(() => {
+    console.log('🔍 Filtrando perfiles:', {
+      totalProfiles: allProfiles.length,
+      totalSubscriptions: subscriptions.length
+    });
+
     const visibleProfiles = allProfiles.filter(profile => {
-      if (!profile.onboarding_completed) return false;
-      if (!profile.visible_en_busqueda) return false;
-      if (profile.estado_perfil !== "activo") return false;
+      if (!profile.onboarding_completed) {
+        // console.log('❌ Perfil sin onboarding:', profile.business_name);
+        return false;
+      }
+      if (!profile.visible_en_busqueda) {
+        // console.log('❌ Perfil no visible:', profile.business_name);
+        return false;
+      }
+      if (profile.estado_perfil !== "activo") {
+        // console.log('❌ Perfil no activo:', profile.business_name, profile.estado_perfil);
+        return false;
+      }
       
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-      if (!userSub) return false;
+      if (!userSub) {
+        // console.log('❌ Sin suscripción:', profile.business_name);
+        return false;
+      }
       
-      return isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+      if (!isActive) {
+        // console.log('❌ Suscripción inactiva:', profile.business_name, userSub.estado);
+      }
+      
+      return isActive;
     });
-    
+
+    console.log('✅ Perfiles visibles:', visibleProfiles.length);
     return visibleProfiles;
-  };
+  }, [allProfiles, subscriptions]);
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -622,8 +634,7 @@ export default function SearchPage() {
     return Icon;
   };
 
-  // ✅ Estado de carga combinado
-  const isLoading = loadingProfiles || loadingSubscriptions;
+  const isLoading = loadingProfiles;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -770,7 +781,14 @@ export default function SearchPage() {
 
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {isLoading ? t('loading') : `${filteredProfiles.length} ${t('freelancersAvailable')}`}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Cargando autónomos...
+              </span>
+            ) : (
+              `${filteredProfiles.length} ${t('freelancersAvailable')}`
+            )}
           </h2>
           <p className="text-sm text-gray-600">
             {t('verifiedProfessionals')}
@@ -797,24 +815,7 @@ export default function SearchPage() {
               </Card>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-            {filteredProfiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                user={user}
-                onToggleFavorite={handleToggleFavorite}
-                onStartChat={handleStartChat}
-                navigate={navigate}
-                isFavorite={userFavorites.has(profile.user_id)}
-                favoriteCount={favoriteCounts[profile.user_id] || 0}
-              />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && filteredProfiles.length === 0 && (
+        ) : filteredProfiles.length === 0 ? (
           <Card className="p-12 text-center border-0 shadow-lg bg-gradient-to-br from-orange-50 to-yellow-50">
             <AlertCircle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -837,6 +838,21 @@ export default function SearchPage() {
               </Button>
             )}
           </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+            {filteredProfiles.map((profile) => (
+              <ProfileCard
+                key={profile.id}
+                profile={profile}
+                user={user}
+                onToggleFavorite={handleToggleFavorite}
+                onStartChat={handleStartChat}
+                navigate={navigate}
+                isFavorite={userFavorites.has(profile.user_id)}
+                favoriteCount={favoriteCounts[profile.user_id] || 0}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
