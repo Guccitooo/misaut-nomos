@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -379,15 +378,13 @@ export default function ProfessionalProfilePage() {
                   )}
                 </div>
 
-                {/* ✅ Descripción - mostrar solo si existe */}
-                {(profile.description || profile.descripcion_corta) && (
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    <TranslatedText 
-                      text={profile.description || profile.descripcion_corta}
-                      showLoader={true}
-                    />
-                  </p>
-                )}
+                {/* ✅ Descripción SÍ se traduce con TranslatedText */}
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  <TranslatedText 
+                    text={profile.description}
+                    showLoader={true}
+                  />
+                </p>
               </div>
             </div>
           </CardContent>
