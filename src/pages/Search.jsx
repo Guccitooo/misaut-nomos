@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -366,46 +367,76 @@ export default function SearchPage() {
       return Array.from(allCategories).sort();
     },
     staleTime: 1000 * 60 * 10,
-    initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
-  // ✅ Query de suscripciones
-  const { data: subscriptions = [] } = useQuery({
+  // ✅ Query de suscripciones - SIN initialData
+  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
       const subs = await base44.entities.Subscription.list();
+      console.log('📊 Suscripciones cargadas:', subs.length);
       return subs;
     },
     staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 15,
-    initialData: [],
+    refetchOnMount: true,
   });
 
-  // ✅ Query de perfiles
+  // ✅ Query de perfiles - SIN initialData
   const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['allProfiles'],
     queryFn: async () => {
       const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
+      console.log('📦 Perfiles cargados:', fresh.length);
       return fresh;
     },
     staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 15,
-    initialData: [],
+    refetchOnMount: true,
   });
 
   // ✅ Filtrar perfiles visibles
   const profiles = useMemo(() => {
+    console.log('🔍 Iniciando filtrado de perfiles...');
+    console.log('   Total perfiles:', allProfiles.length);
+    console.log('   Total suscripciones:', subscriptions.length);
+
     const visibleProfiles = allProfiles.filter(profile => {
-      if (!profile.onboarding_completed) return false;
-      if (!profile.visible_en_busqueda) return false;
-      if (profile.estado_perfil !== "activo") return false;
+      // Check 1: Onboarding completed
+      if (!profile.onboarding_completed) {
+        console.log('❌ Rechazado (sin onboarding):', profile.business_name);
+        return false;
+      }
       
+      // Check 2: Visible en búsqueda
+      if (!profile.visible_en_busqueda) {
+        console.log('❌ Rechazado (no visible):', profile.business_name);
+        return false;
+      }
+      
+      // Check 3: Estado activo
+      if (profile.estado_perfil !== "activo") {
+        console.log('❌ Rechazado (estado no activo):', profile.business_name, '- Estado:', profile.estado_perfil);
+        return false;
+      }
+      
+      // Check 4: Tiene suscripción
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-      if (!userSub) return false;
+      if (!userSub) {
+        console.log('❌ Rechazado (sin suscripción):', profile.business_name);
+        return false;
+      }
       
-      return isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+      // Check 5: Suscripción activa
+      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+      if (!isActive) {
+        console.log('❌ Rechazado (suscripción inactiva):', profile.business_name, '- Estado:', userSub.estado, '- Expira:', userSub.fecha_expiracion);
+        return false;
+      }
+      
+      console.log('✅ Aceptado:', profile.business_name);
+      return true;
     });
 
+    console.log('🎯 RESULTADO FINAL: ', visibleProfiles.length, 'perfiles visibles');
     return visibleProfiles;
   }, [allProfiles, subscriptions]);
 
@@ -420,7 +451,6 @@ export default function SearchPage() {
       return counts;
     },
     staleTime: 1000 * 60 * 5,
-    initialData: {},
   });
 
   const availableProvincias = useMemo(() => {
@@ -544,7 +574,7 @@ export default function SearchPage() {
     return Icon;
   };
 
-  const isLoading = loadingProfiles;
+  const isLoading = loadingProfiles || loadingSubscriptions;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -706,7 +736,6 @@ export default function SearchPage() {
         </div>
 
         {isLoading ? (
-          /* ✅ Skeleton loader */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
