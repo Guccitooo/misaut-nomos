@@ -7,6 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -20,6 +21,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
+// CACHE KEY para localStorage
+const CACHE_KEY = 'milautonomos_conversations_cache';
+const CACHE_DURATION = 1000 * 60 * 5; // 5 minutos
 
 export default function MessagesPage() {
   const queryClient = useQueryClient();
@@ -91,7 +96,6 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Query mejorada para cargar datos completos del usuario
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
@@ -118,7 +122,6 @@ export default function MessagesPage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // ✅ Función mejorada para cargar datos de usuario con cache
   const loadUserData = async (userId) => {
     if (!userId) return null;
     
@@ -153,15 +156,54 @@ export default function MessagesPage() {
     }
   };
 
+  // Función auxiliar para fetch de mensajes
+  const fetchMessages = async () => {
+    const [sent, received] = await Promise.all([
+      base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 30),
+      base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 30)
+    ]);
+    
+    return [...sent, ...received].sort((a, b) => 
+      new Date(b.created_date) - new Date(a.created_date)
+    );
+  };
+
+  // OPTIMIZACIÓN: Query con cache y límite reducido
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
+      console.time('⚡ Load messages');
+      
       try {
-        const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 50);
-        const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 50);
-        return [...sent, ...received].sort((a, b) => 
-          new Date(b.created_date) - new Date(a.created_date)
-        );
+        // Cargar desde cache primero
+        const cached = localStorage.getItem(CACHE_KEY + '_' + user.id);
+        if (cached) {
+          const { data: cachedData, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          
+          if (age < CACHE_DURATION) {
+            console.log('✅ Usando cache de mensajes');
+            // Actualizar en segundo plano
+            setTimeout(async () => {
+              const fresh = await fetchMessages();
+              queryClient.setQueryData(['messages', user.id], fresh);
+            }, 100);
+            
+            return cachedData;
+          }
+        }
+        
+        // Cargar desde servidor
+        const fresh = await fetchMessages();
+        
+        // Guardar en cache
+        localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
+          data: fresh,
+          timestamp: Date.now()
+        }));
+        
+        console.timeEnd('⚡ Load messages');
+        return fresh;
       } catch (error) {
         console.error("Error loading messages:", error);
         return [];
@@ -169,8 +211,8 @@ export default function MessagesPage() {
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 5000,
-    staleTime: 1000,
+    refetchInterval: 10000, // Reducido a 10s
+    staleTime: 5000,
   });
 
   const { data: existingReview } = useQuery({
@@ -213,6 +255,7 @@ export default function MessagesPage() {
     new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
   );
 
+  // OPTIMIZACIÓN: Solo últimos 20 mensajes
   const currentMessages = selectedConversation ? 
     (conversations[selectedConversation]?.messages || []).sort((a, b) => 
       new Date(a.created_date) - new Date(b.created_date)
@@ -252,7 +295,6 @@ export default function MessagesPage() {
     return true;
   };
 
-  // ✅ Función MEJORADA para obtener nombre REAL del usuario
   const getDisplayName = (userId) => {
     if (!userId) return "Usuario";
     
@@ -283,7 +325,6 @@ export default function MessagesPage() {
     return "Usuario";
   };
 
-  // ✅ Función para obtener el tipo de usuario
   const getUserType = (userId) => {
     if (userId === user?.id) {
       return user.user_type;
@@ -300,17 +341,14 @@ export default function MessagesPage() {
     return null;
   };
 
-  // ✅ Función mejorada para navegar al perfil (FUNCIONA PARA CLIENTES TAMBIÉN)
   const handleNavigateToProfile = (userId) => {
     if (userId === user?.id) {
       navigate(createPageUrl("MyProfile"));
     } else {
-      // Para cualquier usuario (profesional o cliente)
       navigate(createPageUrl("ProfessionalProfile") + `?id=${userId}`);
     }
   };
 
-  // ✅ Función para obtener teléfono del profesional
   const getProfessionalPhone = () => {
     if (otherUserData?.user_type === "professionnel" && otherUserData.profile?.telefono_contacto) {
       return otherUserData.profile.telefono_contacto;
@@ -357,6 +395,9 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
+      // Invalidar cache
+      localStorage.removeItem(CACHE_KEY + '_' + user.id);
+      
       setTimeout(() => {
         scrollToBottom(true);
       }, 50);
@@ -393,7 +434,7 @@ export default function MessagesPage() {
 
   const createReviewMutation = useMutation({
     mutationFn: async (review) => {
-      // ✅ VERIFICAR SI YA EXISTE UNA VALORACIÓN
+      // VERIFICAR SI YA EXISTE UNA VALORACIÓN
       const existingReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId,
         client_id: user.id
@@ -417,7 +458,7 @@ export default function MessagesPage() {
       });
     },
     onSuccess: async () => {
-      // ✅ Actualizar media de valoraciones
+      // Actualizar media de valoraciones
       const allReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId
       });
@@ -459,12 +500,12 @@ Equipo milautonomos`,
         }).catch(err => console.log('Email error:', err));
       }
 
-      // ✅ Invalidar queries para actualizar UI
+      // Invalidar queries para actualizar UI
       queryClient.invalidateQueries({ queryKey: ['review'] });
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
       queryClient.invalidateQueries({ queryKey: ['profile', selectedProfessionalId] });
       
-      // ✅ SOLO cerrar modal tras éxito confirmado
+      // SOLO cerrar modal tras éxito confirmado
       setShowReviewDialog(false);
       setReviewData({
         rapidez: 0,
@@ -479,14 +520,14 @@ Equipo milautonomos`,
     onError: (error) => {
       console.error("Error creating review:", error);
       
-      // ✅ Mensajes de error específicos
+      // Mensajes de error específicos
       if (error.message.includes('Ya has valorado')) {
         toast.error("Ya has valorado este servicio anteriormente");
       } else {
         toast.error("Error al enviar la valoración. Inténtalo de nuevo.");
       }
       
-      // ✅ NO cerrar modal en caso de error
+      // NO cerrar modal en caso de error
     }
   });
 
@@ -613,14 +654,14 @@ Equipo milautonomos`,
   };
 
   const handleSubmitReview = () => {
-    // ✅ Validación antes de enviar
+    // Validación antes de enviar
     if (reviewData.rapidez === 0 || reviewData.comunicacion === 0 || 
         reviewData.calidad === 0 || reviewData.precio_satisfaccion === 0) {
       toast.error("Por favor, valora todos los aspectos");
-      return; // ✅ Mantener modal abierto
+      return; // Mantener modal abierto
     }
     
-    // ✅ Validar comentario (opcional pero recomendado)
+    // Validar comentario (opcional pero recomendado)
     if (reviewData.comment.trim().length > 0 && reviewData.comment.trim().length < 10) {
       toast.error("El comentario debe tener al menos 10 caracteres");
       return;
@@ -683,8 +724,17 @@ Equipo milautonomos`,
           
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-700" />
+              // Skeleton loader
+              <div className="p-4 space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
@@ -794,9 +844,9 @@ Equipo milautonomos`,
                     </div>
                   </div>
 
-                  {/* ✅ Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
+                  {/* Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
                   <div className="hidden md:flex items-center gap-2">
-                    {/* ✅ Botones de contacto solo si es profesional */}
+                    {/* Botones de contacto solo si es profesional */}
                     {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                       <>
                         <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`}>
@@ -825,7 +875,7 @@ Equipo milautonomos`,
                       </>
                     )}
 
-                    {/* ✅ Botón de valoración solo para clientes */}
+                    {/* Botón de valoración solo para clientes */}
                     {canLeaveReview() && (
                       <Button
                         onClick={handleOpenReviewDialog}
@@ -846,7 +896,7 @@ Equipo milautonomos`,
                   </div>
                 </div>
 
-                {/* ✅ Botones móvil - VISIBLES PARA TODOS */}
+                {/* Botones móvil - VISIBLES PARA TODOS */}
                 {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                   <div className="flex md:hidden gap-2 mt-3">
                     <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`} className="flex-1">
@@ -995,7 +1045,7 @@ Equipo milautonomos`,
         </div>
       </div>
 
-      {/* ✅ Review Dialog - MEJORADO CON RESPONSIVE Y VALIDACIONES */}
+      {/* Review Dialog - MEJORADO CON RESPONSIVE Y VALIDACIONES */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1053,7 +1103,7 @@ Equipo milautonomos`,
               </p>
             </div>
 
-            {/* ✅ Mostrar error si existe valoración previa */}
+            {/* Mostrar error si existe valoración previa */}
             {existingReview && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-900">
