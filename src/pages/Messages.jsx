@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,6 +49,9 @@ export default function MessagesPage() {
   const messagesContainerRef = useRef(null);
   const previousMessagesCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
+  
+  // ✅ Cache de usuarios para evitar múltiples requests
+  const [usersCache, setUsersCache] = useState({});
 
   useEffect(() => {
     loadUser();
@@ -94,20 +98,27 @@ export default function MessagesPage() {
     }
   };
 
+  // ✅ Query mejorada para cargar datos del otro usuario
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
       if (!selectedProfessionalId) return null;
       
+      console.log('🔍 Cargando datos del usuario:', selectedProfessionalId);
+      
       const users = await base44.entities.User.filter({ id: selectedProfessionalId });
       const otherUser = users[0];
       
+      console.log('👤 Usuario encontrado:', otherUser);
+      
       if (!otherUser) return null;
 
+      // Si es profesional, cargar su perfil
       if (otherUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: selectedProfessionalId
         });
+        console.log('💼 Perfil profesional encontrado:', profiles[0]);
         return {
           ...otherUser,
           profile: profiles[0] || null
@@ -119,6 +130,45 @@ export default function MessagesPage() {
     enabled: !!selectedProfessionalId,
     staleTime: 1000 * 60 * 5,
   });
+
+  // ✅ Función para cargar datos de usuario (con cache)
+  const loadUserData = async (userId) => {
+    if (!userId) return null;
+    
+    // Verificar cache primero
+    if (usersCache[userId]) {
+      return usersCache[userId];
+    }
+    
+    try {
+      const users = await base44.entities.User.filter({ id: userId });
+      const userData = users[0];
+      
+      if (!userData) return null;
+      
+      // Si es profesional, cargar perfil
+      if (userData.user_type === "professionnel") {
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: userId
+        });
+        const fullData = {
+          ...userData,
+          profile: profiles[0] || null
+        };
+        
+        // Guardar en cache
+        setUsersCache(prev => ({ ...prev, [userId]: fullData }));
+        return fullData;
+      }
+      
+      // Guardar en cache
+      setUsersCache(prev => ({ ...prev, [userId]: userData }));
+      return userData;
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      return null;
+    }
+  };
 
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
@@ -222,20 +272,52 @@ export default function MessagesPage() {
     return true;
   };
 
+  // ✅ Función mejorada para obtener nombre (con más fallbacks)
   const getDisplayName = (userId) => {
     if (!userId) return "Usuario";
     
+    console.log('📝 getDisplayName llamada para:', userId);
+    
+    // Si soy yo
     if (userId === user?.id) {
-      return user.full_name || user.email?.split('@')[0] || "Tú";
+      const myName = user.full_name || user.email?.split('@')[0] || "Tú";
+      console.log('✅ Es mi perfil:', myName);
+      return myName;
     }
     
+    // Si es el otro usuario cargado en la query
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
+        console.log('✅ Nombre del negocio:', otherUserData.profile.business_name);
         return otherUserData.profile.business_name;
       }
-      return otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
+      const name = otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
+      console.log('✅ Nombre del usuario:', name);
+      return name;
     }
     
+    // Buscar en el cache
+    if (usersCache[userId]) {
+      const cachedUser = usersCache[userId];
+      if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
+        console.log('✅ Nombre del negocio (cache):', cachedUser.profile.business_name);
+        return cachedUser.profile.business_name;
+      }
+      const name = cachedUser.full_name || cachedUser.email?.split('@')[0] || "Usuario";
+      console.log('✅ Nombre del usuario (cache):', name);
+      return name;
+    }
+    
+    // ✅ Buscar en los datos del mensaje
+    const conversation = conversations[selectedConversation];
+    if (conversation) {
+      if (userId === conversation.otherUserId) {
+        console.log('✅ Nombre de la conversación:', conversation.otherUserName);
+        return conversation.otherUserName || "Usuario";
+      }
+    }
+    
+    console.log('⚠️ Fallback a "Usuario"');
     return "Usuario";
   };
 
@@ -482,7 +564,13 @@ Equipo milautonomos`,
 
   const handleOpenReviewDialog = () => {
     if (!canLeaveReview()) {
-      toast.error("No puedes dejar una valoración todavía");
+      if (existingReview) {
+        toast.info("Ya has valorado este servicio");
+      } else if (!hasBidirectionalConversation()) {
+        toast.info("Necesitas haber tenido una conversación bidireccional para dejar una valoración");
+      } else {
+        toast.error("No puedes dejar una valoración en este momento");
+      }
       return;
     }
     setShowReviewDialog(true);
@@ -642,22 +730,24 @@ Equipo milautonomos`,
                     </div>
                   </div>
 
-                  {canLeaveReview() && (
-                    <Button
-                      onClick={handleOpenReviewDialog}
-                      className="bg-amber-500 hover:bg-amber-600 gap-2"
-                    >
-                      <Star className="w-4 h-4" />
-                      Dejar reseña
-                    </Button>
-                  )}
-                  
-                  {existingReview && user?.user_type === "client" && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span>Ya valoraste este servicio</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {canLeaveReview() && (
+                      <Button
+                        onClick={handleOpenReviewDialog}
+                        className="bg-amber-500 hover:bg-amber-600 gap-2"
+                      >
+                        <Star className="w-4 h-4" />
+                        Dejar valoración
+                      </Button>
+                    )}
+                    
+                    {existingReview && user?.user_type === "client" && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-green-50 px-3 py-2 rounded-lg">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-medium">Ya valoraste este servicio</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -770,16 +860,16 @@ Equipo milautonomos`,
         </div>
       </div>
 
-      {/* Review Dialog */}
+      {/* Review Dialog - MEJORADO */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-amber-500" />
-              Valora el servicio
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Star className="w-6 h-6 text-amber-500" />
+              Valora el servicio de {getDisplayName(selectedProfessionalId)}
             </DialogTitle>
-            <DialogDescription>
-              Comparte tu experiencia con {getDisplayName(selectedProfessionalId)}
+            <DialogDescription className="text-base">
+              Tu opinión ayuda a otros usuarios a tomar mejores decisiones y al profesional a mejorar su servicio
             </DialogDescription>
           </DialogHeader>
 
@@ -803,19 +893,29 @@ Equipo milautonomos`,
             />
 
             <StarRating
-              label="💰 Precio / Satisfacción general"
+              label="💰 Relación calidad/precio"
               value={reviewData.precio_satisfaccion}
               onChange={(value) => setReviewData({ ...reviewData, precio_satisfaccion: value })}
             />
 
             <div className="space-y-2">
-              <Label>Comentario (opcional)</Label>
+              <Label className="text-sm font-medium">💭 Cuéntanos tu experiencia (opcional)</Label>
               <Textarea
                 value={reviewData.comment}
                 onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
-                placeholder="Comparte tu experiencia con más detalle..."
-                className="h-24"
+                placeholder="¿Qué te pareció el servicio? ¿Qué destacarías? ¿Algo que mejorar?"
+                className="h-32 resize-none"
+                maxLength={500}
               />
+              <p className="text-xs text-gray-500 text-right">
+                {reviewData.comment.length}/500 caracteres
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-900">
+                <strong>💡 Tip:</strong> Las valoraciones honestas y detalladas son las más útiles para otros usuarios.
+              </p>
             </div>
           </div>
 
@@ -839,7 +939,7 @@ Equipo milautonomos`,
               ) : (
                 <>
                   <Star className="w-4 h-4 mr-2" />
-                  Enviar valoración
+                  Publicar valoración
                 </>
               )}
             </Button>
