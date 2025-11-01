@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -46,6 +46,7 @@ export default function MessagesPage() {
   const previousMessagesCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
   const [usersCache, setUsersCache] = useState({});
+  const [showMobileChat, setShowMobileChat] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -54,6 +55,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (selectedConversation) {
       isInitialLoadRef.current = true;
+      setShowMobileChat(true);
       setTimeout(() => {
         scrollToBottom(false);
         isInitialLoadRef.current = false;
@@ -88,6 +90,7 @@ export default function MessagesPage() {
     }
   };
 
+  // ✅ Query mejorada para cargar datos completos del usuario
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
@@ -114,12 +117,47 @@ export default function MessagesPage() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // ✅ Función mejorada para cargar datos de usuario con cache
+  const loadUserData = async (userId) => {
+    if (!userId) return null;
+    
+    if (usersCache[userId]) {
+      return usersCache[userId];
+    }
+    
+    try {
+      const users = await base44.entities.User.filter({ id: userId });
+      const userData = users[0];
+      
+      if (!userData) return null;
+      
+      if (userData.user_type === "professionnel") {
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: userId
+        });
+        const fullData = {
+          ...userData,
+          profile: profiles[0] || null
+        };
+        
+        setUsersCache(prev => ({ ...prev, [userId]: fullData }));
+        return fullData;
+      }
+      
+      setUsersCache(prev => ({ ...prev, [userId]: userData }));
+      return userData;
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      return null;
+    }
+  };
+
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       try {
-        const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 100);
-        const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 100);
+        const sent = await base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 50);
+        const received = await base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 50);
         return [...sent, ...received].sort((a, b) => 
           new Date(b.created_date) - new Date(a.created_date)
         );
@@ -130,8 +168,8 @@ export default function MessagesPage() {
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 3000,
-    staleTime: 500,
+    refetchInterval: 5000,
+    staleTime: 1000,
   });
 
   const { data: existingReview } = useQuery({
@@ -177,7 +215,7 @@ export default function MessagesPage() {
   const currentMessages = selectedConversation ? 
     (conversations[selectedConversation]?.messages || []).sort((a, b) => 
       new Date(a.created_date) - new Date(b.created_date)
-    ) : [];
+    ).slice(-20) : [];
 
   useEffect(() => {
     if (currentMessages.length > 0 && !isInitialLoadRef.current) {
@@ -213,6 +251,7 @@ export default function MessagesPage() {
     return true;
   };
 
+  // ✅ Función MEJORADA para obtener nombre REAL del usuario
   const getDisplayName = (userId) => {
     if (!userId) return "Usuario";
     
@@ -236,21 +275,64 @@ export default function MessagesPage() {
     }
     
     const conversation = conversations[selectedConversation];
-    if (conversation) {
-      if (userId === conversation.otherUserId) {
-        return conversation.otherUserName || "Usuario";
-      }
+    if (conversation && userId === conversation.otherUserId) {
+      return conversation.otherUserName || "Usuario";
     }
     
     return "Usuario";
   };
 
+  // ✅ Función para obtener el tipo de usuario
+  const getUserType = (userId) => {
+    if (userId === user?.id) {
+      return user.user_type;
+    }
+    
+    if (otherUserData && otherUserData.id === userId) {
+      return otherUserData.user_type;
+    }
+    
+    if (usersCache[userId]) {
+      return usersCache[userId].user_type;
+    }
+    
+    return null;
+  };
+
+  // ✅ Función mejorada para navegar al perfil (FUNCIONA PARA CLIENTES TAMBIÉN)
   const handleNavigateToProfile = (userId) => {
     if (userId === user?.id) {
       navigate(createPageUrl("MyProfile"));
     } else {
+      // Para cualquier usuario (profesional o cliente)
       navigate(createPageUrl("ProfessionalProfile") + `?id=${userId}`);
     }
+  };
+
+  // ✅ Función para obtener teléfono del profesional
+  const getProfessionalPhone = () => {
+    if (otherUserData?.user_type === "professionnel" && otherUserData.profile?.telefono_contacto) {
+      return otherUserData.profile.telefono_contacto;
+    }
+    return null;
+  };
+
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned.startsWith('34') && cleaned.length === 9) {
+      cleaned = '34' + cleaned;
+    }
+    return cleaned;
   };
 
   const sendMessageMutation = useMutation({
@@ -482,6 +564,13 @@ Equipo milautonomos`,
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation.conversationId);
     setSelectedProfessionalId(conversation.otherUserId);
+    setShowMobileChat(true);
+  };
+
+  const handleBackToConversations = () => {
+    setShowMobileChat(false);
+    setSelectedConversation(null);
+    setSelectedProfessionalId(null);
   };
 
   const handleOpenReviewDialog = () => {
@@ -541,14 +630,17 @@ Equipo milautonomos`,
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Header - Solo desktop */}
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 hidden md:block">
         <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
         <p className="text-gray-600">Comunícate con tus contactos</p>
       </div>
 
       <div className="flex-1 overflow-hidden flex">
         {/* Conversations List */}
-        <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className={`w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${
+          showMobileChat ? 'hidden md:flex' : 'flex'
+        }`}>
           <div className="p-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-blue-700" />
@@ -583,9 +675,15 @@ Equipo milautonomos`,
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {conv.otherUserName || "Usuario"}
+                      <p className="font-semibold text-gray-900 truncate">
+                        {conv.otherUserName || "Usuario"}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {conv.lastMessage.content}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-400">
+                          {format(new Date(conv.lastMessage.created_date), "d MMM HH:mm")}
                         </p>
                         {conv.unreadCount > 0 && (
                           <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
@@ -593,12 +691,6 @@ Equipo milautonomos`,
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conv.lastMessage.content}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {format(new Date(conv.lastMessage.created_date), "d MMM HH:mm")}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -608,78 +700,121 @@ Equipo milautonomos`,
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col bg-gray-50">
+        <div className={`flex-1 flex flex-col bg-gray-50 ${
+          !showMobileChat ? 'hidden md:flex' : 'flex'
+        }`}>
           {selectedConversation ? (
             <>
-              <div className="bg-white border-b border-gray-200 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
-                      <AvatarFallback className="bg-blue-700 text-white">
-                        {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleNavigateToProfile(selectedProfessionalId)}
-                          className="font-semibold text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group"
+              {/* Header con botón volver en móvil */}
+              <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
+                <div className="flex items-center gap-3">
+                  {/* Botón volver solo móvil */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    onClick={handleBackToConversations}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+
+                  <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
+                    <AvatarFallback className="bg-blue-700 text-white">
+                      {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-w-0">
+                    <button
+                      onClick={() => handleNavigateToProfile(selectedProfessionalId)}
+                      className="font-semibold text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group text-left"
+                    >
+                      <span className="truncate">{getDisplayName(selectedProfessionalId)}</span>
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </button>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {otherUserData && (
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs flex items-center gap-1 ${
+                            otherUserData.user_type === "professionnel" 
+                              ? "bg-blue-50 text-blue-700 border-blue-200" 
+                              : "bg-gray-50 text-gray-700 border-gray-200"
+                          }`}
                         >
-                          {getDisplayName(selectedProfessionalId)}
-                          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                        {otherUserData && (
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            {otherUserData.user_type === "professionnel" ? (
-                              <>
-                                <Briefcase className="w-3 h-3" />
-                                <span>Autónomo</span>
-                              </>
-                            ) : (
-                              <>
-                                <UserIcon className="w-3 h-3" />
-                                <span>Cliente</span>
-                              </>
-                            )}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          {otherUserData.user_type === "professionnel" ? (
+                            <>
+                              <Briefcase className="w-3 h-3" />
+                              <span>Autónomo</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserIcon className="w-3 h-3" />
+                              <span>Cliente</span>
+                            </>
+                          )}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                         En línea
-                      </p>
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Acciones - Solo desktop */}
+                  <div className="hidden md:flex items-center gap-2">
+                    {getProfessionalPhone() && (
+                      <>
+                        <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`}>
+                          <Button variant="outline" size="icon">
+                            <Phone className="w-4 h-4" />
+                          </Button>
+                        </a>
+                        <a
+                          href={`https://wa.me/${formatPhoneForWhatsApp(getProfessionalPhone())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button size="icon" className="bg-green-600 hover:bg-green-700">
+                            <MessageCircle className="w-4 h-4" />
+                          </Button>
+                        </a>
+                      </>
+                    )}
+
                     {canLeaveReview() && (
                       <Button
                         onClick={handleOpenReviewDialog}
                         className="bg-amber-500 hover:bg-amber-600 gap-2"
+                        size="sm"
                       >
                         <Star className="w-4 h-4" />
-                        Dejar valoración
+                        <span className="hidden lg:inline">Valorar</span>
                       </Button>
                     )}
                     
                     {existingReview && user?.user_type === "client" && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-green-50 px-3 py-2 rounded-lg">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        <span className="font-medium">Ya valoraste este servicio</span>
+                      <div className="flex items-center gap-2 text-xs text-gray-600 bg-green-50 px-2 py-1 rounded">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span className="hidden lg:inline">Ya valorado</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
+              {/* Messages */}
               <div 
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-6 space-y-4"
+                className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}
               >
                 {currentMessages.map((message) => {
                   const isMe = message.sender_id === user.id;
                   const isOptimistic = message._isOptimistic;
                   const senderName = getDisplayName(message.sender_id);
+                  const senderType = getUserType(message.sender_id);
                   
                   return (
                     <div
@@ -688,7 +823,7 @@ Equipo milautonomos`,
                         isOptimistic ? 'opacity-70' : 'opacity-100'
                       } transition-opacity`}
                     >
-                      <div className="max-w-md">
+                      <div className="max-w-[85%] md:max-w-md">
                         {!isMe && (
                           <div className="flex items-center gap-2 mb-1 ml-1">
                             <button
@@ -698,9 +833,16 @@ Equipo milautonomos`,
                               {senderName}
                               <ExternalLink className="w-2.5 h-2.5" />
                             </button>
-                            {otherUserData && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                {otherUserData.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                            {senderType && (
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-[10px] px-1.5 py-0 ${
+                                  senderType === "professionnel" 
+                                    ? "bg-blue-100 text-blue-700" 
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {senderType === "professionnel" ? "Autónomo" : "Cliente"}
                               </Badge>
                             )}
                           </div>
@@ -713,7 +855,7 @@ Equipo milautonomos`,
                               : 'bg-white text-gray-900 border border-gray-200'
                           }`}
                         >
-                          <p className="leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                          <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
                           <div className="flex items-center justify-end gap-1 mt-1">
                             <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                               {format(new Date(message.created_date), "HH:mm")}
@@ -736,42 +878,43 @@ Equipo milautonomos`,
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="bg-white border-t border-gray-200 p-4">
-                <form onSubmit={handleSendMessage} className="flex gap-3">
+              {/* Input - Optimizado para móvil */}
+              <div 
+                className="bg-white border-t border-gray-200 p-3 md:p-4"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+              >
+                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
                   <Textarea
                     ref={textareaRef}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Escribe un mensaje... (Enter para enviar, Shift+Enter para nueva línea)"
-                    className="flex-1 min-h-[50px] max-h-[120px] resize-none"
+                    placeholder="Escribe un mensaje..."
+                    className="flex-1 min-h-[44px] md:min-h-[50px] max-h-[120px] resize-none text-base"
                     disabled={isSending}
                   />
                   <Button
                     type="submit"
                     disabled={!newMessage.trim() || isSending}
-                    className="h-[50px] bg-blue-600 hover:bg-blue-700 px-6 relative"
+                    className="h-[44px] md:h-[50px] w-[44px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
                   >
                     {isSending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="sr-only">Enviando...</span>
-                      </>
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                       <Send className="w-5 h-5" />
                     )}
                   </Button>
                 </form>
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs text-gray-500 mt-2 text-center hidden md:block">
                   💡 Presiona Enter para enviar • Shift+Enter para nueva línea
                 </p>
               </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Selecciona una conversación</p>
+              <div className="text-center p-4">
+                <MessageSquare className="w-12 md:w-16 h-12 md:h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-base md:text-lg font-medium">Selecciona una conversación</p>
                 <p className="text-sm">Elige un contacto para comenzar a chatear</p>
               </div>
             </div>
@@ -779,6 +922,7 @@ Equipo milautonomos`,
         </div>
       </div>
 
+      {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
