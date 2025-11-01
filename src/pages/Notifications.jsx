@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tantml:react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [filter, setFilter] = useState('all'); // all, unread, read
+  const [filter, setFilter] = useState('all');
 
   React.useEffect(() => {
     loadUser();
@@ -146,8 +146,8 @@ export default function NotificationsPage() {
           <p className="text-gray-600">Mantente al día con todas tus actualizaciones</p>
         </div>
 
-        <div className="flex items-center justify-between mb-6">
-          <Tabs value={filter} onValueChange={setFilter} className="w-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <Tabs value={filter} onValueChange={setFilter} className="w-full md:w-auto">
             <TabsList>
               <TabsTrigger value="all">
                 Todas ({notifications.length})
@@ -161,16 +161,17 @@ export default function NotificationsPage() {
             </TabsList>
           </Tabs>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto">
             {unreadCount > 0 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
+                className="flex-1 md:flex-none"
               >
                 <CheckCheck className="w-4 h-4 mr-2" />
-                Marcar todas como leídas
+                Marcar todas
               </Button>
             )}
             
@@ -180,6 +181,7 @@ export default function NotificationsPage() {
                 size="sm"
                 onClick={() => deleteAllReadMutation.mutate()}
                 disabled={deleteAllReadMutation.isPending}
+                className="flex-1 md:flex-none"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Eliminar leídas
@@ -230,7 +232,7 @@ export default function NotificationsPage() {
                           {notification.title}
                         </h3>
                         {!notification.is_read && (
-                          <Badge className="bg-blue-600">Nueva</Badge>
+                          <Badge className="bg-blue-600 ml-2">Nueva</Badge>
                         )}
                       </div>
 
@@ -238,7 +240,7 @@ export default function NotificationsPage() {
                         {notification.message}
                       </p>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                         <p className="text-xs text-gray-400">
                           {format(new Date(notification.created_date), "d MMMM yyyy 'a las' HH:mm", { locale: es })}
                         </p>
@@ -254,13 +256,14 @@ export default function NotificationsPage() {
                               }}
                             >
                               <Check className="w-4 h-4 mr-1" />
-                              Marcar como leída
+                              Marcar
                             </Button>
                           )}
 
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteNotificationMutation.mutate(notification.id);
