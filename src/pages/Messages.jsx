@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, AlertCircle } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -23,6 +25,7 @@ import { toast } from "sonner";
 
 export default function MessagesPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const initialConversation = urlParams.get('conversation');
   const initialProfessional = urlParams.get('professional');
@@ -47,7 +50,6 @@ export default function MessagesPage() {
     loadUser();
   }, []);
 
-  // ✅ Autoscroll cada vez que cambian los mensajes
   useEffect(() => {
     scrollToBottom();
   }, [selectedConversation]);
@@ -68,7 +70,34 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Query optimizada con refetch cada 3 segundos (más rápido)
+  // ✅ Query para cargar datos del otro usuario (profesional o cliente)
+  const { data: otherUserData } = useQuery({
+    queryKey: ['otherUser', selectedProfessionalId],
+    queryFn: async () => {
+      if (!selectedProfessionalId) return null;
+      
+      const users = await base44.entities.User.filter({ id: selectedProfessionalId });
+      const otherUser = users[0];
+      
+      if (!otherUser) return null;
+
+      // Si es profesional, cargar su perfil
+      if (otherUser.user_type === "professionnel") {
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: selectedProfessionalId
+        });
+        return {
+          ...otherUser,
+          profile: profiles[0] || null
+        };
+      }
+      
+      return otherUser;
+    },
+    enabled: !!selectedProfessionalId,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
@@ -85,11 +114,10 @@ export default function MessagesPage() {
     },
     enabled: !!user,
     initialData: [],
-    refetchInterval: 3000, // ✅ Actualización cada 3 segundos (más rápido)
+    refetchInterval: 3000,
     staleTime: 500,
   });
 
-  // ✅ Verificar si ya dejó reseña
   const { data: existingReview } = useQuery({
     queryKey: ['review', user?.id, selectedProfessionalId],
     queryFn: async () => {
@@ -135,7 +163,6 @@ export default function MessagesPage() {
       new Date(a.created_date) - new Date(b.created_date)
     ) : [];
 
-  // ✅ Verificar si hay conversación bidireccional
   const hasBidirectionalConversation = () => {
     if (!selectedConversation || !user || !selectedProfessionalId) return false;
     
@@ -146,7 +173,6 @@ export default function MessagesPage() {
     return userSent && professionalReplied;
   };
 
-  // ✅ Verificar si puede dejar reseña
   const canLeaveReview = () => {
     if (!user || user.user_type !== "client") return false;
     if (existingReview) return false;
@@ -154,16 +180,38 @@ export default function MessagesPage() {
     return true;
   };
 
-  // ✅ Mutación mejorada con manejo de errores robusto
+  // ✅ Función para obtener el nombre a mostrar
+  const getDisplayName = (userId) => {
+    if (!userId) return "Usuario";
+    
+    if (userId === user?.id) {
+      return user.full_name || user.email?.split('@')[0] || "Tú";
+    }
+    
+    if (otherUserData && otherUserData.id === userId) {
+      if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
+        return otherUserData.profile.business_name;
+      }
+      return otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
+    }
+    
+    return "Usuario";
+  };
+
+  // ✅ Función para navegar al perfil
+  const handleNavigateToProfile = (userId) => {
+    if (userId === user?.id) {
+      navigate(createPageUrl("MyProfile"));
+    } else {
+      navigate(createPageUrl("ProfessionalProfile") + `?id=${userId}`);
+    }
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData) => {
-      console.log('📤 Enviando mensaje:', messageData);
-      const result = await base44.entities.Message.create(messageData);
-      console.log('✅ Mensaje enviado:', result);
-      return result;
+      return base44.entities.Message.create(messageData);
     },
     onMutate: async (newMessage) => {
-      console.log('🔄 Optimistic update iniciado');
       await queryClient.cancelQueries({ queryKey: ['messages'] });
       
       const previousMessages = queryClient.getQueryData(['messages', user?.id]);
@@ -180,15 +228,11 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
-      // ✅ Scroll inmediato al mensaje optimista
       setTimeout(scrollToBottom, 50);
       
       return { previousMessages };
     },
     onSuccess: async (newMessage) => {
-      console.log('✅ Mensaje guardado correctamente');
-      
-      // ✅ Enviar email en background (no bloqueante)
       try {
         const recipient = await base44.entities.User.filter({ id: newMessage.recipient_id });
         if (recipient[0]) {
@@ -203,28 +247,16 @@ export default function MessagesPage() {
         console.log('Error sending notification (non-blocking):', error);
       }
 
-      // ✅ Refetch para datos reales
       queryClient.invalidateQueries({ queryKey: ['messages'] });
-      
-      // ✅ Toast de confirmación
       toast.success('Mensaje enviado ✓');
-      
       setTimeout(scrollToBottom, 200);
     },
     onError: (err, newMessage, context) => {
-      console.error('❌ Error enviando mensaje:', err);
       queryClient.setQueryData(['messages', user?.id], context.previousMessages);
       toast.error("Error al enviar el mensaje. Intenta de nuevo.");
-    },
-    onSettled: () => {
-      setIsSending(false);
-      setNewMessage(""); // This is now done earlier in handleSendMessage, but leaving here as a fallback
-      // ✅ Enfocar de nuevo el textarea
-      textareaRef.current?.focus();
-    },
+    }
   });
 
-  // ✅ Crear reseña
   const createReviewMutation = useMutation({
     mutationFn: async (review) => {
       const avgRating = (review.rapidez + review.comunicacion + review.calidad + review.precio_satisfaccion) / 4;
@@ -300,7 +332,6 @@ Equipo milautonomos`,
     }
   });
 
-  // ✅ Marcar como leído cuando se selecciona conversación
   useEffect(() => {
     if (selectedConversation && currentMessages.length > 0) {
       markAsRead();
@@ -325,34 +356,12 @@ Equipo milautonomos`,
     }
   };
 
-  // ✅ Handler completamente refactorizado con manejo de errores robusto
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     
-    console.log('🚀 handleSendMessage called');
-    console.log('Estado actual:', { newMessage, selectedConversation, isSending });
-    
-    // Validaciones
-    if (!newMessage.trim()) {
-      console.log('❌ Mensaje vacío');
-      toast.error('Escribe un mensaje');
-      return;
-    }
-    
-    if (!selectedConversation) {
-      console.log('❌ Sin conversación seleccionada');
-      toast.error('Selecciona una conversación');
-      return;
-    }
-    
-    if (isSending) {
-      console.log('⏳ Ya se está enviando un mensaje');
-      return;
-    }
+    if (!newMessage.trim() || !selectedConversation || isSending) return;
 
-    // ✅ Activar estado de envío
     setIsSending(true);
-    console.log('✅ isSending = true');
 
     try {
       const otherUserId = selectedProfessionalId || 
@@ -362,9 +371,6 @@ Equipo milautonomos`,
         throw new Error('No se pudo identificar al destinatario');
       }
 
-      console.log('👤 Destinatario:', otherUserId);
-
-      // ✅ Preparar datos del mensaje de forma segura
       let recipientUser = null;
       let currentProfile = null;
 
@@ -398,15 +404,9 @@ Equipo milautonomos`,
         is_read: false
       };
 
-      console.log('📦 Datos del mensaje:', messageData);
-
-      // ✅ Limpiar input inmediatamente para UX fluida
       setNewMessage("");
-      
-      // ✅ Enviar mensaje
       sendMessageMutation.mutate(messageData);
       
-      // ✅ Enfocar textarea para continuar escribiendo
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 100);
@@ -414,19 +414,13 @@ Equipo milautonomos`,
     } catch (error) {
       console.error('❌ Error en handleSendMessage:', error);
       toast.error('Error al preparar el mensaje: ' + error.message);
-      // ✅ Restaurar mensaje si falló
-      // (el mensaje ya se limpió, pero podríamos guardarlo en un ref si queremos)
     } finally {
-      // ✅ CRÍTICO: Siempre resetear isSending
-      console.log('🔄 Reseteando isSending');
       setTimeout(() => {
         setIsSending(false);
-        console.log('✅ isSending = false');
-      }, 1000); // 1 segundo de delay para evitar spam
+      }, 1000);
     }
   };
 
-  // ✅ Handler para Enter key
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -480,7 +474,6 @@ Equipo milautonomos`,
     </div>
   );
 
-  // ✅ Auto-scroll cuando llegan nuevos mensajes
   useEffect(() => {
     if (currentMessages.length > 0) {
       scrollToBottom();
@@ -567,19 +560,40 @@ Equipo milautonomos`,
         <div className="flex-1 flex flex-col bg-gray-50">
           {selectedConversation ? (
             <>
-              {/* Messages Header */}
+              {/* Messages Header - MEJORADO */}
               <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar>
+                    <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
                       <AvatarFallback className="bg-blue-700 text-white">
-                        {conversations[selectedConversation]?.otherUserName?.charAt(0) || "?"}
+                        {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-gray-900">
-                        {conversations[selectedConversation]?.otherUserName || "Usuario"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleNavigateToProfile(selectedProfessionalId)}
+                          className="font-semibold text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group"
+                        >
+                          {getDisplayName(selectedProfessionalId)}
+                          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        {otherUserData && (
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            {otherUserData.user_type === "professionnel" ? (
+                              <>
+                                <Briefcase className="w-3 h-3" />
+                                <span>Autónomo</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserIcon className="w-3 h-3" />
+                                <span>Cliente</span>
+                              </>
+                            )}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 flex items-center gap-1">
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         En línea
@@ -606,11 +620,12 @@ Equipo milautonomos`,
                 </div>
               </div>
 
-              {/* Messages */}
+              {/* Messages - MEJORADO CON NOMBRES */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {currentMessages.map((message) => {
                   const isMe = message.sender_id === user.id;
                   const isOptimistic = message._isOptimistic;
+                  const senderName = getDisplayName(message.sender_id);
                   
                   return (
                     <div
@@ -619,27 +634,47 @@ Equipo milautonomos`,
                         isOptimistic ? 'opacity-70' : 'opacity-100'
                       } transition-opacity`}
                     >
-                      <div
-                        className={`max-w-md px-4 py-3 rounded-2xl shadow-sm ${
-                          isMe
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
-                        }`}
-                      >
-                        <p className="leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
-                        <div className="flex items-center justify-end gap-1 mt-1">
-                          <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                            {format(new Date(message.created_date), "HH:mm")}
-                          </p>
-                          {isMe && (
-                            isOptimistic ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : message.is_read ? (
-                              <CheckCheck className="w-3 h-3" />
-                            ) : (
-                              <Check className="w-3 h-3" />
-                            )
-                          )}
+                      <div className="max-w-md">
+                        {/* ✅ Header del mensaje con nombre clickeable */}
+                        {!isMe && (
+                          <div className="flex items-center gap-2 mb-1 ml-1">
+                            <button
+                              onClick={() => handleNavigateToProfile(message.sender_id)}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                            >
+                              {senderName}
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </button>
+                            {otherUserData && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {otherUserData.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div
+                          className={`px-4 py-3 rounded-2xl shadow-sm ${
+                            isMe
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-900 border border-gray-200'
+                          }`}
+                        >
+                          <p className="leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                              {format(new Date(message.created_date), "HH:mm")}
+                            </p>
+                            {isMe && (
+                              isOptimistic ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : message.is_read ? (
+                                <CheckCheck className="w-3 h-3" />
+                              ) : (
+                                <Check className="w-3 h-3" />
+                              )
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -701,7 +736,7 @@ Equipo milautonomos`,
               Valora el servicio
             </DialogTitle>
             <DialogDescription>
-              Comparte tu experiencia con {conversations[selectedConversation]?.otherUserName}
+              Comparte tu experiencia con {getDisplayName(selectedProfessionalId)}
             </DialogDescription>
           </DialogHeader>
 
