@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,15 +37,11 @@ import {
   Settings,
   AlertCircle,
   User,
-  Loader2 // Imported for loading spinner
+  Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
-
-// ✅ CACHE KEY para localStorage
-const CACHE_KEY = 'milautonomos_profiles_cache';
-const CACHE_DURATION = 1000 * 60 * 10; // 10 minutos
 
 // ✅ Helper function moved outside component
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -64,7 +59,7 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       
       return expiration >= today;
     } catch (error) {
-      return true; // If date parsing fails, assume active to not block users
+      return true;
     }
   }
   
@@ -75,9 +70,9 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      return expiration >= today; // If canceled, still active until expiration date
+      return expiration >= today;
     } catch (error) {
-      return false; // If date parsing fails, assume inactive for canceled subs
+      return false;
     }
   }
   
@@ -374,42 +369,11 @@ export default function SearchPage() {
     initialData: BASE_CATEGORIES.map(c => c.name),
   });
 
-  // ✅ Query de suscripciones (independiente)
+  // ✅ Query de suscripciones
   const { data: subscriptions = [] } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
-      console.time('⚡ Load subscriptions');
-      
-      const cached = localStorage.getItem('milautonomos_subs_cache');
-      if (cached) {
-        const { data: cachedData, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        
-        if (age < CACHE_DURATION) {
-          console.log('✅ Usando cache de suscripciones');
-          
-          setTimeout(async () => {
-            const fresh = await base44.entities.Subscription.list();
-            localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
-              data: fresh,
-              timestamp: Date.now()
-            }));
-            queryClient.setQueryData(['allSubscriptions'], fresh);
-          }, 100);
-          
-          console.timeEnd('⚡ Load subscriptions');
-          return cachedData;
-        }
-      }
-      
       const subs = await base44.entities.Subscription.list();
-      
-      localStorage.setItem('milautonomos_subs_cache', JSON.stringify({
-        data: subs,
-        timestamp: Date.now()
-      }));
-      
-      console.timeEnd('⚡ Load subscriptions');
       return subs;
     },
     staleTime: 1000 * 60 * 5,
@@ -417,42 +381,11 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  // ✅ Query de perfiles (carga independientemente)
+  // ✅ Query de perfiles
   const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['allProfiles'],
     queryFn: async () => {
-      console.time('⚡ Load profiles');
-      
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { data: cachedData, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        
-        if (age < CACHE_DURATION) {
-          console.log('✅ Usando cache de perfiles');
-          
-          setTimeout(async () => {
-            const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-              data: fresh,
-              timestamp: Date.now()
-            }));
-            queryClient.setQueryData(['allProfiles'], fresh);
-          }, 100);
-          
-          console.timeEnd('⚡ Load profiles');
-          return cachedData;
-        }
-      }
-      
       const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-      
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        data: fresh,
-        timestamp: Date.now()
-      }));
-      
-      console.timeEnd('⚡ Load profiles');
       return fresh;
     },
     staleTime: 1000 * 60 * 5,
@@ -460,42 +393,19 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  // ✅ Filtrar perfiles visibles (calculado)
+  // ✅ Filtrar perfiles visibles
   const profiles = useMemo(() => {
-    console.log('🔍 Filtrando perfiles:', {
-      totalProfiles: allProfiles.length,
-      totalSubscriptions: subscriptions.length
-    });
-
     const visibleProfiles = allProfiles.filter(profile => {
-      if (!profile.onboarding_completed) {
-        // console.log('❌ Perfil sin onboarding:', profile.business_name);
-        return false;
-      }
-      if (!profile.visible_en_busqueda) {
-        // console.log('❌ Perfil no visible:', profile.business_name);
-        return false;
-      }
-      if (profile.estado_perfil !== "activo") {
-        // console.log('❌ Perfil no activo:', profile.business_name, profile.estado_perfil);
-        return false;
-      }
+      if (!profile.onboarding_completed) return false;
+      if (!profile.visible_en_busqueda) return false;
+      if (profile.estado_perfil !== "activo") return false;
       
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-      if (!userSub) {
-        // console.log('❌ Sin suscripción:', profile.business_name);
-        return false;
-      }
+      if (!userSub) return false;
       
-      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-      if (!isActive) {
-        // console.log('❌ Suscripción inactiva:', profile.business_name, userSub.estado);
-      }
-      
-      return isActive;
+      return isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
     });
 
-    console.log('✅ Perfiles visibles:', visibleProfiles.length);
     return visibleProfiles;
   }, [allProfiles, subscriptions]);
 
