@@ -1,15 +1,11 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -49,27 +45,22 @@ export default function MessagesPage() {
   const messagesContainerRef = useRef(null);
   const previousMessagesCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
-  
-  // ✅ Cache de usuarios para evitar múltiples requests
   const [usersCache, setUsersCache] = useState({});
 
   useEffect(() => {
     loadUser();
   }, []);
 
-  // ✅ Solo hacer scroll al cambiar de conversación (inicial)
   useEffect(() => {
     if (selectedConversation) {
       isInitialLoadRef.current = true;
-      // Pequeño delay para que los mensajes se rendericen
       setTimeout(() => {
-        scrollToBottom(false); // sin animación para carga inicial
+        scrollToBottom(false);
         isInitialLoadRef.current = false;
       }, 300);
     }
   }, [selectedConversation]);
 
-  // ✅ Scroll mejorado con control
   const scrollToBottom = (smooth = true) => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ 
@@ -79,12 +70,11 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Función para verificar si el usuario está cerca del final
   const isNearBottom = () => {
     if (!messagesContainerRef.current) return true;
     
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const threshold = 150; // pixels desde el final
+    const threshold = 150;
     return scrollHeight - scrollTop - clientHeight < threshold;
   };
 
@@ -98,27 +88,20 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ Query mejorada para cargar datos del otro usuario
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
       if (!selectedProfessionalId) return null;
       
-      console.log('🔍 Cargando datos del usuario:', selectedProfessionalId);
-      
       const users = await base44.entities.User.filter({ id: selectedProfessionalId });
       const otherUser = users[0];
       
-      console.log('👤 Usuario encontrado:', otherUser);
-      
       if (!otherUser) return null;
 
-      // Si es profesional, cargar su perfil
       if (otherUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: selectedProfessionalId
         });
-        console.log('💼 Perfil profesional encontrado:', profiles[0]);
         return {
           ...otherUser,
           profile: profiles[0] || null
@@ -130,45 +113,6 @@ export default function MessagesPage() {
     enabled: !!selectedProfessionalId,
     staleTime: 1000 * 60 * 5,
   });
-
-  // ✅ Función para cargar datos de usuario (con cache)
-  const loadUserData = async (userId) => {
-    if (!userId) return null;
-    
-    // Verificar cache primero
-    if (usersCache[userId]) {
-      return usersCache[userId];
-    }
-    
-    try {
-      const users = await base44.entities.User.filter({ id: userId });
-      const userData = users[0];
-      
-      if (!userData) return null;
-      
-      // Si es profesional, cargar perfil
-      if (userData.user_type === "professionnel") {
-        const profiles = await base44.entities.ProfessionalProfile.filter({
-          user_id: userId
-        });
-        const fullData = {
-          ...userData,
-          profile: profiles[0] || null
-        };
-        
-        // Guardar en cache
-        setUsersCache(prev => ({ ...prev, [userId]: fullData }));
-        return fullData;
-      }
-      
-      // Guardar en cache
-      setUsersCache(prev => ({ ...prev, [userId]: userData }));
-      return userData;
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      return null;
-    }
-  };
 
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['messages', user?.id],
@@ -235,15 +179,12 @@ export default function MessagesPage() {
       new Date(a.created_date) - new Date(b.created_date)
     ) : [];
 
-  // ✅ Solo hacer scroll automático si hay mensajes nuevos Y el usuario está cerca del final
   useEffect(() => {
     if (currentMessages.length > 0 && !isInitialLoadRef.current) {
       const currentCount = currentMessages.length;
       const previousCount = previousMessagesCountRef.current;
       
-      // Solo si hay mensajes nuevos
       if (currentCount > previousCount) {
-        // Solo hacer scroll si el usuario está cerca del final
         if (isNearBottom()) {
           setTimeout(() => {
             scrollToBottom(true);
@@ -272,52 +213,35 @@ export default function MessagesPage() {
     return true;
   };
 
-  // ✅ Función mejorada para obtener nombre (con más fallbacks)
   const getDisplayName = (userId) => {
     if (!userId) return "Usuario";
     
-    console.log('📝 getDisplayName llamada para:', userId);
-    
-    // Si soy yo
     if (userId === user?.id) {
-      const myName = user.full_name || user.email?.split('@')[0] || "Tú";
-      console.log('✅ Es mi perfil:', myName);
-      return myName;
+      return user.full_name || user.email?.split('@')[0] || "Tú";
     }
     
-    // Si es el otro usuario cargado en la query
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
-        console.log('✅ Nombre del negocio:', otherUserData.profile.business_name);
         return otherUserData.profile.business_name;
       }
-      const name = otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
-      console.log('✅ Nombre del usuario:', name);
-      return name;
+      return otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
     }
     
-    // Buscar en el cache
     if (usersCache[userId]) {
       const cachedUser = usersCache[userId];
       if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
-        console.log('✅ Nombre del negocio (cache):', cachedUser.profile.business_name);
         return cachedUser.profile.business_name;
       }
-      const name = cachedUser.full_name || cachedUser.email?.split('@')[0] || "Usuario";
-      console.log('✅ Nombre del usuario (cache):', name);
-      return name;
+      return cachedUser.full_name || cachedUser.email?.split('@')[0] || "Usuario";
     }
     
-    // ✅ Buscar en los datos del mensaje
     const conversation = conversations[selectedConversation];
     if (conversation) {
       if (userId === conversation.otherUserId) {
-        console.log('✅ Nombre de la conversación:', conversation.otherUserName);
         return conversation.otherUserName || "Usuario";
       }
     }
     
-    console.log('⚠️ Fallback a "Usuario"');
     return "Usuario";
   };
 
@@ -350,7 +274,6 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
-      // ✅ Scroll inmediato al enviar mensaje propio
       setTimeout(() => {
         scrollToBottom(true);
       }, 50);
@@ -375,7 +298,6 @@ export default function MessagesPage() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success('Mensaje enviado ✓');
       
-      // ✅ Scroll después de confirmar envío
       setTimeout(() => {
         scrollToBottom(true);
       }, 200);
@@ -657,7 +579,7 @@ Equipo milautonomos`,
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback className="bg-blue-100 text-blue-900">
-                        {conv.otherUserName?.charAt(0) || "?"}
+                        {(conv.otherUserName || "?").charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
@@ -689,7 +611,6 @@ Equipo milautonomos`,
         <div className="flex-1 flex flex-col bg-gray-50">
           {selectedConversation ? (
             <>
-              {/* Messages Header */}
               <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -751,7 +672,6 @@ Equipo milautonomos`,
                 </div>
               </div>
 
-              {/* Messages - CON REF PARA DETECTAR SCROLL */}
               <div 
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-6 space-y-4"
@@ -816,7 +736,6 @@ Equipo milautonomos`,
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
               <div className="bg-white border-t border-gray-200 p-4">
                 <form onSubmit={handleSendMessage} className="flex gap-3">
                   <Textarea
@@ -860,7 +779,6 @@ Equipo milautonomos`,
         </div>
       </div>
 
-      {/* Review Dialog - MEJORADO */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
