@@ -452,14 +452,22 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil - SOLO MÓVIL (max-width: 1023px) */
+          /* ✅ OCULTAR COMPLETAMENTE LA BARRA MÓVIL EN DESKTOP */
+          /* Por defecto: NUNCA se ve */
           .mobile-bottom-nav {
             display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
           }
           
+          /* Solo en móvil pequeño SE PUEDE ver */
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              pointer-events: auto !important;
               position: fixed;
               bottom: 0;
               left: 0;
@@ -473,10 +481,16 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ ASEGURAR QUE SE OCULTE EN DESKTOP */
+          /* Doble check: FORZAR oculto en desktop */
           @media (min-width: 1024px) {
-            .mobile-bottom-nav {
+            .mobile-bottom-nav,
+            nav.mobile-bottom-nav {
               display: none !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+              height: 0 !important;
+              overflow: hidden !important;
             }
           }
           
@@ -790,25 +804,28 @@ function LayoutContent({ children, currentPageName }) {
               {/* ✅ Footer */}
               <Footer />
 
-              {/* ✅ Mobile Bottom Navigation - FORZAR OCULTO EN DESKTOP CON lg:hidden */}
+              {/* ✅ Mobile Bottom Navigation - NUNCA EN DESKTOP */}
               {shouldShowBottomBar() && (
-                <nav className="mobile-bottom-nav lg:!hidden">
-                  {navigationItems.slice(0, 4).map((item) => (
-                    <Link
-                      key={item.title}
-                      to={item.url}
-                      className={`mobile-bottom-nav-item ${
-                        location.pathname === item.url ? 'active' : ''
-                      }`}
-                    >
-                      <item.icon className="w-6 h-6" />
-                      <span>{item.title.split(' ')[0]}</span>
-                      {item.badge && (
-                        <span className="mobile-bottom-nav-badge">{item.badge}</span>
-                      )}
-                    </Link>
-                  ))}
-                </nav>
+                <>
+                  {/* SOLO renderizar en móvil - usar clase y display none en desktop */}
+                  <nav className="mobile-bottom-nav" style={{ display: window.innerWidth >= 1024 ? 'none' : undefined }}>
+                    {navigationItems.slice(0, 4).map((item) => (
+                      <Link
+                        key={item.title}
+                        to={item.url}
+                        className={`mobile-bottom-nav-item ${
+                          location.pathname === item.url ? 'active' : ''
+                        }`}
+                      >
+                        <item.icon className="w-6 h-6" />
+                        <span>{item.title.split(' ')[0]}</span>
+                        {item.badge && (
+                          <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                        )}
+                      </Link>
+                    ))}
+                  </nav>
+                </>
               )}
             </main>
           </div>
