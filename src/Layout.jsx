@@ -452,14 +452,14 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ Menú inferior móvil - SOLO EN MÓVIL Y CON USUARIO LOGUEADO */
+          /* ✅ Menú inferior móvil - SOLO MÓVIL (max-width: 1023px) */
           .mobile-bottom-nav {
-            display: none;
+            display: none !important;
           }
           
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
-              display: grid;
+              display: grid !important;
               position: fixed;
               bottom: 0;
               left: 0;
@@ -470,6 +470,13 @@ function LayoutContent({ children, currentPageName }) {
               padding: 8px 0;
               z-index: 30;
               box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            }
+          }
+          
+          /* ✅ ASEGURAR QUE SE OCULTE EN DESKTOP */
+          @media (min-width: 1024px) {
+            .mobile-bottom-nav {
+              display: none !important;
             }
           }
           
@@ -783,9 +790,9 @@ function LayoutContent({ children, currentPageName }) {
               {/* ✅ Footer */}
               <Footer />
 
-              {/* ✅ Mobile Bottom Navigation - CON VALIDACIÓN COMPLETA */}
+              {/* ✅ Mobile Bottom Navigation - FORZAR OCULTO EN DESKTOP CON lg:hidden */}
               {shouldShowBottomBar() && (
-                <nav className="mobile-bottom-nav">
+                <nav className="mobile-bottom-nav lg:!hidden">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
                       key={item.title}
