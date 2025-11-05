@@ -49,6 +49,41 @@ function LayoutContent({ children, currentPageName }) {
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // ✅ NUEVO: Rutas donde NO se debe mostrar la barra inferior
+  const hideBottomBarRoutes = [
+    createPageUrl("UserTypeSelection"),
+    createPageUrl("ProfileOnboarding"),
+    createPageUrl("ClientOnboarding"),
+    createPageUrl("PricingPlans"),
+    createPageUrl("Onboarding")
+  ];
+
+  // ✅ NUEVO: Determinar si se debe mostrar la barra inferior
+  const shouldShowBottomBar = () => {
+    // 1. No mostrar si no hay usuario
+    if (!user) return false;
+    
+    // 2. No mostrar en rutas específicas
+    if (hideBottomBarRoutes.includes(location.pathname)) return false;
+    
+    // 3. No mostrar si el usuario no tiene tipo definido (debería tenerlo si user existe)
+    if (!user.user_type) return false;
+    
+    // 4. Si es profesional, verificar que haya completado onboarding
+    if (user.user_type === "professionnel") {
+      // Si no hay perfil cargado aún, no mostrar
+      if (professionalProfile === null) return false; // Use null to distinguish between not loaded and no profile found
+      
+      // Si el perfil no está completo o no es visible, no mostrar
+      if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
+        return false;
+      }
+    }
+    
+    // 5. En todos los demás casos, mostrar la barra
+    return true;
+  };
+
   useEffect(() => {
     loadUser();
   }, []);
@@ -78,11 +113,16 @@ function LayoutContent({ children, currentPageName }) {
         });
         if (profiles[0]) {
           setProfessionalProfile(profiles[0]);
+        } else {
+          setProfessionalProfile(undefined); // Indicate no professional profile found
         }
+      } else {
+        setProfessionalProfile(undefined); // Not a professional user
       }
     } catch (error) {
       console.error("Error loading user:", error);
       setUser(null);
+      setProfessionalProfile(undefined); // Reset profile on error
     }
   };
 
@@ -117,7 +157,7 @@ function LayoutContent({ children, currentPageName }) {
 
       const activeStates = ["activo", "en_prueba", "trialing"];
       const hasActive = subscriptions.length > 0 &&
-                       activeStates.includes(subscriptions[0].estado);
+                       activeStates.some(state => subscriptions[0].estado.includes(state)); // Use includes for broader match
       
       setHasActiveSubscription(hasActive);
     } catch (error) {
@@ -151,9 +191,12 @@ function LayoutContent({ children, currentPageName }) {
       if (!profiles[0] || !profiles[0].onboarding_completed || !profiles[0].visible_en_busqueda) {
         setNeedsOnboarding(true);
         
-        setTimeout(() => {
-          navigate(createPageUrl("ProfileOnboarding"));
-        }, 2000);
+        // Only navigate if not already on the onboarding page
+        if (location.pathname !== createPageUrl("ProfileOnboarding")) {
+          setTimeout(() => {
+            navigate(createPageUrl("ProfileOnboarding"));
+          }, 2000);
+        }
       } else {
         setNeedsOnboarding(false);
       }
@@ -732,16 +775,16 @@ function LayoutContent({ children, currentPageName }) {
                 </div>
               </header>
 
-              {/* ✅ Contenido principal */}
-              <div className={`flex-1 overflow-auto ${user ? 'main-content-with-bottom-nav' : ''}`}>
+              {/* ✅ Contenido principal - SOLO agregar padding si se muestra la barra */}
+              <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
                 {children}
               </div>
 
               {/* ✅ Footer */}
               <Footer />
 
-              {/* ✅ Mobile Bottom Navigation - SOLO SI HAY USUARIO LOGUEADO */}
-              {user && (
+              {/* ✅ Mobile Bottom Navigation - CON VALIDACIÓN COMPLETA */}
+              {shouldShowBottomBar() && (
                 <nav className="mobile-bottom-nav">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
