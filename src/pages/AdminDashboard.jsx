@@ -839,37 +839,41 @@ export default function AdminDashboardPage() {
           </TabsContent>
         </Tabs>
 
+        {/* ✅ NUEVO: Dialog de confirmación de eliminación - DISEÑO MEJORADO */}
         {showDeleteDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-lg w-full">
-              <CardHeader className="bg-red-50 border-b border-red-200">
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <AlertCircle className="w-5 h-5" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <Card className="max-w-lg w-full bg-white shadow-2xl">
+              <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 border-b-0 rounded-t-lg py-4">
+                <CardTitle className="flex items-center gap-2 text-white text-lg">
+                  <AlertCircle className="w-5 h-5 animate-pulse" />
                   Eliminar usuario definitivamente
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                  <p className="text-sm font-semibold text-red-800">
+              <CardContent className="space-y-3 pt-4 pb-5 px-5">
+                {/* ⚠️ Advertencia crítica - compacta */}
+                <div className="bg-red-50 border-l-4 border-red-600 p-3 rounded-md">
+                  <p className="text-sm font-bold text-red-900 text-center">
                     ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
                   </p>
                 </div>
 
+                {/* Usuario a eliminar */}
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                  <p className="text-xs font-semibold text-gray-700 mb-1.5">
                     Usuario a eliminar:
                   </p>
-                  <div className="bg-gray-100 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-gray-900">{selectedUser?.full_name || 'Sin nombre'}</p>
-                    <p className="text-sm text-gray-600">{selectedUser?.email}</p>
+                  <div className="bg-gray-100 p-2.5 rounded-lg border border-gray-200">
+                    <p className="text-sm font-semibold text-gray-900">{selectedUser?.full_name || 'Sin nombre'}</p>
+                    <p className="text-xs text-gray-600">{selectedUser?.email}</p>
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-yellow-900 mb-2">
+                {/* Lista de elementos a eliminar - compacta */}
+                <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+                  <p className="text-xs font-bold text-yellow-900 mb-1.5">
                     📋 Se eliminará automáticamente:
                   </p>
-                  <ul className="text-xs text-yellow-800 space-y-1 ml-4 list-disc">
+                  <ul className="text-xs text-yellow-800 space-y-0.5 ml-3 list-disc leading-relaxed">
                     <li>Suscripción (cancelación inmediata en Stripe)</li>
                     <li>Perfil profesional y fotos</li>
                     <li>Mensajes enviados y recibidos</li>
@@ -882,29 +886,31 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                  <p className="text-xs font-semibold text-blue-900 mb-2">
+                {/* Paso adicional - compacto */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md">
+                  <p className="text-xs font-bold text-blue-900 mb-1">
                     🔐 PASO ADICIONAL REQUERIDO:
                   </p>
-                  <p className="text-xs text-blue-800">
+                  <p className="text-xs text-blue-800 leading-relaxed">
                     Después de confirmar, debes ir manualmente a <strong>Base44 Dashboard → Users</strong> y eliminar la cuenta de autenticación con email <strong className="underline">{selectedUser?.email}</strong>
                   </p>
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4 border-t">
+                {/* Botones */}
+                <div className="flex gap-3 justify-end pt-3 border-t border-gray-200">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setShowDeleteDialog(false);
                       setSelectedUser(null);
                     }}
+                    className="hover:bg-gray-100"
                   >
                     Cancelar
                   </Button>
                   <Button
-                    variant="destructive"
                     onClick={handleDeleteUser}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-slow border-2 border-red-700"
                   >
                     <AlertCircle className="w-4 h-4 mr-2" />
                     Eliminar definitivamente
@@ -912,34 +918,51 @@ export default function AdminDashboardPage() {
                 </div>
               </CardContent>
             </Card>
+            
+            <style>{`
+              @keyframes pulse-slow {
+                0%, 100% {
+                  opacity: 1;
+                  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+                }
+                50% {
+                  opacity: 0.95;
+                  box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+                }
+              }
+              
+              .animate-pulse-slow {
+                animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+              }
+            `}</style>
           </div>
         )}
 
         {showExtendDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="max-w-md w-full mx-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-600">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <Card className="max-w-md w-full bg-white shadow-2xl">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-purple-700 border-b-0 rounded-t-lg py-4">
+                <CardTitle className="flex items-center gap-2 text-white text-lg">
                   <Calendar className="w-5 h-5" />
                   Extender periodo de prueba
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-5 pb-5 px-5">
                 <p className="text-sm text-gray-700">
                   Usuario: <strong>{selectedUser?.email}</strong>
                 </p>
                 <div>
-                  <Label>Días a extender</Label>
+                  <Label className="text-sm font-semibold text-gray-700">Días a extender</Label>
                   <Input
                     type="number"
                     min="1"
                     max="90"
                     value={extendDays}
                     onChange={(e) => setExtendDays(e.target.value)}
-                    className="mt-1"
+                    className="mt-1.5"
                   />
                 </div>
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 justify-end pt-3 border-t border-gray-200">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -947,11 +970,12 @@ export default function AdminDashboardPage() {
                       setSelectedUser(null);
                       setExtendDays(7);
                     }}
+                    className="hover:bg-gray-100"
                   >
                     Cancelar
                   </Button>
                   <Button
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-600 hover:bg-purple-700 shadow-md"
                     onClick={handleExtendTrial}
                   >
                     Extender {extendDays} días
