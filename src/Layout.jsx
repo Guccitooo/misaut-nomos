@@ -452,22 +452,15 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ OCULTAR COMPLETAMENTE LA BARRA MÓVIL EN DESKTOP */
-          /* Por defecto: NUNCA se ve */
+          /* ✅ BARRA INFERIOR: OCULTA POR DEFECTO, SOLO VISIBLE EN MÓVIL */
           .mobile-bottom-nav {
             display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
           }
           
-          /* Solo en móvil pequeño SE PUEDE ver */
+          /* Solo visible en móvil (menos de 1024px) */
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
-              visibility: visible !important;
-              opacity: 1 !important;
-              pointer-events: auto !important;
               position: fixed;
               bottom: 0;
               left: 0;
@@ -479,18 +472,20 @@ function LayoutContent({ children, currentPageName }) {
               z-index: 30;
               box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
             }
+            
+            .main-content-with-bottom-nav {
+              padding-bottom: 80px;
+            }
           }
           
-          /* Doble check: FORZAR oculto en desktop */
+          /* Doble seguridad: FORZAR oculto en desktop */
           @media (min-width: 1024px) {
-            .mobile-bottom-nav,
-            nav.mobile-bottom-nav {
+            .mobile-bottom-nav {
               display: none !important;
-              visibility: hidden !important;
-              opacity: 0 !important;
-              pointer-events: none !important;
-              height: 0 !important;
-              overflow: hidden !important;
+            }
+            
+            .main-content-with-bottom-nav {
+              padding-bottom: 0 !important;
             }
           }
           
@@ -528,12 +523,6 @@ function LayoutContent({ children, currentPageName }) {
             border-radius: 10px;
             min-width: 18px;
             text-align: center;
-          }
-          
-          @media (max-width: 1023px) {
-            .main-content-with-bottom-nav {
-              padding-bottom: 80px;
-            }
           }
         `}
       </style>
@@ -806,26 +795,23 @@ function LayoutContent({ children, currentPageName }) {
 
               {/* ✅ Mobile Bottom Navigation - NUNCA EN DESKTOP */}
               {shouldShowBottomBar() && (
-                <>
-                  {/* SOLO renderizar en móvil - usar clase y display none en desktop */}
-                  <nav className="mobile-bottom-nav" style={{ display: window.innerWidth >= 1024 ? 'none' : undefined }}>
-                    {navigationItems.slice(0, 4).map((item) => (
-                      <Link
-                        key={item.title}
-                        to={item.url}
-                        className={`mobile-bottom-nav-item ${
-                          location.pathname === item.url ? 'active' : ''
-                        }`}
-                      >
-                        <item.icon className="w-6 h-6" />
-                        <span>{item.title.split(' ')[0]}</span>
-                        {item.badge && (
-                          <span className="mobile-bottom-nav-badge">{item.badge}</span>
-                        )}
-                      </Link>
-                    ))}
-                  </nav>
-                </>
+                <nav className="mobile-bottom-nav">
+                  {navigationItems.slice(0, 4).map((item) => (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`mobile-bottom-nav-item ${
+                        location.pathname === item.url ? 'active' : ''
+                      }`}
+                    >
+                      <item.icon className="w-6 h-6" />
+                      <span>{item.title.split(' ')[0]}</span>
+                      {item.badge && (
+                        <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                      )}
+                    </Link>
+                  ))}
+                </nav>
               )}
             </main>
           </div>
