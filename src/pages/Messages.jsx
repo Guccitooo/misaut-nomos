@@ -22,9 +22,81 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-// CACHE KEY para localStorage
+// ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutos
+const USERS_CACHE_KEY = 'milautonomos_users_cache';
+
+// ✅ NUEVO: Skeleton para lista de conversaciones
+const ConversationSkeleton = () => (
+  <div className="p-4 space-y-4">
+    {[1, 2, 3, 4, 5].map(i => (
+      <div key={i} className="flex items-center gap-3 animate-pulse">
+        <Skeleton className="w-12 h-12 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ✅ NUEVO: Skeleton para mensajes
+const MessagesSkeleton = () => (
+  <div className="flex-1 p-6 space-y-4">
+    {[1, 2, 3, 4].map(i => (
+      <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'} animate-pulse`}>
+        <div className="max-w-md">
+          <Skeleton className={`h-20 w-64 rounded-2xl ${i % 2 === 0 ? 'bg-blue-100' : 'bg-gray-100'}`} />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ✅ OPTIMIZADO: Función auxiliar para fetch de mensajes con límite
+const fetchMessages = async (userId) => {
+  console.time('⚡ Load messages');
+  
+  // Cargar últimos 50 mensajes (optimizado de 30 a 50 para mejor UX)
+  const [sent, received] = await Promise.all([
+    base44.entities.Message.filter({ sender_id: userId }, '-created_date', 50),
+    base44.entities.Message.filter({ recipient_id: userId }, '-created_date', 50)
+  ]);
+  
+  const allMessages = [...sent, ...received].sort((a, b) => 
+    new Date(b.created_date) - new Date(a.created_date)
+  );
+  
+  console.timeEnd('⚡ Load messages');
+  return allMessages;
+};
+
+// ✅ OPTIMIZADO: Cache de usuarios en localStorage
+const loadUserFromCache = (userId) => {
+  try {
+    const cached = localStorage.getItem(USERS_CACHE_KEY);
+    if (cached) {
+      const usersCache = JSON.parse(cached);
+      return usersCache[userId] || null;
+    }
+  } catch (error) {
+    console.error('Error loading user cache:', error);
+  }
+  return null;
+};
+
+const saveUserToCache = (userId, userData) => {
+  try {
+    const cached = localStorage.getItem(USERS_CACHE_KEY) || '{}';
+    const usersCache = JSON.parse(cached);
+    usersCache[userId] = userData;
+    localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(usersCache));
+  } catch (error) {
+    console.error('Error saving user cache:', error);
+  }
+};
 
 export default function MessagesPage() {
   const queryClient = useQueryClient();
@@ -96,123 +168,107 @@ export default function MessagesPage() {
     }
   };
 
+  // ✅ OPTIMIZADO: Query con placeholderData para mostrar algo instantáneamente
+  const { data: allMessages = [], isLoading, isFetching } = useQuery({
+    queryKey: ['messages', user?.id],
+    queryFn: async () => {
+      // 1. Intentar cargar desde cache primero
+      const cached = localStorage.getItem(CACHE_KEY + '_' + user.id);
+      if (cached) {
+        const { data: cachedData, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        if (age < CACHE_DURATION) {
+          console.log('✅ Usando cache de mensajes (instant load)');
+          
+          // Actualizar en segundo plano
+          setTimeout(async () => {
+            try {
+              const fresh = await fetchMessages(user.id);
+              queryClient.setQueryData(['messages', user.id], fresh);
+              
+              // Actualizar cache
+              localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
+                data: fresh,
+                timestamp: Date.now()
+              }));
+            } catch (error) {
+              console.error('Error refreshing messages:', error);
+            }
+          }, 100);
+          
+          return cachedData;
+        }
+      }
+      
+      // 2. Cargar desde servidor
+      const fresh = await fetchMessages(user.id);
+      
+      // 3. Guardar en cache
+      localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
+        data: fresh,
+        timestamp: Date.now()
+      }));
+      
+      return fresh;
+    },
+    enabled: !!user,
+    placeholderData: () => {
+      // Mostrar datos del cache inmediatamente mientras se carga
+      try {
+        const cached = localStorage.getItem(CACHE_KEY + '_' + user?.id);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          return data;
+        }
+      } catch (error) {
+        console.error('Error loading placeholder data:', error);
+      }
+      return [];
+    },
+    staleTime: 5000, // 5 segundos
+    refetchInterval: 15000, // Reducido de 10s a 15s para menos carga
+  });
+
+  // ✅ OPTIMIZADO: Cargar usuario con cache
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
       if (!selectedProfessionalId) return null;
       
+      // Intentar desde cache primero
+      const cached = loadUserFromCache(selectedProfessionalId);
+      if (cached) {
+        console.log('✅ Usuario cargado desde cache');
+        return cached;
+      }
+      
+      // Cargar desde servidor
       const users = await base44.entities.User.filter({ id: selectedProfessionalId });
       const otherUser = users[0];
       
       if (!otherUser) return null;
 
+      let fullData = otherUser;
+      
       if (otherUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: selectedProfessionalId
         });
-        return {
+        fullData = {
           ...otherUser,
           profile: profiles[0] || null
         };
       }
       
-      return otherUser;
+      // Guardar en cache
+      saveUserToCache(selectedProfessionalId, fullData);
+      
+      return fullData;
     },
     enabled: !!selectedProfessionalId,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const loadUserData = async (userId) => {
-    if (!userId) return null;
-    
-    if (usersCache[userId]) {
-      return usersCache[userId];
-    }
-    
-    try {
-      const users = await base44.entities.User.filter({ id: userId });
-      const userData = users[0];
-      
-      if (!userData) return null;
-      
-      if (userData.user_type === "professionnel") {
-        const profiles = await base44.entities.ProfessionalProfile.filter({
-          user_id: userId
-        });
-        const fullData = {
-          ...userData,
-          profile: profiles[0] || null
-        };
-        
-        setUsersCache(prev => ({ ...prev, [userId]: fullData }));
-        return fullData;
-      }
-      
-      setUsersCache(prev => ({ ...prev, [userId]: userData }));
-      return userData;
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      return null;
-    }
-  };
-
-  // Función auxiliar para fetch de mensajes
-  const fetchMessages = async () => {
-    const [sent, received] = await Promise.all([
-      base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 30),
-      base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 30)
-    ]);
-    
-    return [...sent, ...received].sort((a, b) => 
-      new Date(b.created_date) - new Date(a.created_date)
-    );
-  };
-
-  // OPTIMIZACIÓN: Query con cache y límite reducido
-  const { data: allMessages = [], isLoading } = useQuery({
-    queryKey: ['messages', user?.id],
-    queryFn: async () => {
-      console.time('⚡ Load messages');
-      
-      try {
-        // Cargar desde cache primero
-        const cached = localStorage.getItem(CACHE_KEY + '_' + user.id);
-        if (cached) {
-          const { data: cachedData, timestamp } = JSON.parse(cached);
-          const age = Date.now() - timestamp;
-          
-          if (age < CACHE_DURATION) {
-            console.log('✅ Usando cache de mensajes');
-            // Actualizar en segundo plano
-            setTimeout(async () => {
-              const fresh = await fetchMessages();
-              queryClient.setQueryData(['messages', user.id], fresh);
-            }, 100);
-            
-            return cachedData;
-          }
-        }
-        
-        // Cargar desde servidor
-        const fresh = await fetchMessages();
-        
-        // Guardar en cache
-        localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
-          data: fresh,
-          timestamp: Date.now()
-        }));
-        
-        console.timeEnd('⚡ Load messages');
-        return fresh;
-      } catch (error) {
-        console.error("Error loading messages:", error);
-        return [];
-      }
-    },
-    enabled: !!user,
-    initialData: [],
-    refetchInterval: 10000, // Reducido a 10s
-    staleTime: 5000,
+    staleTime: 1000 * 60 * 10, // 10 minutos
+    placeholderData: () => loadUserFromCache(selectedProfessionalId),
   });
 
   const { data: existingReview } = useQuery({
@@ -230,36 +286,43 @@ export default function MessagesPage() {
     enabled: !!user && !!selectedProfessionalId && user?.user_type === "client",
   });
 
-  const conversations = allMessages.reduce((acc, msg) => {
-    const convId = msg.conversation_id;
-    if (!acc[convId]) {
-      acc[convId] = {
-        conversationId: convId,
-        messages: [],
-        otherUserId: msg.sender_id === user?.id ? msg.recipient_id : msg.sender_id,
-        otherUserName: msg.sender_id === user?.id ? 
-          (msg.client_name || msg.professional_name) : 
-          (msg.professional_name || msg.client_name),
-        lastMessage: msg,
-        unreadCount: 0
-      };
-    }
-    acc[convId].messages.push(msg);
-    if (msg.recipient_id === user?.id && !msg.is_read) {
-      acc[convId].unreadCount++;
-    }
-    return acc;
-  }, {});
+  // ✅ OPTIMIZADO: Memoizar conversaciones para evitar recálculos
+  const conversations = React.useMemo(() => {
+    return allMessages.reduce((acc, msg) => {
+      const convId = msg.conversation_id;
+      if (!acc[convId]) {
+        acc[convId] = {
+          conversationId: convId,
+          messages: [],
+          otherUserId: msg.sender_id === user?.id ? msg.recipient_id : msg.sender_id,
+          otherUserName: msg.sender_id === user?.id ? 
+            (msg.client_name || msg.professional_name) : 
+            (msg.professional_name || msg.client_name),
+          lastMessage: msg,
+          unreadCount: 0
+        };
+      }
+      acc[convId].messages.push(msg);
+      if (msg.recipient_id === user?.id && !msg.is_read) {
+        acc[convId].unreadCount++;
+      }
+      return acc;
+    }, {});
+  }, [allMessages, user?.id]);
 
-  const conversationList = Object.values(conversations).sort((a, b) => 
-    new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
-  );
+  const conversationList = React.useMemo(() => {
+    return Object.values(conversations).sort((a, b) => 
+      new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
+    );
+  }, [conversations]);
 
-  // OPTIMIZACIÓN: Solo últimos 20 mensajes
-  const currentMessages = selectedConversation ? 
-    (conversations[selectedConversation]?.messages || []).sort((a, b) => 
-      new Date(a.created_date) - new Date(b.created_date)
-    ).slice(-20) : [];
+  // OPTIMIZACIÓN: Solo últimos 30 mensajes (reducido de 20)
+  const currentMessages = React.useMemo(() => {
+    if (!selectedConversation) return [];
+    return (conversations[selectedConversation]?.messages || [])
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+      .slice(-30); // Últimos 30 mensajes
+  }, [selectedConversation, conversations]);
 
   useEffect(() => {
     if (currentMessages.length > 0 && !isInitialLoadRef.current) {
@@ -434,7 +497,6 @@ export default function MessagesPage() {
 
   const createReviewMutation = useMutation({
     mutationFn: async (review) => {
-      // VERIFICAR SI YA EXISTE UNA VALORACIÓN
       const existingReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId,
         client_id: user.id
@@ -458,7 +520,6 @@ export default function MessagesPage() {
       });
     },
     onSuccess: async () => {
-      // Actualizar media de valoraciones
       const allReviews = await base44.entities.Review.filter({
         professional_id: selectedProfessionalId
       });
@@ -480,32 +541,15 @@ export default function MessagesPage() {
         base44.integrations.Core.SendEmail({
           to: professionalUser[0].email,
           subject: "⭐ Nueva valoración en tu perfil - milautonomos",
-          body: `Hola,
-
-Has recibido una nueva valoración en tu perfil de milautonomos.
-
-👤 Cliente: ${user.full_name || user.email}
-
-⭐ Valoraciones:
-- Rapidez: ${reviewData.rapidez} estrellas
-- Comunicación: ${reviewData.comunicacion} estrellas
-- Calidad: ${reviewData.calidad} estrellas
-- Precio/Satisfacción: ${reviewData.precio_satisfaccion} estrellas
-
-💬 Comentario: ${reviewData.comment || 'Sin comentario'}
-
-Gracias,
-Equipo milautonomos`,
+          body: `Hola,\n\nHas recibido una nueva valoración en tu perfil de milautonomos.\n\n👤 Cliente: ${user.full_name || user.email}\n\n⭐ Valoraciones:\n- Rapidez: ${reviewData.rapidez} estrellas\n- Comunicación: ${reviewData.comunicacion} estrellas\n- Calidad: ${reviewData.calidad} estrellas\n- Precio/Satisfacción: ${reviewData.precio_satisfaccion} estrellas\n\n💬 Comentario: ${reviewData.comment || 'Sin comentario'}\n\nGracias,\nEquipo milautonomos`,
           from_name: "milautonomos"
         }).catch(err => console.log('Email error:', err));
       }
 
-      // Invalidar queries para actualizar UI
       queryClient.invalidateQueries({ queryKey: ['review'] });
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
       queryClient.invalidateQueries({ queryKey: ['profile', selectedProfessionalId] });
       
-      // SOLO cerrar modal tras éxito confirmado
       setShowReviewDialog(false);
       setReviewData({
         rapidez: 0,
@@ -520,14 +564,11 @@ Equipo milautonomos`,
     onError: (error) => {
       console.error("Error creating review:", error);
       
-      // Mensajes de error específicos
       if (error.message.includes('Ya has valorado')) {
         toast.error("Ya has valorado este servicio anteriormente");
       } else {
         toast.error("Error al enviar la valoración. Inténtalo de nuevo.");
       }
-      
-      // NO cerrar modal en caso de error
     }
   });
 
@@ -654,14 +695,12 @@ Equipo milautonomos`,
   };
 
   const handleSubmitReview = () => {
-    // Validación antes de enviar
     if (reviewData.rapidez === 0 || reviewData.comunicacion === 0 || 
         reviewData.calidad === 0 || reviewData.precio_satisfaccion === 0) {
       toast.error("Por favor, valora todos los aspectos");
-      return; // Mantener modal abierto
+      return;
     }
     
-    // Validar comentario (opcional pero recomendado)
     if (reviewData.comment.trim().length > 0 && reviewData.comment.trim().length < 10) {
       toast.error("El comentario debe tener al menos 10 caracteres");
       return;
@@ -694,10 +733,14 @@ Equipo milautonomos`,
     </div>
   );
 
+  // ✅ NUEVO: Pantalla de carga inicial mejorada
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-700 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Cargando mensajería...</p>
+        </div>
       </div>
     );
   }
@@ -706,8 +749,19 @@ Equipo milautonomos`,
     <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       {/* Header - Solo desktop */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 hidden md:block">
-        <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
-        <p className="text-gray-600">Comunícate con tus contactos</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
+            <p className="text-gray-600">Comunícate con tus contactos</p>
+          </div>
+          {/* ✅ NUEVO: Indicador de sincronización */}
+          {isFetching && !isLoading && (
+            <div className="flex items-center gap-2 text-sm text-blue-600">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              <span>Actualizando...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex">
@@ -719,23 +773,16 @@ Equipo milautonomos`,
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-blue-700" />
               Conversaciones
+              {conversationList.length > 0 && (
+                <span className="text-xs text-gray-500">({conversationList.length})</span>
+              )}
             </h2>
           </div>
           
           <div className="flex-1 overflow-y-auto">
+            {/* ✅ NUEVO: Skeleton mientras carga */}
             {isLoading ? (
-              // Skeleton loader
-              <div className="p-4 space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="w-12 h-12 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ConversationSkeleton />
             ) : conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -788,7 +835,7 @@ Equipo milautonomos`,
         }`}>
           {selectedConversation ? (
             <>
-              {/* Header con botones de contacto - VISIBLE PARA TODOS */}
+              {/* Header con botones de contacto */}
               <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
                 <div className="flex items-center gap-3">
                   <Button
@@ -933,75 +980,86 @@ Equipo milautonomos`,
                 className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}
               >
-                {currentMessages.map((message) => {
-                  const isMe = message.sender_id === user.id;
-                  const isOptimistic = message._isOptimistic;
-                  const senderName = getDisplayName(message.sender_id);
-                  const senderType = getUserType(message.sender_id);
-                  
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${
-                        isOptimistic ? 'opacity-70' : 'opacity-100'
-                      } transition-opacity`}
-                    >
-                      <div className="max-w-[85%] md:max-w-md">
-                        {!isMe && (
-                          <div className="flex items-center gap-2 mb-1 ml-1">
-                            <button
-                              onClick={() => handleNavigateToProfile(message.sender_id)}
-                              className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
-                            >
-                              {senderName}
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </button>
-                            {senderType && (
-                              <Badge 
-                                variant="secondary" 
-                                className={`text-[10px] px-1.5 py-0 ${
-                                  senderType === "professionnel" 
-                                    ? "bg-blue-100 text-blue-700" 
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {senderType === "professionnel" ? "Autónomo" : "Cliente"}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        
+                {/* ✅ NUEVO: Skeleton si está cargando conversación */}
+                {isLoading && currentMessages.length === 0 ? (
+                  <MessagesSkeleton />
+                ) : currentMessages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <p>No hay mensajes en esta conversación</p>
+                  </div>
+                ) : (
+                  <>
+                    {currentMessages.map((message) => {
+                      const isMe = message.sender_id === user.id;
+                      const isOptimistic = message._isOptimistic;
+                      const senderName = getDisplayName(message.sender_id);
+                      const senderType = getUserType(message.sender_id);
+                      
+                      return (
                         <div
-                          className={`px-4 py-3 rounded-2xl shadow-sm ${
-                            isMe
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-900 border border-gray-200'
-                          }`}
+                          key={message.id}
+                          className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${
+                            isOptimistic ? 'opacity-70' : 'opacity-100'
+                          } transition-opacity`}
                         >
-                          <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
-                          <div className="flex items-center justify-end gap-1 mt-1">
-                            <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                              {format(new Date(message.created_date), "HH:mm")}
-                            </p>
-                            {isMe && (
-                              isOptimistic ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : message.is_read ? (
-                                <CheckCheck className="w-3 h-3" />
-                              ) : (
-                                <Check className="w-3 h-3" />
-                              )
+                          <div className="max-w-[85%] md:max-w-md">
+                            {!isMe && (
+                              <div className="flex items-center gap-2 mb-1 ml-1">
+                                <button
+                                  onClick={() => handleNavigateToProfile(message.sender_id)}
+                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                >
+                                  {senderName}
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </button>
+                                {senderType && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-[10px] px-1.5 py-0 ${
+                                      senderType === "professionnel" 
+                                        ? "bg-blue-100 text-blue-700" 
+                                        : "bg-gray-100 text-gray-700"
+                                    }`}
+                                  >
+                                    {senderType === "professionnel" ? "Autónomo" : "Cliente"}
+                                  </Badge>
+                                )}
+                              </div>
                             )}
+                            
+                            <div
+                              className={`px-4 py-3 rounded-2xl shadow-sm ${
+                                isMe
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white text-gray-900 border border-gray-200'
+                              }`}
+                            >
+                              <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                              <div className="flex items-center justify-end gap-1 mt-1">
+                                <p className={`text-xs ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                                  {format(new Date(message.created_date), "HH:mm")}
+                                </p>
+                                {isMe && (
+                                  isOptimistic ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : message.is_read ? (
+                                    <CheckCheck className="w-3 h-3" />
+                                  ) : (
+                                    <Check className="w-3 h-3" />
+                                  )
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
               </div>
 
-              {/* Input - Optimizado para móvil */}
+              {/* Input */}
               <div 
                 className="bg-white border-t border-gray-200 p-3 md:p-4"
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
