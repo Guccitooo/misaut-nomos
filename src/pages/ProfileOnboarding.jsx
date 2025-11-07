@@ -64,6 +64,8 @@ export default function ProfileOnboardingPage() {
     // NUEVOS CAMPOS
     website: "",
     social_links: { facebook: "", instagram: "", linkedin: "" },
+    activity_other: "", // ✅ NEW FIELD
+    metodos_contacto: ['chat_interno'], // ✅ NEW FIELD - default to chat_interno
   });
 
   // Provincias de España
@@ -199,6 +201,8 @@ export default function ProfileOnboardingPage() {
           photos: existingProfileData.photos || [],
           website: existingProfileData.website || "",
           social_links: existingProfileData.social_links || { facebook: "", instagram: "", linkedin: "" },
+          activity_other: existingProfileData.activity_other || "", // ✅ NEW FIELD
+          metodos_contacto: existingProfileData.metodos_contacto || ['chat_interno'], // ✅ NEW FIELD
           acepta_terminos: existingProfileData.acepta_terminos || false, // Default to false if not explicitly true
           acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || false, // Default to false
           consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || false, // Default to false
@@ -250,12 +254,12 @@ export default function ProfileOnboardingPage() {
     {
       id: "identity",
       title: "Identidad",
-      fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto"]
+      fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto", "metodos_contacto"] // ✅ ADDED metodos_contacto
     },
     {
       id: "activity",
       title: "Actividad",
-      fields: ["categories", "descripcion_corta", "description"]
+      fields: ["categories", "activity_other", "descripcion_corta", "description"] // ✅ ADDED activity_other
     },
     {
       id: "location_availability",
@@ -287,7 +291,8 @@ export default function ProfileOnboardingPage() {
   const categories = [
     "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
     "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
-    "Asesoría o gestoría", "Empresa multiservicios"
+    "Asesoría o gestoría", "Empresa multiservicios",
+    "Otro tipo de servicio profesional" // ✅ NUEVO
   ];
 
   const progress = ((currentStep + 1) / steps.length) * 100;
@@ -321,10 +326,18 @@ export default function ProfileOnboardingPage() {
         }
       }
 
-      if (field === "telefono_contacto") {
-        const cleanPhone = value.replace(/[^\d+]/g, '');
-        if (!cleanPhone || cleanPhone.length < 9) {
-          setError("Teléfono debe tener al menos 9 dígitos");
+      // ✅ MODIFICADO: Teléfono ahora es OPCIONAL, no se valida aquí.
+      // if (field === "telefono_contacto") {
+      //   const cleanPhone = value.replace(/[^\d+]/g, '');
+      //   if (!cleanPhone || cleanPhone.length < 9) {
+      //     setError("Teléfono debe tener al menos 9 dígitos");
+      //     return false;
+      //   }
+      // }
+
+      if (field === "metodos_contacto") {
+        if (!value || !Array.isArray(value) || value.length === 0) {
+          setError("Selecciona al menos un método de contacto");
           return false;
         }
       }
@@ -333,6 +346,23 @@ export default function ProfileOnboardingPage() {
         if (!value || value.length === 0) {
           setError("Selecciona al menos una categoría");
           return false;
+        }
+        
+        // ✅ NUEVO: Validar que si se selecciona "Otros", debe especificar el servicio
+        if (value.includes("Otro tipo de servicio profesional")) {
+          if (!formData.activity_other || formData.activity_other.trim().length < 3) {
+            setError('Debes especificar tu tipo de servicio en el campo "Especifica tu servicio"');
+            return false;
+          }
+        }
+      }
+
+      if (field === "activity_other") {
+        if (formData.categories.includes("Otro tipo de servicio profesional")) {
+          if (!value || value.trim().length < 3) {
+            setError('La especificación del servicio debe tener al menos 3 caracteres.');
+            return false;
+          }
         }
       }
 
@@ -440,6 +470,11 @@ export default function ProfileOnboardingPage() {
     dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
 
+    // Make sure optional fields are handled correctly if they were just added to formData
+    if (formData.activity_other !== undefined) dataToSave.activity_other = formData.activity_other; // ✅ NEW FIELD
+    if (formData.metodos_contacto !== undefined) dataToSave.metodos_contacto = formData.metodos_contacto; // ✅ NEW FIELD
+
+
     // Save in background, using isSubmitting to disable buttons during this
     setIsSubmitting(true);
     try {
@@ -465,7 +500,8 @@ export default function ProfileOnboardingPage() {
           // Ensure defaults for numbers/objects
           radio_servicio_km: formData.radio_servicio_km || 10,
           tarifa_base: parseFloat(formData.tarifa_base) || 0,
-          social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" }
+          social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" },
+          metodos_contacto: formData.metodos_contacto || ['chat_interno'], // ✅ NEW FIELD
         });
         setProfile(newProfile);
         setExistingProfile(newProfile); // Also set existingProfile
@@ -525,8 +561,9 @@ export default function ProfileOnboardingPage() {
         business_name: formData.business_name,
         cif_nif: formData.cif_nif,
         email_contacto: formData.email_contacto || user.email,
-        telefono_contacto: formData.telefono_contacto || user.phone,
+        telefono_contacto: formData.telefono_contacto || user.phone || "", // Phone is optional now
         categories: formData.categories,
+        activity_other: formData.activity_other, // ✅ NEW FIELD
         descripcion_corta: formData.descripcion_corta,
         description: formData.description,
         provincia: formData.provincia,
@@ -543,6 +580,7 @@ export default function ProfileOnboardingPage() {
         imagen_principal: formData.photos[0] || "",
         website: formData.website,
         social_links: formData.social_links,
+        metodos_contacto: formData.metodos_contacto, // ✅ NEW FIELD
         price_range: "€€", // Default, can be refined
         average_rating: 0,
         total_reviews: 0,
@@ -578,7 +616,7 @@ export default function ProfileOnboardingPage() {
       // ✅ Actualizar usuario (user_type, phone, city)
       await base44.auth.updateMe({
         user_type: "professionnel",
-        phone: formData.telefono_contacto || user.phone,
+        phone: formData.telefono_contacto || user.phone, // Update phone even if optional
         city: formData.ciudad || user.city
       });
       setUser(prevUser => ({ ...prevUser, user_type: "professionnel", phone: formData.telefono_contacto || prevUser.phone, city: formData.ciudad || prevUser.city }));
@@ -596,7 +634,7 @@ export default function ProfileOnboardingPage() {
 
 Los clientes pueden encontrarte buscando por:
 - Tu nombre: ${formData.business_name}
-- Tu actividad: ${formData.categories.join(', ')}
+- Tu actividad: ${formData.categories.join(', ')} ${formData.activity_other ? `(${formData.activity_other})` : ''}
 - Tu zona: ${formData.service_area}
 
 📊 Estado de tu perfil:
@@ -912,8 +950,9 @@ Equipo milautonomos`,
               />
             </div>
 
+            {/* ✅ MODIFICADO: Teléfono ahora es OPCIONAL */}
             <div>
-              <Label>Teléfono de contacto *</Label>
+              <Label>Teléfono de contacto (opcional)</Label>
               <Input
                 type="tel"
                 value={formData.telefono_contacto}
@@ -923,8 +962,149 @@ Equipo milautonomos`,
                 className="h-12"
               />
               <p className="text-sm text-gray-500 mt-1">
-                {formData.telefono_contacto.replace(/\s/g, '').length} dígitos (mínimo 9)
+                Si no añades teléfono, solo podrán contactarte por chat interno
               </p>
+            </div>
+
+            {/* ✅ NUEVO: Métodos de contacto preferidos */}
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <Label className="text-base font-semibold">Métodos de contacto visibles</Label>
+              <p className="text-sm text-gray-500 mt-1 mb-3">
+                Selecciona cómo quieres que los clientes te contacten
+              </p>
+              <div className="space-y-2">
+                {/* Chat interno - siempre disponible */}
+                <div
+                  className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border-2 border-blue-300"
+                >
+                  <Checkbox
+                    checked={true}
+                    disabled={true}
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-blue-900">
+                      💬 Chat interno
+                    </span>
+                    <p className="text-xs text-blue-700 mt-0.5">Siempre activo (obligatorio)</p>
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div
+                  onClick={() => {
+                    if (!formData.telefono_contacto) {
+                      toast.warning('Añade un teléfono primero para activar WhatsApp');
+                      return;
+                    }
+                    const metodos = formData.metodos_contacto || ['chat_interno'];
+                    if (metodos.includes('whatsapp')) {
+                      setFormData({
+                        ...formData,
+                        metodos_contacto: metodos.filter(m => m !== 'whatsapp')
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        metodos_contacto: [...metodos, 'whatsapp']
+                      });
+                    }
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 ${
+                    !formData.telefono_contacto 
+                      ? 'cursor-not-allowed opacity-50 bg-gray-50 border-gray-200'
+                      : 'cursor-pointer hover:bg-gray-50 ' + 
+                        (formData.metodos_contacto?.includes('whatsapp')
+                          ? 'border-green-600 bg-green-50'
+                          : 'border-gray-200')
+                  }`}
+                >
+                  <Checkbox
+                    checked={formData.metodos_contacto?.includes('whatsapp') || false}
+                    disabled={!formData.telefono_contacto}
+                    onChange={(e) => { // Added onChange to handle direct checkbox click
+                      e.stopPropagation();
+                      if (!formData.telefono_contacto) {
+                        toast.warning('Añade un teléfono primero para activar WhatsApp');
+                        return;
+                      }
+                      const metodos = formData.metodos_contacto || ['chat_interno'];
+                      if (e.target.checked) {
+                        setFormData({ ...formData, metodos_contacto: [...metodos, 'whatsapp'] });
+                      } else {
+                        setFormData({ ...formData, metodos_contacto: metodos.filter(m => m !== 'whatsapp') });
+                      }
+                    }}
+                  />
+                  <div className="flex-1">
+                    <span className={`text-sm font-medium ${
+                      !formData.telefono_contacto ? 'text-gray-400' : 'text-gray-900'
+                    }`}>
+                      📱 WhatsApp
+                    </span>
+                    {!formData.telefono_contacto && (
+                      <p className="text-xs text-gray-500 mt-0.5">Requiere teléfono</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Llamada telefónica */}
+                <div
+                  onClick={() => {
+                    if (!formData.telefono_contacto) {
+                      toast.warning('Añade un teléfono primero para activar las llamadas');
+                      return;
+                    }
+                    const metodos = formData.metodos_contacto || ['chat_interno'];
+                    if (metodos.includes('telefono')) {
+                      setFormData({
+                        ...formData,
+                        metodos_contacto: metodos.filter(m => m !== 'telefono')
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        metodos_contacto: [...metodos, 'telefono']
+                      });
+                    }
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 ${
+                    !formData.telefono_contacto 
+                      ? 'cursor-not-allowed opacity-50 bg-gray-50 border-gray-200'
+                      : 'cursor-pointer hover:bg-gray-50 ' + 
+                        (formData.metodos_contacto?.includes('telefono')
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200')
+                  }`}
+                >
+                  <Checkbox
+                    checked={formData.metodos_contacto?.includes('telefono') || false}
+                    disabled={!formData.telefono_contacto}
+                    onChange={(e) => { // Added onChange to handle direct checkbox click
+                      e.stopPropagation();
+                      if (!formData.telefono_contacto) {
+                        toast.warning('Añade un teléfono primero para activar las llamadas');
+                        return;
+                      }
+                      const metodos = formData.metodos_contacto || ['chat_interno'];
+                      if (e.target.checked) {
+                        setFormData({ ...formData, metodos_contacto: [...metodos, 'telefono'] });
+                      } else {
+                        setFormData({ ...formData, metodos_contacto: metodos.filter(m => m !== 'telefono') });
+                      }
+                    }}
+                  />
+                  <div className="flex-1">
+                    <span className={`text-sm font-medium ${
+                      !formData.telefono_contacto ? 'text-gray-400' : 'text-gray-900'
+                    }`}>
+                      📞 Llamada telefónica
+                    </span>
+                    {!formData.telefono_contacto && (
+                      <p className="text-xs text-gray-500 mt-0.5">Requiere teléfono</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -968,6 +1148,25 @@ Equipo milautonomos`,
                 {formData.categories.length} {formData.categories.length === 1 ? 'seleccionada' : 'seleccionadas'}
               </p>
             </div>
+
+            {/* ✅ NUEVO: Campo de texto para "Otros" */}
+            {formData.categories.includes("Otro tipo de servicio profesional") && (
+              <div className="mt-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+                <Label className="text-base font-semibold text-yellow-900">
+                  Especifica tu servicio *
+                </Label>
+                <Input
+                  value={formData.activity_other}
+                  onChange={(e) => setFormData({ ...formData, activity_other: e.target.value })}
+                  placeholder="Ej: Instalador de paneles solares, Técnico de fibra óptica, etc."
+                  maxLength={100}
+                  className="h-12 mt-2 border-yellow-300"
+                />
+                <p className="text-sm text-yellow-800 mt-2">
+                  📝 Describe tu actividad profesional (mínimo 3 caracteres)
+                </p>
+              </div>
+            )}
 
             <div>
               <Label>Descripción corta * (máximo 220 caracteres)</Label>
@@ -1019,7 +1218,7 @@ Equipo milautonomos`,
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Selecciona tu provincia" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
                   {provincias.map((prov) => (
                     <SelectItem key={prov} value={prov}>
                       {prov}
@@ -1499,7 +1698,15 @@ Equipo milautonomos`,
                 <p><strong>Nombre:</strong> {formData.business_name}</p>
                 <p><strong>NIF:</strong> {formData.cif_nif}</p>
                 <p><strong>Email:</strong> {formData.email_contacto || user?.email}</p>
-                <p><strong>Teléfono:</strong> {formData.telefono_contacto}</p>
+                <p><strong>Teléfono:</strong> {formData.telefono_contacto || "No especificado"}</p>
+                <p><strong>Métodos de contacto:</strong> {formData.metodos_contacto?.length > 0 ? formData.metodos_contacto.map(m => {
+                  switch(m) {
+                    case 'chat_interno': return 'Chat Interno';
+                    case 'whatsapp': return 'WhatsApp';
+                    case 'telefono': return 'Llamada Telefónica';
+                    default: return m;
+                  }
+                }).join(", ") : "Ninguno"}</p>
               </div>
             </div>
 
@@ -1519,6 +1726,9 @@ Equipo milautonomos`,
               </div>
               <div className="space-y-2 text-sm text-gray-700">
                 <p><strong>Categorías:</strong> {formData.categories.join(", ") || "Sin especificar"}</p>
+                {formData.categories.includes("Otro tipo de servicio profesional") && (
+                  <p><strong>Servicio específico:</strong> {formData.activity_other || "No especificado"}</p>
+                )}
                 <p><strong>Descripción:</strong> {formData.descripcion_corta || "Sin descripción"}</p>
               </div>
             </div>
