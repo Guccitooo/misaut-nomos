@@ -255,33 +255,43 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div className="flex-1"></div>
 
+        {/* ✅ MODIFICADO: Mostrar botones según metodos_contacto */}
         {profile.telefono_contacto && (
           <div className="grid grid-cols-3 gap-1.5">
-            <a
-              href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+            {/* ✅ Llamada - Solo si está en metodos_contacto */}
+            {profile.metodos_contacto?.includes('telefono') && (
+              <a
+                href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+                onClick={(e) => e.stopPropagation()}
               >
-                <Phone className="w-4 h-4" />
-              </Button>
-            </a>
-            <a
-              href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button 
-                size="sm"
-                className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                >
+                  <Phone className="w-4 h-4" />
+                </Button>
+              </a>
+            )}
+            
+            {/* ✅ WhatsApp - Solo si está en metodos_contacto */}
+            {profile.metodos_contacto?.includes('whatsapp') && (
+              <a
+                href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
               >
-                <MessageCircle className="w-4 h-4" />
-              </Button>
-            </a>
+                <Button 
+                  size="sm"
+                  className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+              </a>
+            )}
+            
+            {/* ✅ Chat interno - Siempre disponible */}
             <Button
               size="sm"
               className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
@@ -293,6 +303,21 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               <MessageSquare className="w-4 h-4" />
             </Button>
           </div>
+        )}
+
+        {/* ✅ NUEVO: Si no hay teléfono, solo chat interno */}
+        {!profile.telefono_contacto && (
+          <Button
+            size="sm"
+            className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartChat(profile.user_id, profile.business_name);
+            }}
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Chat directo
+          </Button>
         )}
       </CardContent>
     </Card>
