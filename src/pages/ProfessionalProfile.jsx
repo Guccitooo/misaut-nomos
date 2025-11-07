@@ -307,7 +307,7 @@ export default function ProfessionalProfilePage() {
                   </div>
                 </div>
 
-                {/* ✅ Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
+                {/* ✅ MODIFICADO: Botones de contacto según preferencias */}
                 <div className="flex flex-wrap gap-2 mt-4">
                   <div className="relative">
                     <Button
@@ -336,27 +336,30 @@ export default function ProfessionalProfilePage() {
                     )}
                   </div>
 
-                  {/* ✅ Botones de contacto - SIEMPRE VISIBLES */}
-                  {profile.telefono_contacto && (
-                    <>
-                      <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
-                        <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
-                          <Phone className="w-5 h-5 mr-2" />
-                          Llamar
-                        </Button>
-                      </a>
-                      <a
-                        href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button className="bg-green-600 hover:bg-green-700">
-                          <MessageCircle className="w-5 h-5 mr-2" />
-                          WhatsApp
-                        </Button>
-                      </a>
-                    </>
+                  {/* ✅ NUEVO: Mostrar solo botones según metodos_contacto */}
+                  {profile.telefono_contacto && profile.metodos_contacto?.includes('telefono') && (
+                    <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
+                      <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
+                        <Phone className="w-5 h-5 mr-2" />
+                        Llamar
+                      </Button>
+                    </a>
                   )}
+                  
+                  {profile.telefono_contacto && profile.metodos_contacto?.includes('whatsapp') && (
+                    <a
+                      href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button className="bg-green-600 hover:bg-green-700">
+                        <MessageCircle className="w-5 h-5 mr-2" />
+                        WhatsApp
+                      </Button>
+                    </a>
+                  )}
+                  
+                  {/* Chat interno siempre disponible (por defecto) */}
                   <Button
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={handleStartChat}
