@@ -43,7 +43,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
-import AvailabilityBadge from "../components/profile/AvailabilityBadge";
+// ✅ REMOVIDO: import AvailabilityBadge - ya no se usa en tarjetas
 
 // ✅ Helper function moved outside component
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -215,10 +215,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ NUEVO: Badge de disponibilidad */}
-        <div className="mb-2">
-          <AvailabilityBadge profile={profile} />
-        </div>
+        {/* ✅ REMOVIDO: Badge de disponibilidad - solo en ficha individual */}
 
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
@@ -248,7 +245,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
         </div>
 
-        {/* ✅ NUEVO: Mostrar tarifa solo si existe */}
+        {/* ✅ Mostrar tarifa solo si existe */}
         {profile.tarifa_base && profile.tarifa_base > 0 && (
           <div className="mb-2 cursor-pointer" onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
             <p className="text-xs text-gray-600">
@@ -270,10 +267,10 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div className="flex-1"></div>
 
-        {/* ✅ MODIFICADO: Mostrar botones según metodos_contacto */}
+        {/* ✅ Botones de contacto según metodos_contacto */}
         {profile.telefono_contacto && (
           <div className="grid grid-cols-3 gap-1.5">
-            {/* ✅ Llamada - Solo si está en metodos_contacto */}
+            {/* Llamada - Solo si está en metodos_contacto */}
             {profile.metodos_contacto?.includes('telefono') && (
               <a
                 href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
@@ -289,7 +286,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               </a>
             )}
             
-            {/* ✅ WhatsApp - Solo si está en metodos_contacto */}
+            {/* WhatsApp - Solo si está en metodos_contacto */}
             {profile.metodos_contacto?.includes('whatsapp') && (
               <a
                 href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
@@ -306,7 +303,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               </a>
             )}
             
-            {/* ✅ Chat interno - Siempre disponible */}
+            {/* Chat interno - Siempre disponible */}
             <Button
               size="sm"
               className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
@@ -320,7 +317,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         )}
 
-        {/* ✅ NUEVO: Si no hay teléfono, solo chat interno */}
+        {/* Si no hay teléfono, solo chat interno */}
         {!profile.telefono_contacto && (
           <Button
             size="sm"
