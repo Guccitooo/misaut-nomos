@@ -68,7 +68,7 @@ export default function ProfileOnboardingPage() {
     metodos_contacto: ['chat_interno'], // ✅ NEW FIELD - default to chat_interno
   });
 
-  // Provincias de España
+  // ✅ AMPLIADO: TODAS las provincias españolas ordenadas alfabéticamente
   const provincias = [
     "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
     "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
@@ -79,38 +79,60 @@ export default function ProfileOnboardingPage() {
     "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla",
     "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
     "Vizcaya", "Zamora", "Zaragoza"
-  ].sort();
+  ];
 
-  // Lista AMPLIADA de ciudades principales por provincia
+  // ✅ AMPLIADO: Ciudades principales por provincia (ordenadas alfabéticamente)
   const ciudadesPorProvincia = {
-    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
-    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Ripollet", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges", "Montgat", "Calella", "Berga"],
-    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Catarroja", "Xàtiva", "Cullera", "Massamagrell", "Quart de Poblet", "Alfafar", "Requena", "Aldaia", "Benetússer", "Carlet", "Llíria"],
-    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos", "Castilleja de la Cuesta", "Lora del Río", "Brenes", "Marchena"],
-    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Ronda", "Alhaurín de la Torre", "Nerja", "Coín", "Alhaurín el Grande", "Manilva", "Torrox", "Cártama", "Casares"],
-    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena", "Santa Pola", "Petrer", "Calpe", "Altea", "Jávea", "Villajoyosa", "Ibi", "Campello", "Crevillente", "Novelda", "Aspe", "Guardamar del Segura", "Pilar de la Horadada"],
-    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huelva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Monzón", "Tudela", "Illueca"],
-    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana", "Las Torres de Cotillas", "San Pedro del Pinatar", "Archena", "Caravaca de la Cruz", "Alhama de Murcia"],
-    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Langreo", "Mieres", "Castrillón", "Llanera", "Corvera", "Carreño", "Gozón", "Navia", "Villaviciosa", "Tineo"],
-    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Leioa", "Galdakao", "Durango", "Sestao", "Erandio", "Bermeo", "Amorebieta", "Gernika"],
-    "La Coruña": ["La Coruña", "Santiago de Compostela", "Ferrol", "Oleiros", "Narón", "Arteixo", "Culleredo", "Carballo", "Betanzos", "Cambre"],
-    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Puerto Real", "Arcos de la Frontera", "Conil de la Frontera", "Barbate"],
-    "Islas Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón", "Llucmajor", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Ciutadella de Menorca", "Santa Eulalia del Río"],
-    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "O Porriño", "Sanxenxo", "Baiona", "Moaña"],
-    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía de Tirajana", "Arucas", "Agüimes", "Ingenio", "San Bartolomé de Tirajana", "Puerto del Rosario", "Arrecife"],
-    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Granadilla de Abona", "Santa Cruz de La Palma", "Los Llanos de Aridane", "Puerto de la Cruz"],
-    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "Piélagos", "El Astillero", "Santa Cruz de Bezana", "Laredo"],
-    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Mondragón", "Hernani", "Lasarte-Oria", "Zarautz", "Hondarribia", "Beasain"],
-    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls", "Vila-seca", "Salou", "Amposta", "Calafell"],
-    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Cabra", "Baena", "Palma del Río", "Pozoblanco"],
-    "Granada": ["Granada", "Motril", "Almuñécar", "Armilla", "Loja", "Baza", "Guadix", "Maracena", "Atarfe"],
-    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Benicàssim", "Nules", "Almassora", "Benicarló"],
-    "Valladolid": ["Valladolid", "Laguna de Duero", "Medina del Campo", "Arroyo de la Encomienda", "Tudela de Duero", "Íscar", "Cigales"],
-    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Yuncos", "Olías del Rey", "Sonseca"],
-    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "Astorga", "La Bañeza", "Valencia de Don Juan"],
-    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Bailén", "Baeza"],
-    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Zafra", "Montijo", "Villafranca de los Barros"],
-    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Isla Cristina", "Ayamonte", "Cartaya", "Punta Umbría"]
+    "Álava": ["Amurrio", "Llodio", "Salvatierra", "Vitoria-Gasteiz"],
+    "Albacete": ["Albacete", "Almansa", "Caudete", "Hellín", "La Roda", "Villarrobledo"],
+    "Alicante": ["Alcoy", "Alicante", "Altea", "Aspe", "Benidorm", "Calpe", "Campello", "Crevillente", "Dénia", "Elche", "Elda", "Ibi", "Jávea", "Novelda", "Orihuela", "Petrer", "San Vicente del Raspeig", "Santa Pola", "Torrevieja", "Villajoyosa", "Villena"],
+    "Almería": ["Adra", "Almería", "El Ejido", "Huércal-Overa", "Níjar", "Roquetas de Mar", "Vícar"],
+    "Asturias": ["Avilés", "Carreño", "Castrillón", "Corvera", "Gijón", "Gozón", "Langreo", "Llanera", "Mieres", "Navia", "Oviedo", "Siero", "Tineo", "Villaviciosa"],
+    "Ávila": ["Arenas de San Pedro", "Arévalo", "Ávila", "El Tiemblo"],
+    "Badajoz": ["Almendralejo", "Badajoz", "Don Benito", "Mérida", "Montijo", "Olivenza", "Villafranca de los Barros", "Villanueva de la Serena", "Zafra"],
+    "Barcelona": ["Badalona", "Barcelona", "Castelldefels", "Cerdanyola del Vallès", "Cornellà de Llobregat", "El Prat de Llobregat", "Esplugues de Llobregat", "Gavà", "Granollers", "Igualada", "L'Hospitalet de Llobregat", "Manresa", "Mataró", "Mollet del Vallès", "Rubí", "Sabadell", "Sant Boi de Llobregat", "Sant Cugat del Vallès", "Sant Feliu de Llobregat", "Santa Coloma de Gramenet", "Sitges", "Terrassa", "Vic", "Viladecans", "Vilanova i la Geltrú"],
+    "Burgos": ["Aranda de Duero", "Briviesca", "Burgos", "Miranda de Ebro"],
+    "Cáceres": ["Cáceres", "Coria", "Navalmoral de la Mata", "Plasencia", "Trujillo"],
+    "Cádiz": ["Algeciras", "Arcos de la Frontera", "Barbate", "Cádiz", "Chiclana de la Frontera", "Conil de la Frontera", "El Puerto de Santa María", "Jerez de la Frontera", "La Línea de la Concepción", "Puerto Real", "Rota", "San Fernando", "Sanlúcar de Barrameda"],
+    "Cantabria": ["Camargo", "Castro-Urdiales", "El Astillero", "Laredo", "Piélagos", "Santa Cruz de Bezana", "Santander", "Santoña", "Torrelavega"],
+    "Castellón": ["Almassora", "Benicarló", "Benicàssim", "Burriana", "Castellón de la Plana", "La Vall d'Uixó", "Nules", "Onda", "Vila-real", "Vinaròs"],
+    "Ciudad Real": ["Alcázar de San Juan", "Ciudad Real", "Daimiel", "Manzanares", "Puertollano", "Tomelloso", "Valdepeñas"],
+    "Córdoba": ["Baena", "Cabra", "Córdoba", "Lucena", "Montilla", "Palma del Río", "Peñarroya-Pueblonuevo", "Pozoblanco", "Priego de Córdoba", "Puente Genil"],
+    "Cuenca": ["Cuenca", "Quintanar del Rey", "San Clemente", "Tarancón"],
+    "Gerona": ["Blanes", "Figueras", "Gerona", "Lloret de Mar", "Olot", "Palafrugell", "Salt"],
+    "Granada": ["Almuñécar", "Armilla", "Atarfe", "Baza", "Granada", "Guadix", "Huétor Vega", "Loja", "Maracena", "Motril"],
+    "Guadalajara": ["Alovera", "Azuqueca de Henares", "Cabanillas del Campo", "Guadalajara"],
+    "Guipúzcoa": ["Andoain", "Beasain", "Éibar", "Hernani", "Hondarribia", "Irún", "Lasarte-Oria", "Mondragón", "Rentería", "San Sebastián", "Zarautz"],
+    "Huelva": ["Aljaraque", "Almonte", "Ayamonte", "Cartaya", "Huelva", "Isla Cristina", "Lepe", "Moguer", "Punta Umbría"],
+    "Huesca": ["Barbastro", "Fraga", "Huesca", "Jaca", "Monzón"],
+    "Islas Baleares": ["Alcúdia", "Calvià", "Ciutadella de Menorca", "Felanitx", "Ibiza", "Inca", "Llucmajor", "Mahón", "Manacor", "Marratxí", "Palma de Mallorca", "Pollensa", "Santa Eulalia del Río"],
+    "Jaén": ["Alcalá la Real", "Andújar", "Baeza", "Bailén", "Jaén", "Linares", "Martos", "Úbeda", "Villacarrillo"],
+    "La Coruña": ["A Coruña", "Ames", "Arteixo", "Betanzos", "Cambre", "Carballo", "Culleredo", "Ferrol", "Narón", "Oleiros", "Santiago de Compostela"],
+    "La Rioja": ["Arnedo", "Calahorra", "Haro", "Lardero", "Logroño"],
+    "Las Palmas": ["Agüimes", "Arucas", "Ingenio", "Las Palmas de Gran Canaria", "Mogán", "Puerto del Rosario", "San Bartolomé de Tirajana", "Santa Lucía de Tirajana", "Telde"],
+    "León": ["Astorga", "La Bañeza", "León", "Ponferrada", "San Andrés del Rabanedo", "Valencia de Don Juan", "Villablino", "Villaquilambre"],
+    "Lérida": ["Balaguer", "La Seu d'Urgell", "Lérida", "Mollerussa", "Tàrrega"],
+    "Lugo": ["Foz", "Lugo", "Monforte de Lemos", "Vilalba", "Viveiro"],
+    "Madrid": ["Alcalá de Henares", "Alcobendas", "Alcorcón", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Collado Villalba", "Colmenar Viejo", "Coslada", "Fuenlabrada", "Galapagar", "Getafe", "Las Rozas", "Leganés", "Madrid", "Majadahonda", "Móstoles", "Parla", "Pinto", "Pozuelo de Alarcón", "Rivas-Vaciamadrid", "San Fernando de Henares", "San Sebastián de los Reyes", "Valdemoro"],
+    "Málaga": ["Alhaurín el Grande", "Alhaurín de la Torre", "Antequera", "Benalmádena", "Cártama", "Coín", "Estepona", "Fuengirola", "Málaga", "Manilva", "Marbella", "Mijas", "Nerja", "Rincón de la Victoria", "Ronda", "Torremolinos", "Torrox", "Vélez-Málaga"],
+    "Murcia": ["Águilas", "Alcantarilla", "Alhama de Murcia", "Archena", "Caravaca de la Cruz", "Cartagena", "Cieza", "Jumilla", "Las Torres de Cotillas", "Lorca", "Mazarrón", "Molina de Segura", "Murcia", "San Javier", "San Pedro del Pinatar", "Torre-Pacheco", "Totana", "Yecla"],
+    "Navarra": ["Barañáin", "Burlada", "Estella", "Pamplona", "Tafalla", "Tudela", "Zizur Mayor"],
+    "Orense": ["O Barco de Valdeorras", "O Carballiño", "Orense", "Verín", "Xinzo de Limia"],
+    "Palencia": ["Aguilar de Campoo", "Guardo", "Palencia", "Venta de Baños"],
+    "Pontevedra": ["Baiona", "Cangas", "Lalín", "Marín", "Moaña", "O Porriño", "Ponteareas", "Pontevedra", "Redondela", "Sanxenxo", "Vigo", "Vilagarcía de Arousa"],
+    "Salamanca": ["Béjar", "Ciudad Rodrigo", "Salamanca", "Santa Marta de Tormes"],
+    "Santa Cruz de Tenerife": ["Adeje", "Arona", "Granadilla de Abona", "Los Llanos de Aridane", "Puerto de la Cruz", "San Cristóbal de La Laguna", "Santa Cruz de La Palma", "Santa Cruz de Tenerife", "Los Realejos"],
+    "Segovia": ["Cuéllar", "El Espinar", "San Ildefonso", "Segovia"],
+    "Sevilla": ["Alcalá de Guadaíra", "Bormujos", "Camas", "Carmona", "Coria del Río", "Dos Hermanas", "Écija", "La Rinconada", "Lebrija", "Los Palacios y Villafranca", "Mairena del Aljarafe", "Morón de la Frontera", "San Juan de Aznalfarache", "Sevilla", "Tomares", "Utrera"],
+    "Soria": ["Almazán", "El Burgo de Osma", "Soria"],
+    "Tarragona": ["Amposta", "Calafell", "Cambrils", "El Vendrell", "Reus", "Roda de Berà", "Salou", "Tarragona", "Tortosa", "Valls", "Vila-seca"],
+    "Teruel": ["Alcañiz", "Andorra", "Calamocha", "Teruel"],
+    "Toledo": ["Illescas", "Olías del Rey", "Quintanar de la Orden", "Seseña", "Sonseca", "Talavera de la Reina", "Toledo", "Torrijos", "Yuncos"],
+    "Valencia": ["Alaquàs", "Alfafar", "Alzira", "Burjassot", "Catarroja", "Cullera", "Gandía", "Manises", "Massamagrell", "Mislata", "Ontinyent", "Paterna", "Quart de Poblet", "Requena", "Sagunto", "Sueca", "Torrent", "Valencia", "Xàtiva", "Xirivella"],
+    "Valladolid": ["Arroyo de la Encomienda", "Cigales", "Íscar", "Laguna de Duero", "Medina del Campo", "Peñafiel", "Tudela de Duero", "Valladolid"],
+    "Vizcaya": ["Amorebieta", "Barakaldo", "Basauri", "Bermeo", "Bilbao", "Durango", "Erandio", "Galdakao", "Gernika", "Getxo", "Leioa", "Portugalete", "Santurtzi", "Sestao"],
+    "Zamora": ["Benavente", "Toro", "Villalpando", "Zamora"],
+    "Zaragoza": ["Alagón", "Borja", "Calatayud", "Caspe", "Cuarte de Huerva", "Ejea de los Caballeros", "Tarazona", "Tudela", "Utebo", "Zaragoza", "Zuera"]
   };
 
   // Días de la semana
