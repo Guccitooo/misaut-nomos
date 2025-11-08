@@ -973,9 +973,14 @@ export default function MyProfilePage() {
               <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
                 Editar
               </Button>
-              {!profile && (
-                <Button onClick={() => navigate(createPageUrl("ProfileOnboarding"))} className="bg-orange-500 hover:bg-orange-600">
-                  Completar Perfil Profesional
+              {/* ✅ MODIFICADO: Solo mostrar si NO es profesional */}
+              {!isProfessional && (
+                <Button 
+                  onClick={() => navigate(createPageUrl("PricingPlans"))} 
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Hazte Autónomo
                 </Button>
               )}
             </div>
@@ -1018,7 +1023,7 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
-        {/* ✅ Card de conversión para clientes */}
+        {/* ✅ MODIFICADO: Card de conversión para clientes */}
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
             <CardContent className="p-6">
@@ -1035,11 +1040,11 @@ export default function MyProfilePage() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate(createPageUrl("ProfileOnboarding"))}
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
                   className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  Convertirme en Autónomo
+                  Ver Planes
                 </Button>
               </div>
             </CardContent>
