@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -8,8 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox"; // Keeping this import as it's part of the component's imports, even if the terms checkbox is now a native input.
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,12 +23,13 @@ export default function ClientOnboardingPage() {
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
-  const [isRedirecting, setIsRedirecting] = useState(false); // Added new state
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
     telefono: "",
+    provincia: "",
     ciudad: "",
     servicios_buscados: [],
     acepta_terminos: false,
@@ -42,11 +48,55 @@ export default function ClientOnboardingPage() {
     "Empresa multiservicios"
   ];
 
+  // ✅ NUEVO: Lista de provincias españolas
+  const provincias = [
+    "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
+    "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
+    "Castellón", "Ciudad Real", "Córdoba", "Cuenca", "Gerona", "Granada",
+    "Guadalajara", "Guipúzcoa", "Huelva", "Huesca", "Islas Baleares",
+    "Jaén", "La Coruña", "La Rioja", "Las Palmas", "León", "Lérida",
+    "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Orense", "Palencia",
+    "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla",
+    "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
+    "Vizcaya", "Zamora", "Zaragoza"
+  ].sort();
+
+  // ✅ NUEVO: Ciudades por provincia
+  const ciudadesPorProvincia = {
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid"],
+    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat"],
+    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Catarroja", "Xàtiva"],
+    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija"],
+    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Ronda", "Alhaurín de la Torre", "Nerja"],
+    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena", "Santa Pola", "Petrer", "Calpe", "Altea", "Jávea"],
+    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huelva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja"],
+    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana"],
+    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Langreo", "Mieres", "Castrillón", "Llanera"],
+    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Leioa", "Galdakao"],
+    "La Coruña": ["La Coruña", "Santiago de Compostela", "Ferrol", "Oleiros", "Narón", "Arteixo", "Culleredo"],
+    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción"],
+    "Islas Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón", "Llucmajor", "Marratxí", "Inca"],
+    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín"],
+    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía de Tirajana", "Arucas", "Agüimes"],
+    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje"],
+    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "Piélagos"],
+    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Mondragón", "Hernani"],
+    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls"],
+    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba"],
+    "Granada": ["Granada", "Motril", "Almuñécar", "Armilla", "Loja"],
+    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda"],
+    "Valladolid": ["Valladolid", "Laguna de Duero", "Medina del Campo", "Arroyo de la Encomienda"],
+    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos"],
+    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre"],
+    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos"],
+    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena"],
+    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Isla Cristina"]
+  };
+
   useEffect(() => {
     loadUser();
   }, []);
 
-  // ✅ Procesar datos guardados cuando vuelva con sesión
   useEffect(() => {
     if (user) {
       const savedFormData = localStorage.getItem('client_onboarding_pending');
@@ -58,7 +108,6 @@ export default function ClientOnboardingPage() {
           setFormData(parsedData);
           localStorage.removeItem('client_onboarding_pending');
           
-          // Procesar el registro
           completeOnboardingMutation.mutate(parsedData);
           
           toast.info('Completando tu registro...', { duration: 2000 });
@@ -85,13 +134,11 @@ export default function ClientOnboardingPage() {
           ciudad: currentUser.city || prev.ciudad,
         }));
 
-        // Si ya es cliente → ir a búsqueda
         if (currentUser.user_type === "client") {
           navigate(createPageUrl("Search"));
           return;
         }
 
-        // Si es autónomo → mensaje de advertencia
         if (currentUser.user_type === "professionnel") {
           setError("Ya tienes una cuenta profesional activa. No puedes crear una cuenta de cliente.");
           setTimeout(() => {
@@ -109,7 +156,6 @@ export default function ClientOnboardingPage() {
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async (data) => {
-      // 1. Actualizar usuario como cliente
       await base44.auth.updateMe({
         user_type: "client",
         full_name: data.nombre,
@@ -117,7 +163,6 @@ export default function ClientOnboardingPage() {
         city: data.ciudad
       });
 
-      // 2. Enviar email de bienvenida
       await base44.integrations.Core.SendEmail({
         to: data.email,
         subject: "¡Bienvenido a MilAutónomos!",
@@ -167,7 +212,6 @@ Equipo MilAutónomos`,
     e.preventDefault();
     setError(null);
 
-    // ✅ VALIDACIÓN: Términos obligatorios
     if (!formData.acepta_terminos) {
       setError("❌ Debes aceptar los Términos y Condiciones para continuar.");
       toast.error("Debes aceptar los Términos y Condiciones");
@@ -175,7 +219,6 @@ Equipo MilAutónomos`,
       return;
     }
 
-    // Validaciones básicas
     if (!formData.nombre || formData.nombre.trim().length < 2) {
       setError("El nombre debe tener al menos 2 caracteres");
       return;
@@ -191,8 +234,13 @@ Equipo MilAutónomos`,
       return;
     }
 
-    if (!formData.ciudad || formData.ciudad.trim().length < 2) {
-      setError("Indica tu ciudad");
+    if (!formData.provincia || formData.provincia.trim().length === 0) {
+      setError("Selecciona una provincia");
+      return;
+    }
+
+    if (!formData.ciudad || formData.ciudad.trim().length === 0) {
+      setError("Selecciona una ciudad");
       return;
     }
 
@@ -201,30 +249,25 @@ Equipo MilAutónomos`,
       return;
     }
 
-    // ✅ CAMBIO: Si no tiene sesión, guardar datos y redirigir
     if (!user) {
       console.log('💾 Guardando datos y preparando redirección...');
       
-      // Activar estado de redirección
       setIsRedirecting(true);
       
-      // Guardar datos en localStorage
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
-      // Redirigir a Base44 para crear cuenta
       try {
-        console.log('🔄 Redirigiendo a login de Base44...');
+        console.log('🔄 Redirigiendo a login...');
         await base44.auth.redirectToLogin(window.location.href);
       } catch (error) {
         console.error('❌ Error en redirección:', error);
         setError('Error al redirigir al sistema de login. Por favor, intenta de nuevo.');
-        setIsRedirecting(false); // Reset redirection state on error
+        setIsRedirecting(false);
       }
       
       return;
     }
 
-    // ✅ Si tiene sesión, procesar directamente
     completeOnboardingMutation.mutate(formData);
   };
 
@@ -243,7 +286,6 @@ Equipo MilAutónomos`,
     }
   };
 
-  // ✅ NUEVO: Pantalla de carga mientras redirige
   if (isRedirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -274,7 +316,6 @@ Equipo MilAutónomos`,
     );
   }
 
-  // Si es autónomo, mostrar mensaje
   if (user?.user_type === "professionnel") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -314,7 +355,7 @@ Equipo MilAutónomos`,
           </p>
           {!user && (
             <p className="text-sm text-blue-600 mt-2">
-              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación
+              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación de MilAutónomos
             </p>
           )}
         </div>
@@ -361,7 +402,7 @@ Equipo MilAutónomos`,
                 )}
                 {!user && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Recibirás un email de verificación en esta dirección
+                    Recibirás un email de verificación de MilAutónomos en esta dirección
                   </p>
                 )}
               </div>
@@ -380,17 +421,64 @@ Equipo MilAutónomos`,
                 />
               </div>
 
-              {/* Ciudad */}
+              {/* ✅ NUEVO: Provincia */}
               <div>
-                <Label>Ciudad *</Label>
-                <Input
-                  value={formData.ciudad}
-                  onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                  placeholder="Ej: Madrid, Barcelona, Valencia..."
-                  className="h-12 mt-2"
-                  required
-                />
+                <Label>Provincia *</Label>
+                <Select
+                  value={formData.provincia}
+                  onValueChange={(value) => {
+                    setFormData({
+                      ...formData,
+                      provincia: value,
+                      ciudad: ""
+                    });
+                  }}
+                >
+                  <SelectTrigger className="h-12 mt-2">
+                    <SelectValue placeholder="Selecciona tu provincia" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {provincias.map((prov) => (
+                      <SelectItem key={prov} value={prov}>
+                        {prov}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* ✅ NUEVO: Ciudad (solo aparece si hay provincia seleccionada) */}
+              {formData.provincia && (
+                <div>
+                  <Label>Ciudad *</Label>
+                  <Select
+                    value={formData.ciudad}
+                    onValueChange={(value) => {
+                      setFormData({
+                        ...formData,
+                        ciudad: value
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="h-12 mt-2">
+                      <SelectValue placeholder="Selecciona tu ciudad" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
+                        ciudadesPorProvincia[formData.provincia].map((ciudad) => (
+                          <SelectItem key={ciudad} value={ciudad}>
+                            {ciudad}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value={formData.provincia}>
+                          {formData.provincia}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Servicios buscados */}
               <div>
@@ -415,13 +503,13 @@ Equipo MilAutónomos`,
                 </p>
               </div>
 
-              {/* ✅ MEJORADO: Términos y condiciones con check visible */}
+              {/* ✅ MEJORADO: Términos y condiciones con check verde */}
               <div 
                 className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
                   !formData.acepta_terminos && error?.includes('Términos')
                     ? 'bg-red-50 border-red-400 shadow-md animate-pulse'
                     : formData.acepta_terminos
-                      ? 'bg-green-50 border-green-400 shadow-sm'
+                      ? 'bg-gray-50 border-gray-300 shadow-sm'
                       : 'bg-gray-50 border-gray-200 hover:border-blue-300'
                 }`}
               >
@@ -437,19 +525,19 @@ Equipo MilAutónomos`,
                       }
                     }}
                     required
-                    className="peer appearance-none w-7 h-7 border-2 border-gray-400 rounded-md bg-white checked:bg-green-600 checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
+                    className="peer appearance-none w-6 h-6 border-2 border-gray-400 rounded bg-white checked:bg-white checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
                   />
-                  {/* ✅ NUEVO: Check visible grande y claro */}
+                  {/* ✅ NUEVO: Check verde dentro del cuadrado */}
                   <svg
-                    className="absolute top-1 left-1 w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                    className="absolute top-0.5 left-0.5 w-5 h-5 text-green-600 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    strokeWidth="3"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth="3"
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
@@ -465,10 +553,20 @@ Equipo MilAutónomos`,
                   }}
                 >
                   <strong className="text-gray-900 text-base block mb-1">
-                    ✅ Acepto los Términos y Condiciones *
+                    Acepto los Términos y Condiciones *
                   </strong>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    He leído y acepto los términos y condiciones de uso, la política de privacidad y el tratamiento de mis datos personales.
+                    He leído y acepto los{" "}
+                    <a 
+                      href={createPageUrl("TermsConditions")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Términos y Condiciones
+                    </a>
+                    , la política de privacidad y el tratamiento de mis datos personales.
                   </p>
                   <p className="text-xs text-gray-500 mt-2 font-medium">
                     Este campo es obligatorio para poder crear tu cuenta
@@ -497,7 +595,7 @@ Equipo MilAutónomos`,
 
               <p className="text-xs text-center text-gray-500">
                 {!user 
-                  ? '📧 Recibirás un email de verificación de Base44 para confirmar tu cuenta'
+                  ? '📧 Recibirás un email de verificación de MilAutónomos para confirmar tu cuenta'
                   : 'Al completar el registro podrás buscar y contactar con profesionales de forma gratuita'
                 }
               </p>
