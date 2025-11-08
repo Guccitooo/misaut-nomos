@@ -43,6 +43,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
+import AvailabilityBadge from "../components/profile/AvailabilityBadge";
 
 // ✅ Helper function moved outside component
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -214,6 +215,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
+        {/* ✅ NUEVO: Badge de disponibilidad */}
+        <div className="mb-2">
+          <AvailabilityBadge profile={profile} />
+        </div>
+
         <div 
           className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
@@ -241,6 +247,15 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             <div></div>
           )}
         </div>
+
+        {/* ✅ NUEVO: Mostrar tarifa solo si existe */}
+        {profile.tarifa_base && profile.tarifa_base > 0 && (
+          <div className="mb-2 cursor-pointer" onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
+            <p className="text-xs text-gray-600">
+              💶 Desde {profile.tarifa_base}€/h
+            </p>
+          </div>
+        )}
 
         <div 
           className="mb-3 h-10 cursor-pointer"

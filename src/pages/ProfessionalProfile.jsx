@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ReviewSection from "../components/profile/ReviewSection.jsx";
 import PhotoGallery from "../components/profile/PhotoGallery.jsx";
 import OptimizedImage from "../components/ui/OptimizedImage";
+import AvailabilityBadge from "../components/profile/AvailabilityBadge";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
@@ -246,7 +247,7 @@ export default function ProfessionalProfilePage() {
           <OptimizedImage
             src={profile.photos[0]}
             alt={profile.business_name}
-            className="w-full h-full absolute inset-0 opacity-30"
+            className="w-full h-full absolute inset-0 opacity-30 object-cover"
             priority={true}
           />
         )}
@@ -282,6 +283,12 @@ export default function ProfessionalProfilePage() {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
                       {profile.business_name}
                     </h1>
+                    
+                    {/* ✅ NUEVO: Badge de disponibilidad dinámica */}
+                    <div className="mb-3">
+                      <AvailabilityBadge profile={profile} />
+                    </div>
+
                     {profile.average_rating > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
@@ -369,12 +376,18 @@ export default function ProfessionalProfilePage() {
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 mt-4">
                   {profile.categories?.map((cat, idx) => (
                     <Badge key={idx} className="bg-blue-100 text-blue-900">
                       {cat}
                     </Badge>
                   ))}
+                  {/* ✅ NUEVO: Mostrar activity_other si existe */}
+                  {profile.activity_other && (
+                    <Badge className="bg-purple-100 text-purple-900">
+                      {profile.activity_other}
+                    </Badge>
+                  )}
                   {profile.price_range && (
                     <Badge className="bg-orange-100 text-orange-800">
                       {profile.price_range}
@@ -433,12 +446,32 @@ export default function ProfessionalProfilePage() {
                   </div>
                 )}
 
-                {profile.opening_hours && (
+                {/* ✅ NUEVO: Mostrar horario dinámico */}
+                {profile.disponibilidad_tipo && profile.horario_apertura && profile.horario_cierre && (
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-sm text-gray-500">Horario</p>
-                      <p className="font-medium text-gray-900">{profile.opening_hours}</p>
+                      <p className="font-medium text-gray-900">
+                        {profile.disponibilidad_tipo === 'laborables' && 'Lunes a Viernes'}
+                        {profile.disponibilidad_tipo === 'festivos' && 'Sábados, domingos y festivos'}
+                        {profile.disponibilidad_tipo === 'ambos' && 'Todos los días'}
+                        {' · '}
+                        {profile.horario_apertura} – {profile.horario_cierre}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ✅ NUEVO: Mostrar tarifa solo si existe */}
+                {profile.tarifa_base && profile.tarifa_base > 0 && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 flex items-center justify-center text-gray-400 mt-0.5">
+                      <span className="text-lg">€</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Tarifa media</p>
+                      <p className="font-medium text-gray-900">{profile.tarifa_base}€/h</p>
                     </div>
                   </div>
                 )}
@@ -453,12 +486,12 @@ export default function ProfessionalProfilePage() {
                   </div>
                 )}
 
-                {professionalUser?.phone && (
+                {profile.telefono_contacto && (
                   <div className="flex items-start gap-3">
-                    <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-sm text-gray-500">Teléfono</p>
-                      <p className="font-medium text-gray-900">{professionalUser.phone}</p>
+                      <p className="font-medium text-gray-900">{profile.telefono_contacto}</p>
                     </div>
                   </div>
                 )}

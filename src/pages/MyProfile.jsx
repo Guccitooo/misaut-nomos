@@ -123,13 +123,14 @@ export default function MyProfilePage() {
     municipio: "",
     service_area: "",
     radio_servicio_km: 10,
-    horario_dias: [],
+    // horario_dias: [], // REMOVIDO: reemplazado por disponibilidad_tipo
+    disponibilidad_tipo: "laborables", // ✅ NUEVO
     horario_apertura: "09:00",
     horario_cierre: "18:00",
     opening_hours: "",
     website: "",
     price_range: "€€",
-    tarifa_base: 0,
+    tarifa_base: null, // Cambiado a null para permitir 'no mostrar'
     facturacion: "autonomo",
     formas_pago: [],
     photos: [],
@@ -137,7 +138,9 @@ export default function MyProfilePage() {
       facebook: "",
       instagram: "",
       linkedin: ""
-    }
+    },
+    activity_other: "", // ✅ NUEVO
+    metodos_contacto: ['chat_interno'], // ✅ NUEVO
   });
 
   const [newCategory, setNewCategory] = useState("");
@@ -209,15 +212,16 @@ export default function MyProfilePage() {
     "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Tudela"]
   };
 
-  const diasSemana = [
-    { value: "lunes", label: "Lunes" },
-    { value: "martes", label: "Martes" },
-    { value: "miercoles", label: "Miércoles" },
-    { value: "jueves", label: "Jueves" },
-    { value: "viernes", label: "Viernes" },
-    { value: "sabado", label: "Sábado" },
-    { value: "domingo", label: "Domingo" }
-  ];
+  // REMOVIDO: Los días de la semana ya no se seleccionan individualmente
+  // const diasSemana = [
+  //   { value: "lunes", label: "Lunes" },
+  //   { value: "martes", label: "Martes" },
+  //   { value: "miercoles", label: "Miércoles" },
+  //   { value: "jueves", label: "Jueves" },
+  //   { value: "viernes", label: "Viernes" },
+  //   { value: "sabado", label: "Sábado" },
+  //   { value: "domingo", label: "Domingo" }
+  // ];
 
   useEffect(() => {
     loadUser();
@@ -644,13 +648,14 @@ export default function MyProfilePage() {
           municipio: profiles[0].municipio || "",
           service_area: profiles[0].service_area || "",
           radio_servicio_km: profiles[0].radio_servicio_km || 10,
-          horario_dias: profiles[0].horario_dias || [],
+          // horario_dias: profiles[0].horario_dias || [], // REMOVIDO
+          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables", // NUEVO
           horario_apertura: profiles[0].horario_apertura || "09:00",
           horario_cierre: profiles[0].horario_cierre || "18:00",
           opening_hours: profiles[0].opening_hours || "",
           website: profiles[0].website || "",
           price_range: profiles[0].price_range || "€€",
-          tarifa_base: profiles[0].tarifa_base || 0,
+          tarifa_base: profiles[0].tarifa_base !== undefined ? profiles[0].tarifa_base : null, // Carga null si es undefined/null
           facturacion: profiles[0].facturacion || "autonomo",
           formas_pago: profiles[0].formas_pago || [],
           photos: profiles[0].photos || [],
@@ -658,10 +663,13 @@ export default function MyProfilePage() {
             facebook: "",
             instagram: "",
             linkedin: ""
-          }
+          },
+          activity_other: profiles[0].activity_other || "", // NUEVO
+          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'], // NUEVO
         });
       } else {
         console.log("❌ No se encontró perfil profesional");
+        // No need to set profileData here, initial useState already provides defaults
       }
       return profiles[0];
     },
@@ -765,20 +773,21 @@ export default function MyProfilePage() {
     });
   };
 
-  const toggleDia = (dia) => {
-    const dias = profileData.horario_dias;
-    if (dias.includes(dia)) {
-      setProfileData({
-        ...profileData,
-        horario_dias: dias.filter(d => d !== dia)
-      });
-    } else {
-      setProfileData({
-        ...profileData,
-        horario_dias: [...dias, dia]
-      });
-    }
-  };
+  // REMOVIDO: toggleDia ya no es necesario
+  // const toggleDia = (dia) => {
+  //   const dias = profileData.horario_dias;
+  //   if (dias.includes(dia)) {
+  //     setProfileData({
+  //       ...profileData,
+  //       horario_dias: dias.filter(d => d !== dia)
+  //     });
+  //   } else {
+  //     setProfileData({
+  //       ...profileData,
+  //       horario_dias: [...dias, dia]
+  //     });
+  //   }
+  // };
 
   const toggleFormaPago = (forma) => {
     const formas = profileData.formas_pago;
@@ -1320,6 +1329,107 @@ export default function MyProfilePage() {
                         placeholder="+34 612 345 678"
                     />
                   </div>
+
+                  {/* ✅ NUEVO: Métodos de contacto editables */}
+                  <div>
+                    <Label className="text-base font-semibold">Métodos de contacto visibles</Label>
+                    <p className="text-sm text-gray-500 mt-1 mb-3">
+                      Selecciona cómo pueden contactarte los clientes
+                    </p>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        {/* Chat interno - siempre activo */}
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border-2 border-blue-300">
+                          <Checkbox checked={true} disabled={true} />
+                          <span className="text-sm font-medium text-blue-900">💬 Chat interno (siempre activo)</span>
+                        </div>
+
+                        {/* WhatsApp */}
+                        <div
+                          onClick={() => {
+                            if (!isEditing) return;
+                            if (!profileData.telefono_contacto) {
+                              toast.warning('Añade un teléfono primero para activar WhatsApp');
+                              return;
+                            }
+                            const metodos = profileData.metodos_contacto || ['chat_interno'];
+                            if (metodos.includes('whatsapp')) {
+                              setProfileData({
+                                ...profileData,
+                                metodos_contacto: metodos.filter(m => m !== 'whatsapp')
+                              });
+                            } else {
+                              setProfileData({
+                                ...profileData,
+                                metodos_contacto: [...metodos, 'whatsapp']
+                              });
+                            }
+                          }}
+                          className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                            !profileData.telefono_contacto || !isEditing
+                              ? 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
+                              : 'cursor-pointer ' + (profileData.metodos_contacto?.includes('whatsapp')
+                                  ? 'border-green-600 bg-green-50'
+                                  : 'border-gray-200 hover:border-green-300')
+                          }`}
+                        >
+                          <Checkbox
+                            checked={profileData.metodos_contacto?.includes('whatsapp') || false}
+                            disabled={!profileData.telefono_contacto || !isEditing}
+                          />
+                          <span className="text-sm font-medium">📱 WhatsApp</span>
+                        </div>
+
+                        {/* Llamada telefónica */}
+                        <div
+                          onClick={() => {
+                            if (!isEditing) return;
+                            if (!profileData.telefono_contacto) {
+                              toast.warning('Añade un teléfono primero para activar llamadas');
+                              return;
+                            }
+                            const metodos = profileData.metodos_contacto || ['chat_interno'];
+                            if (metodos.includes('telefono')) {
+                              setProfileData({
+                                ...profileData,
+                                metodos_contacto: metodos.filter(m => m !== 'telefono')
+                              });
+                            } else {
+                              setProfileData({
+                                ...profileData,
+                                metodos_contacto: [...metodos, 'telefono']
+                              });
+                            }
+                          }}
+                          className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                            !profileData.telefono_contacto || !isEditing
+                              ? 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
+                              : 'cursor-pointer ' + (profileData.metodos_contacto?.includes('telefono')
+                                  ? 'border-blue-600 bg-blue-50'
+                                  : 'border-gray-200 hover:border-blue-300')
+                          }`}
+                        >
+                          <Checkbox
+                            checked={profileData.metodos_contacto?.includes('telefono') || false}
+                            disabled={!profileData.telefono_contacto || !isEditing}
+                          />
+                          <span className="text-sm font-medium">📞 Llamada telefónica</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.metodos_contacto?.includes('chat_interno') && (
+                          <Badge className="bg-blue-100 text-blue-900">💬 Chat interno</Badge>
+                        )}
+                        {profileData.metodos_contacto?.includes('whatsapp') && (
+                          <Badge className="bg-green-100 text-green-900">📱 WhatsApp</Badge>
+                        )}
+                        {profileData.metodos_contacto?.includes('telefono') && (
+                          <Badge className="bg-purple-100 text-purple-900">📞 Teléfono</Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1498,29 +1608,55 @@ export default function MyProfilePage() {
 
               <Separator />
 
-              {/* Horarios */}
+              {/* ✅ MODIFICADO: Horarios y disponibilidad */}
               <div>
-                <h3 className="font-semibold text-lg mb-4">Horarios</h3>
+                <h3 className="font-semibold text-lg mb-4">Disponibilidad y horarios</h3>
                 <div className="space-y-4">
+                  {/* ✅ NUEVO: Tipo de disponibilidad */}
                   <div>
-                    <Label>Días de disponibilidad</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                      {diasSemana.map((dia) => (
+                    <Label>Días de trabajo</Label>
+                    {isEditing ? (
+                      <div className="grid grid-cols-1 gap-2 mt-2">
                         <div
-                          key={dia.value}
-                          onClick={() => isEditing && toggleDia(dia.value)}
-                          className={`p-2 border-2 rounded-lg text-center transition-all ${
-                            isEditing ? 'cursor-pointer' : 'cursor-default'
-                          } ${
-                            profileData.horario_dias?.includes(dia.value)
-                              ? "border-blue-600 bg-blue-50"
-                              : "border-gray-200"
+                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'laborables' })}
+                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                            profileData.disponibilidad_tipo === 'laborables'
+                              ? 'border-blue-600 bg-blue-50'
+                              : 'border-gray-200 hover:border-blue-300'
                           }`}
                         >
-                          <p className="text-sm font-medium">{dia.label}</p>
+                          <p className="font-medium text-sm">📅 Días laborables (Lunes–Viernes)</p>
                         </div>
-                      ))}
-                    </div>
+
+                        <div
+                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'festivos' })}
+                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                            profileData.disponibilidad_tipo === 'festivos'
+                              ? 'border-orange-600 bg-orange-50'
+                              : 'border-gray-200 hover:border-orange-300'
+                          }`}
+                        >
+                          <p className="font-medium text-sm">🎉 Fines de semana y festivos</p>
+                        </div>
+
+                        <div
+                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'ambos' })}
+                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                            profileData.disponibilidad_tipo === 'ambos'
+                              ? 'border-green-600 bg-green-50'
+                              : 'border-gray-200 hover:border-green-300'
+                          }`}
+                        >
+                          <p className="font-medium text-sm">✅ Ambos (Toda la semana)</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-700 mt-2">
+                        {profileData.disponibilidad_tipo === 'laborables' && '📅 Días laborables (Lunes–Viernes)'}
+                        {profileData.disponibilidad_tipo === 'festivos' && '🎉 Fines de semana y festivos'}
+                        {profileData.disponibilidad_tipo === 'ambos' && '✅ Toda la semana'}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1554,14 +1690,19 @@ export default function MyProfilePage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Tarifa base (€/hora)</Label>
+                      <Label>Tarifa base (€/hora) - Opcional</Label>
                       <Input
                         type="number"
-                        value={profileData.tarifa_base}
-                        onChange={(e) => setProfileData({ ...profileData, tarifa_base: parseFloat(e.target.value) })}
+                        value={profileData.tarifa_base === null ? '' : profileData.tarifa_base} // Display empty if null
+                        onChange={(e) => setProfileData({ ...profileData, tarifa_base: e.target.value === '' ? null : parseFloat(e.target.value) })}
                         disabled={!isEditing}
-                        placeholder="35"
+                        placeholder="35 (déjalo vacío si prefieres no mostrar)"
                       />
+                      {isEditing && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Puedes dejarlo vacío si prefieres no mostrar tarifa pública
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label>Tipo de facturación</Label>
