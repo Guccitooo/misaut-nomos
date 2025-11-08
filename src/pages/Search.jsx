@@ -117,7 +117,7 @@ const BASE_CATEGORIES = [
   { name: "Autónomo de limpieza", icon: "Trash2" },
   { name: "Cerrajero", icon: "Key" },
   { name: "Instalador de aire acondicionado", icon: "Wind" },
-  { name: "Mantenimiento general", icon: "Settings" }
+  "Mantenimiento general", { name: "Mantenimiento general", icon: "Settings" }
 ];
 
 function useDebounce(value, delay) {
@@ -245,14 +245,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           )}
         </div>
 
-        {/* ✅ Mostrar tarifa solo si existe */}
-        {profile.tarifa_base && profile.tarifa_base > 0 && (
-          <div className="mb-2 cursor-pointer" onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
-            <p className="text-xs text-gray-600">
-              💶 Desde {profile.tarifa_base}€/h
-            </p>
-          </div>
-        )}
+        {/* ✅ REMOVIDO: Tarifa base - solo se muestra en ficha individual */}
 
         <div 
           className="mb-3 h-10 cursor-pointer"
@@ -267,10 +260,9 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div className="flex-1"></div>
 
-        {/* ✅ Botones de contacto según metodos_contacto */}
+        {/* Botones de contacto según metodos_contacto */}
         {profile.telefono_contacto && (
           <div className="grid grid-cols-3 gap-1.5">
-            {/* Llamada - Solo si está en metodos_contacto */}
             {profile.metodos_contacto?.includes('telefono') && (
               <a
                 href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
@@ -286,7 +278,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               </a>
             )}
             
-            {/* WhatsApp - Solo si está en metodos_contacto */}
             {profile.metodos_contacto?.includes('whatsapp') && (
               <a
                 href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
