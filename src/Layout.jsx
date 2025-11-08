@@ -49,6 +49,54 @@ function LayoutContent({ children, currentPageName }) {
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // ✅ NUEVO: Google Analytics 4 - Cargar script solo una vez
+  useEffect(() => {
+    // Verificar si ya está cargado para evitar duplicados
+    if (window.gtag) {
+      console.log('✅ Google Analytics ya está cargado');
+      return;
+    }
+
+    console.log('📊 Inicializando Google Analytics 4...');
+
+    // Crear script de gtag.js
+    const script = document.createElement('script');
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
+    script.async = true;
+    document.head.appendChild(script);
+
+    // Inicializar Google Analytics
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      window.dataLayer.push(arguments);
+    }
+    window.gtag = gtag;
+    
+    gtag('js', new Date());
+    gtag('config', 'G-P9DN7YN239', {
+      'send_page_view': true
+    });
+
+    console.log('✅ Google Analytics 4 inicializado correctamente');
+
+    return () => {
+      // Cleanup if needed (though we usually want it to persist)
+      // console.log('🔄 Layout desmontado, GA4 script might persist.');
+    };
+  }, []); // Solo ejecutar una vez al montar
+
+  // ✅ NUEVO: Rastrear cambios de página en Google Analytics
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname,
+        page_title: currentPageName || document.title,
+      });
+      console.log('📊 GA4 Page View:', location.pathname, 'Title:', currentPageName || document.title);
+    }
+  }, [location.pathname, currentPageName]);
+
+
   // ✅ NUEVO: Rutas donde NO se debe mostrar la barra inferior
   const hideBottomBarRoutes = [
     createPageUrl("UserTypeSelection"),
