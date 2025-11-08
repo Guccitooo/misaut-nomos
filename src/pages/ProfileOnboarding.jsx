@@ -51,7 +51,8 @@ export default function ProfileOnboardingPage() {
     ciudad: "",
     municipio: "",
     radio_servicio_km: 10,
-    horario_dias: [],
+    horario_dias: [], // This field is still in formData for backward compatibility during loading, but won't be used for new logic
+    disponibilidad_tipo: "laborables", // ✅ NUEVO: Tipo de disponibilidad
     horario_apertura: "09:00",
     horario_cierre: "18:00",
     tarifa_base: "",
@@ -64,8 +65,8 @@ export default function ProfileOnboardingPage() {
     // NUEVOS CAMPOS
     website: "",
     social_links: { facebook: "", instagram: "", linkedin: "" },
-    activity_other: "", // ✅ NEW FIELD
-    metodos_contacto: ['chat_interno'], // ✅ NEW FIELD - default to chat_interno
+    activity_other: "",
+    metodos_contacto: ['chat_interno'],
   });
 
   // ✅ AMPLIADO: TODAS las provincias españolas ordenadas alfabéticamente
@@ -135,7 +136,7 @@ export default function ProfileOnboardingPage() {
     "Zaragoza": ["Alagón", "Borja", "Calatayud", "Caspe", "Cuarte de Huerva", "Ejea de los Caballeros", "Tarazona", "Tudela", "Utebo", "Zaragoza", "Zuera"]
   };
 
-  // Días de la semana
+  // Días de la semana (still here but not used in new flow for selection)
   const diasSemana = [
     { value: "lunes", label: "Lunes" },
     { value: "martes", label: "Martes" },
@@ -146,7 +147,7 @@ export default function ProfileOnboardingPage() {
     { value: "domingo", label: "Domingo" }
   ];
 
-  // Horarios (cada 30 minutos)
+  // Horarios (cada 30 minutos) - still here but not used for selection inputs
   const horarios = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
@@ -155,6 +156,7 @@ export default function ProfileOnboardingPage() {
     }
   }
 
+  // toggleDia is no longer directly used in the new UI, but kept if any other part of the app relies on it
   const toggleDia = (dia) => {
     const dias = formData.horario_dias;
     if (dias.includes(dia)) {
@@ -214,7 +216,8 @@ export default function ProfileOnboardingPage() {
           ciudad: existingProfileData.ciudad || "",
           municipio: existingProfileData.municipio || "",
           radio_servicio_km: existingProfileData.radio_servicio_km || 10,
-          horario_dias: existingProfileData.horario_dias || [],
+          horario_dias: existingProfileData.horario_dias || [], // Keep for backward compatibility during load, though not used in new UI logic
+          disponibilidad_tipo: existingProfileData.disponibilidad_tipo || "laborables", // ✅ NEW FIELD
           horario_apertura: existingProfileData.horario_apertura || "09:00",
           horario_cierre: existingProfileData.horario_cierre || "18:00",
           tarifa_base: existingProfileData.tarifa_base || "",
@@ -223,8 +226,8 @@ export default function ProfileOnboardingPage() {
           photos: existingProfileData.photos || [],
           website: existingProfileData.website || "",
           social_links: existingProfileData.social_links || { facebook: "", instagram: "", linkedin: "" },
-          activity_other: existingProfileData.activity_other || "", // ✅ NEW FIELD
-          metodos_contacto: existingProfileData.metodos_contacto || ['chat_interno'], // ✅ NEW FIELD
+          activity_other: existingProfileData.activity_other || "",
+          metodos_contacto: existingProfileData.metodos_contacto || ['chat_interno'],
           acepta_terminos: existingProfileData.acepta_terminos || false, // Default to false if not explicitly true
           acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || false, // Default to false
           consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || false, // Default to false
@@ -276,17 +279,17 @@ export default function ProfileOnboardingPage() {
     {
       id: "identity",
       title: "Identidad",
-      fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto", "metodos_contacto"] // ✅ ADDED metodos_contacto
+      fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto", "metodos_contacto"]
     },
     {
       id: "activity",
       title: "Actividad",
-      fields: ["categories", "activity_other", "descripcion_corta", "description"] // ✅ ADDED activity_other
+      fields: ["categories", "activity_other", "descripcion_corta", "description"]
     },
     {
       id: "location_availability",
       title: "Zona y disponibilidad",
-      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "horario_dias", "horario_apertura", "horario_cierre"]
+      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "disponibilidad_tipo", "horario_apertura", "horario_cierre"] // ✅ MODIFICADO: reemplazado horario_dias por disponibilidad_tipo
     },
     {
       id: "prices_work_method",
@@ -314,8 +317,8 @@ export default function ProfileOnboardingPage() {
     "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
     "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
     "Asesoría o gestoría", "Empresa multiservicios",
-    "Otro tipo de servicio profesional" // ✅ NUEVO
-  ];
+    "Otro tipo de servicio profesional"
+  ].sort(); // ✅ Ordenar alfabéticamente
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
@@ -347,15 +350,6 @@ export default function ProfileOnboardingPage() {
           return false;
         }
       }
-
-      // ✅ MODIFICADO: Teléfono ahora es OPCIONAL, no se valida aquí.
-      // if (field === "telefono_contacto") {
-      //   const cleanPhone = value.replace(/[^\d+]/g, '');
-      //   if (!cleanPhone || cleanPhone.length < 9) {
-      //     setError("Teléfono debe tener al menos 9 dígitos");
-      //     return false;
-      //   }
-      // }
 
       if (field === "metodos_contacto") {
         if (!value || !Array.isArray(value) || value.length === 0) {
@@ -409,19 +403,28 @@ export default function ProfileOnboardingPage() {
         }
       }
 
-      if (field === "horario_dias") {
-        if (!value || value.length === 0) {
-          setError("Selecciona al menos un día de disponibilidad");
+      // ✅ MODIFICADO: disponibilidad_tipo ahora es obligatorio, no horario_dias
+      if (field === "disponibilidad_tipo") {
+        if (!value || value.trim().length === 0) {
+          setError("Selecciona un tipo de disponibilidad");
           return false;
         }
       }
 
-      if (field === "tarifa_base") {
-        if (!value || parseFloat(value) <= 0) {
-          setError("La tarifa debe ser mayor a 0");
-          return false;
-        }
-      }
+      // if (field === "horario_dias") { // REMOVED THIS VALIDATION
+      //   if (!value || value.length === 0) {
+      //     setError("Selecciona al menos un día de disponibilidad");
+      //     return false;
+      //   }
+      // }
+
+      // ✅ MODIFICADO: tarifa_base ahora es opcional
+      // if (field === "tarifa_base") { // REMOVED THIS VALIDATION
+      //   if (!value || parseFloat(value) <= 0) {
+      //     setError("La tarifa debe ser mayor a 0");
+      //     return false;
+      //   }
+      // }
 
       if (field === "formas_pago") {
         if (!value || value.length === 0) {
@@ -492,10 +495,10 @@ export default function ProfileOnboardingPage() {
     dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
 
-    // Make sure optional fields are handled correctly if they were just added to formData
-    if (formData.activity_other !== undefined) dataToSave.activity_other = formData.activity_other; // ✅ NEW FIELD
-    if (formData.metodos_contacto !== undefined) dataToSave.metodos_contacto = formData.metodos_contacto; // ✅ NEW FIELD
-
+    // Make sure optional/new fields are handled correctly if they were just added to formData
+    if (formData.activity_other !== undefined) dataToSave.activity_other = formData.activity_other;
+    if (formData.metodos_contacto !== undefined) dataToSave.metodos_contacto = formData.metodos_contacto;
+    if (formData.disponibilidad_tipo !== undefined) dataToSave.disponibilidad_tipo = formData.disponibilidad_tipo; // ✅ NEW FIELD
 
     // Save in background, using isSubmitting to disable buttons during this
     setIsSubmitting(true);
@@ -523,7 +526,8 @@ export default function ProfileOnboardingPage() {
           radio_servicio_km: formData.radio_servicio_km || 10,
           tarifa_base: parseFloat(formData.tarifa_base) || 0,
           social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" },
-          metodos_contacto: formData.metodos_contacto || ['chat_interno'], // ✅ NEW FIELD
+          metodos_contacto: formData.metodos_contacto || ['chat_interno'],
+          disponibilidad_tipo: formData.disponibilidad_tipo || "laborables", // ✅ NEW FIELD
         });
         setProfile(newProfile);
         setExistingProfile(newProfile); // Also set existingProfile
@@ -585,7 +589,7 @@ export default function ProfileOnboardingPage() {
         email_contacto: formData.email_contacto || user.email,
         telefono_contacto: formData.telefono_contacto || user.phone || "", // Phone is optional now
         categories: formData.categories,
-        activity_other: formData.activity_other, // ✅ NEW FIELD
+        activity_other: formData.activity_other,
         descripcion_corta: formData.descripcion_corta,
         description: formData.description,
         provincia: formData.provincia,
@@ -594,7 +598,8 @@ export default function ProfileOnboardingPage() {
         service_area: formData.service_area,
         radio_servicio_km: formData.radio_servicio_km,
         tarifa_base: parseFloat(formData.tarifa_base) || 0,
-        horario_dias: formData.horario_dias,
+        // horario_dias: formData.horario_dias, // REMOVED as it's replaced by disponibilidad_tipo
+        disponibilidad_tipo: formData.disponibilidad_tipo, // ✅ NEW FIELD
         horario_apertura: formData.horario_apertura,
         horario_cierre: formData.horario_cierre,
         formas_pago: formData.formas_pago,
@@ -602,7 +607,7 @@ export default function ProfileOnboardingPage() {
         imagen_principal: formData.photos[0] || "",
         website: formData.website,
         social_links: formData.social_links,
-        metodos_contacto: formData.metodos_contacto, // ✅ NEW FIELD
+        metodos_contacto: formData.metodos_contacto,
         price_range: "€€", // Default, can be refined
         average_rating: 0,
         total_reviews: 0,
@@ -988,7 +993,7 @@ Equipo milautonomos`,
               </p>
             </div>
 
-            {/* ✅ NUEVO: Métodos de contacto preferidos */}
+            {/* ✅ MODIFICADO: Métodos de contacto con mejor UX */}
             <div className="border-t border-gray-200 pt-4 mt-4">
               <Label className="text-base font-semibold">Métodos de contacto visibles</Label>
               <p className="text-sm text-gray-500 mt-1 mb-3">
@@ -1141,23 +1146,19 @@ Equipo milautonomos`,
                   <div
                     key={cat}
                     onClick={() => toggleCategory(cat)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                    className={`flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
                       formData.categories.includes(cat)
                         ? "border-blue-600 bg-blue-50 shadow-sm"
                         : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      formData.categories.includes(cat)
-                        ? "bg-blue-600 border-blue-600"
-                        : "border-gray-300"
-                    }`}>
-                      {formData.categories.includes(cat) && (
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
+                    <Checkbox
+                      checked={formData.categories.includes(cat)}
+                      onCheckedChange={() => toggleCategory(cat)}
+                      className={`
+                        ${formData.categories.includes(cat) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}
+                      `}
+                    />
                     <p className={`text-sm font-medium transition-colors ${
                       formData.categories.includes(cat) ? "text-blue-900" : "text-gray-700"
                     }`}>
@@ -1330,90 +1331,118 @@ Equipo milautonomos`,
               </p>
             </div>
 
+            {/* ✅ NUEVO: Disponibilidad tipo */}
             <div>
-              <Label>Días de disponibilidad *</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                {diasSemana.map((dia) => (
-                  <div
-                    key={dia.value}
-                    onClick={() => toggleDia(dia.value)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                      formData.horario_dias.includes(dia.value)
-                        ? "border-green-600 bg-green-50 shadow-sm"
-                        : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      formData.horario_dias.includes(dia.value)
-                        ? "bg-green-600 border-green-600"
-                        : "border-gray-300"
+              <Label>Disponibilidad *</Label>
+              <p className="text-sm text-gray-500 mt-1 mb-3">
+                ¿Cuándo puedes trabajar?
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                <div
+                  onClick={() => setFormData({ ...formData, disponibilidad_tipo: 'laborables' })}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.disponibilidad_tipo === 'laborables'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      formData.disponibilidad_tipo === 'laborables'
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-300'
                     }`}>
-                      {formData.horario_dias.includes(dia.value) && (
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                        </svg>
+                      {formData.disponibilidad_tipo === 'laborables' && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <p className={`text-sm font-medium transition-colors ${
-                      formData.horario_dias.includes(dia.value) ? "text-green-900" : "text-gray-700"
-                    }`}>
-                      {dia.label}
-                    </p>
+                    <div>
+                      <p className="font-medium text-gray-900">📅 Días laborables (Lunes–Viernes)</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Trabajo de lunes a viernes</p>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                <div
+                  onClick={() => setFormData({ ...formData, disponibilidad_tipo: 'festivos' })}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.disponibilidad_tipo === 'festivos'
+                      ? 'border-orange-600 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      formData.disponibilidad_tipo === 'festivos'
+                        ? 'border-orange-600 bg-orange-600'
+                        : 'border-gray-300'
+                    }`}>
+                      {formData.disponibilidad_tipo === 'festivos' && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">🎉 Fines de semana y festivos</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Trabajo sábados, domingos y festivos</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  onClick={() => setFormData({ ...formData, disponibilidad_tipo: 'ambos' })}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.disponibilidad_tipo === 'ambos'
+                      ? 'border-green-600 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      formData.disponibilidad_tipo === 'ambos'
+                        ? 'border-green-600 bg-green-600'
+                        : 'border-gray-300'
+                    }`}>
+                      {formData.disponibilidad_tipo === 'ambos' && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">✅ Ambos (Toda la semana)</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Disponible cualquier día de la semana</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                {formData.horario_dias.length} {formData.horario_dias.length === 1 ? 'día seleccionado' : 'días seleccionados'}
-              </p>
             </div>
 
-            {formData.horario_dias.length > 0 && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Hora de apertura</Label>
-                  <Select
-                    value={formData.horario_apertura}
-                    onValueChange={(value) => setFormData({ ...formData, horario_apertura: value })}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {horarios.filter(hora => hora < formData.horario_cierre).map((hora) => (
-                        <SelectItem key={hora} value={hora}>
-                          {hora}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Hora de cierre</Label>
-                  <Select
-                    value={formData.horario_cierre}
-                    onValueChange={(value) => setFormData({ ...formData, horario_cierre: value })}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {horarios.filter(hora => hora > formData.horario_apertura).map((hora) => (
-                        <SelectItem key={hora} value={hora}>
-                          {hora}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* ✅ NUEVO: Horario laboral con Input type="time" */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Hora de inicio *</Label>
+                <Input
+                  type="time"
+                  value={formData.horario_apertura}
+                  onChange={(e) => setFormData({ ...formData, horario_apertura: e.target.value })}
+                  className="h-12 mt-2"
+                />
               </div>
-            )}
 
-            {formData.horario_dias.length > 0 && (
+              <div>
+                <Label>Hora de fin *</Label>
+                <Input
+                  type="time"
+                  value={formData.horario_cierre}
+                  onChange={(e) => setFormData({ ...formData, horario_cierre: e.target.value })}
+                  className="h-12 mt-2"
+                />
+              </div>
+            </div>
+
+            {formData.horario_apertura && formData.horario_cierre && (
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <p className="text-sm text-green-900">
-                  ✓ Horario: {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ')}
-                  {' '}{formData.horario_apertura} - {formData.horario_cierre}
+                  ✓ Horario: {formData.disponibilidad_tipo === 'laborables' ? 'Lunes–Viernes' : formData.disponibilidad_tipo === 'festivos' ? 'Sábados, domingos y festivos' : 'Todos los días'}
+                  {' • '}{formData.horario_apertura} – {formData.horario_cierre}
                 </p>
               </div>
             )}
@@ -1424,16 +1453,19 @@ Equipo milautonomos`,
         return (
           <div className="space-y-4">
             <div>
-              <Label>Tarifa base * (€/hora o por servicio)</Label>
+              <Label>Tarifa base (€/hora o por servicio) - OPCIONAL</Label>
               <Input
                 type="number"
                 value={formData.tarifa_base}
                 onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
-                placeholder="Ej: 35"
+                placeholder="Ej: 35 (déjalo vacío si prefieres no mostrar tarifa)"
                 min="0"
                 step="0.01"
                 className="h-12"
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Si lo dejas vacío, no se mostrará información de tarifa en tu perfil
+              </p>
             </div>
 
             <div>
@@ -1758,7 +1790,7 @@ Equipo milautonomos`,
             {/* Location Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Ubicación</h3>
+                <h3 className="font-bold text-lg">Ubicación y Disponibilidad</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1774,13 +1806,19 @@ Equipo milautonomos`,
                 <p><strong>Ciudad:</strong> {formData.ciudad}</p>
                 <p><strong>Municipio:</strong> {formData.municipio || "No especificado"}</p>
                 <p><strong>Radio de servicio:</strong> {formData.radio_servicio_km} km</p>
+                <p><strong>Disponibilidad:</strong> {
+                  formData.disponibilidad_tipo === 'laborables' ? 'Días laborables (L-V)' :
+                  formData.disponibilidad_tipo === 'festivos' ? 'Fines de semana y festivos' :
+                  'Toda la semana'
+                }</p>
+                <p><strong>Horario:</strong> {formData.horario_apertura} - {formData.horario_cierre}</p>
               </div>
             </div>
 
             {/* Schedule and Rates Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Horarios y Tarifas</h3>
+                <h3 className="font-bold text-lg">Tarifas y Forma de Trabajo</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1792,9 +1830,8 @@ Equipo milautonomos`,
                 </Button>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Días:</strong> {formData.horario_dias.map(d => diasSemana.find(ds => ds.value === d)?.label).join(', ') || "No especificado"}</p>
-                <p><strong>Horario:</strong> {formData.horario_apertura} - {formData.horario_cierre}</p>
-                <p><strong>Tarifa base:</strong> {formData.tarifa_base}€</p>
+                <p><strong>Tarifa base:</strong> {formData.tarifa_base ? `${formData.tarifa_base}€` : "No especificada"}</p>
+                <p><strong>Tipo de facturación:</strong> {formData.facturacion}</p>
                 <p><strong>Formas de pago:</strong> {formData.formas_pago.join(", ") || "No especificado"}</p>
               </div>
             </div>
