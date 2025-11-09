@@ -497,35 +497,25 @@ export default function MyProfilePage() {
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
       console.log('🔍 [MyProfile] Buscando suscripción para user_id:', user.id);
-      console.log('🔍 [MyProfile] Email del usuario:', user.email);
       
-      try {
-        const subs = await base44.entities.Subscription.filter({
-          user_id: user.id
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+      
+      console.log('📦 [MyProfile] Suscripciones encontradas:', subs.length);
+      
+      if (subs[0]) {
+        console.log('✅ [MyProfile] Suscripción:', {
+          id: subs[0].id,
+          estado: subs[0].estado,
+          plan: subs[0].plan_nombre,
+          expira: subs[0].fecha_expiracion
         });
-        
-        console.log('📦 [MyProfile] Suscripciones encontradas:', subs.length);
-        
-        if (subs.length > 0) {
-          console.log('✅ [MyProfile] Suscripción encontrada:', {
-            id: subs[0].id,
-            estado: subs[0].estado,
-            plan_nombre: subs[0].plan_nombre,
-            fecha_expiracion: subs[0].fecha_expiracion,
-            is_active: isSubscriptionActive(subs[0].estado, subs[0].fecha_expiracion)
-          });
-          return subs[0];
-        } else {
-          console.log('❌ [MyProfile] No se encontró suscripción para este user_id');
-          // No hay fallback por email, la suscripción debe estar ligada al user_id
-          return null;
-        }
-      } catch (error) {
-        console.error('❌ [MyProfile] Error buscando suscripción:', error);
-        throw error;
       }
+      
+      return subs[0] || null;
     },
-    enabled: !!user && !isVerifyingSubscription, // ✅ Deshabilitar durante el polling
+    enabled: !!user && !isVerifyingSubscription,
     retry: 1,
     staleTime: 0,
     refetchOnMount: true,
@@ -543,19 +533,21 @@ export default function MyProfilePage() {
     
     const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
     
-    // ✅ USAR HELPER PARA DETERMINAR SI ESTÁ ACTIVO
+    // ✅ CALCULAR si está activo
     const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
     
     console.log('📊 Estado de suscripción:', {
       estado: subscription.estado,
       daysLeft,
-      isActive
+      isActive,
+      today: today.toISOString(),
+      expiration: expirationDate.toISOString()
     });
     
-    // ✅ NORMALIZAR ESTADOS
     const normalizedState = subscription.estado.toLowerCase();
     
-    if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
+    // 🟡 En periodo de prueba
+    if (normalizedState === "en_prueba" || normalizedState === "trialing") {
       return {
         text: "Periodo de prueba",
         badge: "🟡",
@@ -567,6 +559,7 @@ export default function MyProfilePage() {
       };
     }
     
+    // 🟢 Activo con pago
     if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
       return {
         text: "Suscripción activa",
@@ -579,22 +572,33 @@ export default function MyProfilePage() {
       };
     }
     
+    // ⚪ Cancelado
     if (normalizedState === "cancelado" || normalizedState === "canceled") {
-      return {
-        text: isActive ? "Suscripción cancelada" : "Suscripción finalizada",
-        badge: isActive ? "⚪" : "🔴",
-        color: isActive 
-          ? "bg-yellow-100 text-yellow-800 border border-yellow-300" 
-          : "bg-red-100 text-red-800 border border-red-300",
-        details: isActive 
-          ? `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`
-          : "Tu perfil está oculto",
-        isActive: isActive,
-        showUpgrade: false,
-        showReactivate: true
-      };
+      // ✅ CORREGIDO: Verificar REALMENTE si tiene días activos
+      if (isActive && daysLeft > 0) {
+        return {
+          text: "Suscripción cancelada",
+          badge: "⚪",
+          color: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+          details: `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (${daysLeft} días restantes)`,
+          isActive: true, // ✅ SÍ está activo hasta la fecha
+          showUpgrade: false,
+          showReactivate: false // ✅ NO mostrar "reactivar" mientras tenga días
+        };
+      } else {
+        return {
+          text: "Suscripción finalizada",
+          badge: "🔴",
+          color: "bg-red-100 text-red-800 border border-red-300",
+          details: "Tu perfil está oculto",
+          isActive: false,
+          showUpgrade: false,
+          showReactivate: true // ✅ Mostrar "reactivar" solo cuando YA expiró
+        };
+      }
     }
     
+    // 🔴 Finalizada
     if (normalizedState === "finalizada" || normalizedState === "expired") {
       return {
         text: "Suscripción finalizada",
@@ -607,13 +611,13 @@ export default function MyProfilePage() {
       };
     }
     
-    // Estado desconocido, verificar por fecha
+    // Estado desconocido
     return {
       text: subscription.estado,
       badge: isActive ? "🟡" : "🔴",
       color: isActive 
-        ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
-        : "bg-red-100 text-red-800 border border-red-300",
+        ? "bg-yellow-100 text-yellow-800"
+        : "bg-red-100 text-red-800",
       details: isActive ? "Activo" : "Inactivo",
       isActive: isActive,
       showUpgrade: false,
@@ -634,7 +638,15 @@ export default function MyProfilePage() {
       console.log("📦 Perfiles encontrados:", profiles.length);
       
       if (profiles[0]) {
-        console.log("✅ Perfil encontrado:", profiles[0]);
+        // ✅ CRÍTICO: Log del estado REAL del perfil en BD
+        console.log("✅ Perfil encontrado:", {
+          id: profiles[0].id,
+          business_name: profiles[0].business_name,
+          visible_en_busqueda: profiles[0].visible_en_busqueda,
+          estado_perfil: profiles[0].estado_perfil,
+          onboarding_completed: profiles[0].onboarding_completed
+        });
+        
         setProfileData({
           business_name: profiles[0].business_name || "",
           cif_nif: profiles[0].cif_nif || "",
@@ -949,13 +961,21 @@ export default function MyProfilePage() {
             </p>
             {profile && (
               <div className="mt-2 flex gap-2">
-                {subscriptionStatus?.isActive ? (
+                {/* ✅ CORREGIDO: Mostrar el valor REAL de la BD */}
+                {profile.visible_en_busqueda === true ? (
                   <Badge className="bg-green-100 text-green-800">
-                    ✓ Visible en búsquedas
+                    ✓ Visible en búsquedas (BD)
                   </Badge>
                 ) : (
                   <Badge className="bg-red-100 text-red-800">
-                    ⚠ Oculto en búsquedas
+                    ⚠ Oculto en búsquedas (BD)
+                  </Badge>
+                )}
+                
+                {/* ✅ NUEVO: Mostrar si DEBERÍA estar visible según suscripción */}
+                {subscriptionStatus?.isActive && profile.visible_en_busqueda !== true && (
+                  <Badge className="bg-orange-100 text-orange-800">
+                    ⚠ INCONSISTENCIA: Suscripción activa pero perfil oculto
                   </Badge>
                 )}
               </div>
@@ -1196,23 +1216,31 @@ export default function MyProfilePage() {
                       {subscription.fecha_expiracion && (
                         <p className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          <strong>Expiración:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+                          <strong>Expira:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
                         </p>
                       )}
                       
-                      {/* ✅ Mensaje de visibilidad */}
+                      {/* ✅ CORREGIDO: Mostrar estado REAL de visibilidad */}
                       <div className={`mt-2 p-2 rounded-lg ${
-                        subscriptionStatus?.isActive 
+                        profile?.visible_en_busqueda === true
                           ? 'bg-green-50 border border-green-200' 
                           : 'bg-red-50 border border-red-200'
                       }`}>
                         <p className={`text-sm font-semibold ${
-                          subscriptionStatus?.isActive ? 'text-green-800' : 'text-red-800'
+                          profile?.visible_en_busqueda === true ? 'text-green-800' : 'text-red-800'
                         }`}>
-                          {subscriptionStatus?.isActive 
-                            ? '✅ Tu perfil es visible en las búsquedas' 
-                            : '❌ Tu perfil está oculto en las búsquedas'}
+                          {profile?.visible_en_busqueda === true
+                            ? '✅ Tu perfil ES VISIBLE en búsquedas (verificado en BD)' 
+                            : '❌ Tu perfil ESTÁ OCULTO en búsquedas (verificado en BD)'}
                         </p>
+                        
+                        {/* ✅ NUEVO: Alerta de inconsistencia */}
+                        {subscriptionStatus?.isActive && profile?.visible_en_busqueda !== true && (
+                          <p className="text-xs text-orange-700 mt-2">
+                            ⚠️ PROBLEMA: Tienes suscripción activa pero tu perfil está oculto. 
+                            Prueba el botón "Verificar pago" o contacta soporte.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
