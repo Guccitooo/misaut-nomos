@@ -889,12 +889,13 @@ export default function MyProfilePage() {
   const subscriptionStatus = getSubscriptionStatus();
 
   // ✅ NUEVO: Detectar si necesita completar onboarding
+  // Note: The previous "needsOnboarding" banner was removed as per outline,
+  // but this variable definition remains, as it could be used for other logic or future features.
   const needsOnboarding = isProfessional && subscription && !profile?.onboarding_completed;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* ✅ NUEVO: Banner de debug para admin */}
         {user.role === 'admin' && (
           <Alert className="mb-6 bg-purple-50 border-purple-200">
             <AlertCircle className="h-4 w-4 text-purple-600" />
@@ -940,22 +941,6 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
-        {/* ✅ NUEVO: Banner de onboarding pendiente */}
-        {needsOnboarding && (
-          <Alert className="mb-6 bg-orange-50 border-orange-200">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-800">
-              <strong>¡Completa tu perfil profesional!</strong> Tu suscripción está activa, pero necesitas completar el quiz para aparecer en las búsquedas.
-              <Button 
-                onClick={() => navigate(createPageUrl("ProfileOnboarding"))}
-                className="mt-2 bg-orange-500 hover:bg-orange-600"
-              >
-                Completar perfil ahora
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
@@ -964,13 +949,12 @@ export default function MyProfilePage() {
             </p>
             {profile && (
               <div className="mt-2 flex gap-2">
-                {/* ✅ MEJORADO: Badge unificado basado en suscripción */}
                 {subscriptionStatus?.isActive ? (
                   <Badge className="bg-green-100 text-green-800">
                     ✓ Visible en búsquedas
                   </Badge>
                 ) : (
-                  <Badge className="bg-gray-100 text-gray-800">
+                  <Badge className="bg-red-100 text-red-800">
                     ⚠ Oculto en búsquedas
                   </Badge>
                 )}
@@ -982,7 +966,6 @@ export default function MyProfilePage() {
               <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
                 Editar
               </Button>
-              {/* ✅ MODIFICADO: Solo mostrar si NO es profesional */}
               {!isProfessional && (
                 <Button 
                   onClick={() => navigate(createPageUrl("PricingPlans"))} 
@@ -997,7 +980,6 @@ export default function MyProfilePage() {
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => {
                 setIsEditing(false);
-                // Recargar datos originales
                 queryClient.invalidateQueries({ queryKey: ['myProfile'] });
               }}>
                 Cancelar
@@ -1055,6 +1037,127 @@ export default function MyProfilePage() {
                   <Briefcase className="w-4 h-4 mr-2" />
                   Ver Planes
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ✅ MEJORADO: Card para profesionales CON perfil pero SIN suscripción */}
+        {isProfessional && !subscription && profile && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-xl text-gray-900 mb-1">Cuenta profesional inactiva</h3>
+                    <p className="text-sm text-gray-700 mb-2">
+                      Tu perfil está completo pero oculto. Reactiva tu suscripción para aparecer en búsquedas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
+                  <p className="text-sm font-semibold text-red-800">
+                    ❌ Tu perfil no es visible para clientes
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    Todos tus datos, fotos y valoraciones se mantienen guardados. Solo necesitas reactivar tu suscripción.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-900">
+                    <strong>💡 ¿Qué conservas?</strong>
+                  </p>
+                  <ul className="text-xs text-blue-800 mt-2 space-y-1 ml-4 list-disc">
+                    <li>Tu perfil profesional completo</li>
+                    <li>Todas tus fotos y galería</li>
+                    <li>Tus valoraciones y reseñas ({profile.total_reviews || 0} opiniones)</li>
+                    <li>Tu historial de mensajes</li>
+                    <li>Tus favoritos guardados</li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                    size="lg"
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Reactivar suscripción
+                  </Button>
+                  <Button
+                    onClick={handleManualSync}
+                    disabled={manualSyncing}
+                    variant="outline"
+                    size="lg"
+                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
+                  >
+                    {manualSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Verificar pago
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ✅ MEJORADO: Card para profesionales sin perfil ni suscripción */}
+        {isProfessional && !subscription && !profile && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-yellow-50 to-orange-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">Completa tu alta profesional</h3>
+                    <p className="text-sm text-gray-700 mb-2">
+                      Necesitas completar tu perfil y contratar un plan para aparecer en búsquedas.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    Ver planes
+                  </Button>
+                  <Button
+                    onClick={handleManualSync}
+                    disabled={manualSyncing}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
+                  >
+                    {manualSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Verificar pago
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1145,59 +1248,6 @@ export default function MyProfilePage() {
                       Mejorar plan
                     </Button>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ Card para profesionales sin suscripción */}
-        {isProfessional && !subscription && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">Sin suscripción activa</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Tu perfil está oculto. Necesitas un plan para aparecer en búsquedas.
-                    </p>
-                    <div className="p-2 bg-red-100 border border-red-200 rounded-lg">
-                      <p className="text-sm font-semibold text-red-800">
-                        ❌ Tu perfil no es visible para clientes
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    Ver planes
-                  </Button>
-                  <Button
-                    onClick={handleManualSync}
-                    disabled={manualSyncing}
-                    variant="outline"
-                    size="sm"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    {manualSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-1" />
-                        Verificar suscripción
-                      </>
-                    )}
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -1323,6 +1373,7 @@ export default function MyProfilePage() {
                   <div>
                     <Label>Teléfono de contacto</Label>
                     <Input
+                        type="tel"
                         value={profileData.telefono_contacto}
                         onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
                         disabled={!isEditing}

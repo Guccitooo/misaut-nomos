@@ -205,7 +205,7 @@ function LayoutContent({ children, currentPageName }) {
 
       const activeStates = ["activo", "en_prueba", "trialing"];
       const hasActive = subscriptions.length > 0 &&
-                       activeStates.some(state => subscriptions[0].estado.includes(state)); // Use includes for broader match
+                       activeStates.some(state => subscriptions[0].estado.includes(state));
       
       setHasActiveSubscription(hasActive);
     } catch (error) {
@@ -223,6 +223,9 @@ function LayoutContent({ children, currentPageName }) {
     const allowedPaths = [
       createPageUrl("ProfileOnboarding"),
       createPageUrl("UserTypeSelection"),
+      createPageUrl("MyProfile"), // ✅ NUEVO: Permitir acceso a Mi Perfil
+      createPageUrl("PricingPlans"), // ✅ NUEVO: Permitir acceso a Planes
+      createPageUrl("SubscriptionManagement"), // ✅ NUEVO: Permitir gestión
       "/logout"
     ];
 
@@ -236,16 +239,18 @@ function LayoutContent({ children, currentPageName }) {
         user_id: user.id
       });
 
-      if (!profiles[0] || !profiles[0].onboarding_completed || !profiles[0].visible_en_busqueda) {
+      // ✅ CORREGIDO: Solo redirigir si NO tiene perfil O si el onboarding no está completado
+      // NO redirigir solo porque visible_en_busqueda = false (eso es suscripción cancelada)
+      if (!profiles[0] || !profiles[0].onboarding_completed) {
         setNeedsOnboarding(true);
         
-        // Only navigate if not already on the onboarding page
         if (location.pathname !== createPageUrl("ProfileOnboarding")) {
           setTimeout(() => {
             navigate(createPageUrl("ProfileOnboarding"));
           }, 2000);
         }
       } else {
+        // Usuario tiene perfil completo, aunque esté invisible por falta de suscripción
         setNeedsOnboarding(false);
       }
     } catch (error) {
