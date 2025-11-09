@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -575,7 +576,6 @@ export default function ProfileOnboardingPage() {
         }
       }
 
-      // Removed subscription verification logic as per outline.
       console.log('✅ Usuario autenticado, procediendo a guardar perfil...');
 
       // Preparar datos del perfil
@@ -587,7 +587,7 @@ export default function ProfileOnboardingPage() {
         business_name: formData.business_name,
         cif_nif: formData.cif_nif,
         email_contacto: formData.email_contacto || user.email,
-        telefono_contacto: formData.telefono_contacto || user.phone || "", // Phone is optional now
+        telefono_contacto: formData.telefono_contacto || user.phone || "",
         categories: formData.categories,
         activity_other: formData.activity_other,
         descripcion_corta: formData.descripcion_corta,
@@ -598,8 +598,7 @@ export default function ProfileOnboardingPage() {
         service_area: formData.service_area,
         radio_servicio_km: formData.radio_servicio_km,
         tarifa_base: parseFloat(formData.tarifa_base) || 0,
-        // horario_dias: formData.horario_dias, // REMOVED as it's replaced by disponibilidad_tipo
-        disponibilidad_tipo: formData.disponibilidad_tipo, // ✅ NEW FIELD
+        disponibilidad_tipo: formData.disponibilidad_tipo,
         horario_apertura: formData.horario_apertura,
         horario_cierre: formData.horario_cierre,
         formas_pago: formData.formas_pago,
@@ -608,10 +607,9 @@ export default function ProfileOnboardingPage() {
         website: formData.website,
         social_links: formData.social_links,
         metodos_contacto: formData.metodos_contacto,
-        price_range: "€€", // Default, can be refined
+        price_range: "€€",
         average_rating: 0,
         total_reviews: 0,
-        // ✅ CRÍTICO: Marcar como completado y visible automáticamente
         onboarding_completed: true,
         visible_en_busqueda: true,
         estado_perfil: "activo",
@@ -625,7 +623,7 @@ export default function ProfileOnboardingPage() {
       console.log('📝 Datos del perfil a guardar:', profileData);
 
       let savedProfile;
-      if (existingProfile) { // Using 'existingProfile' state variable
+      if (existingProfile) {
         console.log('🔄 Actualizando perfil existente...');
         savedProfile = await base44.entities.ProfessionalProfile.update(
           existingProfile.id,
@@ -637,62 +635,136 @@ export default function ProfileOnboardingPage() {
       }
 
       console.log('✅ Perfil guardado correctamente:', savedProfile.id);
-      setProfile(savedProfile); // Update the profile state with the saved data
-      setExistingProfile(savedProfile); // Also update existingProfile
+      setProfile(savedProfile);
+      setExistingProfile(savedProfile);
 
-      // ✅ Actualizar usuario (user_type, phone, city)
+      // ✅ Actualizar usuario
       await base44.auth.updateMe({
         user_type: "professionnel",
-        phone: formData.telefono_contacto || user.phone, // Update phone even if optional
+        phone: formData.telefono_contacto || user.phone,
         city: formData.ciudad || user.city
       });
       setUser(prevUser => ({ ...prevUser, user_type: "professionnel", phone: formData.telefono_contacto || prevUser.phone, city: formData.ciudad || prevUser.city }));
       console.log('✅ Usuario actualizado correctamente');
 
-      // ✅ Email de confirmación con notificación de activación
+      // ✅ Email de bienvenida profesional con diseño mejorado
       await base44.integrations.Core.SendEmail({
         to: user.email,
-        subject: "✅ Tu perfil ya está publicado en milautonomos",
-        body: `Hola ${formData.business_name},
-
-¡Enhorabuena! Tu perfil profesional ya está activo y visible en milautonomos.
-
-🎉 PERFIL ACTIVADO EXITOSAMENTE
-
-Los clientes pueden encontrarte buscando por:
-- Tu nombre: ${formData.business_name}
-- Tu actividad: ${formData.categories.join(', ')} ${formData.activity_other ? `(${formData.activity_other})` : ''}
-- Tu zona: ${formData.service_area}
-
-📊 Estado de tu perfil:
-✅ Visible en búsquedas: SÍ
-✅ Onboarding completado: SÍ
-✅ Fotos subidas: ${formData.photos.length}
-✅ Categorías: ${formData.categories.length}
-
-Próximos pasos para maximizar tu visibilidad:
-1. Añade más fotos de tus trabajos
-2. Completa tu descripción con palabras clave
-3. Responde rápido a los mensajes de clientes
-4. Pide valoraciones a tus clientes satisfechos
-
-Ver mi perfil público: https://milautonomos.com/perfil/${savedProfile.slug_publico}
-
-Gracias por unirte a milautonomos,
-Equipo milautonomos`,
-        from_name: "milautonomos"
+        subject: "✅ Tu perfil profesional ya está activo en MilAutónomos",
+        body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .header p { color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .greeting { font-size: 24px; color: #1f2937; margin-bottom: 20px; font-weight: 700; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .success-box { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; text-align: center; }
+    .success-box h2 { margin: 0 0 15px 0; font-size: 22px; }
+    .success-box p { margin: 0; font-size: 15px; opacity: 0.95; }
+    .profile-data { background: #f9fafb; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .profile-data h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
+    .profile-data ul { margin: 0; padding-left: 20px; color: #4b5563; list-style: none; }
+    .profile-data li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+    .profile-data li:before { content: ''; position: absolute; left: 0; top: 6px; width: 16px; height: 16px; background: #10b981; border-radius: 50%; }
+    .profile-data li:after { content: '✓'; position: absolute; left: 4px; top: 4px; color: white; font-size: 12px; font-weight: bold; }
+    .tips { background: #eff6ff; padding: 25px; margin: 30px 0; border-radius: 12px; border: 2px solid #3b82f6; }
+    .tips h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
+    .tips ul { margin: 0; padding-left: 20px; color: #1e40af; }
+    .tips li { margin-bottom: 12px; line-height: 1.6; }
+    .cta { text-align: center; margin: 35px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
+    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">💼</div>
+      <h1>MilAutónomos</h1>
+      <p>Tu autónomo de confianza</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">¡Enhorabuena, ${formData.business_name}!</p>
+      
+      <div class="success-box">
+        <h2>🎉 PERFIL ACTIVADO EXITOSAMENTE</h2>
+        <p>Tu perfil profesional ya está activo y visible para miles de clientes potenciales</p>
+      </div>
+      
+      <p class="message">
+        Tu perfil en <strong>MilAutónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
+      </p>
+      
+      <div class="profile-data">
+        <h3>📊 Resumen de tu perfil</h3>
+        <ul>
+          <li><strong>Nombre profesional:</strong> ${formData.business_name}</li>
+          <li><strong>Categorías:</strong> ${formData.categories.join(', ')} ${formData.activity_other ? `(${formData.activity_other})` : ''}</li>
+          <li><strong>Zona de trabajo:</strong> ${formData.service_area}</li>
+          <li><strong>Fotos subidas:</strong> ${formData.photos.length}</li>
+          <li><strong>Estado:</strong> Activo y visible</li>
+        </ul>
+      </div>
+      
+      <div class="tips">
+        <h3>💡 Consejos para maximizar tu visibilidad</h3>
+        <ul>
+          <li><strong>Añade más fotos</strong> de tus trabajos recientes para generar confianza</li>
+          <li><strong>Responde rápido</strong> a los mensajes de clientes para mejorar tu posicionamiento</li>
+          <li><strong>Completa tu descripción</strong> con palabras clave que los clientes buscan</li>
+          <li><strong>Pide valoraciones</strong> a tus clientes satisfechos para destacar</li>
+        </ul>
+      </div>
+      
+      <div class="cta">
+        <a href="https://autonomosmil.es/perfil/${savedProfile.slug_publico}" class="button">
+          Ver mi perfil público →
+        </a>
+      </div>
+      
+      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
+        ¿Tienes alguna duda? Contacta con nuestro equipo de soporte:<br/>
+        <a href="mailto:soporte@autonomosmil.es" style="color: #3b82f6; text-decoration: none;">soporte@autonomosmil.es</a>
+      </p>
+    </div>
+    
+    <div class="footer">
+      <strong>Equipo MilAutónomos</strong>
+      <p class="tagline">Tu autónomo de confianza</p>
+      <p>
+        <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>
+        <a href="https://autonomosmil.es">autonomosmil.es</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+        from_name: "MilAutónomos"
       });
 
-      // ✅ Mostrar mensaje de éxito
       toast.success('¡Perfil completado y publicado correctamente!', {
         duration: 5000
       });
 
-      // ✅ Invalidar queries
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
 
-      setCurrentStep(steps.length); // Go to success page
+      setCurrentStep(steps.length);
 
     } catch (err) {
       console.error("❌ Error guardando perfil:", err);
@@ -920,8 +992,8 @@ Equipo milautonomos`,
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
                 ¿Necesitas ayuda? Contacta con soporte:{" "}
-                <a href="mailto:admin@milautonomos.com" className="text-blue-600 hover:text-blue-800 font-medium underline">
-                  admin@milautonomos.com
+                <a href="mailto:soporte@autonomosmil.es" className="text-blue-600 hover:text-blue-800 font-medium underline">
+                  soporte@autonomosmil.es
                 </a>
               </p>
             </div>
