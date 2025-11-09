@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -7,7 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info, AlertCircle } from "lucide-react";
+import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export default function PricingPlansPage() {
     initialData: [],
   });
 
-  // Query para verificar suscripción existente
+  // ✅ NUEVA: Query para verificar suscripción existente
   const { data: existingSubscription } = useQuery({
     queryKey: ['existingSubscription', user?.id],
     queryFn: async () => {
@@ -64,19 +64,6 @@ export default function PricingPlansPage() {
     },
     enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
-
-  // ✅ CORREGIDO: Filtrar plan trial solo si ya lo usó
-  const availablePlans = useMemo(() => {
-    if (!user) return plans;
-    
-    // Si ya usó el trial, no mostrar plan_monthly_trial
-    if (user.free_trial_used === true) {
-      console.log('🚫 Trial ya usado, ocultando plan gratuito');
-      return plans.filter(p => p.plan_id !== 'plan_monthly_trial');
-    }
-    
-    return plans;
-  }, [plans, user]);
 
   // Initial user load on component mount
   useEffect(() => {
@@ -98,8 +85,7 @@ export default function PricingPlansPage() {
     if (processingPendingPlan) return;
     
     // Esperar a que todo esté cargado: user, plans, y que no haya carga activa
-    // We check plans.length === 0, but it should contain all plans including trial for this logic
-    if (isLoadingUser || loadingPlans || !user || plans.length === 0) { 
+    if (isLoadingUser || loadingPlans || !user || plans.length === 0) {
       return;
     }
 
@@ -115,8 +101,6 @@ export default function PricingPlansPage() {
         localStorage.removeItem('pending_plan_selection');
         
         // Buscar el plan completo en la lista de planes cargados
-        // IMPORTANT: Use `plans` here, not `availablePlans`, because the pending plan
-        // might be the trial, which `availablePlans` might filter out for the current view.
         const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
         
         if (fullPlan) {
@@ -165,7 +149,7 @@ export default function PricingPlansPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type, 'Trial Used:', currentUser?.free_trial_used);
+      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
       return currentUser;
     } catch (error) {
       console.error("Error loading user:", error);
@@ -177,21 +161,28 @@ export default function PricingPlansPage() {
   };
 
   const handleSelectPlan = async (plan) => {
-    console.log('🎯 Seleccionando plan:', plan.plan_id);
+    console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
+    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type);
     
-    // Verificar si ya tiene este plan activo
+    // ✅ NUEVO: Verificar si ya tiene este plan activo
+    // Check if there's an existing subscription and it's in an active state (activo, en_prueba)
+    // and if the plan being selected is the same as the existing one.
     if (existingSubscription) {
       const activeStates = ["activo", "en_prueba"];
       if (activeStates.includes(existingSubscription.estado) && 
           existingSubscription.plan_id === plan.plan_id) {
-        toast.error("Ya tienes este plan activo.");
+        toast.error("Ya tienes este plan activo. Puedes gestionarlo desde 'Mi Suscripción'.", {
+          duration: 5000
+        });
         navigate(createPageUrl("SubscriptionManagement"));
         return;
       }
     }
 
-    // Si no hay usuario, guardar y redirigir a login
+    // Si no hay usuario, guardar plan y redirigir a login
     if (!user) {
+      console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
+      
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_id: plan.plan_id,
         precio: plan.precio,
@@ -202,15 +193,23 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // Actualizar a profesional si no lo es
+    // Verificar que sea profesional, si no, actualizar y luego continuar
+    // Esta lógica podría haberse ejecutado ya por el useEffect de pending_plan_selection,
+    // pero se mantiene aquí como un fallback robusto por si handleSelectPlan se llama directamente
     if (user.user_type !== "professionnel") {
+      console.log('⚙️ Usuario no es profesional, intentando actualizar...');
       try {
         await base44.auth.updateMe({ user_type: "professionnel" });
+        console.log('✅ Usuario actualizado a professionnel');
+        // Recargar usuario para que el estado se actualice
         const updatedUser = await loadUser();
         setUser(updatedUser); 
       } catch (error) {
-        console.error('❌ Error actualizando user_type:', error);
-        toast.error('Error al configurar tu cuenta.');
+        console.error('❌ Error actualizando user_type en handleSelectPlan:', error);
+        toast.error('Error al configurar tu cuenta. Por favor, inténtalo de nuevo.');
+        setIsProcessing(false);
+        setSelectedPlan(null);
+        setProcessingPendingPlan(false); // Asegurar que el flag se resetee
         return; 
       }
     }
@@ -226,46 +225,51 @@ export default function PricingPlansPage() {
           : "Procesando pago..."
       );
 
-      const isReactivation = !!existingSubscription;
+      console.log('💳 Llamando a createCheckoutSession...');
       
+      // ✅ NUEVO: Detectar si es reactivación
+      // A subscription exists but it's not the exact same active plan (e.g., cancelled, or different plan_id)
+      const isReactivation = !!existingSubscription; 
+      
+      // En este punto, `user` debe ser "professionnel" y estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email, 
         fullName: user.full_name || user.email,
         userType: "professionnel",  
+        cifNif: "", 
+        phone: user.phone || "",
+        activity: "Sin especificar", 
+        activityOther: "",
+        address: user.city || "Sin especificar", 
+        paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
         isTrial: plan.plan_id === "plan_monthly_trial",
-        isReactivation: isReactivation
+        isReactivation: isReactivation  // ✅ NUEVO: Flag de reactivación
       });
 
       toast.dismiss(loadingToast);
 
+      console.log('📥 Respuesta de createCheckoutSession:', response.data);
+
       if (response.data.error) {
-        // ✅ Manejar error específico de trial usado
-        if (response.data.error === 'trial_already_used') {
-          toast.error('Ya has utilizado tu periodo de prueba gratuito. Elige un plan de pago.', {
-            duration: 6000
-          });
-          setError('Ya utilizaste tu periodo gratuito. Selecciona un plan de pago.');
-          setIsProcessing(false);
-          setSelectedPlan(null);
-          return;
-        }
         throw new Error(response.data.error);
       }
 
       if (response.data.url) {
+        console.log('✅ Redirigiendo a Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      console.error("❌ Error:", err);
-      const errorMessage = "Ha habido un problema. Por favor, inténtalo de nuevo.";
+      console.error("❌ Error selecting plan:", err);
+      const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
       setError(errorMessage);
       toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
+      setProcessingPendingPlan(false); // Asegurar que el flag se resetee en caso de error
     }
   };
 
@@ -399,19 +403,6 @@ export default function PricingPlansPage() {
               </AlertDescription>
             </Alert>
           )}
-          
-          {/* ✅ Alerta si ya usó trial */}
-          {user && user.free_trial_used === true && (
-            <Alert className="mt-6 max-w-2xl mx-auto bg-amber-50 border-amber-300">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-900">
-                <strong>ℹ️ Periodo gratuito ya utilizado</strong>
-                <p className="mt-1">
-                  Ya disfrutaste de los 7 días gratis. Ahora solo puedes contratar planes de pago.
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
 
         {error && (
@@ -420,22 +411,8 @@ export default function PricingPlansPage() {
           </Alert>
         )}
 
-        {/* ✅ DEBUG INFO (solo si no hay planes disponibles) */}
-        {user && availablePlans.length === 0 && (
-          <Alert className="mb-8 max-w-3xl mx-auto bg-red-50 border-red-300">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-900">
-              <strong>Error:</strong> No hay planes disponibles para mostrar.
-              <p className="text-xs mt-2">
-                Debug: free_trial_used = {user.free_trial_used?.toString() || 'undefined'} | 
-                Total planes: {plans.length}
-              </p>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
-          {availablePlans.map((plan) => (
+          {plans.map((plan) => (
             <Card 
               key={plan.plan_id}
               className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 bg-white ${
