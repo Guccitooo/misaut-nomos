@@ -1,3 +1,4 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
                         to: user.email,
                         subject: emailSubject || title,
                         body: emailBody || message,
-                        from_name: 'milautonomos'
+                        from_name: 'MilAutónomos' // Changed from 'milautonomos' to 'MilAutónomos'
                     });
                     console.log('📧 Email enviado a:', user.email);
                 }
