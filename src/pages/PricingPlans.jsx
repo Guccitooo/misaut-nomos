@@ -50,7 +50,7 @@ export default function PricingPlansPage() {
     initialData: [],
   });
 
-  // ✅ NUEVA: Query para verificar suscripción existente
+  // Query para verificar suscripción existente
   const { data: existingSubscription } = useQuery({
     queryKey: ['existingSubscription', user?.id],
     queryFn: async () => {
@@ -65,27 +65,16 @@ export default function PricingPlansPage() {
     enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
 
-  // ✅ MEJORADO: Filtrar planes según si ya usó el trial + debug
+  // ✅ CORREGIDO: Filtrar plan trial solo si ya lo usó
   const availablePlans = useMemo(() => {
-    console.log('🔍 [PLANS FILTER] Evaluando planes disponibles...');
-    console.log('👤 [PLANS FILTER] Usuario:', user?.email);
-    console.log('🎁 [PLANS FILTER] free_trial_used:', user?.free_trial_used);
-    console.log('📦 [PLANS FILTER] Total planes:', plans.length);
+    if (!user) return plans;
     
-    if (!user) {
-      console.log('ℹ️ [PLANS FILTER] Sin usuario, mostrando todos los planes');
-      return plans;
-    }
-    
-    // Si el usuario ya usó el trial, NO mostrar el plan trial
+    // Si ya usó el trial, no mostrar plan_monthly_trial
     if (user.free_trial_used === true) {
-      console.log('🚫 [PLANS FILTER] Usuario YA usó periodo gratuito, filtrando plan_monthly_trial');
-      const filtered = plans.filter(plan => plan.plan_id !== 'plan_monthly_trial');
-      console.log('✅ [PLANS FILTER] Planes después de filtrar:', filtered.map(p => p.plan_id));
-      return filtered;
+      console.log('🚫 Trial ya usado, ocultando plan gratuito');
+      return plans.filter(p => p.plan_id !== 'plan_monthly_trial');
     }
     
-    console.log('✅ [PLANS FILTER] Usuario NO ha usado trial, mostrando todos los planes');
     return plans;
   }, [plans, user]);
 
@@ -188,36 +177,21 @@ export default function PricingPlansPage() {
   };
 
   const handleSelectPlan = async (plan) => {
-    console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
-    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type, 'Trial Used:', user?.free_trial_used);
+    console.log('🎯 Seleccionando plan:', plan.plan_id);
     
-    // ✅ NUEVO: Verificar si ya tiene este plan activo
-    // Check if there's an existing subscription and it's in an active state (activo, en_prueba)
-    // and if the plan being selected is the same as the existing one.
+    // Verificar si ya tiene este plan activo
     if (existingSubscription) {
       const activeStates = ["activo", "en_prueba"];
       if (activeStates.includes(existingSubscription.estado) && 
           existingSubscription.plan_id === plan.plan_id) {
-        toast.error("Ya tienes este plan activo. Puedes gestionarlo desde 'Mi Suscripción'.", {
-          duration: 5000
-        });
+        toast.error("Ya tienes este plan activo.");
         navigate(createPageUrl("SubscriptionManagement"));
         return;
       }
     }
 
-    // If user has already used trial and tries to select trial plan again, prevent it.
-    if (user && user.free_trial_used === true && plan.plan_id === 'plan_monthly_trial') {
-        toast.error("Ya has utilizado tu periodo de prueba gratuito.", {
-            duration: 5000
-        });
-        return;
-    }
-
-    // Si no hay usuario, guardar plan y redirigir a login
+    // Si no hay usuario, guardar y redirigir a login
     if (!user) {
-      console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
-      
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_id: plan.plan_id,
         precio: plan.precio,
@@ -228,23 +202,15 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // Verificar que sea profesional, si no, actualizar y luego continuar
-    // Esta lógica podría haberse ejecutado ya por el useEffect de pending_plan_selection,
-    // pero se mantiene aquí como un fallback robusto por si handleSelectPlan se llama directamente
+    // Actualizar a profesional si no lo es
     if (user.user_type !== "professionnel") {
-      console.log('⚙️ Usuario no es profesional, intentando actualizar...');
       try {
         await base44.auth.updateMe({ user_type: "professionnel" });
-        console.log('✅ Usuario actualizado a professionnel');
-        // Recargar usuario para que el estado se actualice
         const updatedUser = await loadUser();
         setUser(updatedUser); 
       } catch (error) {
-        console.error('❌ Error actualizando user_type en handleSelectPlan:', error);
-        toast.error('Error al configurar tu cuenta. Por favor, inténtalo de nuevo.');
-        setIsProcessing(false);
-        setSelectedPlan(null);
-        setProcessingPendingPlan(false); // Asegurar que el flag se resetee
+        console.error('❌ Error actualizando user_type:', error);
+        toast.error('Error al configurar tu cuenta.');
         return; 
       }
     }
@@ -260,50 +226,46 @@ export default function PricingPlansPage() {
           : "Procesando pago..."
       );
 
-      console.log('💳 Llamando a createCheckoutSession...');
+      const isReactivation = !!existingSubscription;
       
-      // ✅ NUEVO: Detectar si es reactivación
-      // A subscription exists but it's not the exact same active plan (e.g., cancelled, or different plan_id)
-      const isReactivation = !!existingSubscription; 
-      
-      // En este punto, `user` debe ser "professionnel" y estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email, 
         fullName: user.full_name || user.email,
         userType: "professionnel",  
-        cifNif: "", 
-        phone: user.phone || "",
-        activity: "Sin especificar", 
-        address: user.city || "Sin especificar", 
-        paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
         isTrial: plan.plan_id === "plan_monthly_trial",
-        isReactivation: isReactivation  // ✅ NUEVO: Flag de reactivación
+        isReactivation: isReactivation
       });
 
       toast.dismiss(loadingToast);
 
-      console.log('📥 Respuesta de createCheckoutSession:', response.data);
-
       if (response.data.error) {
+        // ✅ Manejar error específico de trial usado
+        if (response.data.error === 'trial_already_used') {
+          toast.error('Ya has utilizado tu periodo de prueba gratuito. Elige un plan de pago.', {
+            duration: 6000
+          });
+          setError('Ya utilizaste tu periodo gratuito. Selecciona un plan de pago.');
+          setIsProcessing(false);
+          setSelectedPlan(null);
+          return;
+        }
         throw new Error(response.data.error);
       }
 
       if (response.data.url) {
-        console.log('✅ Redirigiendo a Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      console.error("❌ Error selecting plan:", err);
-      const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
+      console.error("❌ Error:", err);
+      const errorMessage = "Ha habido un problema. Por favor, inténtalo de nuevo.";
       setError(errorMessage);
       toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
-      setProcessingPendingPlan(false); // Asegurar que el flag se resetee en caso de error
     }
   };
 
@@ -438,15 +400,14 @@ export default function PricingPlansPage() {
             </Alert>
           )}
           
-          {/* ✅ MEJORADO: Mostrar mensaje más prominente si ya usó el trial */}
+          {/* ✅ Alerta si ya usó trial */}
           {user && user.free_trial_used === true && (
-            <Alert className="mt-6 max-w-2xl mx-auto bg-orange-50 border-orange-300 shadow-lg">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              <AlertDescription className="text-orange-900">
-                <strong>⚠️ Periodo gratuito ya utilizado</strong>
-                <p className="mt-2">
-                  Ya has disfrutado de los 7 días de prueba gratuita. 
-                  Ahora puedes elegir entre nuestros planes de pago mensuales, trimestrales o anuales.
+            <Alert className="mt-6 max-w-2xl mx-auto bg-amber-50 border-amber-300">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-900">
+                <strong>ℹ️ Periodo gratuito ya utilizado</strong>
+                <p className="mt-1">
+                  Ya disfrutaste de los 7 días gratis. Ahora solo puedes contratar planes de pago.
                 </p>
               </AlertDescription>
             </Alert>
