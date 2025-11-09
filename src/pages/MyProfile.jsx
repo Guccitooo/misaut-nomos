@@ -389,7 +389,7 @@ export default function MyProfilePage() {
     toast.error(
       <div>
         <p className="font-semibold">No se pudo verificar tu suscripción</p>
-        <p className="text-sm mt-1">Por favor, contacta con soporte: admin@milautonomos.com</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@autonomosmil.es</p>
         <p className="text-xs mt-2">Incluye tu email en el mensaje para que podamos ayudarte.</p>
       </div>,
       {
