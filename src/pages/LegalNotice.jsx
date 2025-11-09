@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export default function LegalNoticePage() {
                   <li><strong>Denominación social:</strong> MilAutónomos</li>
                   <li><strong>Domicilio social:</strong> Madrid, España</li>
                   <li><strong>CIF:</strong> B-12345678</li>
-                  <li><strong>Email:</strong> legal@milautonomos.com</li>
+                  <li><strong>Email:</strong> administrador@autonomosmil.es</li>
                   <li><strong>Teléfono:</strong> +34 900 123 456</li>
                   <li><strong>Registro Mercantil:</strong> Madrid, Tomo XXXX, Folio XX, Hoja M-XXXXX</li>
                 </ul>
@@ -155,7 +156,7 @@ export default function LegalNoticePage() {
                   Para cualquier consulta relacionada con este Aviso Legal, puedes contactarnos en:
                 </p>
                 <ul className="list-none pl-0 space-y-2">
-                  <li>📧 Email: <a href="mailto:legal@milautonomos.com" className="text-blue-600 hover:underline">legal@milautonomos.com</a></li>
+                  <li>📧 Email: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a></li>
                   <li>📞 Teléfono: +34 900 123 456</li>
                   <li>📍 Dirección postal: Madrid, España</li>
                 </ul>

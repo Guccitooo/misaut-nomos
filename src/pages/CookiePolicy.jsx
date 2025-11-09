@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -181,7 +182,7 @@ export default function CookiePolicyPage() {
                   Si tienes preguntas sobre nuestro uso de cookies, contacta con:
                 </p>
                 <ul className="list-none pl-0 mt-4 space-y-2">
-                  <li>📧 Email: <a href="mailto:privacidad@milautonomos.com" className="text-blue-600 hover:underline">privacidad@milautonomos.com</a></li>
+                  <li>📧 Email: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a></li>
                   <li>📞 Teléfono: +34 900 123 456</li>
                 </ul>
               </section>
