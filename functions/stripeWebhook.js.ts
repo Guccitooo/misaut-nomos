@@ -132,24 +132,31 @@ Deno.serve(async (req) => {
 
                     actualStripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
                     eventMetadata = session.metadata || {}; // Metadata from the session
-                    actualEmail = eventMetadata.email || session.customer_email;
+                    actualEmail = eventMetadata.user_email || session.customer_email; // Changed from eventMetadata.email to eventMetadata.user_email
                     
                     console.log('📧 Email del usuario (session):', actualEmail);
                     console.log('📊 Metadata completo (session):', JSON.stringify(eventMetadata, null, 2));
                     console.log('📊 Status Stripe (retrieved subscription):', actualStripeSubscription.status);
-                    console.log('📊 Subscription ID (retrieved):', actualStripeSubscription.id);
-                    console.log('📊 Customer ID (retrieved):', actualStripeSubscription.customer);
+                    console.log('🎁 Is Trial:', isTrial); // Added log
 
-                    // ✅ CRÍTICO: Marcar trial como usado si es periodo gratuito
+                    // ✅ CRÍTICO: Marcar trial como usado INMEDIATAMENTE cuando se crea la sesión
                     if (isTrial) {
-                        console.log('🎁 [TRIAL] Marcando periodo gratuito como usado para user:', actualUserId);
+                        console.log('🎁 [TRIAL] Marcando periodo gratuito como USADO para user:', actualUserId);
                         try {
-                            await base44.asServiceRole.auth.updateUser(actualUserId, {
+                            // ✅ CORREGIDO: Usar el método correcto para actualizar usuario
+                            await base44.asServiceRole.entities.User.update(actualUserId, {
                                 free_trial_used: true
                             });
-                            console.log('✅ [TRIAL] Campo free_trial_used actualizado correctamente');
+                            console.log('✅ [TRIAL] Campo free_trial_used = true GUARDADO en BD');
+                            
+                            // Verificar que se guardó correctamente
+                            const updatedUsers = await base44.asServiceRole.entities.User.filter({ id: actualUserId });
+                            if (updatedUsers[0]) {
+                                console.log('🔍 [TRIAL VERIFY] free_trial_used en BD:', updatedUsers[0].free_trial_used);
+                            }
                         } catch (error) {
-                            console.error('❌ [TRIAL] Error actualizando free_trial_used:', error);
+                            console.error('❌ [TRIAL] Error CRÍTICO actualizando free_trial_used:', error);
+                            console.error('❌ [TRIAL] Stack:', error.stack);
                         }
                     }
 
@@ -167,13 +174,35 @@ Deno.serve(async (req) => {
                     actualStripeSubscription = event.data.object; // For this event, data.object IS the subscription
                     eventMetadata = actualStripeSubscription.metadata || {};
                     actualEmail = eventMetadata.email || actualStripeSubscription.customer_email;
-                    actualPlanId = eventMetadata.planId || 'plan_monthly_trial'; // Default, as per existing code if not in metadata
+                    actualPlanId = eventMetadata.plan_id || 'plan_monthly_trial'; // Changed from planId to plan_id
+                    actualUserId = eventMetadata.user_id; // Added extraction of user_id from metadata
+
+                    const isTrial = eventMetadata.is_trial === 'true'; // Added determination of isTrial
 
                     console.log('📧 Email del usuario (subscription):', actualEmail);
                     console.log('📊 Metadata completo (subscription):', JSON.stringify(eventMetadata, null, 2));
                     console.log('📊 Status Stripe (subscription):', actualStripeSubscription.status);
                     console.log('📊 Subscription ID (subscription):', actualStripeSubscription.id);
                     console.log('📊 Customer ID (subscription):', actualStripeSubscription.customer);
+                    console.log('🎁 Is Trial:', isTrial); // Added log
+                    
+                    // ✅ CRÍTICO: Marcar trial como usado también en subscription.created
+                    if (isTrial && actualUserId) {
+                        console.log('🎁 [TRIAL] Marcando periodo gratuito como USADO para user:', actualUserId);
+                        try {
+                            await base44.asServiceRole.entities.User.update(actualUserId, {
+                                free_trial_used: true
+                            });
+                            console.log('✅ [TRIAL] Campo free_trial_used = true GUARDADO en BD');
+                            
+                            const updatedUsers = await base44.asServiceRole.entities.User.filter({ id: actualUserId });
+                            if (updatedUsers[0]) {
+                                console.log('🔍 [TRIAL VERIFY] free_trial_used en BD:', updatedUsers[0].free_trial_used);
+                            }
+                        } catch (error) {
+                            console.error('❌ [TRIAL] Error CRÍTICO actualizando free_trial_used:', error);
+                        }
+                    }
                 }
 
                 if (!actualEmail) {
@@ -195,7 +224,8 @@ Deno.serve(async (req) => {
                             phone: eventMetadata.phone || '',
                             city: eventMetadata.address || '',
                             user_type: 'professionnel',
-                            subscription_status: actualStripeSubscription.status === 'trialing' ? 'en_prueba' : 'activo'
+                            subscription_status: actualStripeSubscription.status === 'trialing' ? 'en_prueba' : 'activo',
+                            free_trial_used: eventMetadata.is_trial === 'true' ? true : false // ✅ NUEVO
                         });
                         finalUserId = newUser.id;
                         console.log('✅ Usuario creado:', finalUserId);
@@ -208,11 +238,25 @@ Deno.serve(async (req) => {
                     console.log('✅ Usuario encontrado:', finalUserId);
                     
                     try {
-                        await base44.asServiceRole.entities.User.update(finalUserId, {
+                        const updateData = {
                             user_type: 'professionnel',
                             subscription_status: actualStripeSubscription.status === 'trialing' ? 'en_prueba' : 'activo'
-                        });
+                        };
+                        
+                        // ✅ CRÍTICO: Si es trial, marcar como usado
+                        if (eventMetadata.is_trial === 'true') {
+                            updateData.free_trial_used = true;
+                            console.log('🎁 [TRIAL] Marcando free_trial_used = true al actualizar usuario');
+                        }
+                        
+                        await base44.asServiceRole.entities.User.update(finalUserId, updateData);
                         console.log('✅ Usuario actualizado a profesional');
+                        
+                        // Verificar
+                        const verifyUser = await base44.asServiceRole.entities.User.filter({ id: finalUserId });
+                        if (verifyUser[0]) {
+                            console.log('🔍 [VERIFY] free_trial_used después de update:', verifyUser[0].free_trial_used);
+                        }
                     } catch (updateError) {
                         console.error('❌ Error actualizando usuario:', updateError);
                     }

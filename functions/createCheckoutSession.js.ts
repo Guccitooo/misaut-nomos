@@ -1,8 +1,7 @@
-
-import { createClient } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@17.5.0';
+import { createClient } from 'npm:@base44/sdk@0.7.1';
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), {
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
   apiVersion: '2024-12-18.acacia',
 });
 
@@ -10,27 +9,26 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClient(req);
     
-    // Authenticate user
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { 
-        email, 
-        fullName, 
-        userType, 
-        cifNif, 
-        phone, 
-        activity, 
-        activityOther,
-        address,
-        paymentMethod,
-        planId,
-        planPrice,
-        isTrial,
-        isReactivation
+    const {
+      email,
+      fullName,
+      userType,
+      cifNif,
+      phone,
+      activity,
+      activityOther,
+      address,
+      paymentMethod,
+      planId,
+      planPrice,
+      isTrial,
+      isReactivation
     } = body;
 
     console.log('💳 [CHECKOUT] Datos recibidos:', {
@@ -39,12 +37,14 @@ Deno.serve(async (req) => {
       planId,
       isTrial,
       isReactivation,
-      user_id: user.id
+      user_id: user.id,
+      free_trial_used: user.free_trial_used
     });
 
     // ✅ CRÍTICO: Validar que no se puede crear trial si ya fue usado
     if (isTrial === true) {
       console.log('🔍 [TRIAL CHECK] Verificando si usuario ya usó periodo gratuito...');
+      console.log('📊 [TRIAL CHECK] user.free_trial_used =', user.free_trial_used);
       
       // Verificar en el usuario si ya usó el trial
       if (user.free_trial_used === true) {
@@ -56,59 +56,71 @@ Deno.serve(async (req) => {
       }
       
       console.log('✅ [TRIAL ALLOWED] Usuario puede acceder al periodo gratuito');
+      
+      // ✅ NUEVO: Marcar como usado ANTES de crear la sesión (prevención extra)
+      console.log('🎁 [TRIAL] Pre-marcando free_trial_used = true ANTES de crear checkout...');
+      try {
+        await base44.asServiceRole.entities.User.update(user.id, {
+          free_trial_used: true
+        });
+        console.log('✅ [TRIAL] free_trial_used marcado como true ANTES de checkout');
+        
+        // Verificar
+        const verifyUser = await base44.asServiceRole.entities.User.filter({ id: user.id });
+        console.log('🔍 [TRIAL VERIFY] free_trial_used en BD:', verifyUser[0]?.free_trial_used);
+      } catch (error) {
+        console.error('❌ [TRIAL] Error CRÍTICO pre-marcando trial:', error);
+        return Response.json({ 
+          error: 'Error al procesar periodo gratuito',
+          details: error.message
+        }, { status: 500 });
+      }
     }
 
-    // --- Stripe Customer creation/retrieval ---
-    let customer: Stripe.Customer;
+    let customer;
     if (user.stripe_customer_id) {
-        // Attempt to retrieve existing Stripe Customer
         try {
             const retrievedCustomer = await stripe.customers.retrieve(user.stripe_customer_id);
             if (retrievedCustomer && !retrievedCustomer.deleted) {
                 customer = retrievedCustomer;
                 console.log(`✅ [STRIPE] Cliente Stripe existente recuperado: ${customer.id}`);
             } else {
-                // If customer was deleted or not found, create a new one
                 throw new Error("Stripe customer not found or deleted.");
             }
         } catch (retrieveError) {
             console.warn(`⚠️ [STRIPE] Error al recuperar cliente Stripe ${user.stripe_customer_id}: ${retrieveError.message}. Creando uno nuevo.`);
-            // Fallback to creating a new customer
             const newCustomer = await stripe.customers.create({
                 email: email,
                 name: fullName,
                 metadata: {
                     base44_user_id: user.id,
-                    userType: userType || "professionnel"
+                    userType: userType || "professionnel",
+                    free_trial_used: isTrial ? 'true' : 'false'
                 }
             });
-            // Update Base44 user with the new Stripe Customer ID
             await base44.asServiceRole.entities.User.update(user.id, { stripe_customer_id: newCustomer.id });
             customer = newCustomer;
             console.log(`✅ [STRIPE] Nuevo cliente Stripe creado y asociado: ${customer.id}`);
         }
     } else {
-        // Create new Stripe Customer if no ID exists in Base44 user
         const newCustomer = await stripe.customers.create({
             email: email,
             name: fullName,
             metadata: {
                 base44_user_id: user.id,
-                userType: userType || "professionnel"
+                userType: userType || "professionnel",
+                free_trial_used: isTrial ? 'true' : 'false'
             }
         });
-        // Update Base44 user with the new Stripe Customer ID
         await base44.asServiceRole.entities.User.update(user.id, { stripe_customer_id: newCustomer.id });
         customer = newCustomer;
         console.log(`✅ [STRIPE] Nuevo cliente Stripe creado y asociado: ${customer.id}`);
     }
-    // --- END Stripe Customer logic ---
 
     const appOrigin = new URL(req.url).origin;
     
     let successUrl, cancelUrl;
     
-    // Updated success/cancel URL logic
     if (isTrial) {
       successUrl = `${appOrigin}${isReactivation ? '/my-profile' : '/profile-onboarding'}?onboarding=pending`;
       cancelUrl = `${appOrigin}/pricing-plans?canceled=true`;
@@ -129,35 +141,44 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Construct the session configuration
-    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
-      customer: customer.id, // Use the retrieved/created Stripe customer ID
+    const sessionConfig = {
+      customer: customer.id,
       line_items: [{
-        price: plan.stripe_price_id, // Use Stripe Price ID directly
+        price: plan.stripe_price_id,
         quantity: 1,
       }],
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { // Session metadata
+      metadata: {
         user_id: user.id,
         user_email: email,
         plan_id: planId,
         is_trial: isTrial ? 'true' : 'false',
-        is_reactivation: isReactivation ? 'true' : 'false'
+        is_reactivation: isReactivation ? 'true' : 'false',
+        free_trial_marked: isTrial ? 'true' : 'false' // ✅ NUEVO: Flag adicional
       },
-      subscription_data: { // Subscription metadata
+      subscription_data: {
         metadata: {
           user_id: user.id,
+          email: email,
           plan_id: planId,
-          is_trial: isTrial ? 'true' : 'false'
+          is_trial: isTrial ? 'true' : 'false',
+          free_trial_marked: isTrial ? 'true' : 'false'
         }
       }
     };
 
     if (isTrial) {
       sessionConfig.subscription_data.trial_period_days = 7;
-      sessionConfig.payment_method_collection = 'always'; // Mandate payment method for trials
+      sessionConfig.payment_method_collection = 'always';
+      
+      // ✅ NUEVO: Configurar para que NO se puedan crear trials duplicados en Stripe
+      sessionConfig.subscription_data.trial_settings = {
+        end_behavior: {
+          missing_payment_method: 'cancel' // Cancelar si no hay método de pago al final
+        }
+      };
     }
 
     console.log('📦 [STRIPE] Creando sesión con config:', sessionConfig);
@@ -165,6 +186,7 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('✅ [CHECKOUT] Sesión creada exitosamente:', session.id);
+    console.log('🔍 [CHECKOUT] free_trial_used marcado:', isTrial);
     
     return Response.json({ 
       url: session.url,

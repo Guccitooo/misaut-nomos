@@ -7,7 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info } from "lucide-react";
+import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
@@ -65,16 +65,27 @@ export default function PricingPlansPage() {
     enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
 
-  // ✅ NUEVO: Filtrar planes según si ya usó el trial
+  // ✅ MEJORADO: Filtrar planes según si ya usó el trial + debug
   const availablePlans = useMemo(() => {
-    if (!user) return plans; // Si no hay usuario, mostrar todos los planes
+    console.log('🔍 [PLANS FILTER] Evaluando planes disponibles...');
+    console.log('👤 [PLANS FILTER] Usuario:', user?.email);
+    console.log('🎁 [PLANS FILTER] free_trial_used:', user?.free_trial_used);
+    console.log('📦 [PLANS FILTER] Total planes:', plans.length);
+    
+    if (!user) {
+      console.log('ℹ️ [PLANS FILTER] Sin usuario, mostrando todos los planes');
+      return plans;
+    }
     
     // Si el usuario ya usó el trial, NO mostrar el plan trial
     if (user.free_trial_used === true) {
-      console.log('🚫 Usuario ya usó periodo gratuito, ocultando plan trial');
-      return plans.filter(plan => plan.plan_id !== 'plan_monthly_trial');
+      console.log('🚫 [PLANS FILTER] Usuario YA usó periodo gratuito, filtrando plan_monthly_trial');
+      const filtered = plans.filter(plan => plan.plan_id !== 'plan_monthly_trial');
+      console.log('✅ [PLANS FILTER] Planes después de filtrar:', filtered.map(p => p.plan_id));
+      return filtered;
     }
     
+    console.log('✅ [PLANS FILTER] Usuario NO ha usado trial, mostrando todos los planes');
     return plans;
   }, [plans, user]);
 
@@ -418,17 +429,6 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* ✅ NUEVO: Mostrar mensaje si ya usó el trial */}
-          {user && user.free_trial_used === true && (
-            <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                <strong>ℹ️ Información:</strong> Ya has utilizado tu periodo de prueba gratuito. 
-                Ahora puedes elegir entre nuestros planes de pago mensuales, trimestrales o anuales.
-              </AlertDescription>
-            </Alert>
-          )}
-
           {user?.user_type === "client" && (
             <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <AlertDescription className="text-blue-900">
@@ -437,11 +437,39 @@ export default function PricingPlansPage() {
               </AlertDescription>
             </Alert>
           )}
+          
+          {/* ✅ MEJORADO: Mostrar mensaje más prominente si ya usó el trial */}
+          {user && user.free_trial_used === true && (
+            <Alert className="mt-6 max-w-2xl mx-auto bg-orange-50 border-orange-300 shadow-lg">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <AlertDescription className="text-orange-900">
+                <strong>⚠️ Periodo gratuito ya utilizado</strong>
+                <p className="mt-2">
+                  Ya has disfrutado de los 7 días de prueba gratuita. 
+                  Ahora puedes elegir entre nuestros planes de pago mensuales, trimestrales o anuales.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {error && (
           <Alert variant="destructive" className="mb-8 max-w-3xl mx-auto">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* ✅ DEBUG INFO (solo si no hay planes disponibles) */}
+        {user && availablePlans.length === 0 && (
+          <Alert className="mb-8 max-w-3xl mx-auto bg-red-50 border-red-300">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-900">
+              <strong>Error:</strong> No hay planes disponibles para mostrar.
+              <p className="text-xs mt-2">
+                Debug: free_trial_used = {user.free_trial_used?.toString() || 'undefined'} | 
+                Total planes: {plans.length}
+              </p>
+            </AlertDescription>
           </Alert>
         )}
 
