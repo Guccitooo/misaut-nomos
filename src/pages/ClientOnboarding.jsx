@@ -189,28 +189,95 @@ export default function ClientOnboardingPage() {
       await base44.integrations.Core.SendEmail({
         to: data.email,
         subject: "¡Bienvenido a MilAutónomos!",
-        body: `Hola ${data.nombre},
-
-¡Bienvenido a MilAutónomos!
-
-Tu cuenta de cliente ha sido creada correctamente.
-
-Ahora puedes:
-✅ Buscar profesionales por categoría y ubicación
-✅ Ver perfiles completos con fotos y valoraciones
-✅ Contactar directamente con autónomos verificados
-✅ Chatear con ellos para coordinar trabajos
-✅ Dejar valoraciones después de contratar
-
-Todo esto de forma 100% GRATUITA.
-
-Servicios que buscas:
-${data.servicios_buscados.join(', ')}
-
-Empieza a buscar profesionales ahora: ${window.location.origin}/search
-
-Gracias por unirte,
-Equipo MilAutónomos`,
+        body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 50px; height: 50px; background: white; border-radius: 12px; display: inline-block; line-height: 50px; font-size: 24px; margin-bottom: 15px; }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .header p { color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .benefits { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 25px; margin: 30px 0; border-radius: 8px; }
+    .benefits h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
+    .benefits ul { margin: 0; padding-left: 20px; color: #4b5563; }
+    .benefits li { margin-bottom: 10px; }
+    .check { color: #10b981; font-weight: bold; }
+    .cta { text-align: center; margin: 35px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+    .services { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; }
+    .services h4 { color: #1f2937; margin: 0 0 10px 0; font-size: 16px; }
+    .services p { color: #6b7280; margin: 0; font-size: 14px; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 30px; text-align: center; font-size: 14px; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 10px; font-size: 16px; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">💼</div>
+      <h1>MilAutónomos</h1>
+      <p>Tu autónomo de confianza</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">¡Hola ${data.nombre}!</p>
+      
+      <p class="message">
+        Bienvenido a <strong>MilAutónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
+      </p>
+      
+      <p class="message">
+        Tu cuenta de cliente ha sido creada correctamente y ya puedes empezar a buscar profesionales en tu zona.
+      </p>
+      
+      <div class="benefits">
+        <h3>¿Qué puedes hacer ahora?</h3>
+        <ul>
+          <li><span class="check">✓</span> Buscar profesionales por categoría y ubicación</li>
+          <li><span class="check">✓</span> Ver perfiles completos con fotos y valoraciones</li>
+          <li><span class="check">✓</span> Contactar directamente con autónomos verificados</li>
+          <li><span class="check">✓</span> Chatear con ellos para coordinar trabajos</li>
+          <li><span class="check">✓</span> Dejar valoraciones después de contratar</li>
+        </ul>
+      </div>
+      
+      <div class="services">
+        <h4>Servicios que buscas:</h4>
+        <p>${data.servicios_buscados.join(', ')}</p>
+      </div>
+      
+      <div class="cta">
+        <a href="https://autonomosmil.es/search" class="button">
+          Buscar Profesionales Ahora →
+        </a>
+      </div>
+      
+      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280;">
+        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar MilAutónomos como cliente.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <strong>Equipo MilAutónomos</strong>
+      <p>Tu autónomo de confianza</p>
+      <p style="margin-top: 15px;">
+        <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a> | 
+        <a href="https://autonomosmil.es">autonomosmil.es</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
         from_name: "MilAutónomos"
       });
 
