@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <ul className="list-disc pl-6 mt-4 space-y-2">
                   <li>Dirección: Madrid, España</li>
-                  <li>Email: privacidad@milautonomos.com</li>
+                  <li>Email: administrador@autonomosmil.es</li>
                   <li>Teléfono: +34 900 123 456</li>
                 </ul>
               </section>
@@ -112,7 +113,7 @@ export default function PrivacyPolicyPage() {
                   <li><strong>Retirar consentimiento:</strong> en cualquier momento</li>
                 </ul>
                 <p className="mt-4 leading-relaxed">
-                  Para ejercer tus derechos, contacta con: <a href="mailto:privacidad@milautonomos.com" className="text-blue-600 hover:underline">privacidad@milautonomos.com</a>
+                  Para ejercer tus derechos, contacta con: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a>
                 </p>
               </section>
 
@@ -168,7 +169,7 @@ export default function PrivacyPolicyPage() {
                   Para cualquier duda sobre esta política de privacidad, contacta con:
                 </p>
                 <ul className="list-none pl-0 mt-4 space-y-2">
-                  <li>📧 Email: <a href="mailto:privacidad@milautonomos.com" className="text-blue-600 hover:underline">privacidad@milautonomos.com</a></li>
+                  <li>📧 Email: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a></li>
                   <li>📞 Teléfono: +34 900 123 456</li>
                   <li>📍 Dirección: Madrid, España</li>
                 </ul>

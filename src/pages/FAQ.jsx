@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -215,7 +216,7 @@ export default function FAQPage() {
                   Centro de Ayuda
                 </Button>
               </Link>
-              <a href="mailto:soporte@milautonomos.com">
+              <a href="mailto:soporte@autonomosmil.es">
                 <Button variant="outline" size="lg">
                   Contactar Soporte
                 </Button>

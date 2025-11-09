@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,8 +99,8 @@ export default function HelpCenterPage() {
               <Mail className="w-12 h-12 text-green-600 mx-auto mb-4" />
               <h3 className="font-semibold text-lg mb-2">Email</h3>
               <p className="text-gray-600 mb-4">Respuesta en 24h</p>
-              <a href="mailto:soporte@milautonomos.com" className="text-green-600 hover:text-green-700 font-medium">
-                soporte@milautonomos.com
+              <a href="mailto:soporte@autonomosmil.es" className="text-green-600 hover:text-green-700 font-medium">
+                soporte@autonomosmil.es
               </a>
             </CardContent>
           </Card>
@@ -156,7 +157,7 @@ export default function HelpCenterPage() {
                   Ver todas las FAQ
                 </Button>
               </Link>
-              <a href="mailto:soporte@milautonomos.com">
+              <a href="mailto:soporte@autonomosmil.es">
                 <Button variant="outline" size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
                   Contactar soporte
                 </Button>
