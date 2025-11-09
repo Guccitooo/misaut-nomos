@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -65,6 +65,19 @@ export default function PricingPlansPage() {
     enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
 
+  // ✅ NUEVO: Filtrar planes según si ya usó el trial
+  const availablePlans = useMemo(() => {
+    if (!user) return plans; // Si no hay usuario, mostrar todos los planes
+    
+    // Si el usuario ya usó el trial, NO mostrar el plan trial
+    if (user.free_trial_used === true) {
+      console.log('🚫 Usuario ya usó periodo gratuito, ocultando plan trial');
+      return plans.filter(plan => plan.plan_id !== 'plan_monthly_trial');
+    }
+    
+    return plans;
+  }, [plans, user]);
+
   // Initial user load on component mount
   useEffect(() => {
     loadUser();
@@ -85,7 +98,8 @@ export default function PricingPlansPage() {
     if (processingPendingPlan) return;
     
     // Esperar a que todo esté cargado: user, plans, y que no haya carga activa
-    if (isLoadingUser || loadingPlans || !user || plans.length === 0) {
+    // We check plans.length === 0, but it should contain all plans including trial for this logic
+    if (isLoadingUser || loadingPlans || !user || plans.length === 0) { 
       return;
     }
 
@@ -101,6 +115,8 @@ export default function PricingPlansPage() {
         localStorage.removeItem('pending_plan_selection');
         
         // Buscar el plan completo en la lista de planes cargados
+        // IMPORTANT: Use `plans` here, not `availablePlans`, because the pending plan
+        // might be the trial, which `availablePlans` might filter out for the current view.
         const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
         
         if (fullPlan) {
@@ -149,7 +165,7 @@ export default function PricingPlansPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
+      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type, 'Trial Used:', currentUser?.free_trial_used);
       return currentUser;
     } catch (error) {
       console.error("Error loading user:", error);
@@ -162,7 +178,7 @@ export default function PricingPlansPage() {
 
   const handleSelectPlan = async (plan) => {
     console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
-    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type);
+    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type, 'Trial Used:', user?.free_trial_used);
     
     // ✅ NUEVO: Verificar si ya tiene este plan activo
     // Check if there's an existing subscription and it's in an active state (activo, en_prueba)
@@ -177,6 +193,14 @@ export default function PricingPlansPage() {
         navigate(createPageUrl("SubscriptionManagement"));
         return;
       }
+    }
+
+    // If user has already used trial and tries to select trial plan again, prevent it.
+    if (user && user.free_trial_used === true && plan.plan_id === 'plan_monthly_trial') {
+        toast.error("Ya has utilizado tu periodo de prueba gratuito.", {
+            duration: 5000
+        });
+        return;
     }
 
     // Si no hay usuario, guardar plan y redirigir a login
@@ -239,7 +263,6 @@ export default function PricingPlansPage() {
         cifNif: "", 
         phone: user.phone || "",
         activity: "Sin especificar", 
-        activityOther: "",
         address: user.city || "Sin especificar", 
         paymentMethod: "stripe",
         planId: plan.plan_id,
@@ -395,6 +418,17 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
+          {/* ✅ NUEVO: Mostrar mensaje si ya usó el trial */}
+          {user && user.free_trial_used === true && (
+            <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                <strong>ℹ️ Información:</strong> Ya has utilizado tu periodo de prueba gratuito. 
+                Ahora puedes elegir entre nuestros planes de pago mensuales, trimestrales o anuales.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {user?.user_type === "client" && (
             <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <AlertDescription className="text-blue-900">
@@ -412,7 +446,7 @@ export default function PricingPlansPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
-          {plans.map((plan) => (
+          {availablePlans.map((plan) => (
             <Card 
               key={plan.plan_id}
               className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 bg-white ${
