@@ -23,60 +23,28 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
-// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+// ✅ HELPER CORREGIDO: Verificar si suscripción está realmente activa
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) return false;
+  if (!estado || !fechaExpiracion) return false;
   
-  // ✅ Normalizar estado (minúsculas, sin espacios)
-  const normalizedState = estado.toLowerCase().trim();
-  
-  const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
-  
-  // Si está en un estado válido
-  if (validStates.includes(normalizedState)) {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const expiration = new Date(fechaExpiracion);
-      expiration.setHours(0, 0, 0, 0);
-      
-      // Si la fecha de expiración no es válida (incluyendo null, undefined, o string no parseable)
-      // y el estado es de un tipo "activo", asumir que está activo según la lógica de la integración
-      if (isNaN(expiration.getTime())) {
-          console.warn('Fecha de expiración inválida o ausente para un estado activo, asumiendo activo:', estado, 'Fecha:', fechaExpiracion);
-          return true; // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
-      }
-      
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiration = new Date(fechaExpiracion);
+    expiration.setHours(0, 0, 0, 0);
+    
+    // ✅ ACTIVO: Si expira en el futuro Y está en un estado válido
+    const validStates = ["activo", "active", "en_prueba", "trialing", "cancelado", "canceled"];
+    
+    if (validStates.includes(estado.toLowerCase().trim())) {
       return expiration >= today;
-    } catch (error) {
-      console.error('Error parseando fecha:', error);
-      // Si hay error parseando fecha (ej: tipo de dato inesperado), pero el estado es válido, asumir que está activo
-      return true;
     }
+    
+    return false;
+  } catch (error) {
+    console.error('Error verificando suscripción:', error);
+    return false;
   }
-  
-  // Si está cancelado pero aún tiene tiempo
-  if (normalizedState === "cancelado" || normalizedState === "canceled") {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const expiration = new Date(fechaExpiracion);
-      expiration.setHours(0, 0, 0, 0);
-      
-      // Si la fecha de expiración no es válida para un estado cancelado, se considera no activo
-      if (isNaN(expiration.getTime())) {
-          console.warn('Fecha de expiración inválida o ausente para estado cancelado:', fechaExpiracion);
-          return false;
-      }
-
-      return expiration >= today;
-    } catch (error) {
-      console.error('Error parseando fecha:', error);
-      return false;
-    }
-  }
-  
-  return false;
 };
 
 export default function MyProfilePage() {
@@ -211,17 +179,6 @@ export default function MyProfilePage() {
     "Zamora": ["Zamora", "Benavente", "Toro", "Villalpando"],
     "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Tudela"]
   };
-
-  // REMOVIDO: Los días de la semana ya no se seleccionan individualmente
-  // const diasSemana = [
-  //   { value: "lunes", label: "Lunes" },
-  //   { value: "martes", label: "Martes" },
-  //   { value: "miercoles", label: "Miércoles" },
-  //   { value: "jueves", label: "Jueves" },
-  //   { value: "viernes", label: "Viernes" },
-  //   { value: "sabado", label: "Sábado" },
-  //   { value: "domingo", label: "Domingo" }
-  // ];
 
   useEffect(() => {
     loadUser();
@@ -532,58 +489,65 @@ export default function MyProfilePage() {
     expirationDate.setHours(0, 0, 0, 0);
     
     const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
-    
-    // ✅ CALCULAR si está activo
-    const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
-    
-    console.log('📊 Estado de suscripción:', {
-      estado: subscription.estado,
-      daysLeft,
-      isActive,
-      today: today.toISOString(),
-      expiration: expirationDate.toISOString()
-    });
+    const isActive = daysLeft > 0; // ✅ SIMPLE: Tiene días = activo
     
     const normalizedState = subscription.estado.toLowerCase();
     
+    console.log('📊 Estado:', {
+      estado: subscription.estado,
+      daysLeft,
+      isActive
+    });
+    
     // 🟡 En periodo de prueba
     if (normalizedState === "en_prueba" || normalizedState === "trialing") {
-      return {
-        text: "Periodo de prueba",
-        badge: "🟡",
-        color: "bg-blue-100 text-blue-800 border border-blue-300",
-        details: isActive ? `${daysLeft} días de prueba restantes` : "Prueba finalizada",
-        isActive: isActive,
-        showUpgrade: true,
-        showReactivate: false
-      };
+      if (isActive) {
+        return {
+          text: "Periodo de prueba activo",
+          badge: "🟡",
+          color: "bg-blue-100 text-blue-800 border border-blue-300",
+          details: `${daysLeft} días restantes de prueba`,
+          message: `Tu perfil está visible hasta el ${expirationDate.toLocaleDateString('es-ES')}. Después necesitarás renovar para seguir apareciendo.`,
+          isActive: true,
+          showManage: true
+        };
+      } else {
+        return {
+          text: "Prueba finalizada",
+          badge: "🔴",
+          color: "bg-red-100 text-red-800 border border-red-300",
+          details: "Tu perfil está oculto",
+          message: "Reactiva tu suscripción para volver a ser visible en búsquedas.",
+          isActive: false,
+          showReactivate: true
+        };
+      }
     }
     
     // 🟢 Activo con pago
-    if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
+    if (normalizedState === "activo" || normalizedState === "active") {
       return {
         text: "Suscripción activa",
         badge: "🟢",
         color: "bg-green-100 text-green-800 border border-green-300",
         details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
+        message: `Tu perfil está visible y se renovará automáticamente el ${expirationDate.toLocaleDateString('es-ES')}.`,
         isActive: true,
-        showUpgrade: false,
-        showReactivate: false
+        showManage: true
       };
     }
     
     // ⚪ Cancelado
     if (normalizedState === "cancelado" || normalizedState === "canceled") {
-      // ✅ CORREGIDO: Verificar REALMENTE si tiene días activos
       if (isActive && daysLeft > 0) {
         return {
-          text: "Suscripción cancelada",
+          text: "Cancelado - Activo hasta fin de periodo",
           badge: "⚪",
-          color: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-          details: `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (${daysLeft} días restantes)`,
-          isActive: true, // ✅ SÍ está activo hasta la fecha
-          showUpgrade: false,
-          showReactivate: false // ✅ NO mostrar "reactivar" mientras tenga días
+          color: "bg-blue-100 text-blue-800 border border-blue-200",
+          details: `${daysLeft} días restantes`,
+          message: `Tu suscripción se mantendrá activa y visible hasta el ${expirationDate.toLocaleDateString('es-ES')}. Después de esa fecha dejarás de aparecer en las búsquedas.`,
+          isActive: true,
+          showManage: true
         };
       } else {
         return {
@@ -591,37 +555,22 @@ export default function MyProfilePage() {
           badge: "🔴",
           color: "bg-red-100 text-red-800 border border-red-300",
           details: "Tu perfil está oculto",
+          message: "Reactiva tu suscripción para volver a ser visible en búsquedas.",
           isActive: false,
-          showUpgrade: false,
-          showReactivate: true // ✅ Mostrar "reactivar" solo cuando YA expiró
+          showReactivate: true
         };
       }
     }
     
-    // 🔴 Finalizada
-    if (normalizedState === "finalizada" || normalizedState === "expired") {
-      return {
-        text: "Suscripción finalizada",
-        badge: "🔴",
-        color: "bg-red-100 text-red-800 border border-red-300",
-        details: "Tu perfil está oculto de las búsquedas",
-        isActive: false,
-        showUpgrade: false,
-        showReactivate: true
-      };
-    }
-    
-    // Estado desconocido
+    // 🔴 Finalizada (default or other states)
     return {
-      text: subscription.estado,
-      badge: isActive ? "🟡" : "🔴",
-      color: isActive 
-        ? "bg-yellow-100 text-yellow-800"
-        : "bg-red-100 text-red-800",
-      details: isActive ? "Activo" : "Inactivo",
-      isActive: isActive,
-      showUpgrade: false,
-      showReactivate: !isActive
+      text: "Suscripción finalizada",
+      badge: "🔴",
+      color: "bg-red-100 text-red-800 border border-red-300",
+      details: "Tu perfil está oculto",
+      message: "Reactiva tu suscripción para volver a ser visible en búsquedas.",
+      isActive: false,
+      showReactivate: true
     };
   };
 
@@ -785,22 +734,6 @@ export default function MyProfilePage() {
     });
   };
 
-  // REMOVIDO: toggleDia ya no es necesario
-  // const toggleDia = (dia) => {
-  //   const dias = profileData.horario_dias;
-  //   if (dias.includes(dia)) {
-  //     setProfileData({
-  //       ...profileData,
-  //       horario_dias: dias.filter(d => d !== dia)
-  //     });
-  //   } else {
-  //     setProfileData({
-  //       ...profileData,
-  //       horario_dias: [...dias, dia]
-  //     });
-  //   }
-  // };
-
   const toggleFormaPago = (forma) => {
     const formas = profileData.formas_pago;
     if (formas.includes(forma)) {
@@ -908,50 +841,6 @@ export default function MyProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {user.role === 'admin' && (
-          <Alert className="mb-6 bg-purple-50 border-purple-200">
-            <AlertCircle className="h-4 w-4 text-purple-600" />
-            <AlertDescription className="text-purple-800 space-y-2">
-              <div><strong>🔧 Debug Info (solo admin):</strong></div>
-              <div className="text-xs font-mono space-y-1">
-                <div>User ID: <code className="bg-purple-100 px-1 rounded">{user.id}</code></div>
-                <div>Email: <code className="bg-purple-100 px-1 rounded">{user.email}</code></div>
-                <div>Subscription Status (User): <code className="bg-purple-100 px-1 rounded">{user.subscription_status || 'null'}</code></div>
-                <div>Subscription Found: <code className="bg-purple-100 px-1 rounded">{subscription ? 'YES' : 'NO'}</code></div>
-                {subscription && (
-                  <>
-                    <div>Subscription ID: <code className="bg-purple-100 px-1 rounded">{subscription.id}</code></div>
-                    <div>Subscription Estado: <code className="bg-purple-100 px-1 rounded">{subscription.estado}</code></div>
-                    <div>Subscription User ID: <code className="bg-purple-100 px-1 rounded">{subscription.user_id}</code></div>
-                  </>
-                )}
-                {!subscription && (
-                  <div className="text-red-700 font-semibold mt-2">
-                    ⚠️ NO SE ENCONTRÓ SUSCRIPCIÓN en la tabla Subscription para este user_id
-                  </div>
-                )}
-              </div>
-              <Button
-                onClick={handleForceSync}
-                disabled={forcingSync}
-                size="sm"
-                className="mt-2 bg-purple-600 hover:bg-purple-700"
-              >
-                {forcingSync ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Sincronizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Forzar sincronización
-                  </>
-                )}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -1062,218 +951,72 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* ✅ MEJORADO: Card para profesionales CON perfil pero SIN suscripción */}
-        {isProfessional && !subscription && profile && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl text-gray-900 mb-1">Cuenta profesional inactiva</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Tu perfil está completo pero oculto. Reactiva tu suscripción para aparecer en búsquedas.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
-                  <p className="text-sm font-semibold text-red-800">
-                    ❌ Tu perfil no es visible para clientes
-                  </p>
-                  <p className="text-xs text-red-700 mt-1">
-                    Todos tus datos, fotos y valoraciones se mantienen guardados. Solo necesitas reactivar tu suscripción.
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-900">
-                    <strong>💡 ¿Qué conservas?</strong>
-                  </p>
-                  <ul className="text-xs text-blue-800 mt-2 space-y-1 ml-4 list-disc">
-                    <li>Tu perfil profesional completo</li>
-                    <li>Todas tus fotos y galería</li>
-                    <li>Tus valoraciones y reseñas ({profile.total_reviews || 0} opiniones)</li>
-                    <li>Tu historial de mensajes</li>
-                    <li>Tus favoritos guardados</li>
-                  </ul>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                    size="lg"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Reactivar suscripción
-                  </Button>
-                  <Button
-                    onClick={handleManualSync}
-                    disabled={manualSyncing}
-                    variant="outline"
-                    size="lg"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    {manualSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Verificar pago
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ MEJORADO: Card para profesionales sin perfil ni suscripción */}
-        {isProfessional && !subscription && !profile && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-yellow-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">Completa tu alta profesional</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Necesitas completar tu perfil y contratar un plan para aparecer en búsquedas.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    Ver planes
-                  </Button>
-                  <Button
-                    onClick={handleManualSync}
-                    disabled={manualSyncing}
-                    variant="outline"
-                    size="sm"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    {manualSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-1" />
-                        Verificar pago
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ MEJORADO: Subscription Card con estados claros */}
+        {/* ✅ Subscription Card REDISEÑADO - Sin mensajes técnicos */}
         {isProfessional && subscription && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-lg text-gray-900">
+                      Mi Suscripción
+                    </h3>
+                    {subscriptionStatus && (
+                      <Badge className={subscriptionStatus.color}>
+                        {subscriptionStatus.badge} {subscriptionStatus.text}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg text-gray-900">
-                        Gestión de Suscripción
-                      </h3>
-                      {subscriptionStatus && (
-                        <Badge className={subscriptionStatus.color}>
-                          {subscriptionStatus.badge} {subscriptionStatus.text}
-                        </Badge>
-                      )}
-                    </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-700">
+                      <strong>Plan:</strong> {subscription.plan_nombre}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      <strong>Expira:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
                     
-                    {/* ✅ Información detallada */}
-                    <div className="text-sm text-gray-700 space-y-1">
-                      <p>
-                        <strong>Plan:</strong> {subscription.plan_nombre}
-                        {(subscription.estado === "en_prueba" || subscription.estado === "trialing") && " (7 días gratis)"}
-                      </p>
-                      <p>
-                        <strong>Estado:</strong> {subscriptionStatus?.details}
-                      </p>
-                      {subscription.fecha_expiracion && (
-                        <p className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <strong>Expira:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
-                        </p>
-                      )}
-                      
-                      {/* ✅ CORREGIDO: Mostrar estado REAL de visibilidad */}
-                      <div className={`mt-2 p-2 rounded-lg ${
-                        profile?.visible_en_busqueda === true
-                          ? 'bg-green-50 border border-green-200' 
-                          : 'bg-red-50 border border-red-200'
+                    {/* ✅ MENSAJE CLARO PARA EL USUARIO */}
+                    {subscriptionStatus?.message && (
+                      <div className={`mt-3 p-3 rounded-lg ${
+                        subscriptionStatus.isActive 
+                          ? 'bg-blue-50 border border-blue-200' 
+                          : 'bg-orange-50 border border-orange-200'
                       }`}>
-                        <p className={`text-sm font-semibold ${
-                          profile?.visible_en_busqueda === true ? 'text-green-800' : 'text-red-800'
+                        <p className={`text-sm font-medium ${
+                          subscriptionStatus.isActive ? 'text-blue-900' : 'text-orange-900'
                         }`}>
-                          {profile?.visible_en_busqueda === true
-                            ? '✅ Tu perfil ES VISIBLE en búsquedas (verificado en BD)' 
-                            : '❌ Tu perfil ESTÁ OCULTO en búsquedas (verificado en BD)'}
+                          {subscriptionStatus.isActive ? '✅' : '⚠️'} {subscriptionStatus.message}
                         </p>
-                        
-                        {/* ✅ NUEVO: Alerta de inconsistencia */}
-                        {subscriptionStatus?.isActive && profile?.visible_en_busqueda !== true && (
-                          <p className="text-xs text-orange-700 mt-2">
-                            ⚠️ PROBLEMA: Tienes suscripción activa pero tu perfil está oculto. 
-                            Prueba el botón "Verificar pago" o contacta soporte.
-                          </p>
-                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
                 
-                <div className="flex flex-col gap-2">
-                  {/* ✅ Botón principal según estado */}
-                  {subscriptionStatus?.isActive && !subscriptionStatus?.showReactivate ? (
+                <div>
+                  {subscriptionStatus?.showManage && (
                     <Button
                       onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
-                      Gestionar suscripción
+                      Gestionar
                     </Button>
-                  ) : (
+                  )}
+                  
+                  {subscriptionStatus?.showReactivate && (
                     <Button
                       onClick={() => navigate(createPageUrl("PricingPlans"))}
                       className="bg-orange-500 hover:bg-orange-600"
                     >
-                      {subscriptionStatus?.showReactivate ? 'Reactivar plan' : 'Ver planes'}
-                    </Button>
-                  )}
-                  
-                  {/* ✅ Botón upgrade (solo para trial) */}
-                  {subscriptionStatus?.showUpgrade && subscriptionStatus?.isActive && (
-                    <Button
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      variant="outline"
-                      className="border-purple-600 text-purple-700 hover:bg-purple-50"
-                      size="sm"
-                    >
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      Mejorar plan
+                      Reactivar plan
                     </Button>
                   )}
                 </div>

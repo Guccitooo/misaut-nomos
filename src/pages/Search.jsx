@@ -421,50 +421,69 @@ export default function SearchPage() {
     refetchOnMount: true,
   });
 
-  // ✅ Filtrar perfiles visibles
+  // ✅ CORREGIDO: Filtrar perfiles visibles CON LÓGICA CORRECTA
   const profiles = useMemo(() => {
     console.log('🔍 Iniciando filtrado de perfiles...');
     console.log('   Total perfiles:', allProfiles.length);
     console.log('   Total suscripciones:', subscriptions.length);
 
     const visibleProfiles = allProfiles.filter(profile => {
-      // Check 1: Onboarding completed
+      // Check 1: Onboarding completado
       if (!profile.onboarding_completed) {
         console.log('❌ Rechazado (sin onboarding):', profile.business_name);
         return false;
       }
       
-      // Check 2: Visible en búsqueda
-      if (!profile.visible_en_busqueda) {
-        console.log('❌ Rechazado (no visible):', profile.business_name);
-        return false;
-      }
-      
-      // Check 3: Estado activo
+      // Check 2: Estado del perfil activo
       if (profile.estado_perfil !== "activo") {
-        console.log('❌ Rechazado (estado no activo):', profile.business_name, '- Estado:', profile.estado_perfil);
+        console.log('❌ Rechazado (estado perfil):', profile.business_name, '- Estado:', profile.estado_perfil);
         return false;
       }
       
-      // Check 4: Tiene suscripción
+      // Check 3: Tiene suscripción
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
       if (!userSub) {
         console.log('❌ Rechazado (sin suscripción):', profile.business_name);
         return false;
       }
       
-      // Check 5: Suscripción activa
-      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-      if (!isActive) {
-        console.log('❌ Rechazado (suscripción inactiva):', profile.business_name, '- Estado:', userSub.estado, '- Expira:', userSub.fecha_expiracion);
+      // Check 4: Suscripción activa (por fecha, NO por campo visible_en_busqueda)
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const expiration = new Date(userSub.fecha_expiracion);
+        expiration.setHours(0, 0, 0, 0);
+        
+        const hasValidDate = expiration >= today;
+        const validStates = ["activo", "active", "en_prueba", "trialing", "cancelado", "canceled", "actif"]; // "actif" added to validStates
+        const hasValidState = validStates.includes(userSub.estado.toLowerCase().trim());
+        
+        const isReallyActive = hasValidDate && hasValidState;
+        
+        if (!isReallyActive) {
+          console.log('❌ Rechazado (suscripción expirada):', profile.business_name, {
+            estado: userSub.estado,
+            expira: expiration.toISOString(),
+            today: today.toISOString(),
+            hasValidDate,
+            hasValidState
+          });
+          return false;
+        }
+        
+        console.log('✅ Aceptado:', profile.business_name, {
+          estado: userSub.estado,
+          dias_restantes: Math.ceil((expiration - today) / (1000 * 60 * 60 * 24))
+        });
+        return true;
+        
+      } catch (error) {
+        console.error('❌ Error verificando fecha:', error);
         return false;
       }
-      
-      console.log('✅ Aceptado:', profile.business_name);
-      return true;
     });
 
-    console.log('🎯 RESULTADO FINAL: ', visibleProfiles.length, 'perfiles visibles');
+    console.log('🎯 RESULTADO: ', visibleProfiles.length, 'perfiles visibles');
     return visibleProfiles;
   }, [allProfiles, subscriptions]);
 

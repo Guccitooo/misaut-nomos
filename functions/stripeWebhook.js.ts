@@ -35,33 +35,25 @@ Deno.serve(async (req) => {
                 const planId = session.metadata?.plan_id;
                 const isTrial = session.metadata?.is_trial === 'true';
                 
-                console.log('📊 Metadata:', { userId, planId, isTrial });
-                
                 if (!userId || !planId) {
-                    console.error('❌ Sin metadata requerido');
+                    console.error('❌ Sin metadata');
                     return Response.json({ received: true });
                 }
 
-                // Recuperar suscripción de Stripe
                 const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
                 
-                console.log('📊 Stripe subscription:', {
-                    id: stripeSubscription.id,
+                console.log('📊 Stripe:', {
                     status: stripeSubscription.status,
-                    current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString()
+                    trial: isTrial,
+                    end: new Date(stripeSubscription.current_period_end * 1000).toISOString()
                 });
 
-                // ✅ CRÍTICO: Marcar trial como usado
+                // ✅ Marcar trial como usado
                 if (isTrial) {
-                    console.log('🎁 Marcando free_trial_used = true para user:', userId);
-                    try {
-                        await base44.asServiceRole.entities.User.update(userId, {
-                            free_trial_used: true
-                        });
-                        console.log('✅ free_trial_used guardado en BD');
-                    } catch (error) {
-                        console.error('❌ ERROR guardando free_trial_used:', error);
-                    }
+                    console.log('🎁 Marcando trial usado');
+                    await base44.asServiceRole.entities.User.update(userId, {
+                        free_trial_used: true
+                    });
                 }
 
                 // Cargar plan
@@ -70,33 +62,23 @@ Deno.serve(async (req) => {
                 });
                 
                 if (!plans[0]) {
-                    console.error('❌ Plan no encontrado:', planId);
+                    console.error('❌ Plan no encontrado');
                     return Response.json({ received: true });
                 }
 
-                const plan = plans[0];
-
-                // ✅ Calcular estado según Stripe
-                let estado, visible, perfilEstado;
-                
+                // ✅ CRÍTICO: Estado según Stripe
+                let estado;
                 if (stripeSubscription.status === 'trialing') {
                     estado = 'en_prueba';
-                    visible = true;
-                    perfilEstado = 'activo';
-                    console.log('🟡 Estado: EN PRUEBA → Visible');
                 } else if (stripeSubscription.status === 'active') {
                     estado = 'activo';
-                    visible = true;
-                    perfilEstado = 'activo';
-                    console.log('🟢 Estado: ACTIVO → Visible');
                 } else {
                     estado = 'pendiente';
-                    visible = false;
-                    perfilEstado = 'pendiente';
-                    console.log('⚪ Estado: PENDIENTE → Oculto');
                 }
 
-                // Guardar/actualizar suscripción
+                console.log('💾 Estado a guardar:', estado);
+
+                // Guardar suscripción
                 const existingSubs = await base44.asServiceRole.entities.Subscription.filter({
                     user_id: userId
                 });
@@ -104,8 +86,8 @@ Deno.serve(async (req) => {
                 const subData = {
                     user_id: userId,
                     plan_id: planId,
-                    plan_nombre: plan.nombre,
-                    plan_precio: plan.precio,
+                    plan_nombre: plans[0].nombre,
+                    plan_precio: plans[0].precio,
                     fecha_inicio: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
                     fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
                     estado: estado,
@@ -115,14 +97,10 @@ Deno.serve(async (req) => {
                     stripe_customer_id: stripeSubscription.customer
                 };
 
-                console.log('💾 Guardando suscripción:', subData);
-
                 if (existingSubs[0]) {
                     await base44.asServiceRole.entities.Subscription.update(existingSubs[0].id, subData);
-                    console.log('✅ Suscripción actualizada');
                 } else {
                     await base44.asServiceRole.entities.Subscription.create(subData);
-                    console.log('✅ Suscripción creada');
                 }
 
                 // Actualizar usuario
@@ -130,25 +108,22 @@ Deno.serve(async (req) => {
                     user_type: 'professionnel',
                     subscription_status: estado
                 });
-                console.log('✅ Usuario actualizado');
 
-                // Actualizar perfil si existe
+                // ✅ CRÍTICO: Actualizar perfil - SIEMPRE visible si tiene fecha futura
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
                 if (profiles[0]) {
-                    console.log('🔄 Actualizando perfil - visible:', visible);
+                    console.log('🔄 Actualizando perfil → VISIBLE');
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                        visible_en_busqueda: visible,
-                        estado_perfil: perfilEstado
+                        visible_en_busqueda: true, // ✅ VISIBLE cuando hay suscripción
+                        estado_perfil: 'activo'
                     });
-                    console.log('✅ Perfil actualizado');
-                } else {
-                    console.log('ℹ️ Perfil no existe aún (se creará en onboarding)');
+                    console.log('✅ Perfil actualizado a VISIBLE');
                 }
 
-                console.log('✅ ========== CHECKOUT PROCESADO ==========');
+                console.log('✅ Checkout procesado');
                 break;
             }
 
@@ -157,36 +132,38 @@ Deno.serve(async (req) => {
                 
                 const stripeSubscription = event.data.object;
                 
-                console.log('📊 Stripe status:', stripeSubscription.status);
-                console.log('📊 Cancel at period end:', stripeSubscription.cancel_at_period_end);
-                console.log('📊 Current period end:', new Date(stripeSubscription.current_period_end * 1000).toISOString());
+                console.log('📊 Stripe:', {
+                    status: stripeSubscription.status,
+                    cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+                    current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString()
+                });
 
                 const subs = await base44.asServiceRole.entities.Subscription.filter({
                     stripe_subscription_id: stripeSubscription.id
                 });
 
                 if (subs.length === 0) {
-                    console.log('⚠️ Suscripción no encontrada en BD');
+                    console.log('⚠️ Suscripción no encontrada');
                     return Response.json({ received: true });
                 }
 
                 const dbSub = subs[0];
-                const today = new Date();
                 const expirationDate = new Date(stripeSubscription.current_period_end * 1000);
+                const today = new Date();
                 const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
-
+                
                 console.log('📅 Días restantes:', daysLeft);
 
-                // ✅ LÓGICA CLARA Y SIMPLE
+                // ✅ LÓGICA CORREGIDA
                 let estado, visible, perfilEstado;
 
                 if (stripeSubscription.status === 'canceled') {
-                    // Si canceló pero aún tiene días → MANTENER VISIBLE
+                    // ✅ CRÍTICO: Si canceló pero tiene días → MANTENER VISIBLE
                     if (daysLeft > 0) {
                         estado = 'cancelado';
-                        visible = true; // ✅ VISIBLE hasta que expire
+                        visible = true; // ✅ VISIBLE hasta expiración
                         perfilEstado = 'activo';
-                        console.log('⚪ CANCELADO pero con días → VISIBLE');
+                        console.log(`⚪ CANCELADO con ${daysLeft} días → VISIBLE hasta ${expirationDate.toLocaleDateString()}`);
                     } else {
                         estado = 'finalizada';
                         visible = false;
@@ -210,35 +187,31 @@ Deno.serve(async (req) => {
                     console.log('🔴 OTRO ESTADO → OCULTO');
                 }
 
-                // Actualizar suscripción
+                // Actualizar BD
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: estado,
-                    fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                    fecha_expiracion: expirationDate.toISOString(),
                     renovacion_automatica: !stripeSubscription.cancel_at_period_end
                 });
-                console.log('✅ Suscripción BD actualizada');
 
-                // Actualizar perfil
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: dbSub.user_id
                 });
 
                 if (profiles[0]) {
-                    console.log('🔄 Actualizando perfil - visible:', visible, '- estado:', perfilEstado);
+                    console.log(`🔄 Actualizando perfil → visible: ${visible}`);
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
                         visible_en_busqueda: visible,
                         estado_perfil: perfilEstado
                     });
-                    console.log('✅ Perfil BD actualizado');
+                    console.log('✅ Perfil actualizado en BD');
                 }
 
-                // Actualizar usuario
                 await base44.asServiceRole.entities.User.update(dbSub.user_id, {
                     subscription_status: estado
                 });
-                console.log('✅ Usuario BD actualizado');
 
-                console.log('✅ ========== ACTUALIZACIÓN COMPLETADA ==========');
+                console.log('✅ Actualización completada');
                 break;
             }
 
@@ -252,24 +225,23 @@ Deno.serve(async (req) => {
                 });
 
                 if (subs.length === 0) {
-                    console.log('⚠️ Suscripción no encontrada');
                     return Response.json({ received: true });
                 }
 
                 const dbSub = subs[0];
                 
-                // Marcar como finalizada
+                // ✅ OCULTAR perfil cuando Stripe elimina la suscripción
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: 'finalizada',
                     renovacion_automatica: false
                 });
 
-                // Ocultar perfil
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: dbSub.user_id
                 });
 
                 if (profiles[0]) {
+                    console.log('🔄 Ocultando perfil');
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
                         visible_en_busqueda: false,
                         estado_perfil: 'inactivo'
@@ -281,7 +253,7 @@ Deno.serve(async (req) => {
                     subscription_status: 'finalizada'
                 });
 
-                console.log('✅ Suscripción eliminada completamente');
+                console.log('✅ Suscripción eliminada');
                 break;
             }
 
@@ -293,7 +265,6 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error('❌ ERROR:', error.message);
-        console.error('Stack:', error.stack);
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
