@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Responsable del tratamiento</h2>
                 <p className="leading-relaxed">
-                  <strong>MilAutónomos</strong> es el responsable del tratamiento de los datos personales que nos facilites. 
+                  <strong>Misautónomos</strong> es el responsable del tratamiento de los datos personales que nos facilites. 
                   Nos comprometemos a proteger tu privacidad y a cumplir con el Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica de Protección de Datos (LOPD).
                 </p>
                 <ul className="list-disc pl-6 mt-4 space-y-2">

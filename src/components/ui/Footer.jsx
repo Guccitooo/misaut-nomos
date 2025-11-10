@@ -22,25 +22,25 @@ export default function Footer() {
             {/* Column 1: About */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
                   <img 
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                    alt="MilAutónomos"
+                    alt="Misautónomos"
                     className="w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
                     }}
                   />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-xl">MilAutónomos</h3>
-                  <p className="text-xs text-gray-400">{t('tagline')}</p>
+                  <h3 className="text-xl font-bold text-gray-900">{t('aboutUs')}</h3>
+                  <p className="text-sm text-gray-600">{t('tagline')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed mb-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
                 {t('platformDescription')}
               </p>
               <div className="flex gap-3">
@@ -107,7 +107,7 @@ export default function Footer() {
             {/* Column 3: Para Clientes */}
             <div>
               <h4 className="text-white font-semibold text-base mb-4">{t('forClients')}</h4>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 <text-sm></text-sm>">
                 <li>
                   <Link to={createPageUrl("Search")} className="hover:text-white transition-colors">
                     {t('searchFreelancers')}
@@ -160,8 +160,8 @@ export default function Footer() {
 
           {/* Bottom Footer */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-            <div className="text-gray-400 text-center md:text-left">
-              © {new Date().getFullYear()} MilAutónomos. {t('allRightsReserved')}.
+            <div className="text-center text-sm text-gray-600">
+              <p>© 2024 Misautónomos. {t('allRightsReserved')}.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to={createPageUrl("PrivacyPolicy")} className="hover:text-white transition-colors">
@@ -192,13 +192,13 @@ export default function Footer() {
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                alt="MilAutónomos"
+                alt="Misautónomos"
                 className="w-full h-full object-cover"
                 loading="lazy"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                  e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
                 }}
               />
             </div>

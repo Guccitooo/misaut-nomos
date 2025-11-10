@@ -596,7 +596,7 @@ function LayoutContent({ children, currentPageName }) {
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                       <img 
                         src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                        alt="MilAutónomos"
+                        alt="Misautónomos"
                         className="w-full h-full object-cover"
                         loading="eager"
                         onError={(e) => {
@@ -607,7 +607,7 @@ function LayoutContent({ children, currentPageName }) {
                       />
                     </div>
                     <div>
-                      <h2 className="font-bold text-xl text-gray-900">MilAutónomos</h2>
+                      <h2 className="font-bold text-xl text-gray-900">Misautónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
                     </div>
                   </Link>
@@ -781,7 +781,7 @@ function LayoutContent({ children, currentPageName }) {
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                          alt="MilAutónomos"
+                          alt="Misautónomos"
                           className="w-full h-full object-cover"
                           loading="eager"
                           onError={(e) => {
@@ -792,7 +792,7 @@ function LayoutContent({ children, currentPageName }) {
                         />
                       </div>
                       <div>
-                        <h1 className="font-bold text-xl text-gray-900">MilAutónomos</h1>
+                        <h1 className="font-bold text-xl text-gray-900">Misautónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
@@ -830,7 +830,7 @@ function LayoutContent({ children, currentPageName }) {
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
-                  <h1 className="font-bold text-lg text-gray-900">MilAutónomos</h1>
+                  <h1 className="font-bold text-lg text-gray-900">Misautónomos</h1>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />

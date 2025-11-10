@@ -34,15 +34,17 @@ export default function TermsConditionsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Aceptación de los términos</h2>
                 <p className="leading-relaxed">
-                  Al acceder y utilizar MilAutónomos, aceptas estar vinculado por estos Términos y Condiciones. 
-                  Si no estás de acuerdo con alguna parte de estos términos, no debes utilizar nuestros servicios.
+                  Al acceder y utilizar la plataforma <strong>Misautónomos</strong>, aceptas estar vinculado por estos 
+                  términos y condiciones. Si no estás de acuerdo con alguno de estos términos, 
+                  por favor no utilices nuestros servicios.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Descripción del servicio</h2>
                 <p className="leading-relaxed mb-4">
-                  MilAutónomos es una plataforma digital que conecta clientes con profesionales autónomos en España. Ofrecemos:
+                  Misautónomos es una plataforma que conecta clientes con profesionales autónomos 
+                  verificados en toda España. Ofrecemos:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Para clientes:</strong> búsqueda gratuita de profesionales, contacto directo, sistema de valoraciones</li>
@@ -182,7 +184,7 @@ export default function TermsConditionsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">13. Contacto</h2>
                 <p className="leading-relaxed">
-                  Para cualquier duda sobre estos términos:
+                  Para cualquier consulta relacionada con estos términos y condiciones, puedes contactarnos en:
                 </p>
                 <ul className="list-none pl-0 mt-4 space-y-2">
                   <li>📧 Email: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a></li>

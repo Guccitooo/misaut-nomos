@@ -121,22 +121,25 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
+    // Define businessName from profile to be used in message creation
+    const businessName = profile.business_name;
+
     const conversationId = [user.id, professionalId].sort().join('_');
 
     const existingMessages = await base44.entities.Message.filter({
-      conversation_id: conversationId
+        conversation_id: conversationId
     });
 
     if (existingMessages.length === 0) {
-      await base44.entities.Message.create({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        recipient_id: professionalId,
-        content: "Hola, estoy interesado en tus servicios.",
-        professional_name: profile.business_name,
-        client_name: user.full_name || user.email,
-        is_read: false
-      });
+        await base44.entities.Message.create({
+            conversation_id: conversationId,
+            sender_id: user.id,
+            recipient_id: professionalId,
+            content: "Hola, estoy interesado en tus servicios.",
+            professional_name: businessName,
+            client_name: user.full_name || user.email,
+            is_read: false
+        });
     }
 
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
