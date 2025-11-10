@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -36,11 +35,11 @@ export default function Footer() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">{t('aboutUs')}</h3>
-                  <p className="text-sm text-gray-600">{t('tagline')}</p>
+                  <h3 className="text-xl font-bold text-white">Misautónomos</h3>
+                  <p className="text-sm text-gray-400">{t('tagline')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-gray-300 leading-relaxed mb-4">
                 {t('platformDescription')}
               </p>
               <div className="flex gap-3">
@@ -107,7 +106,7 @@ export default function Footer() {
             {/* Column 3: Para Clientes */}
             <div>
               <h4 className="text-white font-semibold text-base mb-4">{t('forClients')}</h4>
-              <ul className="space-y-2 <text-sm></text-sm>">
+              <ul className="space-y-2 text-sm">
                 <li>
                   <Link to={createPageUrl("Search")} className="hover:text-white transition-colors">
                     {t('searchFreelancers')}
@@ -160,7 +159,7 @@ export default function Footer() {
 
           {/* Bottom Footer */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-gray-400">
               <p>© 2024 Misautónomos. {t('allRightsReserved')}.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
@@ -203,7 +202,7 @@ export default function Footer() {
               />
             </div>
             <div>
-              <h3 className="text-white font-bold text-base">MilAutónomos</h3>
+              <h3 className="text-white font-bold text-base">Misautónomos</h3>
               <p className="text-[10px] text-gray-400">{t('tagline')}</p>
             </div>
           </div>
@@ -365,7 +364,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-center text-[11px] text-gray-400 mt-4">
-          © {new Date().getFullYear()} MilAutónomos
+          © {new Date().getFullYear()} Misautónomos
         </div>
       </div>
     </footer>
