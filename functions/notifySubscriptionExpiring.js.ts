@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
                     link: 'https://autonomosmil.es/SubscriptionManagement',
                     priority: 'high',
                     sendEmail: true,
-                    emailSubject: '⏰ Tu suscripción en MilAutónomos expira en 3 días',
+                    emailSubject: '⏰ Tu suscripción en Misautónomos expira en 3 días',
                     emailBody: `
 <!DOCTYPE html>
 <html>
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       <p class="greeting">Hola ${user.full_name || 'Profesional'},</p>
       
       <p class="message">
-        Tu suscripción <strong>${subscription.plan_nombre}</strong> en MilAutónomos expira en <strong>3 días</strong> (${expirationDate.toLocaleDateString('es-ES')}).
+        Tu suscripción <strong>${subscription.plan_nombre}</strong> en Misautónomos expira en <strong>3 días</strong> (${expirationDate.toLocaleDateString('es-ES')}).
       </p>
       
       <div class="warning-box">
@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     </div>
     
     <div class="footer">
-      <strong>Equipo MilAutónomos</strong>
+      <strong>Equipo Misautónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
         <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>

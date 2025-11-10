@@ -109,9 +109,12 @@ Deno.serve(async (req) => {
 
         // ✅ Enviar email de confirmación
         try {
-            await base44.integrations.Core.SendEmail({
-                to: user.email,
-                subject: "Suscripción cancelada - MilAutónomos",
+            const userEmail = user.email;
+            const userName = user.full_name || user.email;
+
+            await base44.asServiceRole.integrations.Core.SendEmail({
+                to: userEmail,
+                subject: '❌ Tu suscripción en Misautónomos ha sido cancelada',
                 body: `
 <!DOCTYPE html>
 <html>
@@ -122,18 +125,15 @@ Deno.serve(async (req) => {
     body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
     .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
     .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
     .content { padding: 40px 30px; }
     .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
     .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
-    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 8px; }
-    .warning-box h3 { color: #92400e; margin: 0 0 10px 0; font-size: 18px; }
-    .warning-box p { color: #78350f; margin: 0; line-height: 1.6; }
-    .details { background: #f9fafb; padding: 20px; margin: 25px 0; border-radius: 8px; }
-    .details h3 { color: #1f2937; margin: 0 0 15px 0; font-size: 18px; }
-    .details ul { margin: 0; padding-left: 20px; color: #4b5563; }
-    .details li { margin-bottom: 10px; }
+    .warning-box { background: #fee2e2; border-left: 4px solid #dc2626; padding: 25px; margin: 25px 0; border-radius: 8px; }
+    .warning-box h3 { color: #991b1b; margin: 0 0 15px 0; font-size: 20px; }
+    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .info-box p { color: #1e40af; margin: 0; }
     .cta { text-align: center; margin: 35px 0; }
     .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
     .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
@@ -145,63 +145,52 @@ Deno.serve(async (req) => {
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">💼</div>
-      <h1>Suscripción Cancelada</h1>
+      <div class="logo">❌</div>
+      <h1>Suscripción cancelada</h1>
     </div>
     
     <div class="content">
-      <p class="greeting">Hola ${user.full_name || user.email},</p>
+      <p class="greeting">Hola ${userName},</p>
       
       <p class="message">
-        Tu suscripción a <strong>MilAutónomos</strong> ha sido cancelada correctamente.
+        Tu suscripción en <strong>Misautónomos</strong> ha sido cancelada correctamente.
       </p>
       
-      <div class="details">
-        <h3>📋 Detalles de la cancelación</h3>
-        <ul>
-          <li><strong>Fecha de cancelación:</strong> ${new Date().toLocaleDateString('es-ES')}</li>
-          <li><strong>Perfil activo hasta:</strong> ${new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}</li>
-          <li><strong>Estado actual:</strong> Cancelado - Oculto de búsquedas</li>
-        </ul>
-      </div>
-      
       <div class="warning-box">
-        <h3>⚠️ IMPORTANTE: Tu perfil ya está oculto</h3>
-        <p>
-          Tu perfil profesional ya no aparece en las búsquedas públicas.<br/>
-          No recibirás nuevos contactos de clientes.<br/>
-          Podrás seguir accediendo a tu cuenta hasta la fecha de expiración.
+        <h3>⚠️ Tu cuenta está ahora inactiva</h3>
+        <p style="color: #991b1b; margin: 0;">
+          Tu perfil profesional ya no es visible en las búsquedas y no podrás recibir nuevos contactos de clientes.
         </p>
       </div>
       
-      <div class="details">
-        <h3>💡 ¿Cambias de opinión?</h3>
-        <p>Puedes reactivar tu suscripción en cualquier momento desde tu panel de usuario.</p>
-        <p style="margin-top: 10px;">
-          <strong>Al reactivar conservarás:</strong>
+      <div class="info-box">
+        <p>
+          <strong>📦 Todos tus datos permanecen guardados:</strong><br/>
+          • Tu perfil profesional completo<br/>
+          • Tus fotos y galería de trabajos<br/>
+          • Tus valoraciones y reseñas<br/>
+          • Tu historial de mensajes
         </p>
-        <ul>
-          <li>Tu perfil profesional completo</li>
-          <li>Todas tus fotos y galería</li>
-          <li>Tus valoraciones y reseñas</li>
-          <li>Tu historial de mensajes</li>
-        </ul>
       </div>
+      
+      <p class="message">
+        Puedes reactivar tu cuenta en cualquier momento contratando un nuevo plan.
+      </p>
       
       <div class="cta">
         <a href="https://autonomosmil.es/PricingPlans" class="button">
-          Reactivar mi suscripción →
+          Reactivar mi cuenta →
         </a>
       </div>
       
-      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
-        ¿Necesitas ayuda? Contacta con:<br/>
+      <p class="message" style="font-size: 14px; color: #6b7280; text-align: center;">
+        Si tienes alguna duda, contacta con nosotros:<br/>
         <a href="mailto:soporte@autonomosmil.es" style="color: #3b82f6; text-decoration: none;">soporte@autonomosmil.es</a>
       </p>
     </div>
     
     <div class="footer">
-      <strong>Equipo MilAutónomos</strong>
+      <strong>Equipo Misautónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
         <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>
@@ -212,7 +201,7 @@ Deno.serve(async (req) => {
 </body>
 </html>
                 `,
-                from_name: "MilAutónomos"
+                from_name: 'Misautónomos'
             });
             console.log('✅ Email de cancelación enviado');
         } catch (emailError) {

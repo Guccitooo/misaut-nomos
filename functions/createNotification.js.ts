@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
                         to: user.email,
                         subject: emailSubject || title,
                         body: emailBody || message,
-                        from_name: 'MilAutónomos' // Changed from 'milautonomos' to 'MilAutónomos'
+                        from_name: 'Misautónomos'
                     });
                     console.log('📧 Email enviado a:', user.email);
                 }

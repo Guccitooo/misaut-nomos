@@ -188,7 +188,7 @@ export default function ClientOnboardingPage() {
 
       await base44.integrations.Core.SendEmail({
         to: data.email,
-        subject: "¡Bienvenido a MilAutónomos!",
+        subject: "¡Bienvenido a Misautónomos!",
         body: `
 <!DOCTYPE html>
 <html>
@@ -224,7 +224,7 @@ export default function ClientOnboardingPage() {
   <div class="container">
     <div class="header">
       <div class="logo">💼</div>
-      <h1>MilAutónomos</h1>
+      <h1>Misautónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
     
@@ -232,7 +232,7 @@ export default function ClientOnboardingPage() {
       <p class="greeting">¡Hola ${data.nombre}!</p>
       
       <p class="message">
-        Bienvenido a <strong>MilAutónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
+        Bienvenido a <strong>Misautónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
       </p>
       
       <p class="message">
@@ -262,12 +262,12 @@ export default function ClientOnboardingPage() {
       </div>
       
       <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar MilAutónomos como cliente.
+        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar Misautónomos como cliente.
       </p>
     </div>
     
     <div class="footer">
-      <strong>Equipo MilAutónomos</strong>
+      <strong>Equipo Misautónomos</strong>
       <p>Tu autónomo de confianza</p>
       <p style="margin-top: 15px;">
         <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a> | 
@@ -278,13 +278,13 @@ export default function ClientOnboardingPage() {
 </body>
 </html>
         `,
-        from_name: "MilAutónomos"
+        from_name: "Misautónomos"
       });
 
       return data;
     },
     onSuccess: () => {
-      toast.success("✅ ¡Bienvenido a MilAutónomos! Tu cuenta está lista.");
+      toast.success("✅ ¡Bienvenido a Misautónomos! Tu cuenta está lista.");
       localStorage.removeItem('client_onboarding_pending');
       setTimeout(() => {
         navigate(createPageUrl("Search"));
@@ -445,7 +445,7 @@ export default function ClientOnboardingPage() {
           </p>
           {!user && (
             <p className="text-sm text-blue-600 mt-2">
-              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación de MilAutónomos
+              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación de Misautónomos
             </p>
           )}
         </div>
@@ -492,7 +492,7 @@ export default function ClientOnboardingPage() {
                 )}
                 {!user && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Recibirás un email de verificación de MilAutónomos en esta dirección
+                    Recibirás un email de verificación de Misautónomos en esta dirección
                   </p>
                 )}
               </div>
@@ -685,7 +685,7 @@ export default function ClientOnboardingPage() {
 
               <p className="text-xs text-center text-gray-500">
                 {!user 
-                  ? '📧 Recibirás un email de verificación de MilAutónomos para confirmar tu cuenta'
+                  ? '📧 Recibirás un email de verificación de Misautónomos para confirmar tu cuenta'
                   : 'Al completar el registro podrás buscar y contactar con profesionales de forma gratuita'
                 }
               </p>
@@ -721,3 +721,4 @@ export default function ClientOnboardingPage() {
     </div>
   );
 }
+

@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       <p class="greeting">Hola ${client.full_name || 'Cliente'},</p>
       
       <p class="message">
-        Hace una semana contactaste con <strong>${professionalName}</strong> en MilAutónomos.
+        Hace una semana contactaste con <strong>${professionalName}</strong> en Misautónomos.
       </p>
       
       <div class="highlight-box">
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
     </div>
     
     <div class="footer">
-      <strong>Equipo MilAutónomos</strong>
+      <strong>Equipo Misautónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
         <a href="mailto:info@autonomosmil.es">info@autonomosmil.es</a><br/>
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
   </div>
 </body>
 </html>
-                `
+                    `
             });
             
             remindersSent++;
