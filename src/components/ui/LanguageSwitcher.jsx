@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
@@ -57,6 +58,7 @@ export const translations = {
     aboutUs: "Sobre Nosotros",
     tagline: "Tu autónomo de confianza",
     platformDescription: "La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.",
+    viewProfile: "Ver Perfil", // Added this line
     forProfessionals: "Para Profesionales",
     plansAndPricing: "Planes y Precios",
     createProfile: "Crear Perfil",
@@ -134,6 +136,7 @@ export const translations = {
     aboutUs: "About Us",
     tagline: "Your trusted freelancer",
     platformDescription: "The leading platform to connect clients with verified freelance professionals throughout Spain.",
+    viewProfile: "View Profile", // Added for consistency in EN translation
     forProfessionals: "For Professionals",
     plansAndPricing: "Plans & Pricing",
     createProfile: "Create Profile",
@@ -174,14 +177,27 @@ const LanguageContext = createContext({
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('language') || 'es';
+    // Check if localStorage is available (client-side)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('language') || 'es';
+    }
+    return 'es'; // Default to 'es' if localStorage is not available (server-side rendering)
   });
+
+  useEffect(() => {
+    // Ensure document.documentElement is available (client-side)
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', language);
+    }
+  }, [language]);
 
   const changeLanguage = (lang) => {
     console.log('🌍 Cambiando idioma a:', lang);
     setLanguage(lang);
-    localStorage.setItem('language', lang);
-    document.documentElement.setAttribute('lang', lang);
+    // Check if localStorage is available before using it
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
   };
 
   const t = (key) => {

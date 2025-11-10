@@ -649,7 +649,7 @@ export default function ProfileOnboardingPage() {
       // ✅ Email de bienvenida profesional con diseño mejorado
       await base44.integrations.Core.SendEmail({
         to: user.email,
-        subject: "✅ Tu perfil profesional ya está activo en MilAutónomos",
+        subject: "✅ Tu perfil profesional ya está activo en Misautónomos",
         body: `
 <!DOCTYPE html>
 <html>
@@ -692,7 +692,7 @@ export default function ProfileOnboardingPage() {
   <div class="container">
     <div class="header">
       <div class="logo">💼</div>
-      <h1>MilAutónomos</h1>
+      <h1>Misautónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
     
@@ -705,7 +705,7 @@ export default function ProfileOnboardingPage() {
       </div>
       
       <p class="message">
-        Tu perfil en <strong>MilAutónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
+        Tu perfil en <strong>Misautónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
       </p>
       
       <div class="profile-data">
@@ -742,7 +742,7 @@ export default function ProfileOnboardingPage() {
     </div>
     
     <div class="footer">
-      <strong>Equipo MilAutónomos</strong>
+      <strong>Equipo Misautónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
         <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>
@@ -753,7 +753,7 @@ export default function ProfileOnboardingPage() {
 </body>
 </html>
         `,
-        from_name: "MilAutónomos"
+        from_name: "Misautónomos"
       });
 
       toast.success('¡Perfil completado y publicado correctamente!', {
@@ -894,7 +894,7 @@ export default function ProfileOnboardingPage() {
 
             {/* ✅ Subtítulo - MEJORADO CONTRASTE */}
             <p className="text-lg md:text-xl text-center text-gray-800 font-semibold mb-3 max-w-2xl mx-auto">
-              Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">milautonomos</span>
+              Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">misautonomos</span>
             </p>
 
             <p className="text-base text-center text-gray-700 mb-8 max-w-xl mx-auto">
@@ -1717,7 +1717,7 @@ export default function ProfileOnboardingPage() {
                     Términos y Condiciones
                   </strong>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    He leído y acepto los términos y condiciones de uso de la plataforma MilAutónomos.
+                    He leído y acepto los términos y condiciones de uso de la plataforma Misautónomos.
                   </p>
                 </label>
               </div>
