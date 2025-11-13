@@ -14,8 +14,8 @@ import {
   LayoutDashboard,
   CreditCard,
   AlertCircle,
-  X
-} from "lucide-react";
+  X } from
+"lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,8 +27,8 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+  SidebarTrigger } from
+"@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -71,7 +71,7 @@ function LayoutContent({ children, currentPageName }) {
       window.dataLayer.push(arguments);
     }
     window.gtag = gtag;
-    
+
     gtag('js', new Date());
     gtag('config', 'G-P9DN7YN239', {
       'send_page_view': true
@@ -80,17 +80,17 @@ function LayoutContent({ children, currentPageName }) {
     console.log('✅ Google Analytics 4 inicializado correctamente');
 
     return () => {
+
+
       // Cleanup if needed (though we usually want it to persist)
       // console.log('🔄 Layout desmontado, GA4 script might persist.');
-    };
-  }, []); // Solo ejecutar una vez al montar
-
+    };}, []); // Solo ejecutar una vez al montar
   // ✅ NUEVO: Rastrear cambios de página en Google Analytics
   useEffect(() => {
     if (window.gtag) {
       window.gtag('event', 'page_view', {
         page_path: location.pathname,
-        page_title: currentPageName || document.title,
+        page_title: currentPageName || document.title
       });
       console.log('📊 GA4 Page View:', location.pathname, 'Title:', currentPageName || document.title);
     }
@@ -99,35 +99,35 @@ function LayoutContent({ children, currentPageName }) {
 
   // ✅ NUEVO: Rutas donde NO se debe mostrar la barra inferior
   const hideBottomBarRoutes = [
-    createPageUrl("UserTypeSelection"),
-    createPageUrl("ProfileOnboarding"),
-    createPageUrl("ClientOnboarding"),
-    createPageUrl("PricingPlans"),
-    createPageUrl("Onboarding")
-  ];
+  createPageUrl("UserTypeSelection"),
+  createPageUrl("ProfileOnboarding"),
+  createPageUrl("ClientOnboarding"),
+  createPageUrl("PricingPlans"),
+  createPageUrl("Onboarding")];
+
 
   // ✅ NUEVO: Determinar si se debe mostrar la barra inferior
   const shouldShowBottomBar = () => {
     // 1. No mostrar si no hay usuario
     if (!user) return false;
-    
+
     // 2. No mostrar en rutas específicas
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
-    
+
     // 3. No mostrar si el usuario no tiene tipo definido (debería tenerlo si user existe)
     if (!user.user_type) return false;
-    
+
     // 4. Si es profesional, verificar que haya completado onboarding
     if (user.user_type === "professionnel") {
       // Si no hay perfil cargado aún, no mostrar
       if (professionalProfile === null) return false; // Use null to distinguish between not loaded and no profile found
-      
+
       // Si el perfil no está completo o no es visible, no mostrar
       if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
         return false;
       }
     }
-    
+
     // 5. En todos los demás casos, mostrar la barra
     return true;
   };
@@ -154,7 +154,7 @@ function LayoutContent({ children, currentPageName }) {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      
+
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
@@ -205,8 +205,8 @@ function LayoutContent({ children, currentPageName }) {
 
       const activeStates = ["activo", "en_prueba", "trialing"];
       const hasActive = subscriptions.length > 0 &&
-                       activeStates.some(state => subscriptions[0].estado.includes(state));
-      
+      activeStates.some((state) => subscriptions[0].estado.includes(state));
+
       setHasActiveSubscription(hasActive);
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -221,13 +221,13 @@ function LayoutContent({ children, currentPageName }) {
     }
 
     const allowedPaths = [
-      createPageUrl("ProfileOnboarding"),
-      createPageUrl("UserTypeSelection"),
-      createPageUrl("MyProfile"), // ✅ NUEVO: Permitir acceso a Mi Perfil
-      createPageUrl("PricingPlans"), // ✅ NUEVO: Permitir acceso a Planes
-      createPageUrl("SubscriptionManagement"), // ✅ NUEVO: Permitir gestión
-      "/logout"
-    ];
+    createPageUrl("ProfileOnboarding"),
+    createPageUrl("UserTypeSelection"),
+    createPageUrl("MyProfile"), // ✅ NUEVO: Permitir acceso a Mi Perfil
+    createPageUrl("PricingPlans"), // ✅ NUEVO: Permitir acceso a Planes
+    createPageUrl("SubscriptionManagement"), // ✅ NUEVO: Permitir gestión
+    "/logout"];
+
 
     if (allowedPaths.includes(location.pathname)) {
       setNeedsOnboarding(false);
@@ -243,7 +243,7 @@ function LayoutContent({ children, currentPageName }) {
       // NO redirigir solo porque visible_en_busqueda = false (eso es suscripción cancelada)
       if (!profiles[0] || !profiles[0].onboarding_completed) {
         setNeedsOnboarding(true);
-        
+
         if (location.pathname !== createPageUrl("ProfileOnboarding")) {
           setTimeout(() => {
             navigate(createPageUrl("ProfileOnboarding"));
@@ -285,75 +285,75 @@ function LayoutContent({ children, currentPageName }) {
 
   const getDisplayName = () => {
     if (!user) return "";
-    
+
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
-    
+
     if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
-    
+
     if (user.email) {
       const username = user.email.split('@')[0];
       const cleaned = username.replace(/\d+$/g, '');
-      
+
       if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
-        return cleaned
-          .split(/[-._]/)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
+        return cleaned.
+        split(/[-._]/).
+        map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).
+        join(' ');
       }
-      
+
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
     }
-    
+
     return "Usuario";
   };
 
   const navigationItems = [
-    {
-      title: t('searchFreelancers'),
-      url: createPageUrl("Search"),
-      icon: Search,
-    },
-    {
-      title: t('messages'),
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      badge: unreadCount > 0 ? unreadCount : null
-    },
-    {
-      title: t('favorites'),
-      url: createPageUrl("Favorites"),
-      icon: Heart,
-    },
-    {
-      title: t('myProfile'),
-      url: createPageUrl("MyProfile"),
-      icon: User,
-    },
-  ];
+  {
+    title: t('searchFreelancers'),
+    url: createPageUrl("Search"),
+    icon: Search
+  },
+  {
+    title: t('messages'),
+    url: createPageUrl("Messages"),
+    icon: MessageSquare,
+    badge: unreadCount > 0 ? unreadCount : null
+  },
+  {
+    title: t('favorites'),
+    url: createPageUrl("Favorites"),
+    icon: Heart
+  },
+  {
+    title: t('myProfile'),
+    url: createPageUrl("MyProfile"),
+    icon: User
+  }];
+
 
   if (user?.user_type === "professionnel") {
     if (hasActiveSubscription) {
       navigationItems.push({
         title: t('mySubscription'),
         url: createPageUrl("SubscriptionManagement"),
-        icon: Briefcase,
+        icon: Briefcase
       });
     } else {
       navigationItems.push({
         title: t('viewPlans'),
         url: createPageUrl("PricingPlans"),
-        icon: CreditCard,
+        icon: CreditCard
       });
     }
   } else if (!user || user?.user_type === "client") {
     navigationItems.push({
       title: t('viewPlans'),
       url: createPageUrl("PricingPlans"),
-      icon: CreditCard,
+      icon: CreditCard
     });
   }
 
@@ -361,7 +361,7 @@ function LayoutContent({ children, currentPageName }) {
     navigationItems.push({
       title: t('administration'),
       url: createPageUrl("AdminDashboard"),
-      icon: LayoutDashboard,
+      icon: LayoutDashboard
     });
   }
 
@@ -382,8 +382,8 @@ function LayoutContent({ children, currentPageName }) {
             </AlertDescription>
           </Alert>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -589,25 +589,25 @@ function LayoutContent({ children, currentPageName }) {
           {/* New div to contain sidebar and main content, taking up available space */}
           <div className="flex flex-1">
             {/* ✅ Desktop Sidebar - SOLO SI HAY USUARIO LOGUEADO */}
-            {user && (
-              <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
+            {user &&
+            <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                      <img 
-                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                        alt="Misautónomos"
-                        className="w-full h-full object-cover"
-                        loading="eager"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                        }}
-                      />
+                      <img
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
+                      alt="Misautónomos"
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                      }} />
+
                     </div>
                     <div>
-                      <h2 className="font-bold text-xl text-gray-900">Misautónomos</h2>
+                      <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
                     </div>
                   </Link>
@@ -617,26 +617,26 @@ function LayoutContent({ children, currentPageName }) {
                   <SidebarGroup>
                     <SidebarGroupContent>
                       <SidebarMenu>
-                        {navigationItems.map((item) => (
-                          <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton 
-                              asChild 
-                              className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
-                                location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
-                              }`}
-                            >
+                        {navigationItems.map((item) =>
+                      <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton
+                          asChild
+                          className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
+                          location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''}`
+                          }>
+
                               <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                                 <item.icon className="w-5 h-5" />
                                 <span className="font-medium">{item.title}</span>
-                                {item.badge && (
-                                  <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                                {item.badge &&
+                            <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                                     {item.badge}
                                   </span>
-                                )}
+                            }
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
-                        ))}
+                      )}
                       </SidebarMenu>
                     </SidebarGroupContent>
                   </SidebarGroup>
@@ -666,40 +666,40 @@ function LayoutContent({ children, currentPageName }) {
                     </div>
                     
                     <Button
-                      variant="outline"
-                      className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
-                      onClick={handleLogout}
-                    >
+                    variant="outline"
+                    className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                    onClick={handleLogout}>
+
                       <LogOut className="w-4 h-4 mr-2" />
                       {t('logout')}
                     </Button>
                   </div>
                 </SidebarFooter>
               </Sidebar>
-            )}
+            }
 
             {/* ✅ Mobile Menu Overlay */}
-            {mobileMenuOpen && (
-              <>
-                <div 
-                  className="mobile-menu-overlay lg:hidden" 
-                  onClick={() => setMobileMenuOpen(false)}
-                />
+            {mobileMenuOpen &&
+            <>
+                <div
+                className="mobile-menu-overlay lg:hidden"
+                onClick={() => setMobileMenuOpen(false)} />
+
                 <div className="mobile-menu lg:hidden">
                   <div className="flex items-center justify-between p-4 border-b">
                     <h2 className="font-bold text-lg">Menú</h2>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileMenuOpen(false)}>
+
                       <X className="w-5 h-5" />
                     </Button>
                   </div>
                   
                   <div className="p-3">
-                    {user && (
-                      <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
+                    {user &&
+                  <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                             {getDisplayName().charAt(0).toUpperCase()}
@@ -714,39 +714,39 @@ function LayoutContent({ children, currentPageName }) {
                           </p>
                         </div>
                       </div>
-                    )}
+                  }
                     
-                    {navigationItems.map((item) => (
-                      <Link
-                        key={item.title}
-                        to={item.url}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                          location.pathname === item.url
-                            ? 'bg-blue-600 text-white'
-                            : 'hover:bg-gray-100'
-                        }`}
-                      >
+                    {navigationItems.map((item) =>
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                    location.pathname === item.url ?
+                    'bg-blue-600 text-white' :
+                    'hover:bg-gray-100'}`
+                    }>
+
                         <item.icon className="w-5 h-5" />
                         <span className="font-medium flex-1">{item.title}</span>
-                        {item.badge && (
-                          <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                        {item.badge &&
+                    <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
                             {item.badge}
                           </span>
-                        )}
+                    }
                       </Link>
-                    ))}
+                  )}
                     
                     {/* ✅ Selector de idioma en menú móvil */}
                     <div className="mt-4 mb-4 px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
                     
-                    {!user ? (
-                      <div className="mt-4 space-y-2">
+                    {!user ?
+                  <div className="mt-4 space-y-2">
                         <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                          onClick={handleLogin}
-                        >
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={handleLogin}>
+
                           <User className="w-4 h-4 mr-2" />
                           {t('login')}
                         </Button>
@@ -756,40 +756,40 @@ function LayoutContent({ children, currentPageName }) {
                             {t('becomeFreelancer')}
                           </Button>
                         </Link>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full mt-4"
-                        onClick={handleLogout}
-                      >
+                      </div> :
+
+                  <Button
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={handleLogout}>
+
                         <LogOut className="w-4 h-4 mr-2" />
                         {t('logout')}
                       </Button>
-                    )}
+                  }
                   </div>
                 </div>
               </>
-            )}
+            }
 
             <main className="flex-1 flex flex-col overflow-hidden">
               {/* ✅ Desktop Header - CON NOTIFICACIONES */}
-              {!user && (
-                <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
+              {!user &&
+              <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                        <img 
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                          alt="Misautónomos"
-                          className="w-full h-full object-cover"
-                          loading="eager"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.style.display = 'none';
-                            e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                          }}
-                        />
+                        <img
+                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
+                        alt="Misautónomos"
+                        className="w-full h-full object-cover"
+                        loading="eager"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
+                        }} />
+
                       </div>
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">Misautónomos</h1>
@@ -799,10 +799,10 @@ function LayoutContent({ children, currentPageName }) {
                     
                     <div className="flex items-center gap-3">
                       <Button
-                        variant="ghost"
-                        className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={handleLogin}
-                      >
+                      variant="ghost"
+                      className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={handleLogin}>
+
                         <User className="w-4 h-4 mr-2" />
                         {t('login')}
                       </Button>
@@ -817,7 +817,7 @@ function LayoutContent({ children, currentPageName }) {
                     </div>
                   </div>
                 </header>
-              )}
+              }
 
               {/* ✅ Mobile Header - CON NOTIFICACIONES */}
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
@@ -826,8 +826,8 @@ function LayoutContent({ children, currentPageName }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="hover:bg-gray-100"
-                  >
+                    className="hover:bg-gray-100">
+
                     <Menu className="w-6 h-6" />
                   </Button>
                   <h1 className="font-bold text-lg text-gray-900">Misautónomos</h1>
@@ -847,25 +847,25 @@ function LayoutContent({ children, currentPageName }) {
               <Footer />
 
               {/* ✅ Mobile Bottom Navigation - NUNCA EN DESKTOP */}
-              {shouldShowBottomBar() && (
-                <nav className="mobile-bottom-nav">
-                  {navigationItems.slice(0, 4).map((item) => (
-                    <Link
-                      key={item.title}
-                      to={item.url}
-                      className={`mobile-bottom-nav-item ${
-                        location.pathname === item.url ? 'active' : ''
-                      }`}
-                    >
+              {shouldShowBottomBar() &&
+              <nav className="mobile-bottom-nav">
+                  {navigationItems.slice(0, 4).map((item) =>
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`mobile-bottom-nav-item ${
+                  location.pathname === item.url ? 'active' : ''}`
+                  }>
+
                       <item.icon className="w-6 h-6" />
                       <span>{item.title.split(' ')[0]}</span>
-                      {item.badge && (
-                        <span className="mobile-bottom-nav-badge">{item.badge}</span>
-                      )}
+                      {item.badge &&
+                  <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                  }
                     </Link>
-                  ))}
+                )}
                 </nav>
-              )}
+              }
             </main>
           </div>
 
@@ -873,8 +873,8 @@ function LayoutContent({ children, currentPageName }) {
           <CookieBanner />
         </div>
       </SidebarProvider>
-    </>
-  );
+    </>);
+
 }
 
 // ✅ Wrapper con LanguageProvider para que el contexto esté disponible
@@ -882,6 +882,6 @@ export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
       <LayoutContent children={children} currentPageName={currentPageName} />
-    </LanguageProvider>
-  );
+    </LanguageProvider>);
+
 }
