@@ -6,7 +6,7 @@ import { Loader2, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import OptimizedImage from "../ui/OptimizedImage";
 
-export default function ProfilePictureUpload({ user, currentPicture, onUpdate, size = "lg" }) {
+export default function ProfilePictureUpload({ user, currentPicture, onUpdate, size = "lg", allowedForClients = true }) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentPicture);
   
@@ -39,9 +39,13 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
     reader.readAsDataURL(file);
     
     try {
+      console.log('📤 Subiendo foto de perfil...');
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      console.log('✅ Foto subida correctamente:', file_url);
       
+      console.log('💾 Guardando URL en usuario...');
       await base44.auth.updateMe({ profile_picture: file_url });
+      console.log('✅ URL guardada en BD');
       
       setPreviewUrl(file_url);
       
@@ -49,10 +53,10 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
         onUpdate(file_url);
       }
       
-      toast.success("✅ Foto de perfil actualizada");
+      toast.success("✅ Foto de perfil actualizada correctamente");
     } catch (error) {
-      console.error("Error uploading profile picture:", error);
-      toast.error("Error al subir la foto");
+      console.error("❌ Error uploading profile picture:", error);
+      toast.error("Error al subir la foto: " + error.message);
       setPreviewUrl(currentPicture);
     } finally {
       setUploading(false);
@@ -60,6 +64,10 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
   };
 
   const handleRemove = async () => {
+    if (!confirm('¿Seguro que quieres eliminar tu foto de perfil?')) {
+      return;
+    }
+
     try {
       await base44.auth.updateMe({ profile_picture: "" });
       setPreviewUrl(null);
@@ -68,7 +76,7 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
         onUpdate("");
       }
       
-      toast.success("Foto eliminada");
+      toast.success("Foto eliminada correctamente");
     } catch (error) {
       console.error("Error removing profile picture:", error);
       toast.error("Error al eliminar la foto");
@@ -119,7 +127,7 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
           </div>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
             className="hidden"
             onChange={handleUpload}
             disabled={uploading}
@@ -129,7 +137,7 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
         {previewUrl && (
           <button
             onClick={handleRemove}
-            className="absolute top-0 left-0 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+            className="absolute top-0 left-0 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
             aria-label="Eliminar foto"
           >
             <X className="w-4 h-4 text-white" />

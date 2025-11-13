@@ -14,7 +14,35 @@ export default function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
+  const [actualSrc, setActualSrc] = useState(src);
   const imgRef = useRef(null);
+
+  useEffect(() => {
+    console.log('🖼️ OptimizedImage montado:', { src, priority, width, height });
+    
+    if (!src || src.trim() === '') {
+      console.log('❌ URL vacía, mostrando fallback');
+      setError(true);
+      setIsLoading(false);
+      return;
+    }
+
+    if (src.startsWith('blob:') || src.startsWith('data:')) {
+      console.log('✅ Preview local detectado');
+      setActualSrc(src);
+      setIsInView(true);
+      return;
+    }
+
+    if (!src.startsWith('http://') && !src.startsWith('https://')) {
+      console.log('⚠️ URL no válida:', src);
+      setError(true);
+      setIsLoading(false);
+      return;
+    }
+
+    setActualSrc(src);
+  }, [src]);
 
   useEffect(() => {
     if (priority) {
@@ -44,11 +72,13 @@ export default function OptimizedImage({
   }, [priority]);
 
   const handleLoad = () => {
+    console.log('✅ Imagen cargada:', actualSrc);
     setIsLoading(false);
     setError(false);
   };
 
-  const handleError = () => {
+  const handleError = (e) => {
+    console.error('❌ Error cargando imagen:', actualSrc, e);
     setIsLoading(false);
     setError(true);
   };
@@ -68,9 +98,9 @@ export default function OptimizedImage({
       {isLoading && (
         <div className={`absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse`} />
       )}
-      {isInView && src && (
+      {isInView && actualSrc && (
         <img
-          src={src}
+          src={actualSrc}
           alt={alt}
           width={width}
           height={height}
@@ -83,6 +113,7 @@ export default function OptimizedImage({
           onLoad={handleLoad}
           onError={handleError}
           decoding={priority ? "sync" : "async"}
+          crossOrigin="anonymous"
         />
       )}
     </div>

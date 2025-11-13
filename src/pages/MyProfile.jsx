@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -287,6 +288,8 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
+      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -462,9 +465,11 @@ export default function MyProfilePage() {
   });
 
   const handleSave = () => {
+    console.log('💾 Guardando datos de usuario:', userData);
     updateUserMutation.mutate(userData);
     
     if (profile || profileData.business_name) {
+      console.log('💾 Guardando datos de perfil profesional:', profileData);
       updateProfileMutation.mutate(profileData);
     }
   };
@@ -618,7 +623,7 @@ export default function MyProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
@@ -641,7 +646,7 @@ export default function MyProfilePage() {
           {!isEditing ? (
             <div className="flex gap-2">
               <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-                Editar
+                Editar Perfil
               </Button>
               {!isProfessional && (
                 <Button 
@@ -694,7 +699,7 @@ export default function MyProfilePage() {
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
                     <Briefcase className="w-6 h-6 text-white" />
@@ -708,7 +713,7 @@ export default function MyProfilePage() {
                 </div>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
                   Ver Planes
@@ -756,12 +761,17 @@ export default function MyProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* ✅ FOTO DE PERFIL - Disponible para TODOS (clientes y autónomos) */}
                 <div className="flex justify-center py-4">
                   <ProfilePictureUpload
                     user={user}
                     currentPicture={user?.profile_picture}
-                    onUpdate={() => loadUser()}
+                    onUpdate={(newUrl) => {
+                      console.log('🔄 Foto actualizada, recargando usuario...');
+                      loadUser();
+                    }}
                     size="lg"
+                    allowedForClients={true}
                   />
                 </div>
 
