@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
+import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 
 // ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
@@ -532,6 +534,7 @@ export default function MyProfilePage() {
     refetchOnWindowFocus: true,
   });
 
+  // ✅ MEJORADO: getSubscriptionStatus SIN mensajes técnicos
   const getSubscriptionStatus = () => {
     if (!subscription) return null;
     
@@ -542,17 +545,8 @@ export default function MyProfilePage() {
     expirationDate.setHours(0, 0, 0, 0);
     
     const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
-    
-    // ✅ USAR HELPER PARA DETERMINAR SI ESTÁ ACTIVO
     const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
     
-    console.log('📊 Estado de suscripción:', {
-      estado: subscription.estado,
-      daysLeft,
-      isActive
-    });
-    
-    // ✅ NORMALIZAR ESTADOS
     const normalizedState = subscription.estado.toLowerCase();
     
     if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
@@ -595,26 +589,13 @@ export default function MyProfilePage() {
       };
     }
     
-    if (normalizedState === "finalizada" || normalizedState === "expired") {
-      return {
-        text: "Suscripción finalizada",
-        badge: "🔴",
-        color: "bg-red-100 text-red-800 border border-red-300",
-        details: "Tu perfil está oculto de las búsquedas",
-        isActive: false,
-        showUpgrade: false,
-        showReactivate: true
-      };
-    }
-    
-    // Estado desconocido, verificar por fecha
     return {
-      text: subscription.estado,
-      badge: isActive ? "🟡" : "🔴",
+      text: isActive ? "Suscripción activa" : "Suscripción inactiva",
+      badge: isActive ? "🟢" : "🔴",
       color: isActive 
-        ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+        ? "bg-green-100 text-green-800 border border-green-300"
         : "bg-red-100 text-red-800 border border-red-300",
-      details: isActive ? "Activo" : "Inactivo",
+      details: isActive ? `Válido hasta ${expirationDate.toLocaleDateString('es-ES')}` : "Reactiva tu plan para aparecer en búsquedas",
       isActive: isActive,
       showUpgrade: false,
       showReactivate: !isActive
@@ -896,66 +877,23 @@ export default function MyProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {user.role === 'admin' && (
-          <Alert className="mb-6 bg-purple-50 border-purple-200">
-            <AlertCircle className="h-4 w-4 text-purple-600" />
-            <AlertDescription className="text-purple-800 space-y-2">
-              <div><strong>🔧 Debug Info (solo admin):</strong></div>
-              <div className="text-xs font-mono space-y-1">
-                <div>User ID: <code className="bg-purple-100 px-1 rounded">{user.id}</code></div>
-                <div>Email: <code className="bg-purple-100 px-1 rounded">{user.email}</code></div>
-                <div>Subscription Status (User): <code className="bg-purple-100 px-1 rounded">{user.subscription_status || 'null'}</code></div>
-                <div>Subscription Found: <code className="bg-purple-100 px-1 rounded">{subscription ? 'YES' : 'NO'}</code></div>
-                {subscription && (
-                  <>
-                    <div>Subscription ID: <code className="bg-purple-100 px-1 rounded">{subscription.id}</code></div>
-                    <div>Subscription Estado: <code className="bg-purple-100 px-1 rounded">{subscription.estado}</code></div>
-                    <div>Subscription User ID: <code className="bg-purple-100 px-1 rounded">{subscription.user_id}</code></div>
-                  </>
-                )}
-                {!subscription && (
-                  <div className="text-red-700 font-semibold mt-2">
-                    ⚠️ NO SE ENCONTRÓ SUSCRIPCIÓN en la tabla Subscription para este user_id
-                  </div>
-                )}
-              </div>
-              <Button
-                onClick={handleForceSync}
-                disabled={forcingSync}
-                size="sm"
-                className="mt-2 bg-purple-600 hover:bg-purple-700"
-              >
-                {forcingSync ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Sincronizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Forzar sincronización
-                  </>
-                )}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
+        
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
               {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
+            {/* ✅ SIMPLIFICADO: Badge de visibilidad SIN mensajes técnicos */}
             {profile && (
               <div className="mt-2 flex gap-2">
                 {subscriptionStatus?.isActive ? (
                   <Badge className="bg-green-100 text-green-800">
-                    ✓ Visible en búsquedas
+                    ✓ Visible para clientes
                   </Badge>
                 ) : (
                   <Badge className="bg-red-100 text-red-800">
-                    ⚠ Oculto en búsquedas
+                    ⚠ Perfil oculto
                   </Badge>
                 )}
               </div>
@@ -1014,6 +952,15 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
+        {/* ✅ NUEVO: Barra de completitud */}
+        {isProfessional && profile && !isEditing && (
+          <ProfileCompleteness 
+            profile={profile} 
+            user={user}
+            onEdit={() => setIsEditing(true)}
+          />
+        )}
+
         {/* ✅ MODIFICADO: Card de conversión para clientes */}
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
@@ -1042,7 +989,7 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* ✅ MEJORADO: Card para profesionales CON perfil pero SIN suscripción */}
+        {/* ✅ MEJORADO: Card para profesionales sin suscripción - SIN mensajes técnicos */}
         {isProfessional && !subscription && profile && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
             <CardContent className="p-6">
@@ -1052,33 +999,23 @@ export default function MyProfilePage() {
                     <AlertCircle className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-xl text-gray-900 mb-1">Cuenta profesional inactiva</h3>
+                    <h3 className="font-bold text-xl text-gray-900 mb-1">Perfil profesional inactivo</h3>
                     <p className="text-sm text-gray-700 mb-2">
-                      Tu perfil está completo pero oculto. Reactiva tu suscripción para aparecer en búsquedas.
+                      Reactiva tu suscripción para que los clientes puedan encontrarte
                     </p>
                   </div>
                 </div>
 
                 <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
                   <p className="text-sm font-semibold text-red-800">
-                    ❌ Tu perfil no es visible para clientes
-                  </p>
-                  <p className="text-xs text-red-700 mt-1">
-                    Todos tus datos, fotos y valoraciones se mantienen guardados. Solo necesitas reactivar tu suscripción.
+                    ❌ Tu perfil no aparece en las búsquedas
                   </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-900">
-                    <strong>💡 ¿Qué conservas?</strong>
+                    <strong>💡 Conservas:</strong> Perfil completo • {profile.total_reviews || 0} opiniones • Fotos • Historial
                   </p>
-                  <ul className="text-xs text-blue-800 mt-2 space-y-1 ml-4 list-disc">
-                    <li>Tu perfil profesional completo</li>
-                    <li>Todas tus fotos y galería</li>
-                    <li>Tus valoraciones y reseñas ({profile.total_reviews || 0} opiniones)</li>
-                    <li>Tu historial de mensajes</li>
-                    <li>Tus favoritos guardados</li>
-                  </ul>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -1254,7 +1191,7 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* User Info */}
+        {/* ✅ MODIFICADO: User Info con foto de perfil */}
         <Card className="mb-6 shadow-lg border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1263,6 +1200,16 @@ export default function MyProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* ✅ NUEVO: Foto de perfil */}
+            <div className="flex justify-center py-4">
+              <ProfilePictureUpload
+                user={user}
+                currentPicture={user?.profile_picture}
+                onUpdate={() => loadUser()}
+                size="lg"
+              />
+            </div>
+
             <div>
               <Label>Email</Label>
               <Input value={user.email} disabled className="bg-gray-50" />

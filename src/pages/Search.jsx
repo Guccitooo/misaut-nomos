@@ -148,7 +148,7 @@ const CategoryBadge = React.memo(({ category }) => {
   );
 });
 
-const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount }) => {
+const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount, profileUser }) => {
   const { t } = useLanguage();
   
   const formatPhoneForCall = (phone) => {
@@ -172,25 +172,44 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
       <CardContent className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-2 h-12">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
-                onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
-              {profile.business_name}
-            </h3>
-            {profile.average_rating > 0 ? (
-              <div className="flex items-center gap-1 mt-1">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-sm font-semibold text-gray-700">
-                  {profile.average_rating.toFixed(1)}
-                </span>
-                <span className="text-xs text-gray-500">
-                  ({profile.total_reviews})
-                </span>
+        <div className="flex items-start justify-between mb-2 h-16">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* ✅ NUEVO: Avatar con foto de perfil */}
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100">
+                {profileUser?.profile_picture ? (
+                  <img 
+                    src={profileUser.profile_picture} 
+                    alt={profile.business_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-lg">
+                    {profile.business_name?.charAt(0)}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="h-5 mt-1"></div>
-            )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
+                  onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
+                {profile.business_name}
+              </h3>
+              {profile.average_rating > 0 ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    {profile.average_rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({profile.total_reviews})
+                  </span>
+                </div>
+              ) : (
+                <div className="h-5 mt-1"></div>
+              )}
+            </div>
           </div>
           
           <div className="flex flex-col items-end gap-1 ml-2">
@@ -467,6 +486,35 @@ export default function SearchPage() {
     console.log('🎯 RESULTADO FINAL: ', visibleProfiles.length, 'perfiles visibles');
     return visibleProfiles;
   }, [allProfiles, subscriptions]);
+
+  // ✅ NUEVO: Cargar usuarios para mostrar fotos de perfil
+  const { data: profileUsers = {} } = useQuery({
+    queryKey: ['profileUsers', profiles.map(p => p.user_id).join(',')], // Include user IDs in key for re-fetch on profile change
+    queryFn: async () => {
+      if (!profiles || profiles.length === 0) return {}; 
+
+      const userIds = [...new Set(profiles.map(p => p.user_id))];
+      const users = await Promise.all(
+        userIds.map(async (id) => {
+          try {
+            const u = await base44.entities.User.filter({ id });
+            return u[0]; // Assuming id is unique for user
+          } catch (error) {
+            console.error(`Error fetching user ${id}:`, error);
+            return null;
+          }
+        })
+      );
+      
+      const usersMap = {};
+      users.forEach(u => {
+        if (u) usersMap[u.id] = u;
+      });
+      return usersMap;
+    },
+    enabled: profiles.length > 0 && !loadingProfiles && !loadingSubscriptions,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -768,8 +816,13 @@ export default function SearchPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
                 <CardContent className="p-4 flex flex-col h-full">
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <div className="flex items-start gap-3 mb-2 h-16">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
                   <div className="flex gap-1 mb-2">
                     <Skeleton className="h-5 w-16" />
                     <Skeleton className="h-5 w-16" />
@@ -812,6 +865,7 @@ export default function SearchPage() {
                 key={profile.id}
                 profile={profile}
                 user={user}
+                profileUser={profileUsers[profile.user_id]}
                 onToggleFavorite={handleToggleFavorite}
                 onStartChat={handleStartChat}
                 navigate={navigate}

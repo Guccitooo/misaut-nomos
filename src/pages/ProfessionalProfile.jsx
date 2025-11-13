@@ -273,10 +273,19 @@ export default function ProfessionalProfilePage() {
         <Card className="mb-6 shadow-2xl border-0">
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* ✅ MODIFICADO: Avatar con foto de perfil */}
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
-                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white text-3xl font-bold">
-                  {profile.business_name?.charAt(0)}
-                </AvatarFallback>
+                {professionalUser?.profile_picture ? (
+                  <img 
+                    src={professionalUser.profile_picture} 
+                    alt={profile.business_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white text-3xl font-bold">
+                    {profile.business_name?.charAt(0)}
+                  </AvatarFallback>
+                )}
               </Avatar>
 
               <div className="flex-1">

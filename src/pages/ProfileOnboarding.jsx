@@ -21,6 +21,8 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertCircle, Upload, X, Edit } from "lucide-react";
 import { toast } from "sonner";
+import ModernCheckbox from "../components/ui/ModernCheckbox";
+import { Link } from "react-router-dom";
 
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
@@ -122,7 +124,7 @@ export default function ProfileOnboardingPage() {
     "Palencia": ["Aguilar de Campoo", "Guardo", "Palencia", "Venta de Baños"],
     "Pontevedra": ["Baiona", "Cangas", "Lalín", "Marín", "Moaña", "O Porriño", "Ponteareas", "Pontevedra", "Redondela", "Sanxenxo", "Vigo", "Vilagarcía de Arousa"],
     "Salamanca": ["Béjar", "Ciudad Rodrigo", "Salamanca", "Santa Marta de Tormes"],
-    "Santa Cruz de Tenerife": ["Adeje", "Arona", "Granadilla de Abona", "Los Llanos de Aridane", "Puerto de la Cruz", "San Cristóbal de La Laguna", "Santa Cruz de La Palma", "Santa Cruz de Tenerife", "Los Realejos"],
+    "Santa Cruz de Tenerife": ["Adeje", "Arona", "Granadilla de Abona", "Los Llanos de Aridane", "Puerto de la Cruz", "San Cristóbal de La Laguna", "Santa Cruz de Tenerife", "Los Realejos"],
     "Segovia": ["Cuéllar", "El Espinar", "San Ildefonso", "Segovia"],
     "Sevilla": ["Alcalá de Guadaíra", "Bormujos", "Camas", "Carmona", "Coria del Río", "Dos Hermanas", "Écija", "La Rinconada", "Lebrija", "Los Palacios y Villafranca", "Mairena del Aljarafe", "Morón de la Frontera", "San Juan de Aznalfarache", "Sevilla", "Tomares", "Utrera"],
     "Soria": ["Almazán", "El Burgo de Osma", "Soria"],
@@ -363,7 +365,7 @@ export default function ProfileOnboardingPage() {
           setError("Selecciona al menos una categoría");
           return false;
         }
-        
+
         // ✅ NUEVO: Validar que si se selecciona "Otros", debe especificar el servicio
         if (value.includes("Otro tipo de servicio profesional")) {
           if (!formData.activity_other || formData.activity_other.trim().length < 3) {
@@ -695,19 +697,19 @@ export default function ProfileOnboardingPage() {
       <h1>Misautónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
-    
+
     <div class="content">
       <p class="greeting">¡Enhorabuena, ${formData.business_name}!</p>
-      
+
       <div class="success-box">
         <h2>🎉 PERFIL ACTIVADO EXITOSAMENTE</h2>
         <p>Tu perfil profesional ya está activo y visible para miles de clientes potenciales</p>
       </div>
-      
+
       <p class="message">
         Tu perfil en <strong>Misautónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
       </p>
-      
+
       <div class="profile-data">
         <h3>📊 Resumen de tu perfil</h3>
         <ul>
@@ -718,7 +720,7 @@ export default function ProfileOnboardingPage() {
           <li><strong>Estado:</strong> Activo y visible</li>
         </ul>
       </div>
-      
+
       <div class="tips">
         <h3>💡 Consejos para maximizar tu visibilidad</h3>
         <ul>
@@ -728,19 +730,19 @@ export default function ProfileOnboardingPage() {
           <li><strong>Pide valoraciones</strong> a tus clientes satisfechos para destacar</li>
         </ul>
       </div>
-      
+
       <div class="cta">
         <a href="https://autonomosmil.es/perfil/${savedProfile.slug_publico}" class="button">
           Ver mi perfil público →
         </a>
       </div>
-      
+
       <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
         ¿Tienes alguna duda? Contacta con nuestro equipo de soporte:<br/>
         <a href="mailto:soporte@autonomosmil.es" style="color: #3b82f6; text-decoration: none;">soporte@autonomosmil.es</a>
       </p>
     </div>
-    
+
     <div class="footer">
       <strong>Equipo Misautónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
@@ -1108,9 +1110,9 @@ export default function ProfileOnboardingPage() {
                     }
                   }}
                   className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 ${
-                    !formData.telefono_contacto 
+                    !formData.telefono_contacto
                       ? 'cursor-not-allowed opacity-50 bg-gray-50 border-gray-200'
-                      : 'cursor-pointer hover:bg-gray-50 ' + 
+                      : 'cursor-pointer hover:bg-gray-50 ' +
                         (formData.metodos_contacto?.includes('whatsapp')
                           ? 'border-green-600 bg-green-50'
                           : 'border-gray-200')
@@ -1166,9 +1168,9 @@ export default function ProfileOnboardingPage() {
                     }
                   }}
                   className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 ${
-                    !formData.telefono_contacto 
+                    !formData.telefono_contacto
                       ? 'cursor-not-allowed opacity-50 bg-gray-50 border-gray-200'
-                      : 'cursor-pointer hover:bg-gray-50 ' + 
+                      : 'cursor-pointer hover:bg-gray-50 ' +
                         (formData.metodos_contacto?.includes('telefono')
                           ? 'border-blue-600 bg-blue-50'
                           : 'border-gray-200')
@@ -1417,20 +1419,18 @@ export default function ProfileOnboardingPage() {
                       : 'border-gray-200 hover:border-blue-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      formData.disponibilidad_tipo === 'laborables'
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.disponibilidad_tipo === 'laborables' && (
-                        <div className="w-2 h-2 rounded-full bg-white"></div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">📅 Días laborables (Lunes–Viernes)</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Trabajo de lunes a viernes</p>
-                    </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    formData.disponibilidad_tipo === 'laborables'
+                      ? 'border-blue-600 bg-blue-600'
+                      : 'border-gray-300'
+                  }`}>
+                    {formData.disponibilidad_tipo === 'laborables' && (
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">📅 Días laborables (Lunes–Viernes)</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Trabajo de lunes a viernes</p>
                   </div>
                 </div>
 
@@ -1442,20 +1442,18 @@ export default function ProfileOnboardingPage() {
                       : 'border-gray-200 hover:border-orange-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      formData.disponibilidad_tipo === 'festivos'
-                        ? 'border-orange-600 bg-orange-600'
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.disponibilidad_tipo === 'festivos' && (
-                        <div className="w-2 h-2 rounded-full bg-white"></div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">🎉 Fines de semana y festivos</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Trabajo sábados, domingos y festivos</p>
-                    </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    formData.disponibilidad_tipo === 'festivos'
+                      ? 'border-orange-600 bg-orange-600'
+                      : 'border-gray-300'
+                  }`}>
+                    {formData.disponibilidad_tipo === 'festivos' && (
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">🎉 Fines de semana y festivos</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Trabajo sábados, domingos y festivos</p>
                   </div>
                 </div>
 
@@ -1467,20 +1465,18 @@ export default function ProfileOnboardingPage() {
                       : 'border-gray-200 hover:border-green-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      formData.disponibilidad_tipo === 'ambos'
-                        ? 'border-green-600 bg-green-600'
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.disponibilidad_tipo === 'ambos' && (
-                        <div className="w-2 h-2 rounded-full bg-white"></div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">✅ Ambos (Toda la semana)</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Disponible cualquier día de la semana</p>
-                    </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    formData.disponibilidad_tipo === 'ambos'
+                      ? 'border-green-600 bg-green-600'
+                      : 'border-gray-300'
+                  }`}>
+                    {formData.disponibilidad_tipo === 'ambos' && (
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">✅ Ambos (Toda la semana)</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Disponible cualquier día de la semana</p>
                   </div>
                 </div>
               </div>
@@ -1512,7 +1508,7 @@ export default function ProfileOnboardingPage() {
             {formData.horario_apertura && formData.horario_cierre && (
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <p className="text-sm text-green-900">
-                  ✓ Horario: {formData.disponibilidad_tipo === 'laborables' ? 'Lunes–Viernes' : formData.disponibilidad_tipo === 'festivos' ? 'Sábados, domingos y festivos' : 'Todos los días'}
+                  ✓ Horario: {formData.disponibilidad_tipo === 'laborables' ? 'Lunes–Viernes' : formData.disponibilidad_tipo === 'festivos' ? 'Fines de semana y festivos' : 'Todos los días'}
                   {' • '}{formData.horario_apertura} – {formData.horario_cierre}
                 </p>
               </div>
@@ -1666,7 +1662,7 @@ export default function ProfileOnboardingPage() {
           <div className="space-y-6">
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
               <p className="text-sm text-blue-900 font-medium">
-                📋 Lee y acepta los consentimientos necesarios para poder publicar tu perfil
+                📋 Lee y acepta los consentimientos necesarios para publicar tu perfil
               </p>
             </div>
 
@@ -1681,6 +1677,7 @@ export default function ProfileOnboardingPage() {
                     acepta_politica_privacidad: true,
                     consiente_contacto_clientes: true
                   });
+                  setError(null);
                   toast.success('✅ Todos los consentimientos aceptados');
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
@@ -1689,108 +1686,72 @@ export default function ProfileOnboardingPage() {
               </Button>
             </div>
 
-            {/* ✅ CHECKBOXES SIMPLIFICADOS - Fondo blanco, sin bordes coloridos */}
+            {/* ✅ NUEVO: Checkboxes modernos con enlaces */}
             <div className="space-y-4">
-              {/* Términos y Condiciones */}
-              <div 
-                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
-                style={{
-                  borderColor: formData.acepta_terminos ? '#3B82F6' : '#E5E7EB'
+              <ModernCheckbox
+                id="acepta_terminos"
+                checked={formData.acepta_terminos}
+                onChange={(checked) => {
+                  setFormData({ ...formData, acepta_terminos: checked });
+                  if (checked && error?.includes('términos')) setError(null);
                 }}
-                onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
-              >
-                <div className="relative flex-shrink-0 mt-1">
-                  <input
-                    type="checkbox"
-                    id="acepta_terminos"
-                    checked={formData.acepta_terminos}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setFormData({ ...formData, acepta_terminos: e.target.checked });
-                    }}
-                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    style={{ accentColor: '#3B82F6' }}
-                  />
-                </div>
-                <label htmlFor="acepta_terminos" className="cursor-pointer flex-1">
-                  <strong className="text-gray-900 text-base block mb-1">
-                    Términos y Condiciones
-                  </strong>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    He leído y acepto los términos y condiciones de uso de la plataforma Misautónomos.
-                  </p>
-                </label>
-              </div>
+                required
+                error={error?.toLowerCase().includes('términos')}
+                label="Términos y Condiciones"
+                sublabel={
+                  <span>
+                    He leído y acepto los{" "}
+                    <Link
+                      to={createPageUrl("TermsConditions")}
+                      target="_blank"
+                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Términos y Condiciones
+                    </Link>
+                    {" "}de uso de la plataforma Misautónomos.
+                  </span>
+                }
+              />
 
-              {/* Política de Privacidad */}
-              <div 
-                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
-                style={{
-                  borderColor: formData.acepta_politica_privacidad ? '#3B82F6' : '#E5E7EB'
+              <ModernCheckbox
+                id="acepta_politica"
+                checked={formData.acepta_politica_privacidad}
+                onChange={(checked) => {
+                  setFormData({ ...formData, acepta_politica_privacidad: checked });
+                  if (checked && error?.toLowerCase().includes('privacidad')) setError(null);
                 }}
-                onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
-              >
-                <div className="relative flex-shrink-0 mt-1">
-                  <input
-                    type="checkbox"
-                    id="acepta_politica"
-                    checked={formData.acepta_politica_privacidad}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setFormData({ ...formData, acepta_politica_privacidad: e.target.checked });
-                    }}
-                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    style={{ accentColor: '#3B82F6' }}
-                  />
-                </div>
-                <label htmlFor="acepta_politica" className="cursor-pointer flex-1">
-                  <strong className="text-gray-900 text-base block mb-1">
-                    Política de Privacidad
-                  </strong>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    Acepto la política de privacidad y el tratamiento de mis datos personales según el RGPD.
-                  </p>
-                </label>
-              </div>
+                required
+                error={error?.toLowerCase().includes('privacidad')}
+                label="Política de Privacidad"
+                sublabel={
+                  <span>
+                    Acepto la{" "}
+                    <Link
+                      to={createPageUrl("PrivacyPolicy")}
+                      target="_blank"
+                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Política de Privacidad
+                    </Link>
+                    {" "}y el tratamiento de mis datos personales según el RGPD.
+                  </span>
+                }
+              />
 
-              {/* Consentimiento de Contacto */}
-              <div 
-                className="flex items-start gap-4 p-5 rounded-xl border-2 transition-all cursor-pointer bg-white"
-                style={{
-                  borderColor: formData.consiente_contacto_clientes ? '#3B82F6' : '#E5E7EB'
+              <ModernCheckbox
+                id="consiente_contacto"
+                checked={formData.consiente_contacto_clientes}
+                onChange={(checked) => {
+                  setFormData({ ...formData, consiente_contacto_clientes: checked });
+                  if (checked && error?.toLowerCase().includes('contacto')) setError(null);
                 }}
-                onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
-              >
-                <div className="relative flex-shrink-0 mt-1">
-                  <input
-                    type="checkbox"
-                    id="consiente_contacto"
-                    checked={formData.consiente_contacto_clientes}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setFormData({ ...formData, consiente_contacto_clientes: e.target.checked });
-                    }}
-                    className="w-6 h-6 border-2 border-gray-400 rounded-md bg-white checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    style={{ accentColor: '#3B82F6' }}
-                  />
-                </div>
-                <label htmlFor="consiente_contacto" className="cursor-pointer flex-1">
-                  <strong className="text-gray-900 text-base block mb-1">
-                    Consentimiento de Contacto
-                  </strong>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    Consiento en que los clientes puedan contactarme a través de la plataforma para solicitar presupuestos y servicios.
-                  </p>
-                </label>
-              </div>
-            </div>
-
-            {/* ✅ INFORMACIÓN LEGAL SIMPLIFICADA - Sin contador de color */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mt-6">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                Al aceptar estos consentimientos, confirmas que has leído y entendido nuestras políticas. 
-                Puedes retirar tu consentimiento en cualquier momento desde tu panel de usuario.
-              </p>
+                required
+                error={error?.toLowerCase().includes('contacto')}
+                label="Consentimiento de Contacto"
+                sublabel="Consiento en que los clientes puedan contactarme a través de la plataforma para solicitar presupuestos y servicios."
+              />
             </div>
           </div>
         );

@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+import ModernCheckbox from "../components/ui/ModernCheckbox";
+import { Link } from "react-router-dom";
 
 export default function ClientOnboardingPage() {
   const navigate = useNavigate();
@@ -593,76 +595,43 @@ export default function ClientOnboardingPage() {
                 </p>
               </div>
 
-              {/* ✅ MEJORADO: Términos y condiciones con check verde */}
-              <div 
-                className={`flex items-start gap-4 p-5 rounded-xl border-2 transition-all ${
-                  !formData.acepta_terminos && error?.includes('Términos')
-                    ? 'bg-red-50 border-red-400 shadow-md animate-pulse'
-                    : formData.acepta_terminos
-                      ? 'bg-gray-50 border-gray-300 shadow-sm'
-                      : 'bg-gray-50 border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                <div className="relative flex-shrink-0 mt-1">
-                  <input
-                    type="checkbox"
-                    id="acepta_terminos_client"
-                    checked={formData.acepta_terminos}
-                    onChange={(e) => {
-                      setFormData({ ...formData, acepta_terminos: e.target.checked });
-                      if (e.target.checked && error?.includes('Términos')) {
-                        setError(null);
-                      }
-                    }}
-                    required
-                    className="peer appearance-none w-6 h-6 border-2 border-gray-400 rounded bg-white checked:bg-white checked:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer transition-all"
-                  />
-                  {/* ✅ NUEVO: Check verde dentro del cuadrado */}
-                  <svg
-                    className="absolute top-0.5 left-0.5 w-5 h-5 text-green-600 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="3"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <label 
-                  htmlFor="acepta_terminos_client"
-                  className="cursor-pointer flex-1" 
-                  onClick={() => {
-                    setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos });
-                    if (!formData.acepta_terminos && error?.includes('Términos')) {
-                      setError(null);
-                    }
-                  }}
-                >
-                  <strong className="text-gray-900 text-base block mb-1">
-                    Acepto los Términos y Condiciones *
-                  </strong>
-                  <p className="text-gray-700 text-sm leading-relaxed">
+              {/* ✅ MEJORADO: Checkbox moderno con enlace */}
+              <ModernCheckbox
+                id="acepta_terminos_client"
+                checked={formData.acepta_terminos}
+                onChange={(checked) => {
+                  setFormData({ ...formData, acepta_terminos: checked });
+                  if (checked && error?.includes('Términos')) setError(null);
+                }}
+                required
+                error={error?.includes('Términos')}
+                label="Acepto los Términos y Condiciones"
+                sublabel={
+                  <span>
                     He leído y acepto los{" "}
-                    <a 
-                      href={createPageUrl("TermsConditions")}
+                    <Link 
+                      to={createPageUrl("TermsConditions")}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
                       onClick={(e) => e.stopPropagation()}
                     >
                       Términos y Condiciones
-                    </a>
-                    , la política de privacidad y el tratamiento de mis datos personales.
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2 font-medium">
-                    Este campo es obligatorio para poder crear tu cuenta
-                  </p>
-                </label>
-              </div>
+                    </Link>
+                    , la{" "}
+                    <Link 
+                      to={createPageUrl("PrivacyPolicy")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Política de Privacidad
+                    </Link>
+                    {" "}y el tratamiento de mis datos personales.
+                  </span>
+                }
+              />
 
               {/* Submit */}
               <Button
@@ -721,4 +690,3 @@ export default function ClientOnboardingPage() {
     </div>
   );
 }
-

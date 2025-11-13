@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } => "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -866,11 +866,20 @@ export default function MessagesPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
+                    {/* ✅ MODIFICADO: Avatar con foto */}
                     <Avatar>
-                      <AvatarFallback className="bg-blue-100 text-blue-900">
-                        {(conv.otherUserName || "?").charAt(0).toUpperCase()}
-                      </AvatarFallback>
+                      {(() => {
+                        const cachedUser = loadUserFromCache(conv.otherUserId);
+                        return cachedUser?.profile_picture ? (
+                          <img src={cachedUser.profile_picture} alt="Perfil" className="w-full h-full object-cover" />
+                        ) : (
+                          <AvatarFallback className="bg-blue-100 text-blue-900">
+                            {(conv.otherUserName || "?").charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        );
+                      })()}
                     </Avatar>
+                    
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">
                         {conv.otherUserName || "Usuario"}
@@ -915,9 +924,13 @@ export default function MessagesPage() {
                   </Button>
 
                   <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
-                    <AvatarFallback className="bg-blue-700 text-white">
-                      {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
-                    </AvatarFallback>
+                    {otherUserData?.profile_picture ? (
+                      <img src={otherUserData.profile_picture} alt="Perfil" className="w-full h-full object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-blue-700 text-white">
+                        {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
