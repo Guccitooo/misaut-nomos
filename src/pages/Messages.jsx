@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } => "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,10 +23,9 @@ import { toast } from "sonner";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
-const CACHE_DURATION = 1000 * 60 * 5; // 5 minutos
+const CACHE_DURATION = 1000 * 60 * 5;
 const USERS_CACHE_KEY = 'milautonomos_users_cache';
 
-// ✅ NUEVO: Skeleton para lista de conversaciones
 const ConversationSkeleton = () => (
   <div className="p-4 space-y-4">
     {[1, 2, 3, 4, 5].map(i => (
@@ -42,7 +40,6 @@ const ConversationSkeleton = () => (
   </div>
 );
 
-// ✅ NUEVO: Skeleton para mensajes
 const MessagesSkeleton = () => (
   <div className="flex-1 p-6 space-y-4">
     {[1, 2, 3, 4].map(i => (
@@ -55,11 +52,9 @@ const MessagesSkeleton = () => (
   </div>
 );
 
-// ✅ OPTIMIZADO: Función auxiliar para fetch de mensajes con límite
 const fetchMessages = async (userId) => {
   console.time('⚡ Load messages');
   
-  // Cargar últimos 50 mensajes (optimizado de 30 a 50 para mejor UX)
   const [sent, received] = await Promise.all([
     base44.entities.Message.filter({ sender_id: userId }, '-created_date', 50),
     base44.entities.Message.filter({ recipient_id: userId }, '-created_date', 50)
@@ -73,7 +68,6 @@ const fetchMessages = async (userId) => {
   return allMessages;
 };
 
-// ✅ OPTIMIZADO: Cache de usuarios en localStorage
 const loadUserFromCache = (userId) => {
   try {
     const cached = localStorage.getItem(USERS_CACHE_KEY);
@@ -168,26 +162,22 @@ export default function MessagesPage() {
     }
   };
 
-  // ✅ OPTIMIZADO: Query con placeholderData para mostrar algo instantáneamente
   const { data: allMessages = [], isLoading, isFetching } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
-      // 1. Intentar cargar desde cache primero
       const cached = localStorage.getItem(CACHE_KEY + '_' + user.id);
       if (cached) {
         const { data: cachedData, timestamp } = JSON.parse(cached);
         const age = Date.now() - timestamp;
         
         if (age < CACHE_DURATION) {
-          console.log('✅ Usando cache de mensajes (instant load)');
+          console.log('✅ Usando cache de mensajes');
           
-          // Actualizar en segundo plano
           setTimeout(async () => {
             try {
               const fresh = await fetchMessages(user.id);
               queryClient.setQueryData(['messages', user.id], fresh);
               
-              // Actualizar cache
               localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
                 data: fresh,
                 timestamp: Date.now()
@@ -201,10 +191,8 @@ export default function MessagesPage() {
         }
       }
       
-      // 2. Cargar desde servidor
       const fresh = await fetchMessages(user.id);
       
-      // 3. Guardar en cache
       localStorage.setItem(CACHE_KEY + '_' + user.id, JSON.stringify({
         data: fresh,
         timestamp: Date.now()
@@ -214,7 +202,6 @@ export default function MessagesPage() {
     },
     enabled: !!user,
     placeholderData: () => {
-      // Mostrar datos del cache inmediatamente mientras se carga
       try {
         const cached = localStorage.getItem(CACHE_KEY + '_' + user?.id);
         if (cached) {
@@ -226,24 +213,21 @@ export default function MessagesPage() {
       }
       return [];
     },
-    staleTime: 5000, // 5 segundos
-    refetchInterval: 15000, // Reducido de 10s a 15s para menos carga
+    staleTime: 5000,
+    refetchInterval: 15000,
   });
 
-  // ✅ OPTIMIZADO: Cargar usuario con cache
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
       if (!selectedProfessionalId) return null;
       
-      // Intentar desde cache primero
       const cached = loadUserFromCache(selectedProfessionalId);
       if (cached) {
         console.log('✅ Usuario cargado desde cache');
         return cached;
       }
       
-      // Cargar desde servidor
       const users = await base44.entities.User.filter({ id: selectedProfessionalId });
       const otherUser = users[0];
       
@@ -261,13 +245,12 @@ export default function MessagesPage() {
         };
       }
       
-      // Guardar en cache
       saveUserToCache(selectedProfessionalId, fullData);
       
       return fullData;
     },
     enabled: !!selectedProfessionalId,
-    staleTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 10,
     placeholderData: () => loadUserFromCache(selectedProfessionalId),
   });
 
@@ -286,7 +269,6 @@ export default function MessagesPage() {
     enabled: !!user && !!selectedProfessionalId && user?.user_type === "client",
   });
 
-  // ✅ OPTIMIZADO: Memoizar conversaciones para evitar recálculos
   const conversations = React.useMemo(() => {
     return allMessages.reduce((acc, msg) => {
       const convId = msg.conversation_id;
@@ -316,12 +298,11 @@ export default function MessagesPage() {
     );
   }, [conversations]);
 
-  // OPTIMIZACIÓN: Solo últimos 30 mensajes (reducido de 20)
   const currentMessages = React.useMemo(() => {
     if (!selectedConversation) return [];
     return (conversations[selectedConversation]?.messages || [])
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
-      .slice(-30); // Últimos 30 mensajes
+      .slice(-30);
   }, [selectedConversation, conversations]);
 
   useEffect(() => {
@@ -458,7 +439,6 @@ export default function MessagesPage() {
         [...old, tempMessage]
       );
       
-      // Invalidar cache
       localStorage.removeItem(CACHE_KEY + '_' + user.id);
       
       setTimeout(() => {
@@ -607,9 +587,86 @@ export default function MessagesPage() {
       if (professionalUser[0]) {
         base44.integrations.Core.SendEmail({
           to: professionalUser[0].email,
-          subject: "⭐ Nueva valoración en tu perfil - milautonomos",
-          body: `Hola,\n\nHas recibido una nueva valoración en tu perfil de milautonomos.\n\n👤 Cliente: ${user.full_name || user.email}\n\n⭐ Valoraciones:\n- Rapidez: ${reviewData.rapidez} estrellas\n- Comunicación: ${reviewData.comunicacion} estrellas\n- Calidad: ${reviewData.calidad} estrellas\n- Precio/Satisfacción: ${reviewData.precio_satisfaccion} estrellas\n\n💬 Comentario: ${reviewData.comment || 'Sin comentario'}\n\nGracias,\nEquipo milautonomos`,
-          from_name: "milautonomos"
+          subject: "⭐ Nueva valoración en tu perfil - Misautónomos",
+          body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .rating-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .rating-box h3 { color: #92400e; margin: 0 0 15px 0; font-size: 18px; }
+    .rating-box p { color: #78350f; margin: 5px 0; font-weight: 500; }
+    .comment-box { background: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .comment-box p { color: #4b5563; margin: 0; font-style: italic; line-height: 1.6; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
+    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⭐</div>
+      <h1>Nueva valoración recibida</h1>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hola,</p>
+      
+      <p class="message">
+        Has recibido una nueva valoración en tu perfil profesional de <strong>Misautónomos</strong>.
+      </p>
+      
+      <div class="rating-box">
+        <h3>📊 Valoraciones recibidas</h3>
+        <p>👤 Cliente: ${user.full_name || user.email}</p>
+        <p>⚡ Rapidez: ${reviewData.rapidez} estrellas</p>
+        <p>💬 Comunicación: ${reviewData.comunicacion} estrellas</p>
+        <p>✨ Calidad: ${reviewData.calidad} estrellas</p>
+        <p>💰 Precio/Satisfacción: ${reviewData.precio_satisfaccion} estrellas</p>
+      </div>
+      
+      ${reviewData.comment ? `
+      <div class="comment-box">
+        <p><strong>💭 Comentario del cliente:</strong></p>
+        <p style="margin-top: 10px;">"${reviewData.comment}"</p>
+      </div>
+      ` : ''}
+      
+      <p class="message">
+        Las valoraciones positivas mejoran tu posicionamiento en las búsquedas y generan más confianza en los clientes.
+      </p>
+      
+      <p class="message" style="font-size: 14px; color: #6b7280; text-align: center;">
+        ¿Dudas? Contacta con nosotros:<br/>
+        <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6; text-decoration: none;">soporte@misautonomos.es</a>
+      </p>
+    </div>
+    
+    <div class="footer">
+      <strong>Equipo Misautónomos</strong>
+      <p class="tagline">Tu autónomo de confianza</p>
+      <p>
+        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
+        <a href="https://misautonomos.es">misautonomos.es</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+          `,
+          from_name: "Misautónomos"
         }).catch(err => console.log('Email error:', err));
       }
 
@@ -800,7 +857,6 @@ export default function MessagesPage() {
     </div>
   );
 
-  // ✅ NUEVO: Pantalla de carga inicial mejorada
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -814,14 +870,12 @@ export default function MessagesPage() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
-      {/* Header - Solo desktop */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 hidden md:block">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
             <p className="text-gray-600">Comunícate con tus contactos</p>
           </div>
-          {/* ✅ NUEVO: Indicador de sincronización */}
           {isFetching && !isLoading && (
             <div className="flex items-center gap-2 text-sm text-blue-600">
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
@@ -832,7 +886,6 @@ export default function MessagesPage() {
       </div>
 
       <div className="flex-1 overflow-hidden flex">
-        {/* Conversations List */}
         <div className={`w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${
           showMobileChat ? 'hidden md:flex' : 'flex'
         }`}>
@@ -847,7 +900,6 @@ export default function MessagesPage() {
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {/* ✅ NUEVO: Skeleton mientras carga */}
             {isLoading ? (
               <ConversationSkeleton />
             ) : conversationList.length === 0 ? (
@@ -866,7 +918,6 @@ export default function MessagesPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {/* ✅ MODIFICADO: Avatar con foto */}
                     <Avatar>
                       {(() => {
                         const cachedUser = loadUserFromCache(conv.otherUserId);
@@ -905,13 +956,11 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Messages Area */}
         <div className={`flex-1 flex flex-col bg-gray-50 ${
           !showMobileChat ? 'hidden md:flex' : 'flex'
         }`}>
           {selectedConversation ? (
             <>
-              {/* Header con botones de contacto */}
               <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
                 <div className="flex items-center gap-3">
                   <Button
@@ -971,9 +1020,7 @@ export default function MessagesPage() {
                     </div>
                   </div>
 
-                  {/* Botones de contacto - VISIBLES PARA TODOS LOS USUARIOS */}
                   <div className="hidden md:flex items-center gap-2">
-                    {/* Botones de contacto solo si es profesional */}
                     {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                       <>
                         <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`}>
@@ -1002,7 +1049,6 @@ export default function MessagesPage() {
                       </>
                     )}
 
-                    {/* Botón de valoración solo para clientes */}
                     {canLeaveReview() && (
                       <Button
                         onClick={handleOpenReviewDialog}
@@ -1023,7 +1069,6 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                {/* Botones móvil - VISIBLES PARA TODOS */}
                 {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                   <div className="flex md:hidden gap-2 mt-3">
                     <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`} className="flex-1">
@@ -1054,13 +1099,11 @@ export default function MessagesPage() {
                 )}
               </div>
 
-              {/* Messages */}
               <div 
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}
               >
-                {/* ✅ NUEVO: Skeleton si está cargando conversación */}
                 {isLoading && currentMessages.length === 0 ? (
                   <MessagesSkeleton />
                 ) : currentMessages.length === 0 ? (
@@ -1139,7 +1182,6 @@ export default function MessagesPage() {
                 )}
               </div>
 
-              {/* Input */}
               <div 
                 className="bg-white border-t border-gray-200 p-3 md:p-4"
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
@@ -1183,7 +1225,6 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Review Dialog - MEJORADO CON RESPONSIVE Y VALIDACIONES */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1241,7 +1282,6 @@ export default function MessagesPage() {
               </p>
             </div>
 
-            {/* Mostrar error si existe valoración previa */}
             {existingReview && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-900">
