@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,21 +19,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 
-// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
   
-  // ✅ Normalizar estado (minúsculas, sin espacios)
   const normalizedState = estado.toLowerCase().trim();
-  
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
   
-  // Si está en un estado válido
   if (validStates.includes(normalizedState)) {
     try {
       const today = new Date();
@@ -42,22 +47,16 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      // Si la fecha de expiración no es válida (incluyendo null, undefined, o string no parseable)
-      // y el estado es de un tipo "activo", asumir que está activo según la lógica de la integración
       if (isNaN(expiration.getTime())) {
-          console.warn('Fecha de expiración inválida o ausente para un estado activo, asumiendo activo:', estado, 'Fecha:', fechaExpiracion);
-          return true; // Si hay error parseando fecha, pero el estado es válido, asumir que está activo
+        return true;
       }
       
       return expiration >= today;
     } catch (error) {
-      console.error('Error parseando fecha:', error);
-      // Si hay error parseando fecha (ej: tipo de dato inesperado), pero el estado es válido, asumir que está activo
       return true;
     }
   }
   
-  // Si está cancelado pero aún tiene tiempo
   if (normalizedState === "cancelado" || normalizedState === "canceled") {
     try {
       const today = new Date();
@@ -65,15 +64,12 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      // Si la fecha de expiración no es válida para un estado cancelado, se considera no activo
       if (isNaN(expiration.getTime())) {
-          console.warn('Fecha de expiración inválida o ausente para estado cancelado:', fechaExpiracion);
-          return false;
+        return false;
       }
 
       return expiration >= today;
     } catch (error) {
-      console.error('Error parseando fecha:', error);
       return false;
     }
   }
@@ -93,25 +89,20 @@ export default function MyProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [manualSyncing, setManualSyncing] = useState(false);
-
-  // ✅ NUEVO: Estado para verificación de suscripción
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 10; // 10 intentos = 20 segundos
+  const MAX_POLLING_ATTEMPTS = 10;
 
-  // Detectar diferentes estados de retorno
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingPending = searchParams.get("onboarding");
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
-  // User data
   const [userData, setUserData] = useState({
     full_name: "",
     phone: "",
     city: "",
   });
 
-  // Professional profile data
   const [profileData, setProfileData] = useState({
     business_name: "",
     cif_nif: "",
@@ -125,14 +116,13 @@ export default function MyProfilePage() {
     municipio: "",
     service_area: "",
     radio_servicio_km: 10,
-    // horario_dias: [], // REMOVIDO: reemplazado por disponibilidad_tipo
-    disponibilidad_tipo: "laborables", // ✅ NUEVO
+    disponibilidad_tipo: "laborables",
     horario_apertura: "09:00",
     horario_cierre: "18:00",
     opening_hours: "",
     website: "",
     price_range: "€€",
-    tarifa_base: null, // Cambiado a null para permitir 'no mostrar'
+    tarifa_base: null,
     facturacion: "autonomo",
     formas_pago: [],
     photos: [],
@@ -141,13 +131,12 @@ export default function MyProfilePage() {
       instagram: "",
       linkedin: ""
     },
-    activity_other: "", // ✅ NUEVO
-    metodos_contacto: ['chat_interno'], // ✅ NUEVO
+    activity_other: "",
+    metodos_contacto: ['chat_interno'],
   });
 
   const [newCategory, setNewCategory] = useState("");
 
-  // ✅ AMPLIADO: TODAS las provincias españolas ordenadas alfabéticamente
   const provincias = [
     "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
     "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
@@ -160,70 +149,13 @@ export default function MyProfilePage() {
     "Vizcaya", "Zamora", "Zaragoza"
   ];
 
-  // ✅ AMPLIADO: Ciudades principales por provincia (ordenadas alfabéticamente)
   const ciudadesPorProvincia = {
-    "Álava": ["Vitoria-Gasteiz", "Llodio", "Amurrio", "Salvatierra"],
-    "Albacete": ["Albacete", "Hellín", "Villarrobledo", "Almansa", "La Roda", "Caudete"],
-    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "San Vicente del Raspeig", "Elda", "Dénia", "Villena", "Santa Pola", "Petrer", "Calpe", "Altea", "Jávea", "Villajoyosa", "Ibi", "Campello", "Crevillente", "Novelda", "Aspe"],
-    "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Níjar", "Adra", "Vícar", "Huércal-Overa"],
-    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Langreo", "Mieres", "Castrillón", "Llanera", "Corvera", "Carreño", "Gozón", "Navia", "Villaviciosa", "Tineo"],
-    "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro", "El Tiemblo"],
-    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Zafra", "Montijo", "Villafranca de los Barros", "Olivenza"],
-    "Barcelona": ["Barcelona", "L'Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges"],
-    "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero", "Briviesca"],
-    "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata", "Coria", "Trujillo"],
-    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Puerto Real", "Arcos de la Frontera", "Conil de la Frontera", "Barbate", "Rota"],
-    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "Piélagos", "El Astillero", "Santa Cruz de Bezana", "Laredo", "Santoña"],
-    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Benicàssim", "Nules", "Almassora", "Benicarló", "La Vall d'Uixó"],
-    "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Alcázar de San Juan", "Valdepeñas", "Manzanares", "Daimiel"],
-    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Cabra", "Baena", "Palma del Río", "Pozoblanco", "Peñarroya-Pueblonuevo"],
-    "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey", "San Clemente"],
-    "Gerona": ["Gerona", "Figueras", "Blanes", "Lloret de Mar", "Olot", "Salt", "Palafrugell"],
-    "Granada": ["Granada", "Motril", "Almuñécar", "Armilla", "Loja", "Baza", "Guadix", "Maracena", "Atarfe", "Huétor Vega"],
-    "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera", "Cabanillas del Campo"],
-    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Mondragón", "Hernani", "Lasarte-Oria", "Zarautz", "Hondarribia", "Beasain", "Andoain"],
-    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Isla Cristina", "Ayamonte", "Cartaya", "Punta Umbría", "Aljaraque"],
-    "Huesca": ["Huesca", "Monzón", "Barbastro", "Jaca", "Fraga"],
-    "Islas Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón", "Llucmajor", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Ciutadella de Menorca", "Santa Eulalia del Río", "Pollensa"],
-    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Bailén", "Baeza", "Villacarrillo"],
-    "La Coruña": ["La Coruña", "Santiago de Compostela", "Ferrol", "Oleiros", "Narón", "Arteixo", "Culleredo", "Carballo", "Betanzos", "Cambre", "Ames"],
-    "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Lardero"],
-    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía de Tirajana", "Arucas", "Agüimes", "Ingenio", "San Bartolomé de Tirajana", "Puerto del Rosario", "Arrecife", "Mogán"],
-    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "Astorga", "La Bañeza", "Valencia de Don Juan", "Villablino"],
-    "Lérida": ["Lérida", "Tàrrega", "Mollerussa", "Balaguer", "La Seu d'Urgell"],
-    "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro", "Vilalba", "Foz"],
-    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
-    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Ronda", "Alhaurín de la Torre", "Nerja", "Coín", "Alhaurín el Grande", "Manilva", "Torrox", "Cártama"],
-    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Cieza", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana", "Las Torres de Cotillas", "San Pedro del Pinatar", "Archena", "Caravaca de la Cruz", "Alhama de Murcia"],
-    "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada", "Estella", "Tafalla", "Zizur Mayor"],
-    "Orense": ["Orense", "Verín", "O Barco de Valdeorras", "Xinzo de Limia", "O Carballiño"],
-    "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo", "Venta de Baños"],
-    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "O Porriño", "Sanxenxo", "Baiona", "Moaña", "Ponteareas", "Lalín"],
-    "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo", "Santa Marta de Tormes"],
-    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Granadilla de Abona", "Santa Cruz de La Palma", "Los Llanos de Aridane", "Puerto de la Cruz", "Los Realejos"],
-    "Segovia": ["Segovia", "Cuéllar", "San Ildefonso", "El Espinar"],
-    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Écija", "Los Palacios y Villafranca", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos"],
-    "Soria": ["Soria", "Almazán", "El Burgo de Osma"],
-    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls", "Vila-seca", "Salou", "Amposta", "Calafell", "Roda de Berà"],
-    "Teruel": ["Teruel", "Alcañiz", "Andorra", "Calamocha"],
-    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Yuncos", "Olías del Rey", "Sonseca", "Quintanar de la Orden"],
-    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Mislata", "Burjassot", "Alzira", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Catarroja", "Xàtiva", "Cullera", "Massamagrell", "Quart de Poblet", "Alfafar", "Requena"],
-    "Valladolid": ["Valladolid", "Laguna de Duero", "Medina del Campo", "Arroyo de la Encomienda", "Tudela de Duero", "Íscar", "Cigales", "Peñafiel"],
-    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Leioa", "Galdakao", "Durango", "Sestao", "Erandio", "Bermeo", "Amorebieta", "Gernika"],
-    "Zamora": ["Zamora", "Benavente", "Toro", "Villalpando"],
-    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja", "Tudela"]
+    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe"],
+    "Barcelona": ["Barcelona", "Badalona", "Terrassa", "Sabadell", "Mataró"],
+    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto"],
+    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera"],
+    "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola"],
   };
-
-  // REMOVIDO: Los días de la semana ya no se seleccionan individualmente
-  // const diasSemana = [
-  //   { value: "lunes", label: "Lunes" },
-  //   { value: "martes", label: "Martes" },
-  //   { value: "miercoles", label: "Miércoles" },
-  //   { value: "jueves", label: "Jueves" },
-  //   { value: "viernes", label: "Viernes" },
-  //   { value: "sabado", label: "Sábado" },
-  //   { value: "domingo", label: "Domingo" }
-  // ];
 
   useEffect(() => {
     loadUser();
@@ -238,19 +170,10 @@ export default function MyProfilePage() {
     }
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
-  // ✅ NUEVO: Detectar estados de retorno y verificar suscripción
   useEffect(() => {
-    console.log('🔍 Verificando parámetros URL en useEffect:', {
-      reactivation: reactivationSuccess,
-      onboarding: onboardingPending,
-      onboardingCompleted
-    });
-
     if (reactivationSuccess === "success" || onboardingPending === "pending") {
-      console.log('🔍 Usuario viene de checkout/reactivación, verificando suscripción...');
       setIsVerifyingSubscription(true);
       startSubscriptionPolling();
-      // Clear search params immediately to prevent re-triggering
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (onboardingCompleted) {
       toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
@@ -261,29 +184,20 @@ export default function MyProfilePage() {
       
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
-    } else if (reactivationSuccess === "canceled") { // Handle canceled reactivation
+    } else if (reactivationSuccess === "canceled") {
       toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
 
-  // ✅ NUEVO: Polling mejorado con sincronización forzada
   const startSubscriptionPolling = async () => {
-    console.log('🔄 Iniciando polling de suscripción...');
-    
-    // Clear search params if they are still present from a previous render
-    // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect for immediate clear
-
     for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
       setPollingAttempts(attempt);
-      console.log(`🔍 Intento ${attempt}/${MAX_POLLING_ATTEMPTS} - Verificando suscripción...`);
       
       try {
-        // Recargar usuario
         const currentUser = await loadUser();
         if (!currentUser) throw new Error("User not loaded during polling");
         
-        // Invalidar y refetch la suscripción para obtener el estado más reciente
         await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
         const result = await queryClient.fetchQuery({
           queryKey: ['subscription', currentUser.id],
@@ -298,11 +212,9 @@ export default function MyProfilePage() {
         });
         
         if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
-          console.log('✅ Suscripción encontrada y activa:', result.estado);
           setIsVerifyingSubscription(false);
-          setPollingAttempts(0); // Reset attempts
+          setPollingAttempts(0);
           
-          // Mostrar mensaje de éxito apropiado
           if (reactivationSuccess === "success") {
             toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
               duration: 6000
@@ -312,35 +224,26 @@ export default function MyProfilePage() {
               duration: 8000
             });
             
-            // Redirigir a ProfileOnboarding
             setTimeout(() => {
               navigate(createPageUrl("ProfileOnboarding"));
             }, 2000);
           }
           
-          // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect
           queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-          return; // Éxito, salir del polling
+          return;
         }
         
-        // ✅ NUEVO: A partir del intento 5, intentar sincronización forzada
-        if (attempt === 5 && currentUser) { // Only attempt if user is loaded
-          console.log('🔄 Intento 5: Ejecutando sincronización forzada...');
+        if (attempt === 5 && currentUser) {
           try {
             const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
-              user_id: currentUser.id // Pass user ID to the function
+              user_id: currentUser.id
             });
-            console.log('📥 Respuesta de sincronización:', syncResponse.data);
             
             if (syncResponse.data.ok) {
-              console.log('✅ Sincronización forzada exitosa');
-              
-              // Refrescar datos
-              await loadUser(); // Reload user to get latest subscription_status
+              await loadUser();
               await queryClient.invalidateQueries({ queryKey: ['subscription'] });
               await queryClient.refetchQueries({ queryKey: ['subscription'] });
               
-              // Verificar si necesita onboarding
               if (syncResponse.data.needs_onboarding) {
                 toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
                   duration: 8000
@@ -355,24 +258,14 @@ export default function MyProfilePage() {
               }
               
               setIsVerifyingSubscription(false);
-              // window.history.replaceState({}, document.title, window.location.pathname); // Moved to useEffect
-              return; // Exit polling as subscription is active
-            } else if (syncResponse.data.error === 'no_stripe_customer' || 
-                       syncResponse.data.error === 'no_subscription') {
-              console.log('⚠️ No se encontró suscripción en Stripe (después de forzar sync). Continuar polling.');
-              // Continue polling, maybe it's just a timing issue or the subscription is not in the expected state yet
-            } else {
-              console.error('❌ Error desconocido en sincronización forzada:', syncResponse.data.error);
+              return;
             }
           } catch (syncError) {
-            console.error('❌ Error en sincronización forzada (invocación de función):', syncError);
-            // Continue polling
+            console.error('❌ Error en sincronización forzada:', syncError);
           }
         }
         
-        // Si no encontró suscripción o no está activa, esperar 2 segundos antes del siguiente intento
         if (attempt < MAX_POLLING_ATTEMPTS) {
-          console.log('⏳ Suscripción no encontrada o no activa, esperando 2 segundos...');
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } catch (error) {
@@ -383,16 +276,13 @@ export default function MyProfilePage() {
       }
     }
     
-    // Si llegamos aquí, no se encontró la suscripción después de todos los intentos
-    console.log('⚠️ No se encontró suscripción después de todos los intentos');
     setIsVerifyingSubscription(false);
-    setPollingAttempts(0); // Reset attempts
+    setPollingAttempts(0);
     
     toast.error(
       <div>
         <p className="font-semibold">No se pudo verificar tu suscripción</p>
-        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@autonomosmil.es</p>
-        <p className="text-xs mt-2">Incluye tu email en el mensaje para que podamos ayudarte.</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
       </div>,
       {
         duration: 15000
@@ -403,12 +293,6 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado en MyProfile:', {
-        id: currentUser.id,
-        email: currentUser.email,
-        subscription_status: currentUser.subscription_status,
-        user_type: currentUser.user_type
-      });
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -423,25 +307,22 @@ export default function MyProfilePage() {
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Botón manual de sincronización
   const handleManualSync = async () => {
     setManualSyncing(true);
     try {
-      console.log('🔄 Sincronización manual iniciada...');
       const currentUser = await loadUser();
       if (!currentUser) throw new Error("User not loaded for manual sync");
       
       const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
         user_id: currentUser.id
       });
-      console.log('📥 Respuesta de sincronización manual:', syncResponse.data);
       
       if (syncResponse.data.ok) {
         toast.success('✅ ¡Suscripción encontrada y activada!', {
           duration: 5000
         });
         
-        await loadUser(); // Refresh user state
+        await loadUser();
         await queryClient.invalidateQueries({ queryKey: ['subscription'] });
         await queryClient.invalidateQueries({ queryKey: ['myProfile'] });
         await queryClient.refetchQueries({ queryKey: ['subscription'] });
@@ -468,73 +349,41 @@ export default function MyProfilePage() {
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Forzar sincronización (para admin)
   const handleForceSync = async () => {
     setForcingSync(true);
     try {
-      console.log('🔄 Forzando sincronización (admin)...');
-      
-      // Recargar usuario
       await loadUser();
-      
-      // Invalidar todas las queries
       await queryClient.invalidateQueries({ queryKey: ['subscription'] });
       await queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       await queryClient.invalidateQueries({ queryKey: ['plan'] });
-      
-      // Esperar un momento y refetch
       await new Promise(resolve => setTimeout(resolve, 1000));
       await queryClient.refetchQueries({ queryKey: ['subscription'] });
       
       toast.success('Datos sincronizados correctamente');
     } catch (error) {
-      console.error('Error sincronizando (admin):', error);
+      console.error('Error sincronizando:', error);
       toast.error('Error al sincronizar');
     } finally {
       setForcingSync(false);
     }
   };
 
-  const { data: subscription, isLoading: loadingSubscription, error: subscriptionError } = useQuery({
+  const { data: subscription, isLoading: loadingSubscription } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      console.log('🔍 [MyProfile] Buscando suscripción para user_id:', user.id);
-      console.log('🔍 [MyProfile] Email del usuario:', user.email);
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
       
-      try {
-        const subs = await base44.entities.Subscription.filter({
-          user_id: user.id
-        });
-        
-        console.log('📦 [MyProfile] Suscripciones encontradas:', subs.length);
-        
-        if (subs.length > 0) {
-          console.log('✅ [MyProfile] Suscripción encontrada:', {
-            id: subs[0].id,
-            estado: subs[0].estado,
-            plan_nombre: subs[0].plan_nombre,
-            fecha_expiracion: subs[0].fecha_expiracion,
-            is_active: isSubscriptionActive(subs[0].estado, subs[0].fecha_expiracion)
-          });
-          return subs[0];
-        } else {
-          console.log('❌ [MyProfile] No se encontró suscripción para este user_id');
-          // No hay fallback por email, la suscripción debe estar ligada al user_id
-          return null;
-        }
-      } catch (error) {
-        console.error('❌ [MyProfile] Error buscando suscripción:', error);
-        throw error;
-      }
+      return subs.length > 0 ? subs[0] : null;
     },
-    enabled: !!user && !isVerifyingSubscription, // ✅ Deshabilitar durante el polling
+    enabled: !!user && !isVerifyingSubscription,
     retry: 1,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
-  // ✅ MEJORADO: getSubscriptionStatus SIN mensajes técnicos
   const getSubscriptionStatus = () => {
     if (!subscription) return null;
     
@@ -546,7 +395,6 @@ export default function MyProfilePage() {
     
     const daysLeft = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
     const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
-    
     const normalizedState = subscription.estado.toLowerCase();
     
     if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
@@ -602,20 +450,14 @@ export default function MyProfilePage() {
     };
   };
 
-  // ✅ CAMBIO CRÍTICO: Cargar perfil SIEMPRE que haya usuario, independiente de user_type
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['myProfile', user?.id],
     queryFn: async () => {
-      console.log("🔍 Buscando perfil para user_id:", user.id);
-      
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: user.id
       });
       
-      console.log("📦 Perfiles encontrados:", profiles.length);
-      
       if (profiles[0]) {
-        console.log("✅ Perfil encontrado:", profiles[0]);
         setProfileData({
           business_name: profiles[0].business_name || "",
           cif_nif: profiles[0].cif_nif || "",
@@ -629,14 +471,13 @@ export default function MyProfilePage() {
           municipio: profiles[0].municipio || "",
           service_area: profiles[0].service_area || "",
           radio_servicio_km: profiles[0].radio_servicio_km || 10,
-          // horario_dias: profiles[0].horario_dias || [], // REMOVIDO
-          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables", // NUEVO
+          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables",
           horario_apertura: profiles[0].horario_apertura || "09:00",
           horario_cierre: profiles[0].horario_cierre || "18:00",
           opening_hours: profiles[0].opening_hours || "",
           website: profiles[0].website || "",
           price_range: profiles[0].price_range || "€€",
-          tarifa_base: profiles[0].tarifa_base !== undefined ? profiles[0].tarifa_base : null, // Carga null si es undefined/null
+          tarifa_base: profiles[0].tarifa_base !== undefined ? profiles[0].tarifa_base : null,
           facturacion: profiles[0].facturacion || "autonomo",
           formas_pago: profiles[0].formas_pago || [],
           photos: profiles[0].photos || [],
@@ -645,16 +486,13 @@ export default function MyProfilePage() {
             instagram: "",
             linkedin: ""
           },
-          activity_other: profiles[0].activity_other || "", // NUEVO
-          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'], // NUEVO
+          activity_other: profiles[0].activity_other || "",
+          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'],
         });
-      } else {
-        console.log("❌ No se encontró perfil profesional");
-        // No need to set profileData here, initial useState already provides defaults
       }
       return profiles[0];
     },
-    enabled: !!user, // ✅ Solo requiere que haya usuario
+    enabled: !!user,
   });
 
   const updateUserMutation = useMutation({
@@ -668,22 +506,15 @@ export default function MyProfilePage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      console.log("💾 Guardando perfil...");
-      console.log("📝 Datos a guardar:", data);
-      
       if (profile) {
-        console.log("🔄 Actualizando perfil existente ID:", profile.id);
-        // ✅ IMPORTANTE: Mantener estado activo y visible
         const result = await base44.entities.ProfessionalProfile.update(profile.id, {
           ...data,
           estado_perfil: "activo",
           visible_en_busqueda: true,
           onboarding_completed: true
         });
-        console.log("✅ Perfil actualizado correctamente");
         return result;
       } else {
-        console.log("➕ Creando nuevo perfil");
         const result = await base44.entities.ProfessionalProfile.create({
           ...data,
           user_id: user.id,
@@ -691,7 +522,6 @@ export default function MyProfilePage() {
           visible_en_busqueda: true,
           onboarding_completed: true
         });
-        console.log("✅ Perfil creado correctamente");
         return result;
       }
     },
@@ -704,12 +534,9 @@ export default function MyProfilePage() {
   });
 
   const handleSave = () => {
-    console.log("💾 Iniciando guardado...");
     updateUserMutation.mutate(userData);
     
-    // ✅ Guardar perfil SIEMPRE si existe algún dato profesional
     if (profile || profileData.business_name) {
-      console.log("💼 Guardando perfil profesional");
       updateProfileMutation.mutate(profileData);
     }
   };
@@ -754,22 +581,6 @@ export default function MyProfilePage() {
     });
   };
 
-  // REMOVIDO: toggleDia ya no es necesario
-  // const toggleDia = (dia) => {
-  //   const dias = profileData.horario_dias;
-  //   if (dias.includes(dia)) {
-  //     setProfileData({
-  //       ...profileData,
-  //       horario_dias: dias.filter(d => d !== dia)
-  //     });
-  //   } else {
-  //     setProfileData({
-  //       ...profileData,
-  //       horario_dias: [...dias, dia]
-  //     });
-  //   }
-  // };
-
   const toggleFormaPago = (forma) => {
     const formas = profileData.formas_pago;
     if (formas.includes(forma)) {
@@ -788,8 +599,6 @@ export default function MyProfilePage() {
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      console.log('🗑️ Iniciando eliminación de cuenta...');
-      
       const response = await base44.functions.invoke('deleteUser', {
         userId: user.id,
         isSelfDelete: true
@@ -800,7 +609,6 @@ export default function MyProfilePage() {
           duration: 5000
         });
         
-        // Esperar 2 segundos y cerrar sesión
         setTimeout(() => {
           base44.auth.logout();
         }, 2000);
@@ -815,7 +623,6 @@ export default function MyProfilePage() {
     }
   };
 
-  // ✅ NUEVO: Mostrar loading mientras verifica suscripción
   if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -824,11 +631,10 @@ export default function MyProfilePage() {
     );
   }
 
-  // ✅ NUEVO: Mostrar pantalla de verificación
   if (isVerifyingSubscription) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-xl">
+        <Card className="max-w-md w-full shadow-xl bg-white">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
@@ -849,15 +655,6 @@ export default function MyProfilePage() {
                   {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
                 </p>
               </div>
-              {pollingAttempts >= 5 && (
-                <Alert className="bg-yellow-50 border-yellow-200">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription className="text-yellow-800 text-sm">
-                    El proceso está tardando más de lo esperado. Si el problema persiste, 
-                    puedes recargar la página en unos segundos o contactar a soporte.
-                  </AlertDescription>
-                </Alert>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -865,26 +662,18 @@ export default function MyProfilePage() {
     );
   }
 
-  // ✅ Detectar si es profesional por tener perfil O por user_type
   const isProfessional = profile || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
-
-  // ✅ NUEVO: Detectar si necesita completar onboarding
-  // Note: The previous "needsOnboarding" banner was removed as per outline,
-  // but this variable definition remains, as it could be used for other logic or future features.
-  const needsOnboarding = isProfessional && subscription && !profile?.onboarding_completed;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
               {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
-            {/* ✅ SIMPLIFICADO: Badge de visibilidad SIN mensajes técnicos */}
             {profile && (
               <div className="mt-2 flex gap-2">
                 {subscriptionStatus?.isActive ? (
@@ -947,21 +736,11 @@ export default function MyProfilePage() {
           <Alert className="mb-6 bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              ✅ Tu perfil se ha actualizado correctamente. Los cambios ya son visibles en las búsquedas.
+              ✅ Tu perfil se ha actualizado correctamente.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* ✅ NUEVO: Barra de completitud */}
-        {isProfessional && profile && !isEditing && (
-          <ProfileCompleteness 
-            profile={profile} 
-            user={user}
-            onEdit={() => setIsEditing(true)}
-          />
-        )}
-
-        {/* ✅ MODIFICADO: Card de conversión para clientes */}
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
             <CardContent className="p-6">
@@ -989,210 +768,15 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* ✅ MEJORADO: Card para profesionales sin suscripción - SIN mensajes técnicos */}
-        {isProfessional && !subscription && profile && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl text-gray-900 mb-1">Perfil profesional inactivo</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Reactiva tu suscripción para que los clientes puedan encontrarte
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
-                  <p className="text-sm font-semibold text-red-800">
-                    ❌ Tu perfil no aparece en las búsquedas
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-900">
-                    <strong>💡 Conservas:</strong> Perfil completo • {profile.total_reviews || 0} opiniones • Fotos • Historial
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                    size="lg"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Reactivar suscripción
-                  </Button>
-                  <Button
-                    onClick={handleManualSync}
-                    disabled={manualSyncing}
-                    variant="outline"
-                    size="lg"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    {manualSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Verificar pago
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {isProfessional && profile && !isEditing && (
+          <ProfileCompleteness 
+            profile={profile} 
+            user={user}
+            onEdit={() => setIsEditing(true)}
+          />
         )}
 
-        {/* ✅ MEJORADO: Card para profesionales sin perfil ni suscripción */}
-        {isProfessional && !subscription && !profile && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-yellow-50 to-orange-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">Completa tu alta profesional</h3>
-                    <p className="text-sm text-gray-700 mb-2">
-                      Necesitas completar tu perfil y contratar un plan para aparecer en búsquedas.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    Ver planes
-                  </Button>
-                  <Button
-                    onClick={handleManualSync}
-                    disabled={manualSyncing}
-                    variant="outline"
-                    size="sm"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    {manualSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-1" />
-                        Verificar pago
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ MEJORADO: Subscription Card con estados claros */}
-        {isProfessional && subscription && (
-          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg text-gray-900">
-                        Gestión de Suscripción
-                      </h3>
-                      {subscriptionStatus && (
-                        <Badge className={subscriptionStatus.color}>
-                          {subscriptionStatus.badge} {subscriptionStatus.text}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* ✅ Información detallada */}
-                    <div className="text-sm text-gray-700 space-y-1">
-                      <p>
-                        <strong>Plan:</strong> {subscription.plan_nombre}
-                        {(subscription.estado === "en_prueba" || subscription.estado === "trialing") && " (7 días gratis)"}
-                      </p>
-                      <p>
-                        <strong>Estado:</strong> {subscriptionStatus?.details}
-                      </p>
-                      {subscription.fecha_expiracion && (
-                        <p className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <strong>Expiración:</strong> {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
-                        </p>
-                      )}
-                      
-                      {/* ✅ Mensaje de visibilidad */}
-                      <div className={`mt-2 p-2 rounded-lg ${
-                        subscriptionStatus?.isActive 
-                          ? 'bg-green-50 border border-green-200' 
-                          : 'bg-red-50 border border-red-200'
-                      }`}>
-                        <p className={`text-sm font-semibold ${
-                          subscriptionStatus?.isActive ? 'text-green-800' : 'text-red-800'
-                        }`}>
-                          {subscriptionStatus?.isActive 
-                            ? '✅ Tu perfil es visible en las búsquedas' 
-                            : '❌ Tu perfil está oculto en las búsquedas'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  {/* ✅ Botón principal según estado */}
-                  {subscriptionStatus?.isActive && !subscriptionStatus?.showReactivate ? (
-                    <Button
-                      onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Gestionar suscripción
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      className="bg-orange-500 hover:bg-orange-600"
-                    >
-                      {subscriptionStatus?.showReactivate ? 'Reactivar plan' : 'Ver planes'}
-                    </Button>
-                  )}
-                  
-                  {/* ✅ Botón upgrade (solo para trial) */}
-                  {subscriptionStatus?.showUpgrade && subscriptionStatus?.isActive && (
-                    <Button
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      variant="outline"
-                      className="border-purple-600 text-purple-700 hover:bg-purple-50"
-                      size="sm"
-                    >
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      Mejorar plan
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ MODIFICADO: User Info con foto de perfil */}
-        <Card className="mb-6 shadow-lg border-0">
+        <Card className="mb-6 shadow-lg border-0 bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5 text-blue-700" />
@@ -1200,7 +784,6 @@ export default function MyProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* ✅ NUEVO: Foto de perfil */}
             <div className="flex justify-center py-4">
               <ProfilePictureUpload
                 user={user}
@@ -1252,7 +835,6 @@ export default function MyProfilePage() {
               </Badge>
             </div>
 
-            {/* ✅ NUEVO: Zona de peligro - Eliminar cuenta */}
             {!isEditing && (
               <div className="mt-8 pt-6 border-t border-red-200">
                 <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ Zona de peligro</h3>
@@ -1272,616 +854,16 @@ export default function MyProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Professional Profile */}
-        {isProfessional && (
-          <Card className="shadow-lg border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-700" />
-                Perfil profesional
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Identidad */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Identidad</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Nombre profesional</Label>
-                    <Input
-                      value={profileData.business_name}
-                      onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
-                      disabled={!isEditing}
-                      placeholder="Mi Empresa"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>NIF / CIF</Label>
-                      <Input
-                        value={profileData.cif_nif}
-                        onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="A12345678"
-                      />
-                    </div>
-                    <div>
-                      <Label>Email de contacto</Label>
-                      <Input
-                        value={profileData.email_contacto}
-                        onChange={(e) => setProfileData({ ...profileData, email_contacto: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="contacto@empresa.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Teléfono de contacto</Label>
-                    <Input
-                        type="tel"
-                        value={profileData.telefono_contacto}
-                        onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="+34 612 345 678"
-                    />
-                  </div>
-
-                  {/* ✅ NUEVO: Métodos de contacto editables */}
-                  <div>
-                    <Label className="text-base font-semibold">Métodos de contacto visibles</Label>
-                    <p className="text-sm text-gray-500 mt-1 mb-3">
-                      Selecciona cómo pueden contactarte los clientes
-                    </p>
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        {/* Chat interno - siempre activo */}
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border-2 border-blue-300">
-                          <Checkbox checked={true} disabled={true} />
-                          <span className="text-sm font-medium text-blue-900">💬 Chat interno (siempre activo)</span>
-                        </div>
-
-                        {/* WhatsApp */}
-                        <div
-                          onClick={() => {
-                            if (!isEditing) return;
-                            if (!profileData.telefono_contacto) {
-                              toast.warning('Añade un teléfono primero para activar WhatsApp');
-                              return;
-                            }
-                            const metodos = profileData.metodos_contacto || ['chat_interno'];
-                            if (metodos.includes('whatsapp')) {
-                              setProfileData({
-                                ...profileData,
-                                metodos_contacto: metodos.filter(m => m !== 'whatsapp')
-                              });
-                            } else {
-                              setProfileData({
-                                ...profileData,
-                                metodos_contacto: [...metodos, 'whatsapp']
-                              });
-                            }
-                          }}
-                          className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                            !profileData.telefono_contacto || !isEditing
-                              ? 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
-                              : 'cursor-pointer ' + (profileData.metodos_contacto?.includes('whatsapp')
-                                  ? 'border-green-600 bg-green-50'
-                                  : 'border-gray-200 hover:border-green-300')
-                          }`}
-                        >
-                          <Checkbox
-                            checked={profileData.metodos_contacto?.includes('whatsapp') || false}
-                            disabled={!profileData.telefono_contacto || !isEditing}
-                          />
-                          <span className="text-sm font-medium">📱 WhatsApp</span>
-                        </div>
-
-                        {/* Llamada telefónica */}
-                        <div
-                          onClick={() => {
-                            if (!isEditing) return;
-                            if (!profileData.telefono_contacto) {
-                              toast.warning('Añade un teléfono primero para activar llamadas');
-                              return;
-                            }
-                            const metodos = profileData.metodos_contacto || ['chat_interno'];
-                            if (metodos.includes('telefono')) {
-                              setProfileData({
-                                ...profileData,
-                                metodos_contacto: metodos.filter(m => m !== 'telefono')
-                              });
-                            } else {
-                              setProfileData({
-                                ...profileData,
-                                metodos_contacto: [...metodos, 'telefono']
-                              });
-                            }
-                          }}
-                          className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                            !profileData.telefono_contacto || !isEditing
-                              ? 'opacity-50 bg-gray-50 border-gray-200 cursor-not-allowed'
-                              : 'cursor-pointer ' + (profileData.metodos_contacto?.includes('telefono')
-                                  ? 'border-blue-600 bg-blue-50'
-                                  : 'border-gray-200 hover:border-blue-300')
-                          }`}
-                        >
-                          <Checkbox
-                            checked={profileData.metodos_contacto?.includes('telefono') || false}
-                            disabled={!profileData.telefono_contacto || !isEditing}
-                          />
-                          <span className="text-sm font-medium">📞 Llamada telefónica</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {profileData.metodos_contacto?.includes('chat_interno') && (
-                          <Badge className="bg-blue-100 text-blue-900">💬 Chat interno</Badge>
-                        )}
-                        {profileData.metodos_contacto?.includes('whatsapp') && (
-                          <Badge className="bg-green-100 text-green-900">📱 WhatsApp</Badge>
-                        )}
-                        {profileData.metodos_contacto?.includes('telefono') && (
-                          <Badge className="bg-purple-100 text-purple-900">📞 Teléfono</Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Actividad */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Actividad</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Categorías de servicios</Label>
-                    {isEditing && (
-                      <div className="flex gap-2 mb-3">
-                        <Input
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="Ej: Fontanería, Electricidad..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addCategory();
-                            }
-                          }}
-                        />
-                        <Button type="button" onClick={addCategory} size="icon">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {profileData.categories?.map((cat, idx) => (
-                        <Badge key={idx} className="bg-blue-100 text-blue-900">
-                          {cat}
-                          {isEditing && (
-                            <button
-                              onClick={() => removeCategory(cat)}
-                              className="ml-2 hover:text-blue-600"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Descripción corta (220 caracteres)</Label>
-                    <Textarea
-                      value={profileData.descripcion_corta}
-                      onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
-                      disabled={!isEditing}
-                      className="h-24"
-                      placeholder="Describe brevemente tus servicios..."
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      {profileData.descripcion_corta?.length || 0}/220 caracteres
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label>Descripción completa</Label>
-                    <Textarea
-                      value={profileData.description}
-                      onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
-                      disabled={!isEditing}
-                      className="h-32"
-                      placeholder="Describe tus servicios..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Ubicación */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Ubicación y zona de trabajo</h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Provincia</Label>
-                      <Select
-                        value={profileData.provincia}
-                        onValueChange={(value) => setProfileData({ 
-                          ...profileData, 
-                          provincia: value,
-                          ciudad: "",
-                          municipio: ""
-                        })}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {provincias.map((prov) => (
-                            <SelectItem key={prov} value={prov}>
-                              {prov}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Ciudad</Label>
-                      <Select
-                        value={profileData.ciudad}
-                        onValueChange={(value) => setProfileData({ 
-                          ...profileData, 
-                          ciudad: value,
-                          municipio: ""
-                        })}
-                        disabled={!isEditing || !profileData.provincia}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ciudadesPorProvincia[profileData.provincia]?.length > 0 ? (
-                            ciudadesPorProvincia[profileData.provincia].map((ciudad) => (
-                              <SelectItem key={ciudad} value={ciudad}>
-                                {ciudad}
-                              </SelectItem>
-                            ))
-                          ) : profileData.provincia ? (
-                            // Fallback if no specific cities listed for the province, use province name as city
-                            <SelectItem value={profileData.provincia}>
-                              {profileData.provincia}
-                            </SelectItem>
-                          ) : null}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Municipio/Barrio</Label>
-                      <Input
-                        value={profileData.municipio}
-                        onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="Centro, Chamartín..."
-                      />
-                    </div>
-                  </div>
-
-                  {profileData.service_area && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-600">Ubicación completa:</p>
-                      <p className="font-semibold text-gray-900">{profileData.service_area}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <Label>Radio de servicio</Label>
-                    <Select
-                      value={profileData.radio_servicio_km?.toString()}
-                      onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5 km</SelectItem>
-                        <SelectItem value="10">10 km</SelectItem>
-                        <SelectItem value="25">25 km</SelectItem>
-                        <SelectItem value="50">50 km</SelectItem>
-                        <SelectItem value="100">100+ km</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* ✅ MODIFICADO: Horarios y disponibilidad */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Disponibilidad y horarios</h3>
-                <div className="space-y-4">
-                  {/* ✅ NUEVO: Tipo de disponibilidad */}
-                  <div>
-                    <Label>Días de trabajo</Label>
-                    {isEditing ? (
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        <div
-                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'laborables' })}
-                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                            profileData.disponibilidad_tipo === 'laborables'
-                              ? 'border-blue-600 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <p className="font-medium text-sm">📅 Días laborables (Lunes–Viernes)</p>
-                        </div>
-
-                        <div
-                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'festivos' })}
-                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                            profileData.disponibilidad_tipo === 'festivos'
-                              ? 'border-orange-600 bg-orange-50'
-                              : 'border-gray-200 hover:border-orange-300'
-                          }`}
-                        >
-                          <p className="font-medium text-sm">🎉 Fines de semana y festivos</p>
-                        </div>
-
-                        <div
-                          onClick={() => setProfileData({ ...profileData, disponibilidad_tipo: 'ambos' })}
-                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                            profileData.disponibilidad_tipo === 'ambos'
-                              ? 'border-green-600 bg-green-50'
-                              : 'border-gray-200 hover:border-green-300'
-                          }`}
-                        >
-                          <p className="font-medium text-sm">✅ Ambos (Toda la semana)</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-700 mt-2">
-                        {profileData.disponibilidad_tipo === 'laborables' && '📅 Días laborables (Lunes–Viernes)'}
-                        {profileData.disponibilidad_tipo === 'festivos' && '🎉 Fines de semana y festivos'}
-                        {profileData.disponibilidad_tipo === 'ambos' && '✅ Toda la semana'}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Hora apertura</Label>
-                      <Input
-                        type="time"
-                        value={profileData.horario_apertura}
-                        onChange={(e) => setProfileData({ ...profileData, horario_apertura: e.target.value })}
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <div>
-                      <Label>Hora cierre</Label>
-                      <Input
-                        type="time"
-                        value={profileData.horario_cierre}
-                        onChange={(e) => setProfileData({ ...profileData, horario_cierre: e.target.value })}
-                        disabled={!isEditing}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Precios */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Precios y forma de trabajo</h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Tarifa base (€/hora) - Opcional</Label>
-                      <Input
-                        type="number"
-                        value={profileData.tarifa_base === null ? '' : profileData.tarifa_base} // Display empty if null
-                        onChange={(e) => setProfileData({ ...profileData, tarifa_base: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                        disabled={!isEditing}
-                        placeholder="35 (déjalo vacío si prefieres no mostrar)"
-                      />
-                      {isEditing && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Puedes dejarlo vacío si prefieres no mostrar tarifa pública
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label>Tipo de facturación</Label>
-                      <Select
-                        value={profileData.facturacion}
-                        onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="autonomo">Autónomo</SelectItem>
-                          <SelectItem value="sociedad">Sociedad</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-base font-semibold">Formas de pago aceptadas</Label>
-                    {isEditing && (
-                      <p className="text-sm text-gray-500 mt-1 mb-3">
-                        Selecciona las formas de pago que aceptas
-                      </p>
-                    )}
-                    <div className={`space-y-2 ${!isEditing ? 'flex flex-wrap gap-2' : ''}`}>
-                      {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                        isEditing ? (
-                          <div
-                            key={forma}
-                            onClick={() => toggleFormaPago(forma)}
-                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                              profileData.formas_pago?.includes(forma)
-                                ? "border-purple-600 bg-purple-50 shadow-md"
-                                : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                              profileData.formas_pago?.includes(forma)
-                                ? "bg-purple-600 border-purple-600"
-                                : "border-gray-300"
-                            }`}>
-                              {profileData.formas_pago?.includes(forma) && (
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
-                            <span className={`text-base font-medium flex-1 transition-colors ${
-                              profileData.formas_pago?.includes(forma) ? "text-purple-900" : "text-gray-700"
-                            }`}>
-                              {forma}
-                            </span>
-                            {profileData.formas_pago?.includes(forma) && (
-                              <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
-                            )}
-                          </div>
-                        ) : (
-                          profileData.formas_pago?.includes(forma) && (
-                            <Badge key={forma} className="bg-purple-100 text-purple-900 text-sm px-3 py-1">
-                              {forma}
-                            </Badge>
-                          )
-                        )
-                      ))}
-                    </div>
-                    {isEditing && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-900 font-medium">
-                          {profileData.formas_pago?.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
-                          {profileData.formas_pago?.length === 1 && `✓ 1 forma de pago seleccionada`}
-                          {profileData.formas_pago?.length > 1 && `✓ ${profileData.formas_pago.length} formas de pago seleccionadas`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Photos */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Fotos de trabajos</h3>
-                {isEditing && (
-                  <div className="mb-4">
-                    <label className="cursor-pointer">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
-                        {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Haz clic para añadir una foto</p>
-                          </>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePhotoUpload}
-                        disabled={uploadingPhoto}
-                      />
-                    </label>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {profileData.photos?.map((photo, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
-                        src={photo}
-                        alt={`Photo ${idx + 1}`}
-                        className="w-full h-32 object-cover rounded-lg shadow-md"
-                      />
-                      {isEditing && (
-                        <button
-                          onClick={() => removePhoto(idx)}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Social Links */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Redes sociales</h3>
-                <div className="space-y-3">
-                  <Input
-                    value={profileData.social_links?.facebook || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, facebook: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de Facebook"
-                  />
-                  <Input
-                    value={profileData.social_links?.instagram || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, instagram: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de Instagram"
-                  />
-                  <Input
-                    value={profileData.social_links?.linkedin || ""}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      social_links: { ...profileData.social_links, linkedin: e.target.value }
-                    })}
-                    disabled={!isEditing}
-                    placeholder="URL de LinkedIn"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ✅ NUEVO: Dialog de confirmación de eliminación */}
-        {showDeleteDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-lg w-full">
-              <CardHeader className="bg-red-50 border-b border-red-200">
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <AlertCircle className="w-5 h-5" />
-                  ¿Eliminar tu cuenta definitivamente?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                <div className="bg-red-50 border-l-4 border-red-500 p-4">
+        {/* ✅ MODAL DE CONFIRMACIÓN DE ELIMINACIÓN - 100% OPACO */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent className="bg-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                ¿Eliminar tu cuenta definitivamente?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-700">
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
                   <p className="text-sm font-semibold text-red-800">
                     ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
                   </p>
@@ -1896,51 +878,37 @@ export default function MyProfilePage() {
                     {isProfessional && (
                       <>
                         <li>Tu perfil profesional y fotos</li>
-                        <li>Tu suscripción activa (se cancelará inmediatamente)</li>
-                        <li>Tu visibilidad en las búsquedas</li>
+                        <li>Tu suscripción activa</li>
                       </>
                     )}
                   </ul>
                 </div>
-
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                  <p className="text-sm text-blue-900">
-                    💡 <strong>Alternativa:</strong> Si solo quieres pausar tu cuenta temporalmente,
-                    puedes cancelar tu suscripción desde "Gestión de Suscripción" sin eliminar tu cuenta.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 justify-end pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteDialog(false)}
-                    disabled={isDeleting}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Eliminando...
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Sí, eliminar definitivamente
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Sí, eliminar definitivamente
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

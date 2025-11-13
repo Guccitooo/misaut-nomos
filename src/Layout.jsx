@@ -48,7 +48,6 @@ function LayoutContent({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Google Analytics
     if (window.gtag) {
       return;
     }
@@ -384,49 +383,166 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
+          /* ✅ ESTILOS GLOBALES PARA TODOS LOS MODALES Y OVERLAYS */
+          
+          /* Overlays oscuros detrás de modales */
+          [data-radix-dialog-overlay],
+          [data-radix-alert-dialog-overlay],
+          .dialog-overlay,
+          .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 200ms ease-out;
+          }
+          
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          @keyframes slideIn {
+            from { 
+              opacity: 0;
+              transform: translate(-50%, -48%) scale(0.96);
+            }
+            to { 
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+          }
+          
+          /* Contenido de modales - 100% OPACO */
           [role="dialog"],
           [role="alertdialog"],
+          [data-radix-dialog-content],
+          [data-radix-alert-dialog-content],
           .modal-content,
           .dialog-content {
             background-color: #FFFFFF !important;
-            color: #222222 !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+            color: #1F2937 !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
             border: 1px solid #E5E7EB !important;
-            border-radius: 12px !important;
+            border-radius: 16px !important;
+            animation: slideIn 250ms ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
           }
           
-          .modal-header,
+          /* Headers de modales */
           [role="dialog"] h2,
-          [role="alertdialog"] h2 {
-            background-color: #FFFFFF !important;
+          [role="alertdialog"] h2,
+          [data-dialog-title],
+          .dialog-header h2,
+          .modal-header {
+            background-color: transparent !important;
             color: #111827 !important;
             font-weight: 700 !important;
-            padding: 20px !important;
-            border-bottom: 1px solid #E5E7EB !important;
+            font-size: 1.5rem !important;
+            line-height: 1.3 !important;
+            margin-bottom: 0.5rem !important;
           }
           
-          input, select, textarea {
+          /* Descripciones de modales */
+          [role="dialog"] p,
+          [role="alertdialog"] p,
+          [data-dialog-description],
+          .dialog-description {
+            color: #4B5563 !important;
+            line-height: 1.6 !important;
+          }
+          
+          /* Inputs dentro de modales */
+          [role="dialog"] input,
+          [role="dialog"] select,
+          [role="dialog"] textarea,
+          [role="alertdialog"] input,
+          [role="alertdialog"] select,
+          [role="alertdialog"] textarea {
             background-color: #FFFFFF !important;
-            color: #222222 !important;
-            border: 1px solid #DDD !important;
-            border-radius: 6px !important;
+            color: #1F2937 !important;
+            border: 2px solid #D1D5DB !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            font-size: 16px !important;
           }
           
-          input:disabled, select:disabled, textarea:disabled {
-            background-color: #F5F5F5 !important;
-            color: #888888 !important;
+          [role="dialog"] input:focus,
+          [role="dialog"] select:focus,
+          [role="dialog"] textarea:focus {
+            border-color: #3B82F6 !important;
+            outline: none !important;
+            ring: 2px solid rgba(59, 130, 246, 0.2) !important;
           }
           
-          label {
-            color: #333333 !important;
-            font-weight: 500 !important;
+          [role="dialog"] input:disabled,
+          [role="dialog"] select:disabled,
+          [role="dialog"] textarea:disabled {
+            background-color: #F3F4F6 !important;
+            color: #9CA3AF !important;
+            cursor: not-allowed !important;
           }
           
+          /* Labels dentro de modales */
+          [role="dialog"] label,
+          [role="alertdialog"] label {
+            color: #374151 !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            margin-bottom: 8px !important;
+            display: block !important;
+          }
+          
+          /* Botones dentro de modales */
+          [role="dialog"] button,
+          [role="alertdialog"] button {
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            transition: all 150ms ease !important;
+          }
+          
+          /* Popovers y Dropdowns */
+          [data-radix-popper-content-wrapper],
+          [data-radix-select-content],
+          [data-radix-dropdown-menu-content],
+          .popover-content,
+          .select-content,
+          .dropdown-content {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+            z-index: 100 !important;
+          }
+          
+          /* Select items */
+          [data-radix-select-item],
+          .select-item {
+            color: #1F2937 !important;
+            padding: 10px 12px !important;
+            cursor: pointer !important;
+            transition: background-color 150ms ease !important;
+          }
+          
+          [data-radix-select-item]:hover,
+          .select-item:hover {
+            background-color: #EFF6FF !important;
+            color: #1E40AF !important;
+          }
+          
+          [data-radix-select-item][data-state="checked"],
+          .select-item[data-state="checked"] {
+            background-color: #DBEAFE !important;
+            color: #1E40AF !important;
+            font-weight: 600 !important;
+          }
+          
+          /* Menú móvil overlay */
           @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
               inset: 0;
-              background: rgba(0, 0, 0, 0.5);
+              background: rgba(0, 0, 0, 0.6) !important;
+              backdrop-filter: blur(4px);
               z-index: 40;
               animation: fadeIn 200ms ease;
             }
@@ -438,15 +554,11 @@ function LayoutContent({ children, currentPageName }) {
               bottom: 0;
               width: 80%;
               max-width: 320px;
-              background: white;
+              background: #FFFFFF !important;
               z-index: 50;
               animation: slideInLeft 200ms ease;
               overflow-y: auto;
-            }
-            
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
+              box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
             }
             
             @keyframes slideInLeft {
@@ -455,6 +567,7 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
+          /* Barra inferior móvil */
           .mobile-bottom-nav {
             display: none !important;
           }
@@ -466,12 +579,12 @@ function LayoutContent({ children, currentPageName }) {
               bottom: 0;
               left: 0;
               right: 0;
-              background: white;
-              border-top: 1px solid #E5E7EB;
+              background: #FFFFFF !important;
+              border-top: 2px solid #E5E7EB !important;
               grid-template-columns: repeat(4, 1fr);
               padding: 8px 0;
               z-index: 30;
-              box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+              box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
             }
             
             .main-content-with-bottom-nav {
@@ -523,6 +636,44 @@ function LayoutContent({ children, currentPageName }) {
             border-radius: 10px;
             min-width: 18px;
             text-align: center;
+          }
+          
+          /* ✅ ACCESIBILIDAD: Focus visible */
+          button:focus-visible,
+          a:focus-visible,
+          [role="button"]:focus-visible {
+            outline: 2px solid #3B82F6 !important;
+            outline-offset: 2px !important;
+          }
+          
+          /* ✅ Asegurar que modales tengan scroll si son muy largos */
+          [role="dialog"],
+          [role="alertdialog"] {
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+          }
+          
+          /* ✅ Scrollbar personalizada en modales */
+          [role="dialog"]::-webkit-scrollbar,
+          [role="alertdialog"]::-webkit-scrollbar {
+            width: 8px;
+          }
+          
+          [role="dialog"]::-webkit-scrollbar-track,
+          [role="alertdialog"]::-webkit-scrollbar-track {
+            background: #F3F4F6;
+            border-radius: 10px;
+          }
+          
+          [role="dialog"]::-webkit-scrollbar-thumb,
+          [role="alertdialog"]::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 10px;
+          }
+          
+          [role="dialog"]::-webkit-scrollbar-thumb:hover,
+          [role="alertdialog"]::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
           }
         `}
       </style>
@@ -629,14 +780,17 @@ function LayoutContent({ children, currentPageName }) {
                 <div 
                   className="mobile-menu-overlay lg:hidden" 
                   onClick={() => setMobileMenuOpen(false)}
+                  role="presentation"
+                  aria-hidden="true"
                 />
-                <div className="mobile-menu lg:hidden">
+                <div className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
                   <div className="flex items-center justify-between p-4 border-b">
                     <h2 className="font-bold text-lg">Menú</h2>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setMobileMenuOpen(false)}
+                      aria-label="Cerrar menú"
                     >
                       <X className="w-5 h-5" />
                     </Button>
@@ -772,6 +926,7 @@ function LayoutContent({ children, currentPageName }) {
                     size="icon"
                     onClick={() => setMobileMenuOpen(true)}
                     className="hover:bg-gray-100"
+                    aria-label="Abrir menú"
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
@@ -790,7 +945,7 @@ function LayoutContent({ children, currentPageName }) {
               <Footer />
 
               {shouldShowBottomBar() && (
-                <nav className="mobile-bottom-nav">
+                <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
                       key={item.title}
@@ -798,6 +953,7 @@ function LayoutContent({ children, currentPageName }) {
                       className={`mobile-bottom-nav-item ${
                         location.pathname === item.url ? 'active' : ''
                       }`}
+                      aria-label={item.title}
                     >
                       <item.icon className="w-6 h-6" />
                       <span>{item.title.split(' ')[0]}</span>
