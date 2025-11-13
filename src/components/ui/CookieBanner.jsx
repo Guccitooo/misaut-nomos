@@ -1,127 +1,77 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { X, Cookie } from "lucide-react";
-import { useLanguage } from "./LanguageSwitcher";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Cookie } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { useLanguage } from './LanguageSwitcher';
 
 export default function CookieBanner() {
   const { t } = useLanguage();
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    const cookiesAccepted = localStorage.getItem('cookies_accepted');
-    if (!cookiesAccepted) {
-      setTimeout(() => {
-        setShowBanner(true);
-      }, 1000);
+    const consent = localStorage.getItem('cookie_consent');
+    if (!consent) {
+      setTimeout(() => setShowBanner(true), 2000);
     }
   }, []);
 
-  const handleAccept = () => {
-    localStorage.setItem('cookies_accepted', 'true');
-    localStorage.setItem('cookies_accepted_date', new Date().toISOString());
+  const handleAcceptAll = () => {
+    localStorage.setItem('cookie_consent', 'all');
     setShowBanner(false);
   };
 
-  const handleReject = () => {
-    localStorage.setItem('cookies_accepted', 'false');
-    localStorage.setItem('cookies_accepted_date', new Date().toISOString());
+  const handleNecessaryOnly = () => {
+    localStorage.setItem('cookie_consent', 'necessary');
     setShowBanner(false);
   };
 
   if (!showBanner) return null;
 
   return (
-    <>
-      <style>
-        {`
-          @keyframes slideUpCookie {
-            from {
-              transform: translateY(20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-
-          .cookie-banner-compact {
-            animation: slideUpCookie 0.3s ease;
-          }
-
-          @media (max-width: 768px) {
-            .cookie-banner-compact {
-              max-width: 95% !important;
-              bottom: 10px !important;
-              left: 2.5% !important;
-              right: 2.5% !important;
-              padding: 12px 14px !important;
-            }
-
-            .cookie-banner-buttons {
-              flex-direction: column !important;
-              gap: 6px !important;
-            }
-
-            .cookie-banner-buttons button {
-              width: 100% !important;
-            }
-          }
-        `}
-      </style>
-      
-      <div 
-        className="cookie-banner-compact fixed bottom-5 left-5 right-5 mx-auto max-w-[420px] bg-white border border-gray-300 rounded-xl shadow-lg p-4 z-[9999]"
-      >
-        {/* Close button */}
-        <button
-          onClick={handleReject}
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 transition-colors"
-          aria-label="Cerrar"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Icon + Content */}
-        <div className="flex items-start gap-3 mb-3">
-          <Cookie className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 pr-4">
-            <p className="text-[13px] leading-relaxed text-gray-700">
-              🍪 <strong>{t('cookieTitle')}</strong>
-            </p>
-            <p className="text-[12px] leading-relaxed text-gray-600 mt-1">
-              {t('cookieText')}{" "}
-              <Link 
-                to={createPageUrl("CookiePolicy")} 
-                className="text-blue-600 hover:text-blue-700 underline font-medium"
-              >
-                {t('cookiePolicy')}
-              </Link>.
-            </p>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none">
+      <Card className="max-w-4xl mx-auto border-0 shadow-2xl pointer-events-auto">
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Cookie className="w-6 h-6 text-white" />
+            </div>
+            
+            <div className="flex-1">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">
+                {t('cookieTitle')}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {t('cookieText')}{" "}
+                <strong>"{t('acceptAll')}"</strong>{" "}
+                {t('cookieAccept')}{" "}
+                <Link 
+                  to={createPageUrl("CookiePolicy")} 
+                  className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                >
+                  Política de Cookies
+                </Link>.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleAcceptAll}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {t('acceptAll')}
+                </Button>
+                <Button
+                  onClick={handleNecessaryOnly}
+                  variant="outline"
+                >
+                  {t('onlyNecessary')}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Buttons */}
-        <div className="cookie-banner-buttons flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReject}
-            className="text-[12px] h-8 px-3 hover:bg-gray-100 text-gray-700"
-          >
-            {t('onlyNecessary')}
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleAccept}
-            className="text-[12px] h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {t('acceptAll')}
-          </Button>
-        </div>
-      </div>
-    </>
+      </Card>
+    </div>
   );
 }

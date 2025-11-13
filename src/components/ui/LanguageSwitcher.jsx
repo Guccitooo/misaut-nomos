@@ -33,7 +33,7 @@ export const translations = {
     logout: "Cerrar sesión",
     
     // Search & Filters
-    filters: "Filtros",
+    filters: "Filtros de búsqueda", // Updated
     search: "Buscar servicio, empresa...",
     allCategories: "Todas las categorías",
     allProvinces: "Todas las provincias",
@@ -41,7 +41,7 @@ export const translations = {
     freelancersAvailable: "autónomos disponibles",
     verifiedProfessionals: "Profesionales verificados en toda España",
     
-    // Categories (for translation)
+    // Categories
     "Electricista": "Electricista",
     "Carpintero": "Carpintero",
     "Fontanero": "Fontanero",
@@ -58,7 +58,7 @@ export const translations = {
     aboutUs: "Sobre Nosotros",
     tagline: "Tu autónomo de confianza",
     platformDescription: "La plataforma líder para conectar clientes con profesionales autónomos verificados en toda España.",
-    viewProfile: "Ver Perfil", // Added this line
+    viewProfile: "Ver Perfil",
     forProfessionals: "Para Profesionales",
     plansAndPricing: "Planes y Precios",
     createProfile: "Crear Perfil",
@@ -66,7 +66,7 @@ export const translations = {
     helpCenter: "Centro de Ayuda",
     forClients: "Para Clientes",
     createFreeAccount: "Crear Cuenta Gratis",
-    allCategories: "Todas las Categorías",
+    // allCategories: "Todas las Categorías", // Removed duplicate key
     faq: "Preguntas Frecuentes",
     contact: "Contacto",
     allRightsReserved: "Todos los derechos reservados",
@@ -87,6 +87,19 @@ export const translations = {
     noResults: "No se encontraron resultados",
     tryDifferentFilters: "Prueba con otros filtros o elimina los filtros activos.",
     viewAll: "Ver todos los autónomos",
+
+    // Profile (New)
+    profileCompleteness: "Completitud del perfil",
+    completeProfile: "Completar perfil",
+    profileVisible: "Visible para clientes",
+    profileHidden: "Perfil oculto",
+    addProfilePhoto: "Añadir foto de perfil",
+    uploadPhoto: "Subir foto",
+    
+    // Errors (user-friendly) (New)
+    errorGeneric: "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+    errorNetwork: "Error de conexión. Verifica tu internet.",
+    errorNotFound: "No se encontró la información solicitada.",
   },
   en: {
     // Header
@@ -111,7 +124,7 @@ export const translations = {
     logout: "Logout",
     
     // Search & Filters
-    filters: "Filters",
+    filters: "Search filters", // Updated
     search: "Search service, company...",
     allCategories: "All categories",
     allProvinces: "All provinces",
@@ -136,7 +149,7 @@ export const translations = {
     aboutUs: "About Us",
     tagline: "Your trusted freelancer",
     platformDescription: "The leading platform to connect clients with verified freelance professionals throughout Spain.",
-    viewProfile: "View Profile", // Added for consistency in EN translation
+    viewProfile: "View Profile",
     forProfessionals: "For Professionals",
     plansAndPricing: "Plans & Pricing",
     createProfile: "Create Profile",
@@ -144,7 +157,7 @@ export const translations = {
     helpCenter: "Help Center",
     forClients: "For Clients",
     createFreeAccount: "Create Free Account",
-    allCategories: "All Categories",
+    // allCategories: "All Categories", // Removed duplicate key
     faq: "FAQ",
     contact: "Contact",
     allRightsReserved: "All rights reserved",
@@ -165,6 +178,19 @@ export const translations = {
     noResults: "No results found",
     tryDifferentFilters: "Try different filters or remove active filters.",
     viewAll: "View all freelancers",
+
+    // Profile (New)
+    profileCompleteness: "Profile completeness",
+    completeProfile: "Complete profile",
+    profileVisible: "Visible to clients",
+    profileHidden: "Profile hidden",
+    addProfilePhoto: "Add profile photo",
+    uploadPhoto: "Upload photo",
+    
+    // Errors (user-friendly) (New)
+    errorGeneric: "An error occurred. Please try again.",
+    errorNetwork: "Connection error. Check your internet.",
+    errorNotFound: "The requested information was not found.",
   }
 };
 

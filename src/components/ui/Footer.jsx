@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { MapPin, Mail, Phone, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Mail, Phone, ChevronDown, ChevronUp, Globe } from "lucide-react"; // Added Globe icon
 import { useLanguage } from "./LanguageSwitcher";
 
 export default function Footer() {
@@ -22,7 +23,7 @@ export default function Footer() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-                  <img 
+                  <img
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
                     alt="Misautónomos"
                     className="w-full h-full object-cover"
@@ -43,9 +44,9 @@ export default function Footer() {
                 {t('platformDescription')}
               </p>
               <div className="flex gap-3">
-                <a 
-                  href="https://facebook.com" 
-                  target="_blank" 
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors"
                 >
@@ -53,9 +54,9 @@ export default function Footer() {
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
-                <a 
-                  href="https://twitter.com" 
-                  target="_blank" 
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-400 flex items-center justify-center transition-colors"
                 >
@@ -63,9 +64,9 @@ export default function Footer() {
                     <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                   </svg>
                 </a>
-                <a 
-                  href="https://linkedin.com" 
-                  target="_blank" 
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-700 flex items-center justify-center transition-colors"
                 >
@@ -140,14 +141,20 @@ export default function Footer() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
-                  <a href="mailto:contacto@autonomosmil.es" className="hover:text-white transition-colors">
-                    contacto@autonomosmil.es
+                  <a href="mailto:soporte@misautonomos.es" className="hover:text-white transition-colors">
+                    soporte@misautonomos.es
                   </a>
                 </li>
                 <li className="flex items-start gap-2">
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
                   <a href="tel:+34900123456" className="hover:text-white transition-colors">
                     +34 900 123 456
+                  </a>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Globe className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                  <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    misautonomos.es
                   </a>
                 </li>
               </ul>
@@ -160,7 +167,7 @@ export default function Footer() {
           {/* Bottom Footer */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <div className="text-center text-sm text-gray-400">
-              <p>© 2024 Misautónomos. {t('allRightsReserved')}.</p>
+              <p>© {new Date().getFullYear()} Misautónomos. Todos los derechos reservados.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to={createPageUrl("PrivacyPolicy")} className="hover:text-white transition-colors">
@@ -189,7 +196,7 @@ export default function Footer() {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-              <img 
+              <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
                 alt="Misautónomos"
                 className="w-full h-full object-cover"
@@ -207,9 +214,9 @@ export default function Footer() {
             </div>
           </div>
           <div className="flex gap-2 justify-center">
-            <a 
-              href="https://facebook.com" 
-              target="_blank" 
+            <a
+              href="https://facebook.com"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors"
             >
@@ -217,9 +224,9 @@ export default function Footer() {
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
             </a>
-            <a 
-              href="https://twitter.com" 
-              target="_blank" 
+            <a
+              href="https://twitter.com"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-blue-400 flex items-center justify-center transition-colors"
             >
@@ -227,9 +234,9 @@ export default function Footer() {
                 <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
               </svg>
             </a>
-            <a 
-              href="https://linkedin.com" 
-              target="_blank" 
+            <a
+              href="https://linkedin.com"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-blue-700 flex items-center justify-center transition-colors"
             >
@@ -329,14 +336,20 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-400" />
-                <a href="mailto:contacto@autonomosmil.es" className="hover:text-white transition-colors">
-                  contacto@autonomosmil.es
+                <a href="mailto:soporte@misautonomos.es" className="hover:text-white transition-colors">
+                  soporte@misautonomos.es
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <Phone className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-400" />
                 <a href="tel:+34900123456" className="hover:text-white transition-colors">
                   +34 900 123 456
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Globe className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-400" />
+                <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  misautonomos.es
                 </a>
               </li>
             </ul>
@@ -364,7 +377,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-center text-[11px] text-gray-400 mt-4">
-          © {new Date().getFullYear()} Misautónomos
+          © {new Date().getFullYear()} Misautónomos. Todos los derechos reservados.
         </div>
       </div>
     </footer>

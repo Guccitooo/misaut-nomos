@@ -162,11 +162,30 @@ export default function PricingPlansPage() {
 
   const handleSelectPlan = async (plan) => {
     console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
-    console.log('👤 Usuario en handleSelectPlan:', user?.email, 'Tipo:', user?.user_type);
     
-    // ✅ NUEVO: Verificar si ya tiene este plan activo
-    // Check if there's an existing subscription and it's in an active state (activo, en_prueba)
-    // and if the plan being selected is the same as the existing one.
+    // ✅ NUEVO: Verificar si ya usó el trial
+    if (user && plan.plan_id === "plan_monthly_trial") {
+      if (user.has_used_trial === true) {
+        toast.error("Ya has usado tu periodo de prueba gratuito. Por favor, selecciona un plan de pago.", {
+          duration: 7000
+        });
+        return;
+      }
+      
+      // Double check en suscripciones
+      if (existingSubscription) {
+        const hasUsedTrial = existingSubscription.plan_id === "plan_monthly_trial" || 
+                            existingSubscription.estado === "en_prueba";
+        if (hasUsedTrial) {
+          toast.error("Ya has usado tu periodo de prueba gratuito anteriormente. Selecciona un plan de pago.", {
+            duration: 7000
+          });
+          return;
+        }
+      }
+    }
+
+    // ✅ Verificar si ya tiene este plan activo
     if (existingSubscription) {
       const activeStates = ["activo", "en_prueba"];
       if (activeStates.includes(existingSubscription.estado) && 
