@@ -250,7 +250,8 @@ export default function ProfessionalProfilePage() {
           <OptimizedImage
             src={profile.photos[0]}
             alt={profile.business_name}
-            className="w-full h-full absolute inset-0 opacity-30 object-cover"
+            className="w-full h-full absolute inset-0 opacity-30"
+            objectFit="cover"
             priority={true}
           />
         )}
@@ -273,13 +274,16 @@ export default function ProfessionalProfilePage() {
         <Card className="mb-6 shadow-2xl border-0">
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* ✅ MODIFICADO: Avatar con foto de perfil */}
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
                 {professionalUser?.profile_picture ? (
-                  <img 
+                  <OptimizedImage
                     src={professionalUser.profile_picture} 
                     alt={profile.business_name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
+                    objectFit="cover"
+                    width={96}
+                    height={96}
+                    priority={true}
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white text-3xl font-bold">

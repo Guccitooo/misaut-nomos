@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import OptimizedImage from "../components/ui/OptimizedImage";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
@@ -922,7 +924,14 @@ export default function MessagesPage() {
                       {(() => {
                         const cachedUser = loadUserFromCache(conv.otherUserId);
                         return cachedUser?.profile_picture ? (
-                          <img src={cachedUser.profile_picture} alt="Perfil" className="w-full h-full object-cover" />
+                          <OptimizedImage
+                            src={cachedUser.profile_picture}
+                            alt="Perfil"
+                            className="w-full h-full"
+                            objectFit="cover"
+                            width={40}
+                            height={40}
+                          />
                         ) : (
                           <AvatarFallback className="bg-blue-100 text-blue-900">
                             {(conv.otherUserName || "?").charAt(0).toUpperCase()}
@@ -974,7 +983,15 @@ export default function MessagesPage() {
 
                   <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
                     {otherUserData?.profile_picture ? (
-                      <img src={otherUserData.profile_picture} alt="Perfil" className="w-full h-full object-cover" />
+                      <OptimizedImage
+                        src={otherUserData.profile_picture}
+                        alt="Perfil"
+                        className="w-full h-full"
+                        objectFit="cover"
+                        width={40}
+                        height={40}
+                        priority={true}
+                      />
                     ) : (
                       <AvatarFallback className="bg-blue-700 text-white">
                         {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}

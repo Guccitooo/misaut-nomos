@@ -35,6 +35,8 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
+import OptimizedLogo from "@/components/ui/OptimizedLogo";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
@@ -385,7 +387,6 @@ function LayoutContent({ children, currentPageName }) {
           
           /* ✅ ESTILOS GLOBALES PARA TODOS LOS MODALES Y OVERLAYS */
           
-          /* Overlays oscuros detrás de modales */
           [data-radix-dialog-overlay],
           [data-radix-alert-dialog-overlay],
           .dialog-overlay,
@@ -411,7 +412,6 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* Contenido de modales - 100% OPACO */
           [role="dialog"],
           [role="alertdialog"],
           [data-radix-dialog-content],
@@ -428,7 +428,6 @@ function LayoutContent({ children, currentPageName }) {
             overflow-y: auto;
           }
           
-          /* Headers de modales */
           [role="dialog"] h2,
           [role="alertdialog"] h2,
           [data-dialog-title],
@@ -442,7 +441,6 @@ function LayoutContent({ children, currentPageName }) {
             margin-bottom: 0.5rem !important;
           }
           
-          /* Descripciones de modales */
           [role="dialog"] p,
           [role="alertdialog"] p,
           [data-dialog-description],
@@ -451,7 +449,6 @@ function LayoutContent({ children, currentPageName }) {
             line-height: 1.6 !important;
           }
           
-          /* Inputs dentro de modales */
           [role="dialog"] input,
           [role="dialog"] select,
           [role="dialog"] textarea,
@@ -482,7 +479,6 @@ function LayoutContent({ children, currentPageName }) {
             cursor: not-allowed !important;
           }
           
-          /* Labels dentro de modales */
           [role="dialog"] label,
           [role="alertdialog"] label {
             color: #374151 !important;
@@ -492,7 +488,6 @@ function LayoutContent({ children, currentPageName }) {
             display: block !important;
           }
           
-          /* Botones dentro de modales */
           [role="dialog"] button,
           [role="alertdialog"] button {
             font-weight: 600 !important;
@@ -500,7 +495,6 @@ function LayoutContent({ children, currentPageName }) {
             transition: all 150ms ease !important;
           }
           
-          /* Popovers y Dropdowns */
           [data-radix-popper-content-wrapper],
           [data-radix-select-content],
           [data-radix-dropdown-menu-content],
@@ -514,7 +508,6 @@ function LayoutContent({ children, currentPageName }) {
             z-index: 100 !important;
           }
           
-          /* Select items */
           [data-radix-select-item],
           .select-item {
             color: #1F2937 !important;
@@ -536,7 +529,6 @@ function LayoutContent({ children, currentPageName }) {
             font-weight: 600 !important;
           }
           
-          /* Menú móvil overlay */
           @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
@@ -567,7 +559,6 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* Barra inferior móvil */
           .mobile-bottom-nav {
             display: none !important;
           }
@@ -638,7 +629,6 @@ function LayoutContent({ children, currentPageName }) {
             text-align: center;
           }
           
-          /* ✅ ACCESIBILIDAD: Focus visible */
           button:focus-visible,
           a:focus-visible,
           [role="button"]:focus-visible {
@@ -646,14 +636,12 @@ function LayoutContent({ children, currentPageName }) {
             outline-offset: 2px !important;
           }
           
-          /* ✅ Asegurar que modales tengan scroll si son muy largos */
           [role="dialog"],
           [role="alertdialog"] {
             max-height: 90vh !important;
             overflow-y: auto !important;
           }
           
-          /* ✅ Scrollbar personalizada en modales */
           [role="dialog"]::-webkit-scrollbar,
           [role="alertdialog"]::-webkit-scrollbar {
             width: 8px;
@@ -687,19 +675,7 @@ function LayoutContent({ children, currentPageName }) {
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                      <img 
-                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                        alt="MisAutónomos"
-                        className="w-full h-full object-cover"
-                        loading="eager"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                        }}
-                      />
-                    </div>
+                    <OptimizedLogo size="md" />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
@@ -741,7 +717,12 @@ function LayoutContent({ children, currentPageName }) {
                     <div className="flex items-center gap-3 px-2">
                       <Avatar className="w-10 h-10 border-2 border-blue-600">
                         {getProfilePicture() ? (
-                          <img src={getProfilePicture()} alt="Perfil" className="w-full h-full object-cover" />
+                          <OptimizedImage 
+                            src={getProfilePicture()} 
+                            alt="Perfil" 
+                            className="w-full h-full object-cover"
+                            priority={true}
+                          />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                             {getDisplayName().charAt(0).toUpperCase()}
@@ -801,7 +782,12 @@ function LayoutContent({ children, currentPageName }) {
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
-                            <img src={getProfilePicture()} alt="Perfil" className="w-full h-full object-cover" />
+                            <OptimizedImage 
+                              src={getProfilePicture()} 
+                              alt="Perfil" 
+                              className="w-full h-full object-cover"
+                              priority={true}
+                            />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                               {getDisplayName().charAt(0).toUpperCase()}
@@ -879,19 +865,7 @@ function LayoutContent({ children, currentPageName }) {
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                        <img 
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                          alt="MisAutónomos"
-                          className="w-full h-full object-cover"
-                          loading="eager"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.style.display = 'none';
-                            e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>';
-                          }}
-                        />
-                      </div>
+                      <OptimizedLogo size="md" />
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>

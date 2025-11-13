@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
+import OptimizedImage from "../components/ui/OptimizedImage";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -163,10 +165,13 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             <div className="flex-shrink-0">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100">
                 {profileUser?.profile_picture ? (
-                  <img 
+                  <OptimizedImage
                     src={profileUser.profile_picture} 
                     alt={profile.business_name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
+                    objectFit="cover"
+                    width={48}
+                    height={48}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-lg">
@@ -260,7 +265,6 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div className="flex-1"></div>
 
-        {/* ✅ ÚNICO BLOQUE DE BOTONES - Sin duplicados */}
         <div className="mt-auto pt-3">
           {profile.telefono_contacto && (profile.metodos_contacto?.includes('telefono') || profile.metodos_contacto?.includes('whatsapp')) ? (
             <div className="grid grid-cols-3 gap-1.5">

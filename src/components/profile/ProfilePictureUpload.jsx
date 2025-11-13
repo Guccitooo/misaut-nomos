@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, X } from "lucide-react";
 import { toast } from "sonner";
+import OptimizedImage from "../ui/OptimizedImage";
 
 export default function ProfilePictureUpload({ user, currentPicture, onUpdate, size = "lg" }) {
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(currentPicture);
   
   const sizes = {
     sm: { avatar: "w-16 h-16", icon: "w-4 h-4", text: "text-xs" },
@@ -18,23 +20,30 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validar tamaño (máx 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("La imagen no puede superar los 5MB");
       return;
     }
     
-    // Validar tipo
     if (!file.type.startsWith('image/')) {
       toast.error("Solo se permiten archivos de imagen");
       return;
     }
     
     setUploading(true);
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+    
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
       await base44.auth.updateMe({ profile_picture: file_url });
+      
+      setPreviewUrl(file_url);
       
       if (onUpdate) {
         onUpdate(file_url);
@@ -44,8 +53,25 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
     } catch (error) {
       console.error("Error uploading profile picture:", error);
       toast.error("Error al subir la foto");
+      setPreviewUrl(currentPicture);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    try {
+      await base44.auth.updateMe({ profile_picture: "" });
+      setPreviewUrl(null);
+      
+      if (onUpdate) {
+        onUpdate("");
+      }
+      
+      toast.success("Foto eliminada");
+    } catch (error) {
+      console.error("Error removing profile picture:", error);
+      toast.error("Error al eliminar la foto");
     }
   };
   
@@ -68,8 +94,14 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
     <div className="flex flex-col items-center gap-3">
       <div className="relative group">
         <Avatar className={`${sizes[size].avatar} border-4 border-white shadow-xl`}>
-          {currentPicture ? (
-            <AvatarImage src={currentPicture} alt="Foto de perfil" />
+          {previewUrl ? (
+            <OptimizedImage
+              src={previewUrl}
+              alt="Foto de perfil"
+              className="w-full h-full"
+              objectFit="cover"
+              priority={true}
+            />
           ) : (
             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-2xl">
               {getInitials()}
@@ -93,14 +125,24 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
             disabled={uploading}
           />
         </label>
+
+        {previewUrl && (
+          <button
+            onClick={handleRemove}
+            className="absolute top-0 left-0 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+            aria-label="Eliminar foto"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        )}
       </div>
       
       <div className="text-center">
         <p className={`font-semibold text-gray-900 ${sizes[size].text}`}>
-          {currentPicture ? 'Cambiar foto' : 'Añadir foto de perfil'}
+          {previewUrl ? 'Cambiar foto' : 'Añadir foto de perfil'}
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          Recomendado: rostro profesional o logo
+          Máx 5MB - JPG, PNG o WEBP
         </p>
       </div>
     </div>

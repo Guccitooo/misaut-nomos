@@ -1,53 +1,90 @@
-import React, { useState } from "react";
-import { ImageIcon } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { ImageIcon } from 'lucide-react';
 
 export default function OptimizedImage({ 
   src, 
   alt, 
   className = "", 
-  fallbackClassName = "",
-  aspectRatio = "aspect-square",
-  priority = false 
+  fallback = null,
+  priority = false,
+  objectFit = "cover",
+  width,
+  height
 }) {
-  const [loaded, setLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isInView, setIsInView] = useState(priority);
+  const imgRef = useRef(null);
 
-  // ✅ Convertir a WebP si es posible
-  const optimizedSrc = src && !src.includes('.svg') 
-    ? src.replace(/\.(jpg|jpeg|png)$/i, '.webp') 
-    : src;
+  useEffect(() => {
+    if (priority) {
+      setIsInView(true);
+      return;
+    }
 
-  if (error || !src) {
-    return (
-      <div className={`${className} ${aspectRatio} bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center ${fallbackClassName}`}>
-        <ImageIcon className="w-12 h-12 text-blue-300" />
-      </div>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '200px',
+      }
     );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [priority]);
+
+  const handleLoad = () => {
+    setIsLoading(false);
+    setError(false);
+  };
+
+  const handleError = () => {
+    setIsLoading(false);
+    setError(true);
+  };
+
+  const defaultFallback = (
+    <div className={`${className} bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
+      <ImageIcon className="w-1/3 h-1/3 text-gray-400" />
+    </div>
+  );
+
+  if (error) {
+    return fallback || defaultFallback;
   }
 
   return (
-    <div className={`${className} ${aspectRatio} relative overflow-hidden bg-gray-100`}>
-      {!loaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-100 animate-pulse" />
+    <div ref={imgRef} className={`relative ${className}`}>
+      {isLoading && (
+        <div className={`absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse`} />
       )}
-      <img
-        src={optimizedSrc}
-        alt={alt}
-        loading={priority ? "eager" : "lazy"}
-        decoding="async"
-        className={`w-full h-full object-cover transition-opacity duration-200 ${
-          loaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        onLoad={() => setLoaded(true)}
-        onError={(e) => {
-          // ✅ Fallback a imagen original si WebP falla
-          if (optimizedSrc !== src) {
-            e.target.src = src;
-          } else {
-            setError(true);
-          }
-        }}
-      />
+      {isInView && src && (
+        <img
+          src={src}
+          alt={alt}
+          width={width}
+          height={height}
+          loading={priority ? "eager" : "lazy"}
+          fetchpriority={priority ? "high" : "auto"}
+          className={`${className} transition-opacity duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{ objectFit }}
+          onLoad={handleLoad}
+          onError={handleError}
+          decoding={priority ? "sync" : "async"}
+        />
+      )}
     </div>
   );
 }
