@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,20 +72,104 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
     mutationFn: async (reviewId) => {
       await base44.entities.Review.update(reviewId, { is_reported: true });
       
+      const review = reportingReview; // Access the review from component state
+      if (!review) {
+        console.error("Review data (reportingReview) not available for sending email.");
+        return; // Or throw an error to stop execution
+      }
+
+      // Fetch professional user details using professionalId prop
+      // This assumes base44.entities.User.get returns a single user object.
+      const professionalDetails = await base44.entities.User.get(professionalId); 
+      if (!professionalDetails || !professionalDetails.email) {
+        console.error("Professional user details or email not found for ID:", professionalId);
+        // Fallback or skip email if professional email is not found
+        return; 
+      }
+
       await base44.integrations.Core.SendEmail({
-        to: "admin@milautonomos.com",
-        subject: "⚠️ Opinión reportada - milautonomos",
-        body: `Una opinión ha sido reportada por un usuario.
-
-Review ID: ${reviewId}
-Reportado por: ${currentUser.email}
-
-Por favor, revisa esta opinión en el dashboard de administración.
-
-Gracias,
-Sistema milautonomos`,
-        from_name: "milautonomos"
-      });
+        to: professionalDetails.email,
+        subject: "⭐ Nueva valoración en tu perfil - Misautónomos",
+        body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .rating-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .rating-box h3 { color: #92400e; margin: 0 0 15px 0; font-size: 18px; }
+    .rating-box p { color: #78350f; margin: 5px 0; font-weight: 500; }
+    .comment-box { background: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .comment-box p { color: #4b5563; margin: 0; font-style: italic; line-height: 1.6; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
+    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⭐</div>
+      <h1>Nueva valoración recibida</h1>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hola,</p>
+      
+      <p class="message">
+        Has recibido una nueva valoración en tu perfil profesional de <strong>Misautónomos</strong>.
+      </p>
+      
+      <div class="rating-box">
+        <h3>📊 Valoraciones recibidas</h3>
+        <p>👤 Cliente: ${review.client_name || 'Anónimo'}</p>
+        <p>⚡ Rapidez: ${review.rapidez || 'N/A'} estrellas</p>
+        <p>💬 Comunicación: ${review.comunicacion || 'N/A'} estrellas</p>
+        <p>✨ Calidad: ${review.calidad || 'N/A'} estrellas</p>
+        <p>💰 Precio/Satisfacción: ${review.precio_satisfaccion || 'N/A'} estrellas</p>
+      </div>
+      
+      ${review.comment ? `
+      <div class="comment-box">
+        <p><strong>💭 Comentario del cliente:</strong></p>
+        <p style="margin-top: 10px;">"${review.comment}"</p>
+      </div>
+      ` : ''}
+      
+      <p class="message">
+        Las valoraciones positivas mejoran tu posicionamiento en las búsquedas y generan más confianza en los clientes.
+      </p>
+      
+      <p class="message" style="font-size: 14px; color: #6b7280; text-align: center;">
+        ¿Dudas? Contacta con nosotros:<br/>
+        <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6; text-decoration: none;">soporte@misautonomos.es</a>
+      </p>
+    </div>
+    
+    <div class="footer">
+      <strong>Equipo Misautónomos</strong>
+      <p class="tagline">Tu autónomo de confianza</p>
+      <p>
+        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
+        <a href="https://misautonomos.es">misautonomos.es</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+        from_name: "Misautónomos"
+      }).catch(err => console.log('Email error:', err));
     },
     onSuccess: () => {
       setReportingReview(null);
