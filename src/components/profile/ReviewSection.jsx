@@ -74,8 +74,8 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       
       const review = reportingReview; // Access the review from component state
       if (!review) {
-        console.error("Review data (reportingReview) not available for sending email.");
-        return; // Or throw an error to stop execution
+        console.error("Review data (reportingReview) not available for sending email to professional.");
+        // Continue execution for admin email, as it doesn't strictly depend on all review details.
       }
 
       // Fetch professional user details using professionalId prop
@@ -84,13 +84,15 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       if (!professionalDetails || !professionalDetails.email) {
         console.error("Professional user details or email not found for ID:", professionalId);
         // Fallback or skip email if professional email is not found
-        return; 
+        // We can still proceed with admin email.
       }
 
-      await base44.integrations.Core.SendEmail({
-        to: professionalDetails.email,
-        subject: "⭐ Nueva valoración en tu perfil - Misautónomos",
-        body: `
+      // Existing email to professional (NOTE: subject says 'Nueva valoración' but this is 'report' mutation)
+      if (review && professionalDetails && professionalDetails.email) {
+        await base44.integrations.Core.SendEmail({
+          to: professionalDetails.email,
+          subject: "⭐ Nueva valoración en tu perfil - Misautónomos",
+          body: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -168,8 +170,69 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
 </body>
 </html>
         `,
+          from_name: "Misautónomos"
+        }).catch(err => console.log('Email to professional error:', err));
+      }
+
+      // NEW: Email to administrator about the reported review
+      await base44.integrations.Core.SendEmail({
+        to: "administrador@misautonomos.es",
+        subject: "⚠️ Opinión reportada - Misautónomos",
+        body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .alert-box { background: #fee2e2; border-left: 4px solid #dc2626; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .alert-box p { color: #991b1b; margin: 5px 0; font-weight: 500; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⚠️</div>
+      <h1>Opinión reportada</h1>
+    </div>
+    
+    <div class="content">
+      <p class="message">
+        Una opinión ha sido reportada por un usuario en la plataforma.
+      </p>
+      
+      <div class="alert-box">
+        <p><strong>Review ID:</strong> ${reviewId}</p>
+        <p><strong>Reportado por:</strong> ${currentUser?.email || 'Usuario anónimo'}</p>
+      </div>
+      
+      <p class="message">
+        Por favor, revisa esta opinión en el dashboard de administración para determinar si contiene contenido inapropiado.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <strong>Sistema Misautónomos</strong>
+      <p style="margin-top: 10px;">
+        <a href="mailto:administrador@misautonomos.es">administrador@misautonomos.es</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
         from_name: "Misautónomos"
-      }).catch(err => console.log('Email error:', err));
+      }).catch(err => console.log('Email to administrator error:', err));
     },
     onSuccess: () => {
       setReportingReview(null);
