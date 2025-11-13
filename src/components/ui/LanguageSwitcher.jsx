@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
@@ -33,7 +32,7 @@ export const translations = {
     logout: "Cerrar sesión",
     
     // Search & Filters
-    filters: "Filtros de búsqueda", // Updated
+    filters: "Filtros de búsqueda",
     search: "Buscar servicio, empresa...",
     allCategories: "Todas las categorías",
     allProvinces: "Todas las provincias",
@@ -66,7 +65,6 @@ export const translations = {
     helpCenter: "Centro de Ayuda",
     forClients: "Para Clientes",
     createFreeAccount: "Crear Cuenta Gratis",
-    // allCategories: "Todas las Categorías", // Removed duplicate key
     faq: "Preguntas Frecuentes",
     contact: "Contacto",
     allRightsReserved: "Todos los derechos reservados",
@@ -87,8 +85,8 @@ export const translations = {
     noResults: "No se encontraron resultados",
     tryDifferentFilters: "Prueba con otros filtros o elimina los filtros activos.",
     viewAll: "Ver todos los autónomos",
-
-    // Profile (New)
+    
+    // Profile
     profileCompleteness: "Completitud del perfil",
     completeProfile: "Completar perfil",
     profileVisible: "Visible para clientes",
@@ -96,7 +94,7 @@ export const translations = {
     addProfilePhoto: "Añadir foto de perfil",
     uploadPhoto: "Subir foto",
     
-    // Errors (user-friendly) (New)
+    // Errors
     errorGeneric: "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
     errorNetwork: "Error de conexión. Verifica tu internet.",
     errorNotFound: "No se encontró la información solicitada.",
@@ -124,7 +122,7 @@ export const translations = {
     logout: "Logout",
     
     // Search & Filters
-    filters: "Search filters", // Updated
+    filters: "Search filters",
     search: "Search service, company...",
     allCategories: "All categories",
     allProvinces: "All provinces",
@@ -157,7 +155,6 @@ export const translations = {
     helpCenter: "Help Center",
     forClients: "For Clients",
     createFreeAccount: "Create Free Account",
-    // allCategories: "All Categories", // Removed duplicate key
     faq: "FAQ",
     contact: "Contact",
     allRightsReserved: "All rights reserved",
@@ -178,8 +175,8 @@ export const translations = {
     noResults: "No results found",
     tryDifferentFilters: "Try different filters or remove active filters.",
     viewAll: "View all freelancers",
-
-    // Profile (New)
+    
+    // Profile
     profileCompleteness: "Profile completeness",
     completeProfile: "Complete profile",
     profileVisible: "Visible to clients",
@@ -187,14 +184,13 @@ export const translations = {
     addProfilePhoto: "Add profile photo",
     uploadPhoto: "Upload photo",
     
-    // Errors (user-friendly) (New)
+    // Errors
     errorGeneric: "An error occurred. Please try again.",
     errorNetwork: "Connection error. Check your internet.",
     errorNotFound: "The requested information was not found.",
   }
 };
 
-// ✅ Context para que el idioma sea reactivo globalmente
 const LanguageContext = createContext({
   language: 'es',
   changeLanguage: () => {},
@@ -203,24 +199,20 @@ const LanguageContext = createContext({
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    // Check if localStorage is available (client-side)
     if (typeof window !== 'undefined') {
       return localStorage.getItem('language') || 'es';
     }
-    return 'es'; // Default to 'es' if localStorage is not available (server-side rendering)
+    return 'es';
   });
 
   useEffect(() => {
-    // Ensure document.documentElement is available (client-side)
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', language);
     }
   }, [language]);
 
   const changeLanguage = (lang) => {
-    console.log('🌍 Cambiando idioma a:', lang);
     setLanguage(lang);
-    // Check if localStorage is available before using it
     if (typeof window !== 'undefined') {
       localStorage.setItem('language', lang);
     }
@@ -248,7 +240,6 @@ export const useLanguage = () => {
 export default function LanguageSwitcher({ variant = "default" }) {
   const { language, changeLanguage } = useLanguage();
 
-  // Variante compacta para header (sin dropdown)
   if (variant === "compact") {
     return (
       <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm">
@@ -277,7 +268,6 @@ export default function LanguageSwitcher({ variant = "default" }) {
     );
   }
 
-  // Variante default (dropdown)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

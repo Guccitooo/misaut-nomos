@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,9 +42,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
-// ✅ REMOVIDO: import AvailabilityBadge - ya no se usa en tarjetas
 
-// ✅ Helper function moved outside component
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
   
@@ -92,18 +89,7 @@ const CATEGORY_ICONS = {
   "Autónomo de limpieza": Trash2,
   "Cerrajero": Key,
   "Instalador de aire acondicionado": Wind,
-  "Mantenimiento general": Settings,
-  "Fontanería": Wrench,
-  "Albañilería": Home,
-  "Electricidad": Zap,
-  "Carpintería": Hammer,
-  "Pintura": Paintbrush,
-  "Jardinería": Leaf,
-  "Transporte": Truck,
-  "Limpieza": Trash2,
-  "Cerrajería": Key,
-  "Aire acondicionado": Wind,
-  "Mantenimiento": Settings
+  "Mantenimiento general": Settings
 };
 
 const BASE_CATEGORIES = [
@@ -117,7 +103,7 @@ const BASE_CATEGORIES = [
   { name: "Autónomo de limpieza", icon: "Trash2" },
   { name: "Cerrajero", icon: "Key" },
   { name: "Instalador de aire acondicionado", icon: "Wind" },
-  "Mantenimiento general", { name: "Mantenimiento general", icon: "Settings" }
+  { name: "Mantenimiento general", icon: "Settings" }
 ];
 
 function useDebounce(value, delay) {
@@ -172,9 +158,8 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
       <CardContent className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-2 h-16">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            {/* ✅ NUEVO: Avatar con foto de perfil */}
             <div className="flex-shrink-0">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100">
                 {profileUser?.profile_picture ? (
@@ -234,10 +219,8 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
           </div>
         </div>
 
-        {/* ✅ REMOVIDO: Badge de disponibilidad - solo en ficha individual */}
-
         <div 
-          className="flex flex-wrap gap-1 mb-2 h-7 cursor-pointer"
+          className="flex flex-wrap gap-1 mb-2 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           {profile.categories?.slice(0, 2).map((cat, idx) => (
@@ -251,7 +234,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
         </div>
 
         <div 
-          className="mb-2 h-5 cursor-pointer"
+          className="mb-2 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           {profile.service_area ? (
@@ -260,14 +243,12 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
               <span className="truncate">{profile.service_area}</span>
             </div>
           ) : (
-            <div></div>
+            <div className="h-5"></div>
           )}
         </div>
 
-        {/* ✅ REMOVIDO: Tarifa base - solo se muestra en ficha individual */}
-
         <div 
-          className="mb-3 h-10 cursor-pointer"
+          className="mb-3 cursor-pointer"
           onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
         >
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
@@ -279,41 +260,53 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div className="flex-1"></div>
 
-        {/* Botones de contacto según metodos_contacto */}
-        {profile.telefono_contacto && (
-          <div className="grid grid-cols-3 gap-1.5">
-            {profile.metodos_contacto?.includes('telefono') && (
-              <a
-                href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+        {/* ✅ ÚNICO BLOQUE DE BOTONES - Sin duplicados */}
+        <div className="mt-auto pt-3">
+          {profile.telefono_contacto && (profile.metodos_contacto?.includes('telefono') || profile.metodos_contacto?.includes('whatsapp')) ? (
+            <div className="grid grid-cols-3 gap-1.5">
+              {profile.metodos_contacto?.includes('telefono') && (
+                <a
+                  href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Phone className="w-4 h-4" />
-                </Button>
-              </a>
-            )}
-            
-            {profile.metodos_contacto?.includes('whatsapp') && (
-              <a
-                href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button 
-                  size="sm"
-                  className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                  >
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                </a>
+              )}
+              
+              {profile.metodos_contacto?.includes('whatsapp') && (
+                <a
+                  href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-              </a>
-            )}
-            
-            {/* Chat interno - Siempre disponible */}
+                  <Button 
+                    size="sm"
+                    className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                </a>
+              )}
+              
+              <Button
+                size="sm"
+                className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartChat(profile.user_id, profile.business_name);
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
             <Button
               size="sm"
               className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
@@ -322,25 +315,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                 onStartChat(profile.user_id, profile.business_name);
               }}
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat directo
             </Button>
-          </div>
-        )}
-
-        {/* Si no hay teléfono, solo chat interno */}
-        {!profile.telefono_contacto && (
-          <Button
-            size="sm"
-            className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStartChat(profile.user_id, profile.business_name);
-            }}
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Chat directo
-          </Button>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -416,7 +395,6 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 10,
   });
 
-  // ✅ Query de suscripciones - SIN initialData
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
@@ -428,7 +406,6 @@ export default function SearchPage() {
     refetchOnMount: true,
   });
 
-  // ✅ Query de perfiles - SIN initialData
   const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['allProfiles'],
     queryFn: async () => {
@@ -440,81 +417,23 @@ export default function SearchPage() {
     refetchOnMount: true,
   });
 
-  // ✅ Filtrar perfiles visibles
   const profiles = useMemo(() => {
-    console.log('🔍 Iniciando filtrado de perfiles...');
-    console.log('   Total perfiles:', allProfiles.length);
-    console.log('   Total suscripciones:', subscriptions.length);
-
     const visibleProfiles = allProfiles.filter(profile => {
-      // Check 1: Onboarding completed
-      if (!profile.onboarding_completed) {
-        console.log('❌ Rechazado (sin onboarding):', profile.business_name);
-        return false;
-      }
+      if (!profile.onboarding_completed) return false;
+      if (!profile.visible_en_busqueda) return false;
+      if (profile.estado_perfil !== "activo") return false;
       
-      // Check 2: Visible en búsqueda
-      if (!profile.visible_en_busqueda) {
-        console.log('❌ Rechazado (no visible):', profile.business_name);
-        return false;
-      }
-      
-      // Check 3: Estado activo
-      if (profile.estado_perfil !== "activo") {
-        console.log('❌ Rechazado (estado no activo):', profile.business_name, '- Estado:', profile.estado_perfil);
-        return false;
-      }
-      
-      // Check 4: Tiene suscripción
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
-      if (!userSub) {
-        console.log('❌ Rechazado (sin suscripción):', profile.business_name);
-        return false;
-      }
+      if (!userSub) return false;
       
-      // Check 5: Suscripción activa
       const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-      if (!isActive) {
-        console.log('❌ Rechazado (suscripción inactiva):', profile.business_name, '- Estado:', userSub.estado, '- Expira:', userSub.fecha_expiracion);
-        return false;
-      }
+      if (!isActive) return false;
       
-      console.log('✅ Aceptado:', profile.business_name);
       return true;
     });
 
-    console.log('🎯 RESULTADO FINAL: ', visibleProfiles.length, 'perfiles visibles');
     return visibleProfiles;
   }, [allProfiles, subscriptions]);
-
-  // ✅ NUEVO: Cargar usuarios para mostrar fotos de perfil
-  const { data: profileUsers = {} } = useQuery({
-    queryKey: ['profileUsers', profiles.map(p => p.user_id).join(',')], // Include user IDs in key for re-fetch on profile change
-    queryFn: async () => {
-      if (!profiles || profiles.length === 0) return {}; 
-
-      const userIds = [...new Set(profiles.map(p => p.user_id))];
-      const users = await Promise.all(
-        userIds.map(async (id) => {
-          try {
-            const u = await base44.entities.User.filter({ id });
-            return u[0]; // Assuming id is unique for user
-          } catch (error) {
-            console.error(`Error fetching user ${id}:`, error);
-            return null;
-          }
-        })
-      );
-      
-      const usersMap = {};
-      users.forEach(u => {
-        if (u) usersMap[u.id] = u;
-      });
-      return usersMap;
-    },
-    enabled: profiles.length > 0 && !loadingProfiles && !loadingSubscriptions,
-    staleTime: 1000 * 60 * 5,
-  });
 
   const { data: favoriteCounts = {} } = useQuery({
     queryKey: ['favoriteCounts'],
@@ -526,6 +445,27 @@ export default function SearchPage() {
       });
       return counts;
     },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: profileUsers = {} } = useQuery({
+    queryKey: ['profileUsers'],
+    queryFn: async () => {
+      const userIds = [...new Set(profiles.map(p => p.user_id))];
+      const users = await Promise.all(
+        userIds.map(async (id) => {
+          const u = await base44.entities.User.filter({ id });
+          return u[0];
+        })
+      );
+      
+      const usersMap = {};
+      users.forEach(u => {
+        if (u) usersMap[u.id] = u;
+      });
+      return usersMap;
+    },
+    enabled: profiles.length > 0,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -654,7 +594,6 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero Section - SOLO SIN USUARIO */}
       {!isLoadingUser && !user && (
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
           <div className="max-w-6xl mx-auto text-center">
@@ -816,13 +755,8 @@ export default function SearchPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden h-full">
                 <CardContent className="p-4 flex flex-col h-full">
-                  <div className="flex items-start gap-3 mb-2 h-16">
-                    <Skeleton className="w-12 h-12 rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-                  </div>
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
                   <div className="flex gap-1 mb-2">
                     <Skeleton className="h-5 w-16" />
                     <Skeleton className="h-5 w-16" />

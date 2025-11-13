@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -27,7 +26,6 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -49,23 +47,17 @@ function LayoutContent({ children, currentPageName }) {
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ✅ NUEVO: Google Analytics 4 - Cargar script solo una vez
   useEffect(() => {
-    // Verificar si ya está cargado para evitar duplicados
+    // Google Analytics
     if (window.gtag) {
-      console.log('✅ Google Analytics ya está cargado');
       return;
     }
 
-    console.log('📊 Inicializando Google Analytics 4...');
-
-    // Crear script de gtag.js
     const script = document.createElement('script');
     script.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
     script.async = true;
     document.head.appendChild(script);
 
-    // Inicializar Google Analytics
     window.dataLayer = window.dataLayer || [];
     function gtag() {
       window.dataLayer.push(arguments);
@@ -76,28 +68,17 @@ function LayoutContent({ children, currentPageName }) {
     gtag('config', 'G-P9DN7YN239', {
       'send_page_view': true
     });
+  }, []);
 
-    console.log('✅ Google Analytics 4 inicializado correctamente');
-
-    return () => {
-      // Cleanup if needed (though we usually want it to persist)
-      // console.log('🔄 Layout desmontado, GA4 script might persist.');
-    };
-  }, []); // Solo ejecutar una vez al montar
-
-  // ✅ NUEVO: Rastrear cambios de página en Google Analytics
   useEffect(() => {
     if (window.gtag) {
       window.gtag('event', 'page_view', {
         page_path: location.pathname,
         page_title: currentPageName || document.title,
       });
-      console.log('📊 GA4 Page View:', location.pathname, 'Title:', currentPageName || document.title);
     }
   }, [location.pathname, currentPageName]);
 
-
-  // ✅ NUEVO: Rutas donde NO se debe mostrar la barra inferior
   const hideBottomBarRoutes = [
     createPageUrl("UserTypeSelection"),
     createPageUrl("ProfileOnboarding"),
@@ -106,29 +87,18 @@ function LayoutContent({ children, currentPageName }) {
     createPageUrl("Onboarding")
   ];
 
-  // ✅ NUEVO: Determinar si se debe mostrar la barra inferior
   const shouldShowBottomBar = () => {
-    // 1. No mostrar si no hay usuario
     if (!user) return false;
-    
-    // 2. No mostrar en rutas específicas
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
-    
-    // 3. No mostrar si el usuario no tiene tipo definido (debería tenerlo si user existe)
     if (!user.user_type) return false;
     
-    // 4. Si es profesional, verificar que haya completado onboarding
     if (user.user_type === "professionnel") {
-      // Si no hay perfil cargado aún, no mostrar
-      if (professionalProfile === null) return false; // Use null to distinguish between not loaded and no profile found
-      
-      // Si el perfil no está completo o no es visible, no mostrar
+      if (professionalProfile === null) return false;
       if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
         return false;
       }
     }
     
-    // 5. En todos los demás casos, mostrar la barra
     return true;
   };
 
@@ -145,7 +115,6 @@ function LayoutContent({ children, currentPageName }) {
     checkSubscriptionStatus();
   }, [user, location.pathname]);
 
-  // ✅ Cerrar menú móvil al cambiar de página
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -162,15 +131,15 @@ function LayoutContent({ children, currentPageName }) {
         if (profiles[0]) {
           setProfessionalProfile(profiles[0]);
         } else {
-          setProfessionalProfile(undefined); // Indicate no professional profile found
+          setProfessionalProfile(undefined);
         }
       } else {
-        setProfessionalProfile(undefined); // Not a professional user
+        setProfessionalProfile(undefined);
       }
     } catch (error) {
       console.error("Error loading user:", error);
       setUser(null);
-      setProfessionalProfile(undefined); // Reset profile on error
+      setProfessionalProfile(undefined);
     }
   };
 
@@ -223,9 +192,9 @@ function LayoutContent({ children, currentPageName }) {
     const allowedPaths = [
       createPageUrl("ProfileOnboarding"),
       createPageUrl("UserTypeSelection"),
-      createPageUrl("MyProfile"), // ✅ NUEVO: Permitir acceso a Mi Perfil
-      createPageUrl("PricingPlans"), // ✅ NUEVO: Permitir acceso a Planes
-      createPageUrl("SubscriptionManagement"), // ✅ NUEVO: Permitir gestión
+      createPageUrl("MyProfile"),
+      createPageUrl("PricingPlans"),
+      createPageUrl("SubscriptionManagement"),
       "/logout"
     ];
 
@@ -239,8 +208,6 @@ function LayoutContent({ children, currentPageName }) {
         user_id: user.id
       });
 
-      // ✅ CORREGIDO: Solo redirigir si NO tiene perfil O si el onboarding no está completado
-      // NO redirigir solo porque visible_en_busqueda = false (eso es suscripción cancelada)
       if (!profiles[0] || !profiles[0].onboarding_completed) {
         setNeedsOnboarding(true);
         
@@ -250,7 +217,6 @@ function LayoutContent({ children, currentPageName }) {
           }, 2000);
         }
       } else {
-        // Usuario tiene perfil completo, aunque esté invisible por falta de suscripción
         setNeedsOnboarding(false);
       }
     } catch (error) {
@@ -266,21 +232,7 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const handleLogin = () => {
-    console.log('🔑 Intentando redirigir al login...');
-    try {
-      if (typeof base44.auth.redirectToLogin === 'function') {
-        console.log('✅ Método redirectToLogin existe, llamando...');
-        base44.auth.redirectToLogin();
-      } else {
-        console.warn('⚠️ redirectToLogin no existe, usando método alternativo');
-        const loginUrl = `https://app.base44.com/login?app_id=${window.location.hostname}&redirect_uri=${encodeURIComponent(window.location.href)}`;
-        console.log('🔗 Redirigiendo a:', loginUrl);
-        window.location.href = loginUrl;
-      }
-    } catch (error) {
-      console.error('❌ Error al intentar login:', error);
-      alert('Error al iniciar sesión. Intenta recargando la página.');
-    }
+    base44.auth.redirectToLogin();
   };
 
   const getDisplayName = () => {
@@ -311,7 +263,6 @@ function LayoutContent({ children, currentPageName }) {
     return "Usuario";
   };
 
-  // ✅ NUEVO: Helper para obtener foto de perfil
   const getProfilePicture = () => {
     return user?.profile_picture || null;
   };
@@ -404,17 +355,14 @@ function LayoutContent({ children, currentPageName }) {
             --card: #ffffff;
           }
           
-          /* ✅ Optimización de animaciones */
           * {
             -webkit-tap-highlight-color: transparent;
           }
           
-          /* ✅ Smooth scroll optimizado */
           html {
             scroll-behavior: smooth;
           }
           
-          /* ✅ Transiciones performantes */
           button, a, [role="button"] {
             transition: transform 150ms ease, opacity 150ms ease;
             will-change: transform, opacity;
@@ -424,7 +372,6 @@ function LayoutContent({ children, currentPageName }) {
             transform: scale(0.98);
           }
           
-          /* ✅ Tamaños táctiles correctos (mínimo 48x48px) */
           @media (max-width: 768px) {
             button, a[role="button"], [role="button"] {
               min-height: 48px;
@@ -437,7 +384,6 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ ESTILOS GLOBALES PARA MODALES */
           [role="dialog"],
           [role="alertdialog"],
           .modal-content,
@@ -476,7 +422,6 @@ function LayoutContent({ children, currentPageName }) {
             font-weight: 500 !important;
           }
           
-          /* ✅ Menú móvil overlay */
           @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
@@ -510,12 +455,10 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ BARRA INFERIOR: OCULTA POR DEFECTO, SOLO VISIBLE EN MÓVIL */
           .mobile-bottom-nav {
             display: none !important;
           }
           
-          /* Solo visible en móvil (menos de 1024px) */
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
@@ -536,7 +479,6 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* Doble seguridad: FORZAR oculto en desktop */
           @media (min-width: 1024px) {
             .mobile-bottom-nav {
               display: none !important;
@@ -585,15 +527,11 @@ function LayoutContent({ children, currentPageName }) {
         `}
       </style>
 
-      {/* ✅ Scroll to top on route change */}
       <ScrollToTop />
 
       <SidebarProvider>
-        {/* Changed to flex-col to stack main content and cookie banner */}
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
-          {/* New div to contain sidebar and main content, taking up available space */}
           <div className="flex flex-1">
-            {/* ✅ Desktop Sidebar - SOLO SI HAY USUARIO LOGUEADO */}
             {user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
@@ -601,7 +539,7 @@ function LayoutContent({ children, currentPageName }) {
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                       <img 
                         src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                        alt="Misautónomos"
+                        alt="MisAutónomos"
                         className="w-full h-full object-cover"
                         loading="eager"
                         onError={(e) => {
@@ -612,7 +550,7 @@ function LayoutContent({ children, currentPageName }) {
                       />
                     </div>
                     <div>
-                      <h2 className="font-bold text-xl text-gray-900">Misautónomos</h2>
+                      <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
                     </div>
                   </Link>
@@ -650,7 +588,6 @@ function LayoutContent({ children, currentPageName }) {
                 <SidebarFooter className="border-t border-gray-100 p-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 px-2">
-                      {/* ✅ MODIFICADO: Avatar con foto de perfil */}
                       <Avatar className="w-10 h-10 border-2 border-blue-600">
                         {getProfilePicture() ? (
                           <img src={getProfilePicture()} alt="Perfil" className="w-full h-full object-cover" />
@@ -660,7 +597,6 @@ function LayoutContent({ children, currentPageName }) {
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 text-sm truncate">
                           {getDisplayName()}
@@ -671,7 +607,6 @@ function LayoutContent({ children, currentPageName }) {
                       </div>
                     </div>
                     
-                    {/* ✅ Selector de idioma en sidebar */}
                     <div className="px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
@@ -689,7 +624,6 @@ function LayoutContent({ children, currentPageName }) {
               </Sidebar>
             )}
 
-            {/* ✅ MODIFICADO: Mobile Menu con foto */}
             {mobileMenuOpen && (
               <>
                 <div 
@@ -711,7 +645,6 @@ function LayoutContent({ children, currentPageName }) {
                   <div className="p-3">
                     {user && (
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
-                        {/* ✅ NUEVO: Avatar con foto */}
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
                             <img src={getProfilePicture()} alt="Perfil" className="w-full h-full object-cover" />
@@ -721,7 +654,6 @@ function LayoutContent({ children, currentPageName }) {
                             </AvatarFallback>
                           )}
                         </Avatar>
-                        
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 text-sm truncate">
                             {getDisplayName()}
@@ -753,7 +685,6 @@ function LayoutContent({ children, currentPageName }) {
                       </Link>
                     ))}
                     
-                    {/* ✅ Selector de idioma en menú móvil */}
                     <div className="mt-4 mb-4 px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
@@ -790,7 +721,6 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {/* ✅ Desktop Header - CON NOTIFICACIONES */}
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -798,7 +728,7 @@ function LayoutContent({ children, currentPageName }) {
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                         <img 
                           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png"
-                          alt="Misautónomos"
+                          alt="MisAutónomos"
                           className="w-full h-full object-cover"
                           loading="eager"
                           onError={(e) => {
@@ -809,7 +739,7 @@ function LayoutContent({ children, currentPageName }) {
                         />
                       </div>
                       <div>
-                        <h1 className="font-bold text-xl text-gray-900">Misautónomos</h1>
+                        <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
@@ -829,14 +759,12 @@ function LayoutContent({ children, currentPageName }) {
                           {t('becomeFreelancer')}
                         </Button>
                       </Link>
-                      {/* ✅ Selector de idioma a la derecha de "Hazte Autónomo" */}
                       <LanguageSwitcher variant="compact" />
                     </div>
                   </div>
                 </header>
               )}
 
-              {/* ✅ Mobile Header - CON NOTIFICACIONES */}
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
                   <Button
@@ -847,7 +775,7 @@ function LayoutContent({ children, currentPageName }) {
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
-                  <h1 className="font-bold text-lg text-gray-900">Misautónomos</h1>
+                  <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />
@@ -855,15 +783,12 @@ function LayoutContent({ children, currentPageName }) {
                 </div>
               </header>
 
-              {/* ✅ Contenido principal - SOLO agregar padding si se muestra la barra */}
               <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
                 {children}
               </div>
 
-              {/* ✅ Footer */}
               <Footer />
 
-              {/* ✅ Mobile Bottom Navigation - NUNCA EN DESKTOP */}
               {shouldShowBottomBar() && (
                 <nav className="mobile-bottom-nav">
                   {navigationItems.slice(0, 4).map((item) => (
@@ -886,7 +811,6 @@ function LayoutContent({ children, currentPageName }) {
             </main>
           </div>
 
-          {/* ✅ Cookie Banner */}
           <CookieBanner />
         </div>
       </SidebarProvider>
@@ -894,7 +818,6 @@ function LayoutContent({ children, currentPageName }) {
   );
 }
 
-// ✅ Wrapper con LanguageProvider para que el contexto esté disponible
 export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
