@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Briefcase, Mail, Phone, MapPin, ChevronDown, ChevronUp, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
+import { Mail, MapPin, ChevronDown, ChevronUp, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
+import { useLanguage } from "./LanguageSwitcher";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
 export default function Footer() {
   const [openSection, setOpenSection] = useState(null);
+  const { t } = useLanguage();
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -27,7 +29,7 @@ export default function Footer() {
               <h3 className="text-xl font-bold">MisAutónomos</h3>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Tu autónomo de confianza. Conectamos profesionales con clientes en toda España.
+              {t('platformDescription')}
             </p>
             <div className="flex gap-3 mt-4">
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors">
@@ -43,59 +45,59 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-4">Navegación</h4>
+            <h4 className="font-semibold text-lg mb-4">{t('navigation')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to={createPageUrl("Search")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Buscar autónomos
+                  {t('searchFreelancers')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("PricingPlans")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Hazte autónomo
+                  {t('becomeFreelancer')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("FAQ")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Preguntas frecuentes
+                  {t('faq')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("HelpCenter")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Centro de ayuda
+                  {t('helpCenter')}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-4">Legal</h4>
+            <h4 className="font-semibold text-lg mb-4">{t('legal')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to={createPageUrl("TermsConditions")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Términos y condiciones
+                  {t('termsConditions')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("PrivacyPolicy")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Política de privacidad
+                  {t('privacyPolicy')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("CookiePolicy")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Política de cookies
+                  {t('cookiePolicy')}
                 </Link>
               </li>
               <li>
                 <Link to={createPageUrl("LegalNotice")} className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Aviso legal
+                  {t('legalNotice')}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-4">Contacto</h4>
+            <h4 className="font-semibold text-lg mb-4">{t('contact')}</h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-gray-400">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -126,14 +128,14 @@ export default function Footer() {
           >
             <div className="flex items-center gap-2">
               <img src={LOGO_URL} alt="MisAutónomos" className="w-8 h-8 rounded" />
-              <span className="font-semibold">Sobre MisAutónomos</span>
+              <span className="font-semibold">MisAutónomos</span>
             </div>
             {openSection === 'about' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {openSection === 'about' && (
             <div className="px-6 pb-4 bg-gray-800/50">
               <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                Tu autónomo de confianza. Conectamos profesionales con clientes en toda España.
+                {t('platformDescription')}
               </p>
               <div className="flex gap-3">
                 <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors">
@@ -155,22 +157,22 @@ export default function Footer() {
             onClick={() => toggleSection('navigation')}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
           >
-            <span className="font-semibold">Navegación</span>
+            <span className="font-semibold">{t('navigation')}</span>
             {openSection === 'navigation' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {openSection === 'navigation' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
               <Link to={createPageUrl("Search")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Buscar autónomos
+                {t('searchFreelancers')}
               </Link>
               <Link to={createPageUrl("PricingPlans")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Hazte autónomo
+                {t('becomeFreelancer')}
               </Link>
               <Link to={createPageUrl("FAQ")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Preguntas frecuentes
+                {t('faq')}
               </Link>
               <Link to={createPageUrl("HelpCenter")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Centro de ayuda
+                {t('helpCenter')}
               </Link>
             </div>
           )}
@@ -181,22 +183,22 @@ export default function Footer() {
             onClick={() => toggleSection('legal')}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
           >
-            <span className="font-semibold">Legal</span>
+            <span className="font-semibold">{t('legal')}</span>
             {openSection === 'legal' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {openSection === 'legal' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
               <Link to={createPageUrl("TermsConditions")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Términos y condiciones
+                {t('termsConditions')}
               </Link>
               <Link to={createPageUrl("PrivacyPolicy")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Política de privacidad
+                {t('privacyPolicy')}
               </Link>
               <Link to={createPageUrl("CookiePolicy")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Política de cookies
+                {t('cookiePolicy')}
               </Link>
               <Link to={createPageUrl("LegalNotice")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
-                Aviso legal
+                {t('legalNotice')}
               </Link>
             </div>
           )}
@@ -207,7 +209,7 @@ export default function Footer() {
             onClick={() => toggleSection('contact')}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
           >
-            <span className="font-semibold">Contacto</span>
+            <span className="font-semibold">{t('contact')}</span>
             {openSection === 'contact' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {openSection === 'contact' && (
@@ -231,8 +233,8 @@ export default function Footer() {
 
       <div className="border-t border-gray-700 py-6 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-          <p>© 2025 <strong className="text-white">MisAutónomos</strong>. Todos los derechos reservados.</p>
-          <p className="text-xs">Tu autónomo de confianza en España</p>
+          <p>© 2025 <strong className="text-white">MisAutónomos</strong>. {t('allRightsReserved')}.</p>
+          <p className="text-xs">{t('tagline')}</p>
         </div>
       </div>
     </footer>

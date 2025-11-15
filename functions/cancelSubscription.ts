@@ -1,5 +1,4 @@
-
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
@@ -8,7 +7,6 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Authenticate user
         const user = await base44.auth.me();
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,7 +15,6 @@ Deno.serve(async (req) => {
         console.log(`🔴 ========== CANCELACIÓN DE SUSCRIPCIÓN ==========`);
         console.log(`👤 Usuario: ${user.email} (ID: ${user.id})`);
 
-        // Get user's subscription
         const subscriptions = await base44.entities.Subscription.filter({
             user_id: user.id
         });
@@ -35,22 +32,20 @@ Deno.serve(async (req) => {
             stripe_subscription_id: subscription.stripe_subscription_id,
             estado: subscription.estado,
             fecha_expiracion: subscription.fecha_expiracion,
-            plan_nombre: subscription.plan_nombre // Assuming this property exists on the subscription object
+            plan_nombre: subscription.plan_nombre
         });
 
         let stripeCanceled = false;
         let stripeError = null;
 
-        // ✅ CRÍTICO: Cancelar en Stripe con cancel_at_period_end
         if (subscription.stripe_subscription_id) {
             try {
                 console.log(`🔄 Intentando cancelar en Stripe: ${subscription.stripe_subscription_id}`);
                 
-                // ✅ Usar update en lugar de cancel para mantener acceso hasta el final del período
                 const updated = await stripe.subscriptions.update(
                     subscription.stripe_subscription_id,
                     {
-                        cancel_at_period_end: true, // ✅ Cancelar al final del período
+                        cancel_at_period_end: true,
                         metadata: {
                             canceled_by: user.email,
                             canceled_at: new Date().toISOString(),
@@ -71,32 +66,27 @@ Deno.serve(async (req) => {
                 console.error(`❌ Error cancelando en Stripe:`, error);
                 stripeError = error.message;
                 
-                // ✅ Si la suscripción no existe en Stripe, continuar con la cancelación local
                 if (error.code === 'resource_missing') {
                     console.log('⚠️ Suscripción no encontrada en Stripe, continuando con cancelación local');
-                    stripeCanceled = true; // Marcar como "cancelado" para continuar
+                    stripeCanceled = true;
                 }
             }
         } else {
             console.log('⚠️ No hay stripe_subscription_id, solo cancelación local');
-            stripeCanceled = true; // Si no hay ID de Stripe, continuar
+            stripeCanceled = true;
         }
 
-        // ✅ Actualizar estado en base de datos
-        // The subscription will be marked as "cancelado" but access is retained until end of period due to Stripe's cancel_at_period_end
         await base44.entities.Subscription.update(subscription.id, {
             estado: "cancelado",
             renovacion_automatica: false
         });
-        console.log('✅ Suscripción actualizada en BD local: estado = cancelado, renovacion_automatica = false');
+        console.log('✅ Suscripción actualizada en BD local: estado = cancelado');
 
-        // ✅ Actualizar usuario
         await base44.auth.updateMe({
             subscription_status: "cancelado"
         });
         console.log('✅ Usuario actualizado: subscription_status = cancelado');
 
-        // ✅ Ocultar perfil INMEDIATAMENTE
         const profiles = await base44.entities.ProfessionalProfile.filter({
             user_id: user.id
         });
@@ -109,38 +99,29 @@ Deno.serve(async (req) => {
             console.log(`✅ Perfil ocultado de búsquedas (ID: ${profiles[0].id})`);
         }
 
-        // ✅ Enviar email de confirmación
         try {
-            const userEmail = user.email;
             const userName = user.full_name || user.email;
-
-            // Determine if the subscription remains active until the end of the period
-            // Based on the 'cancel_at_period_end: true' logic, it should always be true if Stripe was successfully updated.
-            // If Stripe was not involved or failed, then it's considered immediately inactive.
-            const isActiveUntilEnd = stripeCanceled && (subscription.stripe_subscription_id !== null); // If stripe operation was successful, implies cancel_at_period_end was set.
+            const isActiveUntilEnd = stripeCanceled && (subscription.stripe_subscription_id !== null);
             
-            let expirationDate: Date | null = null;
+            let expirationDate = new Date();
             if (subscription.fecha_expiracion) {
                 expirationDate = new Date(subscription.fecha_expiracion);
-            } else {
-                console.warn("subscription.fecha_expiracion is missing, falling back to a placeholder for email display.");
-                expirationDate = new Date(); // Fallback to current date
             }
 
             await base44.asServiceRole.integrations.Core.SendEmail({
-                to: userEmail,
-                subject: "Suscripción cancelada - Misautónomos",
+                to: user.email,
+                subject: "Suscripción cancelada - MisAutónomos",
                 body: `
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
     .header { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
+    .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: white; border-radius: 16px; padding: 12px; }
     .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
     .content { padding: 40px 30px; }
     .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
@@ -159,7 +140,7 @@ Deno.serve(async (req) => {
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">📋</div>
+      <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png" alt="MisAutónomos" class="logo" />
       <h1>Suscripción cancelada</h1>
     </div>
     
@@ -167,7 +148,7 @@ Deno.serve(async (req) => {
       <p class="greeting">Hola ${userName},</p>
       
       <p class="message">
-        Tu solicitud de cancelación de suscripción en <strong>Misautónomos</strong> ha sido procesada correctamente.
+        Tu solicitud de cancelación de suscripción en <strong>MisAutónomos</strong> ha sido procesada correctamente.
       </p>
       
       <div class="info-box">
@@ -213,7 +194,7 @@ Deno.serve(async (req) => {
     </div>
     
     <div class="footer">
-      <strong>Equipo Misautónomos</strong>
+      <strong>MisAutónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
         <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
@@ -224,7 +205,7 @@ Deno.serve(async (req) => {
 </body>
 </html>
                 `,
-                from_name: 'Misautónomos'
+                from_name: 'MisAutónomos'
             });
             console.log('✅ Email de cancelación enviado');
         } catch (emailError) {

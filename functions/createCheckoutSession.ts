@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
@@ -30,18 +30,15 @@ Deno.serve(async (req) => {
         console.log('🎁 Trial:', isTrial);
         console.log('🔄 Reactivación:', isReactivation);
 
-        // ✅ NUEVO: Verificar si el usuario ya usó la prueba gratuita
         if (isTrial && planId === "plan_monthly_trial") {
             const users = await base44.asServiceRole.entities.User.filter({ email });
             if (users.length > 0) {
                 const userId = users[0].id;
                 
-                // Buscar suscripciones previas
                 const previousSubs = await base44.asServiceRole.entities.Subscription.filter({
                     user_id: userId
                 });
                 
-                // Si ya usó trial antes, no permitir otro
                 const hasUsedTrial = previousSubs.some(sub => 
                     sub.plan_id === "plan_monthly_trial" || sub.estado === "en_prueba"
                 );
@@ -105,7 +102,6 @@ Deno.serve(async (req) => {
             ? `${activity}: ${activityOther}` 
             : (activity || "Sin especificar");
 
-        // ✅ URLs usando nombres exactos de páginas Base44
         const origin = req.headers.get('origin');
         let successUrl, cancelUrl;
 
@@ -120,7 +116,6 @@ Deno.serve(async (req) => {
         console.log('🔗 Success URL:', successUrl);
         console.log('🔗 Cancel URL:', cancelUrl);
 
-        // ✅ CRÍTICO: Metadata completo y consistente
         const metadata = {
             email: email,
             fullName: fullName,
@@ -133,13 +128,11 @@ Deno.serve(async (req) => {
             planId: planId || "plan_monthly_trial",
             isTrial: isTrial ? "true" : "false",
             isReactivation: isReactivation ? "true" : "false",
-            // ✅ NUEVO: Timestamp para tracking
             created_at: new Date().toISOString()
         };
 
         console.log('📋 Metadata completo:', metadata);
 
-        // ✅ Trial con tarjeta obligatoria
         if (isTrial && planId === "plan_monthly_trial") {
             console.log('🎁 Creando sesión de prueba gratuita');
             
@@ -151,7 +144,7 @@ Deno.serve(async (req) => {
                         price_data: {
                             currency: 'eur',
                             product_data: {
-                                name: 'Plan Mensual Misautónomos',
+                                name: 'Plan Mensual MisAutónomos',
                                 description: '7 días gratis, luego 49€/mes',
                             },
                             recurring: {
@@ -174,7 +167,6 @@ Deno.serve(async (req) => {
                 metadata: metadata,
                 success_url: successUrl,
                 cancel_url: cancelUrl,
-                // ✅ NUEVO: Permitir códigos promocionales
                 allow_promotion_codes: true,
             });
 
@@ -186,7 +178,6 @@ Deno.serve(async (req) => {
                 url: session.url
             });
         } else {
-            // ✅ Planes de pago normales
             console.log('💳 Creando sesión de pago normal');
             
             const session = await stripe.checkout.sessions.create({
@@ -197,7 +188,7 @@ Deno.serve(async (req) => {
                         price_data: {
                             currency: 'eur',
                             product_data: {
-                                name: plan ? `Plan ${plan.nombre} - Misautónomos` : 'Suscripción Profesional Misautónomos',
+                                name: plan ? `Plan ${plan.nombre} - MisAutónomos` : 'Suscripción Profesional MisAutónomos',
                                 description: plan ? plan.descripcion : 'Acceso completo a la plataforma profesional',
                             },
                             recurring: {
