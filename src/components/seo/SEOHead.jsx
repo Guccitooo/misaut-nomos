@@ -6,11 +6,20 @@ export default function SEOHead({
   description = "Encuentra y contacta con los mejores profesionales autónomos verificados cerca de ti. Electricistas, fontaneros, carpinteros y más. 100% gratis para clientes.",
   image = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png",
   type = "website",
-  keywords = "autónomos, profesionales, servicios, España, electricista, fontanero, carpintero, reformas"
+  keywords = "autónomos, profesionales, servicios, España, electricista, fontanero, carpintero, reformas",
+  noindex = false
 }) {
   const location = useLocation();
   const baseUrl = "https://misautonomos.es";
-  const canonicalUrl = baseUrl + location.pathname;
+  
+  const getCanonicalUrl = () => {
+    if (location.pathname === '/search' || location.pathname === '/Search') {
+      return baseUrl + '/';
+    }
+    return baseUrl + location.pathname;
+  };
+  
+  const canonicalUrl = getCanonicalUrl();
 
   useEffect(() => {
     document.title = title;
@@ -57,12 +66,18 @@ export default function SEOHead({
       document.head.appendChild(preconnect);
     }
 
-    updateMetaTag('robots', 'index, follow');
-    updateMetaTag('googlebot', 'index, follow');
+    if (noindex || location.pathname === '/search' || location.pathname === '/Search') {
+      updateMetaTag('robots', 'noindex, follow');
+      updateMetaTag('googlebot', 'noindex, follow');
+    } else {
+      updateMetaTag('robots', 'index, follow');
+      updateMetaTag('googlebot', 'index, follow');
+    }
+    
     updateMetaTag('language', 'Spanish');
     updateMetaTag('author', 'MisAutónomos');
     
-  }, [title, description, image, canonicalUrl, keywords, type]);
+  }, [title, description, image, canonicalUrl, keywords, type, noindex, location.pathname]);
 
   return null;
 }

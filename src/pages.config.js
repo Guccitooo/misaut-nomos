@@ -17,6 +17,7 @@ import TermsConditions from './pages/TermsConditions';
 import CookiePolicy from './pages/CookiePolicy';
 import LegalNotice from './pages/LegalNotice';
 import Notifications from './pages/Notifications';
+import Home from './pages/Home';
 import Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "CookiePolicy": CookiePolicy,
     "LegalNotice": LegalNotice,
     "Notifications": Notifications,
+    "Home": Home,
 }
 
 export const pagesConfig = {

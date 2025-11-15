@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -52,9 +51,7 @@ function LayoutContent({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (window.gtag) {
-      return;
-    }
+    if (window.gtag) return;
 
     const script = document.createElement('script');
     script.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
@@ -229,13 +226,11 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
-    setUser(null);
-    setUnreadCount(0);
+    base44.auth.logout('/');
   };
 
   const handleLogin = () => {
-    base44.auth.redirectToLogin();
+    base44.auth.redirectToLogin('/');
   };
 
   const getDisplayName = () => {
@@ -273,7 +268,7 @@ function LayoutContent({ children, currentPageName }) {
   const navigationItems = [
     {
       title: t('searchFreelancers'),
-      url: createPageUrl("Search"),
+      url: '/',
       icon: Search,
     },
     {
@@ -674,7 +669,7 @@ function LayoutContent({ children, currentPageName }) {
             {user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                  <Link to="/" className="flex items-center gap-3">
                     <img
                       src={LOGO_URL}
                       alt="MisAutónomos"
@@ -871,7 +866,7 @@ function LayoutContent({ children, currentPageName }) {
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                    <Link to="/" className="flex items-center gap-3">
                       <img
                         src={LOGO_URL}
                         alt="MisAutónomos"
@@ -918,7 +913,7 @@ function LayoutContent({ children, currentPageName }) {
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
-                  <div className="flex items-center gap-2">
+                  <Link to="/" className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
                       alt="MisAutónomos"
@@ -927,7 +922,7 @@ function LayoutContent({ children, currentPageName }) {
                       fetchpriority="high"
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />
