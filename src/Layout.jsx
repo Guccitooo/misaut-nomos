@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -36,8 +35,9 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
-import OptimizedLogo from "@/components/ui/OptimizedLogo";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+
+const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
@@ -386,8 +386,6 @@ function LayoutContent({ children, currentPageName }) {
             }
           }
           
-          /* ✅ ESTILOS GLOBALES PARA TODOS LOS MODALES Y OVERLAYS */
-          
           [data-radix-dialog-overlay],
           [data-radix-alert-dialog-overlay],
           .dialog-overlay,
@@ -676,7 +674,14 @@ function LayoutContent({ children, currentPageName }) {
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-                    <OptimizedLogo size="md" />
+                    <img
+                      src={LOGO_URL}
+                      alt="MisAutónomos"
+                      className="w-12 h-12 rounded-lg"
+                      loading="eager"
+                      fetchpriority="high"
+                      decoding="sync"
+                    />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
@@ -866,7 +871,14 @@ function LayoutContent({ children, currentPageName }) {
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3">
-                      <OptimizedLogo size="md" />
+                      <img
+                        src={LOGO_URL}
+                        alt="MisAutónomos"
+                        className="w-12 h-12 rounded-lg"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="sync"
+                      />
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
@@ -905,7 +917,16 @@ function LayoutContent({ children, currentPageName }) {
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
-                  <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={LOGO_URL}
+                      alt="MisAutónomos"
+                      className="w-8 h-8 rounded"
+                      loading="eager"
+                      fetchpriority="high"
+                    />
+                    <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
+                  </div>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />

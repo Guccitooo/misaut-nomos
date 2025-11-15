@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Briefcase, Mail, Phone, MapPin, ChevronDown, ChevronUp, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
 
+const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+
 export default function Footer() {
   const [openSection, setOpenSection] = useState(null);
 
@@ -16,9 +18,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
+              <img
+                src={LOGO_URL}
+                alt="MisAutónomos"
+                className="w-12 h-12 rounded-lg"
+                loading="lazy"
+              />
               <h3 className="text-xl font-bold">MisAutónomos</h3>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -120,7 +125,7 @@ export default function Footer() {
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-400" />
+              <img src={LOGO_URL} alt="MisAutónomos" className="w-8 h-8 rounded" />
               <span className="font-semibold">Sobre MisAutónomos</span>
             </div>
             {openSection === 'about' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
