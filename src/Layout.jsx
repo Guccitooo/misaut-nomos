@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -63,7 +64,7 @@ function LayoutContent({ children, currentPageName }) {
       window.dataLayer.push(arguments);
     }
     window.gtag = gtag;
-    
+
     gtag('js', new Date());
     gtag('config', 'G-P9DN7YN239', {
       'send_page_view': true
@@ -91,14 +92,14 @@ function LayoutContent({ children, currentPageName }) {
     if (!user) return false;
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
     if (!user.user_type) return false;
-    
+
     if (user.user_type === "professionnel") {
       if (professionalProfile === null) return false;
       if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
         return false;
       }
     }
-    
+
     return true;
   };
 
@@ -123,7 +124,7 @@ function LayoutContent({ children, currentPageName }) {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      
+
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
@@ -175,7 +176,7 @@ function LayoutContent({ children, currentPageName }) {
       const activeStates = ["activo", "en_prueba", "trialing"];
       const hasActive = subscriptions.length > 0 &&
                        activeStates.some(state => subscriptions[0].estado.includes(state));
-      
+
       setHasActiveSubscription(hasActive);
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -195,7 +196,8 @@ function LayoutContent({ children, currentPageName }) {
       createPageUrl("MyProfile"),
       createPageUrl("PricingPlans"),
       createPageUrl("SubscriptionManagement"),
-      "/logout"
+      "/logout",
+      "/"
     ];
 
     if (allowedPaths.includes(location.pathname)) {
@@ -210,7 +212,7 @@ function LayoutContent({ children, currentPageName }) {
 
       if (!profiles[0] || !profiles[0].onboarding_completed) {
         setNeedsOnboarding(true);
-        
+
         if (location.pathname !== createPageUrl("ProfileOnboarding")) {
           setTimeout(() => {
             navigate(createPageUrl("ProfileOnboarding"));
@@ -235,35 +237,37 @@ function LayoutContent({ children, currentPageName }) {
 
   const getDisplayName = () => {
     if (!user) return "";
-    
+
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
-    
+
     if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
-    
+
     if (user.email) {
       const username = user.email.split('@')[0];
       const cleaned = username.replace(/\d+$/g, '');
-      
+
       if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
         return cleaned
           .split(/[-._]/)
           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ');
       }
-      
+
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
     }
-    
+
     return t('user');
   };
 
   const getProfilePicture = () => {
     return user?.profile_picture || null;
   };
+
+  const isHomePage = location.pathname === '/' || location.pathname === '/Home';
 
   const navigationItems = [
     {
@@ -352,36 +356,36 @@ function LayoutContent({ children, currentPageName }) {
             --background: #f8fafc;
             --card: #ffffff;
           }
-          
+
           * {
             -webkit-tap-highlight-color: transparent;
           }
-          
+
           html {
             scroll-behavior: smooth;
           }
-          
+
           button, a, [role="button"] {
             transition: transform 150ms ease, opacity 150ms ease;
             will-change: transform, opacity;
           }
-          
+
           button:active, a:active, [role="button"]:active {
             transform: scale(0.98);
           }
-          
+
           @media (max-width: 768px) {
             button, a[role="button"], [role="button"] {
               min-height: 48px;
               min-width: 48px;
             }
-            
+
             input, select, textarea {
               font-size: 16px !important;
               padding: 12px !important;
             }
           }
-          
+
           [data-radix-dialog-overlay],
           [data-radix-alert-dialog-overlay],
           .dialog-overlay,
@@ -390,23 +394,23 @@ function LayoutContent({ children, currentPageName }) {
             backdrop-filter: blur(4px);
             animation: fadeIn 200ms ease-out;
           }
-          
+
           @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
           }
-          
+
           @keyframes slideIn {
-            from { 
+            from {
               opacity: 0;
               transform: translate(-50%, -48%) scale(0.96);
             }
-            to { 
+            to {
               opacity: 1;
               transform: translate(-50%, -50%) scale(1);
             }
           }
-          
+
           [role="dialog"],
           [role="alertdialog"],
           [data-radix-dialog-content],
@@ -422,7 +426,7 @@ function LayoutContent({ children, currentPageName }) {
             max-height: 90vh;
             overflow-y: auto;
           }
-          
+
           [role="dialog"] h2,
           [role="alertdialog"] h2,
           [data-dialog-title],
@@ -435,7 +439,7 @@ function LayoutContent({ children, currentPageName }) {
             line-height: 1.3 !important;
             margin-bottom: 0.5rem !important;
           }
-          
+
           [role="dialog"] p,
           [role="alertdialog"] p,
           [data-dialog-description],
@@ -443,7 +447,7 @@ function LayoutContent({ children, currentPageName }) {
             color: #4B5563 !important;
             line-height: 1.6 !important;
           }
-          
+
           [role="dialog"] input,
           [role="dialog"] select,
           [role="dialog"] textarea,
@@ -457,7 +461,7 @@ function LayoutContent({ children, currentPageName }) {
             padding: 12px !important;
             font-size: 16px !important;
           }
-          
+
           [role="dialog"] input:focus,
           [role="dialog"] select:focus,
           [role="dialog"] textarea:focus {
@@ -465,7 +469,7 @@ function LayoutContent({ children, currentPageName }) {
             outline: none !important;
             ring: 2px solid rgba(59, 130, 246, 0.2) !important;
           }
-          
+
           [role="dialog"] input:disabled,
           [role="dialog"] select:disabled,
           [role="dialog"] textarea:disabled {
@@ -473,7 +477,7 @@ function LayoutContent({ children, currentPageName }) {
             color: #9CA3AF !important;
             cursor: not-allowed !important;
           }
-          
+
           [role="dialog"] label,
           [role="alertdialog"] label {
             color: #374151 !important;
@@ -482,14 +486,14 @@ function LayoutContent({ children, currentPageName }) {
             margin-bottom: 8px !important;
             display: block !important;
           }
-          
+
           [role="dialog"] button,
           [role="alertdialog"] button {
             font-weight: 600 !important;
             border-radius: 10px !important;
             transition: all 150ms ease !important;
           }
-          
+
           [data-radix-popper-content-wrapper],
           [data-radix-select-content],
           [data-radix-dropdown-menu-content],
@@ -502,7 +506,7 @@ function LayoutContent({ children, currentPageName }) {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
             z-index: 100 !important;
           }
-          
+
           [data-radix-select-item],
           .select-item {
             color: #1F2937 !important;
@@ -510,20 +514,20 @@ function LayoutContent({ children, currentPageName }) {
             cursor: pointer !important;
             transition: background-color 150ms ease !important;
           }
-          
+
           [data-radix-select-item]:hover,
           .select-item:hover {
             background-color: #EFF6FF !important;
             color: #1E40AF !important;
           }
-          
+
           [data-radix-select-item][data-state="checked"],
           .select-item[data-state="checked"] {
             background-color: #DBEAFE !important;
             color: #1E40AF !important;
             font-weight: 600 !important;
           }
-          
+
           @media (max-width: 1023px) {
             .mobile-menu-overlay {
               position: fixed;
@@ -533,7 +537,7 @@ function LayoutContent({ children, currentPageName }) {
               z-index: 40;
               animation: fadeIn 200ms ease;
             }
-            
+
             .mobile-menu {
               position: fixed;
               left: 0;
@@ -547,17 +551,17 @@ function LayoutContent({ children, currentPageName }) {
               overflow-y: auto;
               box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
             }
-            
+
             @keyframes slideInLeft {
               from { transform: translateX(-100%); }
               to { transform: translateX(0); }
             }
           }
-          
+
           .mobile-bottom-nav {
             display: none !important;
           }
-          
+
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
@@ -572,22 +576,22 @@ function LayoutContent({ children, currentPageName }) {
               z-index: 30;
               box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
             }
-            
+
             .main-content-with-bottom-nav {
               padding-bottom: 80px;
             }
           }
-          
+
           @media (min-width: 1024px) {
             .mobile-bottom-nav {
               display: none !important;
             }
-            
+
             .main-content-with-bottom-nav {
               padding-bottom: 0 !important;
             }
           }
-          
+
           .mobile-bottom-nav-item {
             display: flex;
             flex-direction: column;
@@ -600,16 +604,16 @@ function LayoutContent({ children, currentPageName }) {
             transition: color 150ms ease;
             position: relative;
           }
-          
+
           .mobile-bottom-nav-item.active {
             color: #1e40af;
           }
-          
+
           .mobile-bottom-nav-item span {
             font-size: 11px;
             font-weight: 500;
           }
-          
+
           .mobile-bottom-nav-badge {
             position: absolute;
             top: 4px;
@@ -623,37 +627,37 @@ function LayoutContent({ children, currentPageName }) {
             min-width: 18px;
             text-align: center;
           }
-          
+
           button:focus-visible,
           a:focus-visible,
           [role="button"]:focus-visible {
             outline: 2px solid #3B82F6 !important;
             outline-offset: 2px !important;
           }
-          
+
           [role="dialog"],
           [role="alertdialog"] {
             max-height: 90vh !important;
             overflow-y: auto !important;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar,
           [role="alertdialog"]::-webkit-scrollbar {
             width: 8px;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar-track,
           [role="alertdialog"]::-webkit-scrollbar-track {
             background: #F3F4F6;
             border-radius: 10px;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar-thumb,
           [role="alertdialog"]::-webkit-scrollbar-thumb {
             background: #D1D5DB;
             border-radius: 10px;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar-thumb:hover,
           [role="alertdialog"]::-webkit-scrollbar-thumb:hover {
             background: #9CA3AF;
@@ -684,17 +688,17 @@ function LayoutContent({ children, currentPageName }) {
                     </div>
                   </Link>
                 </SidebarHeader>
-                
+
                 <SidebarContent className="p-3">
                   <SidebarGroup>
                     <SidebarGroupContent>
                       <SidebarMenu>
                         {navigationItems.map((item) => (
                           <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton 
-                              asChild 
+                            <SidebarMenuButton
+                              asChild
                               className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
-                                location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
+                                (location.pathname === item.url || (isHomePage && item.url === '/')) ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
                               }`}
                             >
                               <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
@@ -719,9 +723,9 @@ function LayoutContent({ children, currentPageName }) {
                     <div className="flex items-center gap-3 px-2">
                       <Avatar className="w-10 h-10 border-2 border-blue-600">
                         {getProfilePicture() ? (
-                          <OptimizedImage 
-                            src={getProfilePicture()} 
-                            alt={t('profilePicture')} 
+                          <OptimizedImage
+                            src={getProfilePicture()}
+                            alt={t('profilePicture')}
                             className="w-full h-full object-cover"
                             priority={true}
                           />
@@ -740,11 +744,11 @@ function LayoutContent({ children, currentPageName }) {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
-                    
+
                     <Button
                       variant="outline"
                       className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
@@ -760,8 +764,8 @@ function LayoutContent({ children, currentPageName }) {
 
             {mobileMenuOpen && (
               <>
-                <div 
-                  className="mobile-menu-overlay lg:hidden" 
+                <div
+                  className="mobile-menu-overlay lg:hidden"
                   onClick={() => setMobileMenuOpen(false)}
                   role="presentation"
                   aria-hidden="true"
@@ -778,15 +782,15 @@ function LayoutContent({ children, currentPageName }) {
                       <X className="w-5 h-5" />
                     </Button>
                   </div>
-                  
+
                   <div className="p-3">
                     {user && (
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
-                            <OptimizedImage 
-                              src={getProfilePicture()} 
-                              alt={t('profilePicture')} 
+                            <OptimizedImage
+                              src={getProfilePicture()}
+                              alt={t('profilePicture')}
                               className="w-full h-full object-cover"
                               priority={true}
                             />
@@ -806,7 +810,7 @@ function LayoutContent({ children, currentPageName }) {
                         </div>
                       </div>
                     )}
-                    
+
                     {navigationItems.map((item) => (
                       <Link
                         key={item.title}
@@ -826,11 +830,11 @@ function LayoutContent({ children, currentPageName }) {
                         )}
                       </Link>
                     ))}
-                    
+
                     <div className="mt-4 mb-4 px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
-                    
+
                     {!user ? (
                       <div className="mt-4 space-y-2">
                         <Button
@@ -880,7 +884,7 @@ function LayoutContent({ children, currentPageName }) {
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
-                    
+
                     <div className="flex items-center gap-3">
                       <Button
                         variant="ghost"
@@ -943,7 +947,7 @@ function LayoutContent({ children, currentPageName }) {
                       key={item.title}
                       to={item.url}
                       className={`mobile-bottom-nav-item ${
-                        location.pathname === item.url ? 'active' : ''
+                        (location.pathname === item.url || (isHomePage && item.url === '/')) ? 'active' : ''
                       }`}
                       aria-label={item.title}
                     >
