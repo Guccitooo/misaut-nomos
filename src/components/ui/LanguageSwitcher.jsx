@@ -10,7 +10,6 @@ import {
 
 const translations = {
   es: {
-    // Navigation
     searchFreelancers: 'Buscar Autónomos',
     messages: 'Mensajes',
     favorites: 'Favoritos',
@@ -21,15 +20,11 @@ const translations = {
     logout: 'Cerrar sesión',
     login: 'Iniciar sesión',
     becomeFreelancer: 'Hazte autónomo',
-    
-    // Hero
     heroTitle: 'Encuentra tu autónomo de confianza',
     heroSubtitle: 'Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.',
     chooseHow: '¿Cómo quieres usar MisAutónomos?',
     imFreelancer: 'Soy autónomo',
     imClient: 'Busco servicios',
-    
-    // Search
     filters: 'Filtros de búsqueda',
     search: 'Buscar servicio, empresa...',
     allCategories: 'Todas las categorías',
@@ -40,8 +35,6 @@ const translations = {
     noResults: 'No se encontraron resultados',
     tryDifferentFilters: 'Intenta con otros filtros o busca en otra ubicación',
     viewAll: 'Ver todos',
-    
-    // Categories
     'Electricista': 'Electricista',
     'Fontanero': 'Fontanero',
     'Carpintero': 'Carpintero',
@@ -50,14 +43,6 @@ const translations = {
     'Jardinero': 'Jardinero',
     'Transportista': 'Transportista',
     'Autónomo de limpieza': 'Autónomo de limpieza',
-    'Cerrajero': 'Cerrajero',
-    'Instalador de aire acondicionado': 'Instalador de aire acondicionado',
-    'Mantenimiento general': 'Mantenimiento general',
-    'Asesoría o gestoría': 'Asesoría o gestoría',
-    'Empresa multiservicios': 'Empresa multiservicios',
-    'Otro tipo de servicio profesional': 'Otro tipo de servicio',
-    
-    // Cards
     verified: 'Verificado',
     availableNow: 'Disponible ahora',
     until: 'Hasta las',
@@ -70,8 +55,6 @@ const translations = {
     workGallery: 'Galería de Trabajos',
     reviews: 'opiniones',
     review: 'opinión',
-    
-    // Profile
     information: 'Información',
     schedule: 'Horario',
     mondayFriday: 'Lunes a Viernes',
@@ -82,8 +65,6 @@ const translations = {
     phone: 'Teléfono',
     website: 'Sitio web',
     visitWebsite: 'Visitar sitio web',
-    
-    // Reviews
     reviewsTitle: 'Opiniones de clientes',
     noReviewsYet: 'Sin opiniones por ahora',
     beFirstReview: 'Sé el primero en dejar una opinión',
@@ -91,25 +72,16 @@ const translations = {
     communication: 'Comunicación',
     quality: 'Calidad',
     priceSatisfaction: 'Precio/Satisfacción',
-    reportReview: 'Reportar opinión',
-    inappropriate: 'Contenido inapropiado',
-    
-    // Messages
     conversations: 'Conversaciones',
     noConversations: 'No hay conversaciones',
     startChatting: 'Comienza a chatear con profesionales',
     writeMessage: 'Escribe un mensaje...',
     send: 'Enviar',
-    loadingMessages: 'Cargando mensajes...',
-    
-    // Favorites
     myFavorites: 'Mis Favoritos',
     noFavorites: 'Aún no tienes favoritos',
     addFavorites: 'Guarda tus profesionales preferidos aquí',
     remove: 'Eliminar',
     contact: 'Contactar',
-    
-    // Footer
     tagline: 'Tu autónomo de confianza',
     platformDescription: 'Conectamos profesionales con clientes en toda España',
     forProfessionals: 'Para Profesionales',
@@ -127,39 +99,17 @@ const translations = {
     cookiePolicy: 'Política de cookies',
     legalNotice: 'Aviso legal',
     allRightsReserved: 'Todos los derechos reservados',
-    
-    // Common
     loading: 'Cargando...',
     save: 'Guardar',
     cancel: 'Cancelar',
     edit: 'Editar',
     delete: 'Eliminar',
-    back: 'Volver',
-    next: 'Siguiente',
-    previous: 'Anterior',
-    confirm: 'Confirmar',
-    close: 'Cerrar',
-    
-    // Pricing
-    freeTrial: 'Prueba gratuita',
-    selectPlan: 'Seleccionar plan',
-    monthly: 'Mensual',
-    quarterly: 'Trimestral',
-    annual: 'Anual',
-    perMonth: '/mes',
-    perYear: '/año',
-    
-    // Days
-    monday: 'Lunes',
-    tuesday: 'Martes',
-    wednesday: 'Miércoles',
-    thursday: 'Jueves',
-    friday: 'Viernes',
-    saturday: 'Sábado',
-    sunday: 'Domingo',
+    professional: 'Autónomo',
+    client: 'Cliente',
+    online: 'En línea',
+    user: 'Usuario',
   },
   en: {
-    // Navigation
     searchFreelancers: 'Find Professionals',
     messages: 'Messages',
     favorites: 'Favorites',
@@ -170,15 +120,11 @@ const translations = {
     logout: 'Log out',
     login: 'Log in',
     becomeFreelancer: 'Become a professional',
-    
-    // Hero
     heroTitle: 'Find your trusted professional',
     heroSubtitle: 'Connect with verified professionals near you. Fast, easy and secure.',
     chooseHow: 'How do you want to use MisAutónomos?',
     imFreelancer: "I'm a professional",
     imClient: 'I need services',
-    
-    // Search
     filters: 'Search filters',
     search: 'Search service, company...',
     allCategories: 'All categories',
@@ -189,8 +135,6 @@ const translations = {
     noResults: 'No results found',
     tryDifferentFilters: 'Try different filters or search in another location',
     viewAll: 'View all',
-    
-    // Categories
     'Electricista': 'Electrician',
     'Fontanero': 'Plumber',
     'Carpintero': 'Carpenter',
@@ -199,14 +143,6 @@ const translations = {
     'Jardinero': 'Gardener',
     'Transportista': 'Carrier',
     'Autónomo de limpieza': 'Cleaning Service',
-    'Cerrajero': 'Locksmith',
-    'Instalador de aire acondicionado': 'AC Installer',
-    'Mantenimiento general': 'General Maintenance',
-    'Asesoría o gestoría': 'Consulting / Advisory',
-    'Empresa multiservicios': 'Multi-service Company',
-    'Otro tipo de servicio profesional': 'Other professional service',
-    
-    // Cards
     verified: 'Verified',
     availableNow: 'Available now',
     until: 'Until',
@@ -219,8 +155,6 @@ const translations = {
     workGallery: 'Work Gallery',
     reviews: 'reviews',
     review: 'review',
-    
-    // Profile
     information: 'Information',
     schedule: 'Schedule',
     mondayFriday: 'Monday to Friday',
@@ -231,8 +165,6 @@ const translations = {
     phone: 'Phone',
     website: 'Website',
     visitWebsite: 'Visit website',
-    
-    // Reviews
     reviewsTitle: 'Client reviews',
     noReviewsYet: 'No reviews yet',
     beFirstReview: 'Be the first to leave a review',
@@ -240,25 +172,16 @@ const translations = {
     communication: 'Communication',
     quality: 'Quality',
     priceSatisfaction: 'Price/Satisfaction',
-    reportReview: 'Report review',
-    inappropriate: 'Inappropriate content',
-    
-    // Messages
     conversations: 'Conversations',
     noConversations: 'No conversations',
     startChatting: 'Start chatting with professionals',
     writeMessage: 'Write a message...',
     send: 'Send',
-    loadingMessages: 'Loading messages...',
-    
-    // Favorites
     myFavorites: 'My Favorites',
     noFavorites: 'No favorites yet',
     addFavorites: 'Save your preferred professionals here',
     remove: 'Remove',
     contact: 'Contact',
-    
-    // Footer
     tagline: 'Your trusted professional',
     platformDescription: 'Connecting professionals with clients across Spain',
     forProfessionals: 'For Professionals',
@@ -276,36 +199,15 @@ const translations = {
     cookiePolicy: 'Cookie Policy',
     legalNotice: 'Legal Notice',
     allRightsReserved: 'All rights reserved',
-    
-    // Common
     loading: 'Loading...',
     save: 'Save',
     cancel: 'Cancel',
     edit: 'Edit',
     delete: 'Delete',
-    back: 'Back',
-    next: 'Next',
-    previous: 'Previous',
-    confirm: 'Confirm',
-    close: 'Close',
-    
-    // Pricing
-    freeTrial: 'Free trial',
-    selectPlan: 'Select plan',
-    monthly: 'Monthly',
-    quarterly: 'Quarterly',
-    annual: 'Annual',
-    perMonth: '/month',
-    perYear: '/year',
-    
-    // Days
-    monday: 'Monday',
-    tuesday: 'Tuesday',
-    wednesday: 'Wednesday',
-    thursday: 'Thursday',
-    friday: 'Friday',
-    saturday: 'Saturday',
-    sunday: 'Sunday',
+    professional: 'Professional',
+    client: 'Client',
+    online: 'Online',
+    user: 'User',
   }
 };
 
