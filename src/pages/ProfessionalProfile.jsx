@@ -30,6 +30,7 @@ import ReviewSection from "../components/profile/ReviewSection.jsx";
 import PhotoGallery from "../components/profile/PhotoGallery.jsx";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import AvailabilityBadge from "../components/profile/AvailabilityBadge";
+import TranslatedText from "../components/ui/TranslatedText"; // Added import
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
 
@@ -124,9 +125,7 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
-    // Define businessName from profile to be used in message creation
     const businessName = profile.business_name;
-
     const conversationId = [user.id, professionalId].sort().join('_');
 
     const existingMessages = await base44.entities.Message.filter({
@@ -311,7 +310,7 @@ export default function ProfessionalProfilePage() {
                         {profile.business_name}
                       </h1>
                       
-                      {/* ✅ NUEVO: Badge de disponibilidad dinámica */}
+                      {/* Badge de disponibilidad dinámica */}
                       <div className="mb-3">
                         <AvailabilityBadge profile={profile} />
                       </div>
@@ -341,7 +340,7 @@ export default function ProfessionalProfilePage() {
                     </div>
                   </div>
 
-                  {/* ✅ MODIFICADO: Botones de contacto según preferencias */}
+                  {/* Botones de contacto según preferencias */}
                   <div className="flex flex-wrap gap-2 mt-4">
                     <div className="relative">
                       <Button
@@ -370,7 +369,7 @@ export default function ProfessionalProfilePage() {
                       )}
                     </div>
 
-                    {/* ✅ NUEVO: Mostrar solo botones según metodos_contacto */}
+                    {/* Mostrar solo botones según metodos_contacto */}
                     {profile.telefono_contacto && profile.metodos_contacto?.includes('telefono') && (
                       <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
                         <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
@@ -406,13 +405,13 @@ export default function ProfessionalProfilePage() {
                   <div className="flex flex-wrap gap-2 mb-4 mt-4">
                     {profile.categories?.map((cat, idx) => (
                       <Badge key={idx} className="bg-blue-100 text-blue-900">
-                        {cat}
+                        {t(cat)}
                       </Badge>
                     ))}
-                    {/* ✅ NUEVO: Mostrar activity_other si existe */}
+                    {/* Mostrar activity_other si existe */}
                     {profile.activity_other && (
                       <Badge className="bg-purple-100 text-purple-900">
-                        {profile.activity_other}
+                        <TranslatedText text={profile.activity_other} />
                       </Badge>
                     )}
                     {profile.price_range && (
@@ -423,7 +422,7 @@ export default function ProfessionalProfilePage() {
                   </div>
 
                   <p className="text-gray-700 text-lg leading-relaxed">
-                    {profile.description}
+                    <TranslatedText text={profile.description} />
                   </p>
                 </div>
               </div>
@@ -473,7 +472,7 @@ export default function ProfessionalProfilePage() {
                     </div>
                   )}
 
-                  {/* ✅ NUEVO: Mostrar horario dinámico */}
+                  {/* Mostrar horario dinámico */}
                   {profile.disponibilidad_tipo && profile.horario_apertura && profile.horario_cierre && (
                     <div className="flex items-start gap-3">
                       <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
@@ -490,7 +489,7 @@ export default function ProfessionalProfilePage() {
                     </div>
                   )}
 
-                  {/* ✅ NUEVO: Mostrar tarifa solo si existe */}
+                  {/* Mostrar tarifa solo si existe */}
                   {profile.tarifa_base && profile.tarifa_base > 0 && (
                     <div className="flex items-start gap-3">
                       <div className="w-5 h-5 flex items-center justify-center text-gray-400 mt-0.5">
