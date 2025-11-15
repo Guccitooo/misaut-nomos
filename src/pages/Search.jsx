@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -403,7 +402,6 @@ export default function SearchPage() {
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
       const subs = await base44.entities.Subscription.list();
-      console.log('📊 Suscripciones cargadas:', subs.length);
       return subs;
     },
     staleTime: 1000 * 60 * 5,
@@ -414,7 +412,6 @@ export default function SearchPage() {
     queryKey: ['allProfiles'],
     queryFn: async () => {
       const fresh = await base44.entities.ProfessionalProfile.list('-updated_date', 100);
-      console.log('📦 Perfiles cargados:', fresh.length);
       return fresh;
     },
     staleTime: 1000 * 60 * 5,
