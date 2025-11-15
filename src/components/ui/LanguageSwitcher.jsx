@@ -10,7 +10,16 @@ import {
 
 const translations = {
   es: {
-    // Navigation
+    // ============ ROLES Y TIPOS ============
+    'Autónomo': 'Autónomo',
+    'Cliente': 'Cliente',
+    freelancer: 'Autónomo',
+    client: 'Cliente',
+    professional: 'Autónomo',
+    userType: 'Tipo de usuario',
+    accountType: 'Tipo de cuenta',
+    
+    // ============ NAVEGACIÓN ============
     searchFreelancers: 'Buscar Autónomos',
     messages: 'Mensajes',
     favorites: 'Favoritos',
@@ -21,15 +30,16 @@ const translations = {
     logout: 'Cerrar sesión',
     login: 'Iniciar sesión',
     becomeFreelancer: 'Hazte autónomo',
+    navigation: 'Navegación',
     
-    // Hero
+    // ============ HERO ============
     heroTitle: 'Encuentra tu autónomo de confianza',
     heroSubtitle: 'Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.',
     chooseHow: '¿Cómo quieres usar MisAutónomos?',
     imFreelancer: 'Soy autónomo',
     imClient: 'Busco servicios',
     
-    // Search
+    // ============ BÚSQUEDA ============
     filters: 'Filtros de búsqueda',
     search: 'Buscar servicio, empresa...',
     allCategories: 'Todas las categorías',
@@ -40,8 +50,9 @@ const translations = {
     noResults: 'No se encontraron resultados',
     tryDifferentFilters: 'Intenta con otros filtros o busca en otra ubicación',
     viewAll: 'Ver todos',
+    discoverFreelancers: 'Descubrir autónomos',
     
-    // Categories
+    // ============ CATEGORÍAS ============
     'Electricista': 'Electricista',
     'Fontanero': 'Fontanero',
     'Carpintero': 'Carpintero',
@@ -57,7 +68,7 @@ const translations = {
     'Empresa multiservicios': 'Empresa multiservicios',
     'Otro tipo de servicio profesional': 'Otro tipo de servicio',
     
-    // Cards & Profile
+    // ============ PERFIL PROFESIONAL ============
     verified: 'Verificado',
     availableNow: 'Disponible ahora',
     until: 'Hasta las',
@@ -81,7 +92,7 @@ const translations = {
     website: 'Sitio web',
     visitWebsite: 'Visitar sitio web',
     
-    // Reviews
+    // ============ REVIEWS ============
     reviewsTitle: 'Opiniones de clientes',
     noReviewsYet: 'Sin opiniones por ahora',
     beFirstReview: 'Sé el primero en dejar una opinión',
@@ -91,8 +102,12 @@ const translations = {
     priceSatisfaction: 'Precio/Satisfacción',
     reportReview: 'Reportar opinión',
     inappropriate: 'Contenido inapropiado',
+    rapidez: 'Rapidez',
+    comunicacion: 'Comunicación',
+    calidadTrabajo: 'Calidad del trabajo',
+    relacionCalidadPrecio: 'Relación calidad/precio',
     
-    // Messages
+    // ============ MENSAJERÍA ============
     conversations: 'Conversaciones',
     noConversations: 'No hay conversaciones',
     startChatting: 'Comienza a chatear con profesionales',
@@ -101,8 +116,6 @@ const translations = {
     loadingMessages: 'Cargando mensajes...',
     user: 'Usuario',
     you: 'Tú',
-    professional: 'Autónomo',
-    client: 'Cliente',
     online: 'En línea',
     selectConversation: 'Selecciona una conversación',
     chooseContactToChat: 'Elige un contacto para comenzar a chatear',
@@ -110,14 +123,14 @@ const translations = {
     messageSent: 'Mensaje enviado',
     sendMessageError: 'Error al enviar el mensaje',
     prepareMessageError: 'Error al preparar el mensaje: ',
+    contactProfessionalToStart: 'Contacta con un profesional para empezar',
+    messagesPageDescription: 'Gestiona tus conversaciones con profesionales',
+    noMessagesInConversation: 'No hay mensajes en esta conversación',
+    loadingMessaging: 'Cargando mensajes...',
     
-    // Review Dialog
+    // ============ REVIEWS DIALOG ============
     rateServiceOf: 'Valorar el servicio de {{name}}',
     reviewHelpfulDescription: 'Tu opinión ayuda a otros clientes a tomar decisiones informadas',
-    rapidez: 'Rapidez',
-    comunicacion: 'Comunicación',
-    calidadTrabajo: 'Calidad del trabajo',
-    relacionCalidadPrecio: 'Relación calidad/precio',
     tellExperienceOptional: 'Cuéntanos tu experiencia (opcional)',
     experiencePlaceholder: 'Describe tu experiencia con este profesional...',
     characters: 'caracteres',
@@ -135,24 +148,92 @@ const translations = {
     cannotLeaveReviewNow: 'No puedes dejar una valoración ahora',
     sending: 'Enviando...',
     publishReview: 'Publicar valoración',
-    noMessagesInConversation: 'No hay mensajes en esta conversación',
-    contactProfessionalToStart: 'Contacta con un profesional para empezar',
-    loadingMessaging: 'Cargando mensajes...',
-    messagesPageDescription: 'Gestiona tus conversaciones con profesionales',
     
-    // Favorites
+    // ============ FAVORITOS ============
     myFavorites: 'Mis Favoritos',
     noFavorites: 'Aún no tienes favoritos',
     addFavorites: 'Guarda tus profesionales preferidos aquí',
     remove: 'Eliminar',
     contact: 'Contactar',
+    manageFavoriteProfessionals: 'Gestiona tus profesionales favoritos',
+    addFreelancersToFavorites: 'Guarda profesionales para contactarlos más tarde',
+    favoriteProfessionalsSubtitle: 'Tus autónomos guardados',
     
-    // Footer
+    // ============ MI PERFIL ============
+    manageProfile: 'Gestiona tu información',
+    manageProfessionalProfile: 'Gestiona tu perfil profesional',
+    editProfile: 'Editar Perfil',
+    visibleToClients: 'Visible para clientes',
+    hiddenProfile: 'Perfil oculto',
+    saveChanges: 'Guardar cambios',
+    saving: 'Guardando...',
+    personalInfo: 'Información personal',
+    professionalProfile: 'Perfil Profesional',
+    portfolio: 'Portfolio',
+    fullName: 'Nombre completo',
+    city: 'Ciudad',
+    changePhoto: 'Cambiar foto',
+    professionalIdentity: 'Identidad Profesional',
+    professionalName: 'Nombre profesional',
+    yearsExperience: 'Años de experiencia',
+    emailContact: 'Email de contacto',
+    phoneContact: 'Teléfono de contacto',
+    certifications: 'Certificaciones y títulos',
+    addCertification: 'Añadir certificación',
+    servicesDescription: 'Servicios y Descripción',
+    serviceCategories: 'Categorías de servicio',
+    specifyService: 'Especifica tu servicio',
+    shortDescription: 'Descripción corta',
+    detailedDescription: 'Descripción detallada',
+    locationAvailability: 'Ubicación y Disponibilidad',
+    province: 'Provincia',
+    neighborhood: 'Barrio/Municipio',
+    serviceRadius: 'Radio de servicio',
+    availability: 'Disponibilidad',
+    startTime: 'Hora inicio',
+    endTime: 'Hora fin',
+    ratesPayment: 'Tarifas y Forma de Trabajo',
+    baseRate: 'Tarifa base',
+    invoiceType: 'Tipo de facturación',
+    paymentMethods: 'Formas de pago aceptadas',
+    onlinePresence: 'Presencia Online',
+    workGalleryTitle: 'Galería de Trabajos',
+    uploadPhotos: 'Sube fotos de tus trabajos',
+    addPhoto: 'Añadir foto',
+    mainPhoto: 'Principal',
+    dangerZone: 'Zona de peligro',
+    deleteAccount: 'Eliminar mi cuenta',
+    deleteAccountWarning: 'Esta acción eliminará permanentemente tu cuenta',
+    confirmDelete: 'Sí, eliminar definitivamente',
+    
+    // ============ SUSCRIPCIÓN ============
+    manageSubscription: 'Gestiona tu plan profesional',
+    backToProfile: 'Volver a Mi Perfil',
+    noActiveSubscription: 'Sin suscripción activa',
+    needSubscription: 'Necesitas contratar un plan profesional',
+    currentPlan: 'Plan actual',
+    startDate: 'Fecha de inicio',
+    renewalExpiration: 'Renovación / Expiración',
+    daysRemaining: 'días restantes',
+    profileVisible: 'Tu perfil es visible para todos los clientes',
+    trialActive: 'Periodo de prueba activa',
+    subscriptionCanceled: 'Suscripción cancelada',
+    subscriptionEnded: 'Suscripción finalizada',
+    improvePlan: 'Mejora tu plan',
+    reactivatePlan: 'Reactiva tu plan',
+    cancelSubscription: 'Cancelar suscripción',
+    changePlan: 'Cambiar plan',
+    viewAllPlans: 'Ver todos los planes',
+    cancelConfirm: '¿Cancelar suscripción?',
+    keepActive: 'No, mantener activo',
+    yesCancelSubscription: 'Sí, cancelar suscripción',
+    canceling: 'Cancelando...',
+    
+    // ============ FOOTER ============
     tagline: 'Tu autónomo de confianza',
     platformDescription: 'Conectamos profesionales con clientes en toda España',
     forProfessionals: 'Para Profesionales',
     forClients: 'Para Clientes',
-    navigation: 'Navegación',
     legal: 'Legal',
     plansAndPricing: 'Planes y precios',
     createProfile: 'Crear perfil',
@@ -166,7 +247,7 @@ const translations = {
     legalNotice: 'Aviso legal',
     allRightsReserved: 'Todos los derechos reservados',
     
-    // Common
+    // ============ COMUNES ============
     loading: 'Cargando...',
     save: 'Guardar',
     cancel: 'Cancelar',
@@ -177,9 +258,21 @@ const translations = {
     previous: 'Anterior',
     confirm: 'Confirmar',
     close: 'Cerrar',
+    accept: 'Aceptar',
+    yes: 'Sí',
+    no: 'No',
   },
   en: {
-    // Navigation
+    // ============ ROLES Y TIPOS ============
+    'Autónomo': 'Freelancer',
+    'Cliente': 'Client',
+    freelancer: 'Freelancer',
+    client: 'Client',
+    professional: 'Professional',
+    userType: 'User type',
+    accountType: 'Account type',
+    
+    // ============ NAVEGACIÓN ============
     searchFreelancers: 'Find Professionals',
     messages: 'Messages',
     favorites: 'Favorites',
@@ -190,15 +283,16 @@ const translations = {
     logout: 'Log out',
     login: 'Log in',
     becomeFreelancer: 'Become a professional',
+    navigation: 'Navigation',
     
-    // Hero
+    // ============ HERO ============
     heroTitle: 'Find your trusted professional',
     heroSubtitle: 'Connect with verified professionals near you. Fast, easy and secure.',
     chooseHow: 'How do you want to use MisAutónomos?',
     imFreelancer: "I'm a professional",
     imClient: 'I need services',
     
-    // Search
+    // ============ BÚSQUEDA ============
     filters: 'Search filters',
     search: 'Search service, company...',
     allCategories: 'All categories',
@@ -209,8 +303,9 @@ const translations = {
     noResults: 'No results found',
     tryDifferentFilters: 'Try different filters or search in another location',
     viewAll: 'View all',
+    discoverFreelancers: 'Discover professionals',
     
-    // Categories
+    // ============ CATEGORÍAS ============
     'Electricista': 'Electrician',
     'Fontanero': 'Plumber',
     'Carpintero': 'Carpenter',
@@ -226,7 +321,7 @@ const translations = {
     'Empresa multiservicios': 'Multi-service',
     'Otro tipo de servicio profesional': 'Other service',
     
-    // Cards & Profile
+    // ============ PERFIL PROFESIONAL ============
     verified: 'Verified',
     availableNow: 'Available now',
     until: 'Until',
@@ -250,7 +345,7 @@ const translations = {
     website: 'Website',
     visitWebsite: 'Visit website',
     
-    // Reviews
+    // ============ REVIEWS ============
     reviewsTitle: 'Client reviews',
     noReviewsYet: 'No reviews yet',
     beFirstReview: 'Be the first to leave a review',
@@ -260,8 +355,12 @@ const translations = {
     priceSatisfaction: 'Price/Satisfaction',
     reportReview: 'Report review',
     inappropriate: 'Inappropriate content',
+    rapidez: 'Speed',
+    comunicacion: 'Communication',
+    calidadTrabajo: 'Work quality',
+    relacionCalidadPrecio: 'Value for money',
     
-    // Messages
+    // ============ MENSAJERÍA ============
     conversations: 'Conversations',
     noConversations: 'No conversations',
     startChatting: 'Start chatting with professionals',
@@ -270,8 +369,6 @@ const translations = {
     loadingMessages: 'Loading messages...',
     user: 'User',
     you: 'You',
-    professional: 'Professional',
-    client: 'Client',
     online: 'Online',
     selectConversation: 'Select a conversation',
     chooseContactToChat: 'Choose a contact to start chatting',
@@ -279,14 +376,14 @@ const translations = {
     messageSent: 'Message sent',
     sendMessageError: 'Error sending message',
     prepareMessageError: 'Error preparing message: ',
+    contactProfessionalToStart: 'Contact a professional to start',
+    messagesPageDescription: 'Manage your conversations with professionals',
+    noMessagesInConversation: 'No messages in this conversation',
+    loadingMessaging: 'Loading messages...',
     
-    // Review Dialog
+    // ============ REVIEWS DIALOG ============
     rateServiceOf: 'Rate service from {{name}}',
     reviewHelpfulDescription: 'Your review helps other clients make informed decisions',
-    rapidez: 'Speed',
-    comunicacion: 'Communication',
-    calidadTrabajo: 'Work quality',
-    relacionCalidadPrecio: 'Value for money',
     tellExperienceOptional: 'Tell us about your experience (optional)',
     experiencePlaceholder: 'Describe your experience with this professional...',
     characters: 'characters',
@@ -304,24 +401,92 @@ const translations = {
     cannotLeaveReviewNow: 'Cannot leave a review now',
     sending: 'Sending...',
     publishReview: 'Publish review',
-    noMessagesInConversation: 'No messages in this conversation',
-    contactProfessionalToStart: 'Contact a professional to start',
-    loadingMessaging: 'Loading messages...',
-    messagesPageDescription: 'Manage your conversations with professionals',
     
-    // Favorites
+    // ============ FAVORITOS ============
     myFavorites: 'My Favorites',
     noFavorites: 'No favorites yet',
     addFavorites: 'Save your preferred professionals here',
     remove: 'Remove',
     contact: 'Contact',
+    manageFavoriteProfessionals: 'Manage your favorite professionals',
+    addFreelancersToFavorites: 'Save professionals to contact them later',
+    favoriteProfessionalsSubtitle: 'Your saved professionals',
     
-    // Footer
+    // ============ MI PERFIL ============
+    manageProfile: 'Manage your information',
+    manageProfessionalProfile: 'Manage your professional profile',
+    editProfile: 'Edit Profile',
+    visibleToClients: 'Visible to clients',
+    hiddenProfile: 'Hidden profile',
+    saveChanges: 'Save changes',
+    saving: 'Saving...',
+    personalInfo: 'Personal information',
+    professionalProfile: 'Professional Profile',
+    portfolio: 'Portfolio',
+    fullName: 'Full name',
+    city: 'City',
+    changePhoto: 'Change photo',
+    professionalIdentity: 'Professional Identity',
+    professionalName: 'Professional name',
+    yearsExperience: 'Years of experience',
+    emailContact: 'Contact email',
+    phoneContact: 'Contact phone',
+    certifications: 'Certifications and qualifications',
+    addCertification: 'Add certification',
+    servicesDescription: 'Services and Description',
+    serviceCategories: 'Service categories',
+    specifyService: 'Specify your service',
+    shortDescription: 'Short description',
+    detailedDescription: 'Detailed description',
+    locationAvailability: 'Location and Availability',
+    province: 'Province',
+    neighborhood: 'Neighborhood',
+    serviceRadius: 'Service radius',
+    availability: 'Availability',
+    startTime: 'Start time',
+    endTime: 'End time',
+    ratesPayment: 'Rates and Payment',
+    baseRate: 'Base rate',
+    invoiceType: 'Invoice type',
+    paymentMethods: 'Accepted payment methods',
+    onlinePresence: 'Online Presence',
+    workGalleryTitle: 'Work Gallery',
+    uploadPhotos: 'Upload photos of your work',
+    addPhoto: 'Add photo',
+    mainPhoto: 'Main',
+    dangerZone: 'Danger zone',
+    deleteAccount: 'Delete my account',
+    deleteAccountWarning: 'This action will permanently delete your account',
+    confirmDelete: 'Yes, delete permanently',
+    
+    // ============ SUSCRIPCIÓN ============
+    manageSubscription: 'Manage your professional plan',
+    backToProfile: 'Back to My Profile',
+    noActiveSubscription: 'No active subscription',
+    needSubscription: 'You need a professional plan',
+    currentPlan: 'Current plan',
+    startDate: 'Start date',
+    renewalExpiration: 'Renewal / Expiration',
+    daysRemaining: 'days remaining',
+    profileVisible: 'Your profile is visible to all clients',
+    trialActive: 'Free trial active',
+    subscriptionCanceled: 'Subscription canceled',
+    subscriptionEnded: 'Subscription ended',
+    improvePlan: 'Upgrade your plan',
+    reactivatePlan: 'Reactivate your plan',
+    cancelSubscription: 'Cancel subscription',
+    changePlan: 'Change plan',
+    viewAllPlans: 'View all plans',
+    cancelConfirm: 'Cancel subscription?',
+    keepActive: 'No, keep active',
+    yesCancelSubscription: 'Yes, cancel subscription',
+    canceling: 'Canceling...',
+    
+    // ============ FOOTER ============
     tagline: 'Your trusted professional',
     platformDescription: 'Connecting professionals with clients across Spain',
     forProfessionals: 'For Professionals',
     forClients: 'For Clients',
-    navigation: 'Navigation',
     legal: 'Legal',
     plansAndPricing: 'Plans & Pricing',
     createProfile: 'Create profile',
@@ -335,7 +500,7 @@ const translations = {
     legalNotice: 'Legal Notice',
     allRightsReserved: 'All rights reserved',
     
-    // Common
+    // ============ COMUNES ============
     loading: 'Loading...',
     save: 'Save',
     cancel: 'Cancel',
@@ -346,6 +511,9 @@ const translations = {
     previous: 'Previous',
     confirm: 'Confirm',
     close: 'Close',
+    accept: 'Accept',
+    yes: 'Yes',
+    no: 'No',
   }
 };
 
