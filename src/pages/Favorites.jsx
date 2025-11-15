@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,7 @@ import SEOHead from "../components/seo/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import OptimizedImage from "../components/ui/OptimizedImage";
 
 export default function FavoritesPage() {
   const navigate = useNavigate();
@@ -34,7 +33,6 @@ export default function FavoritesPage() {
     }
   };
 
-  // Fetch Favorite entities
   const { data: rawFavorites = [], isLoading: isLoadingFavorites } = useQuery({
     queryKey: ['favorites', user?.id],
     queryFn: async () => {
@@ -47,33 +45,30 @@ export default function FavoritesPage() {
 
   const professionalIds = rawFavorites.map(fav => fav.professional_id);
 
-  // Fetch ProfessionalProfile entities based on favorite professional IDs
   const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
     queryKey: ['favoriteProfessionalProfiles', professionalIds],
     queryFn: async () => {
       if (professionalIds.length === 0) return [];
-      // Assuming base44.entities.ProfessionalProfile.filter can take an array of user_ids using '__in'
-      return base44.entities.ProfessionalProfile.filter({ user_id__in: professionalIds });
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      return allProfiles.filter(p => professionalIds.includes(p.user_id));
     },
-    enabled: professionalIds.length > 0, // Only run if there are professional IDs to fetch
+    enabled: professionalIds.length > 0,
     initialData: [],
   });
 
-  // Fetch User entities (for profile pictures) based on favorite professional IDs
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ['favoriteUsers', professionalIds],
     queryFn: async () => {
       if (professionalIds.length === 0) return [];
-      // Assuming base44.entities.User.filter can take an array of IDs using '__in'
-      return base44.entities.User.filter({ id__in: professionalIds });
+      const allUsers = await base44.entities.User.list();
+      return allUsers.filter(u => professionalIds.includes(u.id));
     },
-    enabled: professionalIds.length > 0, // Only run if there are professional IDs to fetch
+    enabled: professionalIds.length > 0,
     initialData: [],
   });
 
   const isLoading = isLoadingFavorites || isLoadingProfiles || isLoadingUsers;
 
-  // Filter raw favorites to only include those for which a profile was successfully loaded
   const displayFavorites = rawFavorites.filter(fav =>
     profiles.some(p => p.user_id === fav.professional_id)
   );
@@ -81,7 +76,7 @@ export default function FavoritesPage() {
   const handleRemoveFavorite = async (favoriteId) => {
     try {
       await base44.entities.Favorite.delete(favoriteId);
-      queryClient.invalidateQueries(['favorites', user?.id]); // Invalidate cache to refetch
+      queryClient.invalidateQueries(['favorites', user?.id]);
     } catch (error) {
       console.error("Error removing favorite:", error);
     }
@@ -89,7 +84,7 @@ export default function FavoritesPage() {
 
   const handleStartChat = (professionalId, professionalName) => {
     const conversationId = [user.id, professionalId].sort().join('_');
-    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professionalId=${professionalId}&professionalName=${encodeURIComponent(professionalName)}`);
+    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
   if (!user) {
@@ -104,14 +99,14 @@ export default function FavoritesPage() {
     <>
       <SEOHead
         title={`${t('myFavorites')} - MisAutónomos`}
-        description={t('manageFavoriteProfessionals')}
+        description="Gestiona tus profesionales favoritos guardados"
       />
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('myFavorites')}</h1>
-            <p className="text-gray-600">{t('favoriteProfessionalsSubtitle')}</p>
+            <p className="text-gray-600">{t('addFavorites')}</p>
           </div>
 
           {isLoading ? (
@@ -133,13 +128,13 @@ export default function FavoritesPage() {
                 {t('noFavorites')}
               </h3>
               <p className="text-gray-600 mb-6">
-                {t('addFreelancersToFavorites')}
+                {t('addFavorites')}
               </p>
               <Button
                 onClick={() => navigate(createPageUrl("Search"))}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {t('discoverFreelancers')}
+                {t('searchFreelancers')}
               </Button>
             </Card>
           ) : (
@@ -148,7 +143,7 @@ export default function FavoritesPage() {
                 const profile = profiles.find(p => p.user_id === favorite.professional_id);
                 const profileUser = users.find(u => u.id === favorite.professional_id);
 
-                if (!profile) return null; // Should not happen with `displayFavorites` filtering, but for safety
+                if (!profile) return null;
 
                 return (
                   <Card
