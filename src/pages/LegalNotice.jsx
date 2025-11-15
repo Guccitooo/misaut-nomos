@@ -1,170 +1,153 @@
-
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Scale } from "lucide-react";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import SEOHead from "../components/seo/SEOHead";
 
 export default function LegalNoticePage() {
+  const navigate = useNavigate();
+  const { language, t } = useLanguage();
+
+  const content = {
+    es: {
+      title: "Aviso Legal",
+      subtitle: "Última actualización: 15 de enero de 2025",
+      sections: [
+        {
+          title: "1. Datos Identificativos",
+          text: "En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, se informa que: Titular: MisAutónomos, Domicilio: Madrid, España, Email: info@misautonomos.es, Web: https://misautonomos.es"
+        },
+        {
+          title: "2. Objeto",
+          text: "El presente aviso legal regula el uso del sitio web MisAutónomos (en adelante, el sitio web). La navegación por el sitio web atribuye la condición de usuario y conlleva la aceptación plena de todas las disposiciones incluidas en este aviso legal."
+        },
+        {
+          title: "3. Condiciones de Uso",
+          text: "El usuario se compromete a utilizar el sitio web y sus servicios conforme a la ley, el presente aviso legal, y las buenas costumbres. Queda prohibido el uso del sitio web con fines ilícitos o que perjudiquen los intereses de MisAutónomos o de terceros."
+        },
+        {
+          title: "4. Propiedad Intelectual e Industrial",
+          text: "Todos los contenidos del sitio web (textos, imágenes, marcas, logotipos, código fuente, diseño gráfico) son propiedad de MisAutónomos o de terceros que han autorizado su uso. Quedan reservados todos los derechos sobre los mismos."
+        },
+        {
+          title: "5. Responsabilidad",
+          text: "MisAutónomos no se hace responsable de: (a) La disponibilidad técnica y continuidad del sitio web, (b) Información o contenidos publicados por usuarios, (c) Servicios prestados por profesionales a clientes, (d) Daños derivados del uso indebido del sitio web."
+        },
+        {
+          title: "6. Enlaces",
+          text: "El sitio web puede contener enlaces a sitios web de terceros. MisAutónomos no controla ni se hace responsable del contenido, políticas de privacidad o prácticas de dichos sitios web externos."
+        },
+        {
+          title: "7. Protección de Datos",
+          text: "Para información sobre cómo tratamos sus datos personales, consulte nuestra Política de Privacidad."
+        },
+        {
+          title: "8. Legislación Aplicable",
+          text: "El presente aviso legal se rige por la legislación española. Para cualquier controversia será competente la jurisdicción de Madrid, España."
+        },
+        {
+          title: "9. Contacto",
+          text: "Para comunicaciones legales: info@misautonomos.es"
+        }
+      ]
+    },
+    en: {
+      title: "Legal Notice",
+      subtitle: "Last updated: January 15, 2025",
+      sections: [
+        {
+          title: "1. Identifying Information",
+          text: "In compliance with article 10 of Law 34/2002 on Information Society Services and Electronic Commerce, we inform: Owner: MisAutónomos, Address: Madrid, Spain, Email: info@misautonomos.es, Website: https://misautonomos.es"
+        },
+        {
+          title: "2. Purpose",
+          text: "This legal notice regulates the use of the MisAutónomos website (hereinafter, the website). Browsing the website grants user status and implies full acceptance of all provisions included in this legal notice."
+        },
+        {
+          title: "3. Terms of Use",
+          text: "The user agrees to use the website and its services in accordance with the law, this legal notice, and good practices. Use of the website for unlawful purposes or that harm MisAutónomos or third parties is prohibited."
+        },
+        {
+          title: "4. Intellectual and Industrial Property",
+          text: "All website content (texts, images, trademarks, logos, source code, graphic design) is property of MisAutónomos or third parties who have authorized its use. All rights thereto are reserved."
+        },
+        {
+          title: "5. Liability",
+          text: "MisAutónomos is not responsible for: (a) Technical availability and continuity of the website, (b) Information or content published by users, (c) Services provided by professionals to clients, (d) Damages arising from improper use of the website."
+        },
+        {
+          title: "6. Links",
+          text: "The website may contain links to third-party websites. MisAutónomos does not control and is not responsible for the content, privacy policies or practices of such external websites."
+        },
+        {
+          title: "7. Data Protection",
+          text: "For information on how we process your personal data, see our Privacy Policy."
+        },
+        {
+          title: "8. Applicable Law",
+          text: "This legal notice is governed by Spanish law. For any dispute, the jurisdiction of Madrid, Spain shall be competent."
+        },
+        {
+          title: "9. Contact",
+          text: "For legal communications: info@misautonomos.es"
+        }
+      ]
+    }
+  };
+
+  const currentContent = content[language] || content.es;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Link to={createPageUrl("Search")}>
-          <Button variant="ghost" className="mb-6">
+    <>
+      <SEOHead 
+        title={`${currentContent.title} - MisAutónomos`}
+        description="Aviso legal de la plataforma MisAutónomos"
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("Search"))}
+            className="mb-6 hover:bg-blue-50"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al inicio
+            {t('back')}
           </Button>
-        </Link>
 
-        <Card className="border-0 shadow-xl">
-          <CardContent className="p-8 md:p-12">
-            <div className="flex items-center gap-3 mb-6">
-              <Scale className="w-8 h-8 text-blue-600" />
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Aviso Legal
-              </h1>
-            </div>
-            
-            <p className="text-gray-600 mb-8">
-              <strong>Última actualización:</strong> {new Date().toLocaleDateString('es-ES')}
-            </p>
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Scale className="w-8 h-8" />
+                <CardTitle className="text-3xl font-bold">{currentContent.title}</CardTitle>
+              </div>
+              <p className="text-blue-100">{currentContent.subtitle}</p>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              {currentContent.sections.map((section, idx) => (
+                <div key={idx} className="space-y-2">
+                  <h2 className="text-xl font-semibold text-gray-900">{section.title}</h2>
+                  <p className="text-gray-700 leading-relaxed">{section.text}</p>
+                </div>
+              ))}
 
-            <div className="space-y-8 text-gray-700">
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Datos identificativos</h2>
-                <p className="leading-relaxed mb-4">
-                  En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y Comercio Electrónico, 
-                  informamos de los siguientes datos:
+              <div className="mt-12 p-6 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg">
+                <p className="text-sm text-gray-800 font-medium">
+                  {language === 'es' 
+                    ? 'Para comunicaciones legales' 
+                    : 'For legal communications'}: 
+                  <a href="mailto:info@misautonomos.es" className="text-blue-600 hover:text-blue-800 ml-1 font-semibold">
+                    info@misautonomos.es
+                  </a>
                 </p>
-                <ul className="list-none pl-0 space-y-2">
-                  <li><strong>Denominación social:</strong> MilAutónomos</li>
-                  <li><strong>Domicilio social:</strong> Madrid, España</li>
-                  <li><strong>CIF:</strong> B-12345678</li>
-                  <li><strong>Email:</strong> administrador@autonomosmil.es</li>
-                  <li><strong>Teléfono:</strong> +34 900 123 456</li>
-                  <li><strong>Registro Mercantil:</strong> Madrid, Tomo XXXX, Folio XX, Hoja M-XXXXX</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Objeto</h2>
-                <p className="leading-relaxed">
-                  El presente aviso legal regula el uso y utilización del sitio web <strong>milautonomos.com</strong> (en adelante, "el Sitio Web"), 
-                  del que es titular MilAutónomos.
-                </p>
-                <p className="leading-relaxed mt-4">
-                  La navegación por el Sitio Web atribuye la condición de usuario del mismo e implica la aceptación plena y sin reservas de todas y cada una 
-                  de las disposiciones incluidas en este Aviso Legal.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Condiciones de uso</h2>
-                <p className="leading-relaxed mb-4">
-                  El usuario se compromete a:
-                </p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Hacer un uso adecuado y lícito del Sitio Web</li>
-                  <li>No utilizar el Sitio Web con fines fraudulentos o ilegales</li>
-                  <li>No acceder a áreas restringidas sin autorización</li>
-                  <li>No introducir virus, malware o cualquier código dañino</li>
-                  <li>No realizar actividades de scraping o extracción masiva de datos</li>
-                  <li>No suplantar la identidad de otros usuarios</li>
-                  <li>Respetar los derechos de propiedad intelectual e industrial</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Propiedad intelectual e industrial</h2>
-                <p className="leading-relaxed mb-4">
-                  Todos los contenidos del Sitio Web (textos, imágenes, diseño, código fuente, logos, marcas, etc.) son propiedad de MilAutónomos 
-                  o de terceros que han autorizado su uso.
-                </p>
-                <p className="leading-relaxed mb-4">
-                  Quedan expresamente prohibidas la reproducción, distribución, comunicación pública y transformación de cualquier elemento del Sitio Web 
-                  sin la autorización expresa del titular de los derechos correspondientes.
-                </p>
-                <p className="leading-relaxed">
-                  El incumplimiento de estas prohibiciones puede constituir una infracción sancionable por la legislación vigente.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Exclusión de responsabilidades</h2>
-                <p className="leading-relaxed mb-4">
-                  MilAutónomos no se hace responsable de:
-                </p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>La calidad, veracidad o legalidad de los servicios ofrecidos por los profesionales registrados</li>
-                  <li>Las relaciones contractuales entre usuarios (clientes y profesionales)</li>
-                  <li>Los daños derivados del mal uso del Sitio Web por parte de los usuarios</li>
-                  <li>La disponibilidad continua del Sitio Web (puede haber interrupciones por mantenimiento)</li>
-                  <li>Los contenidos de sitios web de terceros enlazados desde el Sitio Web</li>
-                  <li>Los virus o elementos dañinos introducidos por terceros</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Enlaces a terceros</h2>
-                <p className="leading-relaxed">
-                  El Sitio Web puede contener enlaces a sitios web de terceros. MilAutónomos no controla ni es responsable del contenido, 
-                  políticas de privacidad o prácticas de estos sitios externos. El acceso y uso de sitios enlazados es bajo la exclusiva responsabilidad del usuario.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Protección de datos</h2>
-                <p className="leading-relaxed">
-                  MilAutónomos cumple con el Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica de Protección de Datos (LOPD). 
-                  Para más información sobre cómo tratamos tus datos personales, consulta nuestra{" "}
-                  <Link to={createPageUrl("PrivacyPolicy")} className="text-blue-600 hover:underline">
-                    Política de Privacidad
-                  </Link>.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Cookies</h2>
-                <p className="leading-relaxed">
-                  El Sitio Web utiliza cookies para mejorar la experiencia del usuario. Para más información, consulta nuestra{" "}
-                  <Link to={createPageUrl("CookiePolicy")} className="text-blue-600 hover:underline">
-                    Política de Cookies
-                  </Link>.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Modificaciones</h2>
-                <p className="leading-relaxed">
-                  MilAutónomos se reserva el derecho de modificar el presente Aviso Legal en cualquier momento. 
-                  Se recomienda revisar periódicamente esta página para estar informado de posibles cambios.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Legislación aplicable y jurisdicción</h2>
-                <p className="leading-relaxed">
-                  El presente Aviso Legal se rige por la legislación española. Para la resolución de cualquier controversia derivada del uso del Sitio Web, 
-                  las partes se someten expresamente a los Juzgados y Tribunales de Madrid, España.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Contacto</h2>
-                <p className="leading-relaxed mb-4">
-                  Para cualquier consulta relacionada con este Aviso Legal, puedes contactarnos en:
-                </p>
-                <ul className="list-none pl-0 space-y-2">
-                  <li>📧 Email: <a href="mailto:administrador@autonomosmil.es" className="text-blue-600 hover:underline">administrador@autonomosmil.es</a></li>
-                  <li>📞 Teléfono: +34 900 123 456</li>
-                  <li>📍 Dirección postal: Madrid, España</li>
-                </ul>
-              </section>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

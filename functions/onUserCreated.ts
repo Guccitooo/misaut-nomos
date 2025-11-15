@@ -9,7 +9,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid user data' }, { status: 400 });
     }
 
-    // ✅ CORREO DE BIENVENIDA PROFESIONAL - DISEÑO LIMPIO
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: user.email,
       subject: "Bienvenido a MisAutónomos",
@@ -37,16 +36,12 @@ Deno.serve(async (req) => {
       text-align: center;
     }
     .logo {
-      width: 64px;
-      height: 64px;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
       background: white;
       border-radius: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      font-size: 32px;
+      padding: 12px;
     }
     .header h1 {
       color: white;
@@ -190,14 +185,12 @@ Deno.serve(async (req) => {
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <div class="header">
-      <div class="logo">💼</div>
+      <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png" alt="MisAutónomos" class="logo" />
       <h1>MisAutónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
 
-    <!-- Content -->
     <div class="content">
       <p class="greeting">¡Bienvenido a MisAutónomos!</p>
 
@@ -235,7 +228,6 @@ Deno.serve(async (req) => {
       </p>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
       <span class="footer-brand">MisAutónomos</span>
       <p class="footer-tagline">Tu autónomo de confianza</p>
@@ -247,7 +239,6 @@ Deno.serve(async (req) => {
       <div class="footer-links">
         <a href="https://misautonomos.es/PrivacyPolicy">Política de Privacidad</a>
         <a href="https://misautonomos.es/TermsConditions">Términos y Condiciones</a>
-        <a href="https://misautonomos.es/unsubscribe">Darme de baja</a>
       </div>
       
       <p style="margin-top: 24px; font-size: 12px; color: #6b7280;">
