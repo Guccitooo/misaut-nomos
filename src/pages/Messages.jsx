@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,6 +22,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import OptimizedImage from "../components/ui/OptimizedImage";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import SEOHead from "../components/seo/SEOHead";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
@@ -97,15 +99,14 @@ const saveUserToCache = (userId, userData) => {
 export default function MessagesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialConversation = urlParams.get('conversation');
-  const initialProfessional = urlParams.get('professional');
+  const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [user, setUser] = useState(null);
-  const [selectedConversation, setSelectedConversation] = useState(initialConversation);
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState(initialProfessional);
+  const [selectedConversation, setSelectedConversation] = useState(searchParams.get('conversation'));
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState(searchParams.get('professional'));
   const [newMessage, setNewMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewData, setReviewData] = useState({
     rapidez: 0,
@@ -120,7 +121,6 @@ export default function MessagesPage() {
   const previousMessagesCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
   const [usersCache, setUsersCache] = useState({});
-  const [showMobileChat, setShowMobileChat] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -129,7 +129,6 @@ export default function MessagesPage() {
   useEffect(() => {
     if (selectedConversation) {
       isInitialLoadRef.current = true;
-      setShowMobileChat(true);
       setTimeout(() => {
         scrollToBottom(false);
         isInitialLoadRef.current = false;
@@ -342,17 +341,17 @@ export default function MessagesPage() {
   };
 
   const getDisplayName = (userId) => {
-    if (!userId) return "Usuario";
+    if (!userId) return t("user");
     
     if (userId === user?.id) {
-      return user.full_name || user.email?.split('@')[0] || "Tú";
+      return user.full_name || user.email?.split('@')[0] || t("you");
     }
     
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
         return otherUserData.profile.business_name;
       }
-      return otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
+      return otherUserData.full_name || otherUserData.email?.split('@')[0] || t("user");
     }
     
     if (usersCache[userId]) {
@@ -360,15 +359,15 @@ export default function MessagesPage() {
       if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
         return cachedUser.profile.business_name;
       }
-      return cachedUser.full_name || cachedUser.email?.split('@')[0] || "Usuario";
+      return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
     }
     
     const conversation = conversations[selectedConversation];
     if (conversation && userId === conversation.otherUserId) {
-      return conversation.otherUserName || "Usuario";
+      return conversation.otherUserName || t("user");
     }
     
-    return "Usuario";
+    return t("user");
   };
 
   const getUserType = (userId) => {
@@ -532,7 +531,7 @@ export default function MessagesPage() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['messages'] });
-      toast.success('Mensaje enviado ✓');
+      toast.success(t('messageSent'));
       
       setTimeout(() => {
         scrollToBottom(true);
@@ -540,7 +539,7 @@ export default function MessagesPage() {
     },
     onError: (err, newMessage, context) => {
       queryClient.setQueryData(['messages', user?.id], context.previousMessages);
-      toast.error("Error al enviar el mensaje. Intenta de nuevo.");
+      toast.error(t('sendMessageError'));
     }
   });
 
@@ -685,15 +684,15 @@ export default function MessagesPage() {
         comment: ""
       });
       
-      toast.success("✅ ¡Gracias por tu valoración!");
+      toast.success(t('reviewSuccess'));
     },
     onError: (error) => {
       console.error("Error creating review:", error);
       
       if (error.message.includes('Ya has valorado')) {
-        toast.error("Ya has valorado este servicio anteriormente");
+        toast.error(t('alreadyReviewed'));
       } else {
-        toast.error("Error al enviar la valoración. Inténtalo de nuevo.");
+        toast.error(t('reviewError'));
       }
     }
   });
@@ -725,9 +724,9 @@ export default function MessagesPage() {
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     
-    if (!newMessage.trim() || !selectedConversation || isSending) return;
+    if (!newMessage.trim() || !selectedConversation || sendingMessage) return;
 
-    setIsSending(true);
+    setSendingMessage(true);
 
     try {
       const otherUserId = selectedProfessionalId || 
@@ -779,10 +778,10 @@ export default function MessagesPage() {
 
     } catch (error) {
       console.error('❌ Error en handleSendMessage:', error);
-      toast.error('Error al preparar el mensaje: ' + error.message);
+      toast.error(t('prepareMessageError') + error.message);
     } finally {
       setTimeout(() => {
-        setIsSending(false);
+        setSendingMessage(false);
       }, 1000);
     }
   };
@@ -794,26 +793,26 @@ export default function MessagesPage() {
     }
   };
 
-  const handleSelectConversation = (conversation) => {
-    setSelectedConversation(conversation.conversationId);
-    setSelectedProfessionalId(conversation.otherUserId);
-    setShowMobileChat(true);
+  const handleSelectConversation = (conv) => {
+    setSelectedConversation(conv.conversationId);
+    setSelectedProfessionalId(conv.otherUserId);
+    setSearchParams({ conversation: conv.conversationId, professional: conv.otherUserId }, { replace: true });
   };
 
   const handleBackToConversations = () => {
-    setShowMobileChat(false);
     setSelectedConversation(null);
     setSelectedProfessionalId(null);
+    setSearchParams({}, { replace: true });
   };
 
   const handleOpenReviewDialog = () => {
     if (!canLeaveReview()) {
       if (existingReview) {
-        toast.info("Ya has valorado este servicio");
+        toast.info(t('alreadyReviewedInfo'));
       } else if (!hasBidirectionalConversation()) {
-        toast.info("Necesitas haber tenido una conversación bidireccional para dejar una valoración");
+        toast.info(t('bidirectionalConversationRequired'));
       } else {
-        toast.error("No puedes dejar una valoración en este momento");
+        toast.error(t('cannotLeaveReviewNow'));
       }
       return;
     }
@@ -823,12 +822,12 @@ export default function MessagesPage() {
   const handleSubmitReview = () => {
     if (reviewData.rapidez === 0 || reviewData.comunicacion === 0 || 
         reviewData.calidad === 0 || reviewData.precio_satisfaccion === 0) {
-      toast.error("Por favor, valora todos los aspectos");
+      toast.error(t('rateAllAspects'));
       return;
     }
     
     if (reviewData.comment.trim().length > 0 && reviewData.comment.trim().length < 10) {
-      toast.error("El comentario debe tener al menos 10 caracteres");
+      toast.error(t('commentMinLength'));
       return;
     }
     
@@ -837,7 +836,7 @@ export default function MessagesPage() {
 
   const StarRating = ({ value, onChange, label }) => (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-sm font-medium">{t(label)}</Label>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
@@ -864,37 +863,27 @@ export default function MessagesPage() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-700 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Cargando mensajería...</p>
+          <p className="text-gray-600 font-medium">{t('loadingMessaging')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 hidden md:block">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mensajería</h1>
-            <p className="text-gray-600">Comunícate con tus contactos</p>
-          </div>
-          {isFetching && !isLoading && (
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-              <span>Actualizando...</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-hidden flex">
-        <div className={`w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${
-          showMobileChat ? 'hidden md:flex' : 'flex'
+    <>
+      <SEOHead 
+        title={`${t('messages')} - MisAutónomos`}
+        description={t('messagesPageDescription')}
+      />
+      
+      <div className="flex-1 overflow-hidden flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className={`w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col ${
+          selectedConversation ? 'hidden md:flex' : 'flex'
         }`}>
           <div className="p-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-blue-700" />
-              Conversaciones
+              {t('conversations')}
               {conversationList.length > 0 && (
                 <span className="text-xs text-gray-500">({conversationList.length})</span>
               )}
@@ -907,8 +896,14 @@ export default function MessagesPage() {
             ) : conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p className="font-medium">Sin conversaciones</p>
-                <p className="text-sm">Contacta con un autónomo para empezar</p>
+                <p className="font-medium">{t('noConversations')}</p>
+                <p className="text-sm">{t('contactProfessionalToStart')}</p>
+                <Button
+                  onClick={() => navigate(createPageUrl("Search"))}
+                  className="bg-blue-600 hover:bg-blue-700 mt-4"
+                >
+                  {t('searchFreelancers')}
+                </Button>
               </div>
             ) : (
               conversationList.map((conv) => (
@@ -916,7 +911,7 @@ export default function MessagesPage() {
                   key={conv.conversationId}
                   onClick={() => handleSelectConversation(conv)}
                   className={`p-4 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-100 ${
-                    selectedConversation === conv.conversationId ? 'bg-blue-50' : ''
+                    selectedConversation === conv.conversationId ? 'bg-blue-50 border-l-4 border-blue-600' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -966,7 +961,7 @@ export default function MessagesPage() {
         </div>
 
         <div className={`flex-1 flex flex-col bg-gray-50 ${
-          !showMobileChat ? 'hidden md:flex' : 'flex'
+          !selectedConversation ? 'hidden md:flex' : 'flex'
         }`}>
           {selectedConversation ? (
             <>
@@ -1020,19 +1015,19 @@ export default function MessagesPage() {
                           {otherUserData.user_type === "professionnel" ? (
                             <>
                               <Briefcase className="w-3 h-3" />
-                              <span>Autónomo</span>
+                              <span>{t('professional')}</span>
                             </>
                           ) : (
                             <>
                               <UserIcon className="w-3 h-3" />
-                              <span>Cliente</span>
+                              <span>{t('client')}</span>
                             </>
                           )}
                         </Badge>
                       )}
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        En línea
+                        {t('online')}
                       </span>
                     </div>
                   </div>
@@ -1047,7 +1042,7 @@ export default function MessagesPage() {
                             className="hover:bg-blue-50 hover:border-blue-600"
                           >
                             <Phone className="w-4 h-4 mr-1" />
-                            <span className="hidden lg:inline">Llamar</span>
+                            <span className="hidden lg:inline">{t('call')}</span>
                           </Button>
                         </a>
                         <a
@@ -1073,14 +1068,14 @@ export default function MessagesPage() {
                         size="sm"
                       >
                         <Star className="w-4 h-4" />
-                        <span className="hidden lg:inline">Valorar</span>
+                        <span className="hidden lg:inline">{t('review')}</span>
                       </Button>
                     )}
                     
                     {existingReview && user?.user_type === "client" && (
                       <div className="flex items-center gap-2 text-xs text-gray-600 bg-green-50 px-3 py-2 rounded-lg">
                         <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="font-medium">Ya valorado</span>
+                        <span className="font-medium">{t('alreadyReviewed')}</span>
                       </div>
                     )}
                   </div>
@@ -1095,7 +1090,7 @@ export default function MessagesPage() {
                         className="w-full hover:bg-blue-50"
                       >
                         <Phone className="w-4 h-4 mr-2" />
-                        Llamar
+                        {t('call')}
                       </Button>
                     </a>
                     <a
@@ -1125,7 +1120,7 @@ export default function MessagesPage() {
                   <MessagesSkeleton />
                 ) : currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
-                    <p>No hay mensajes en esta conversación</p>
+                    <p>{t('noMessagesInConversation')}</p>
                   </div>
                 ) : (
                   <>
@@ -1161,7 +1156,7 @@ export default function MessagesPage() {
                                         : "bg-gray-100 text-gray-700"
                                     }`}
                                   >
-                                    {senderType === "professionnel" ? "Autónomo" : "Cliente"}
+                                    {senderType === "professionnel" ? t('professional') : t('client')}
                                   </Badge>
                                 )}
                               </div>
@@ -1191,151 +1186,153 @@ export default function MessagesPage() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
 
-              <div 
-                className="bg-white border-t border-gray-200 p-3 md:p-4"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
-              >
-                <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
-                  <Textarea
-                    ref={textareaRef}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Escribe un mensaje..."
-                    className="flex-1 min-h-[44px] md:min-h-[50px] max-h-[120px] resize-none text-base"
-                    disabled={isSending}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!newMessage.trim() || isSending}
-                    className="h-[44px] md:h-[50px] w-[44px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isSending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                  </Button>
-                </form>
-                <p className="text-xs text-gray-500 mt-2 text-center hidden md:block">
-                  💡 Presiona Enter para enviar • Shift+Enter para nueva línea
-                </p>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center p-4">
-                <MessageSquare className="w-12 md:w-16 h-12 md:h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-base md:text-lg font-medium">Selecciona una conversación</p>
-                <p className="text-sm">Elige un contacto para comenzar a chatear</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Star className="w-6 h-6 text-amber-500" />
-              Valora el servicio de {getDisplayName(selectedProfessionalId)}
-            </DialogTitle>
-            <DialogDescription className="text-base">
-              Tu opinión ayuda a otros usuarios a tomar mejores decisiones y al profesional a mejorar su servicio
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <StarRating
-              label="⚡ Rapidez"
-              value={reviewData.rapidez}
-              onChange={(value) => setReviewData({ ...reviewData, rapidez: value })}
-            />
-
-            <StarRating
-              label="💬 Comunicación"
-              value={reviewData.comunicacion}
-              onChange={(value) => setReviewData({ ...reviewData, comunicacion: value })}
-            />
-
-            <StarRating
-              label="✨ Calidad del trabajo"
-              value={reviewData.calidad}
-              onChange={(value) => setReviewData({ ...reviewData, calidad: value })}
-            />
-
-            <StarRating
-              label="💰 Relación calidad/precio"
-              value={reviewData.precio_satisfaccion}
-              onChange={(value) => setReviewData({ ...reviewData, precio_satisfaccion: value })}
-            />
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">💭 Cuéntanos tu experiencia (opcional)</Label>
-              <Textarea
-                value={reviewData.comment}
-                onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
-                placeholder="¿Qué te pareció el servicio? ¿Qué destacarías? ¿Algo que mejorar?"
-                className="h-32 resize-none"
-                maxLength={500}
-              />
-              <p className="text-xs text-gray-500 text-right">
-                {reviewData.comment.length}/500 caracteres
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900">
-                <strong>💡 Tip:</strong> Las valoraciones honestas y detalladas son las más útiles para otros usuarios.
-              </p>
-            </div>
-
-            {existingReview && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-900">
-                  <strong>⚠️ Aviso:</strong> Ya has valorado este servicio anteriormente.
-                </p>
+                <div 
+                  className="bg-white border-t border-gray-200 p-3 md:p-4"
+                  style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+                >
+                  <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
+                    <Textarea
+                      ref={textareaRef}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder={t('writeMessage')}
+                      className="flex-1 min-h-[44px] md:min-h-[50px] max-h-[120px] resize-none text-base"
+                      disabled={sendingMessage}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!newMessage.trim() || sendingMessage}
+                      className="h-[44px] md:h-[50px] w-[44px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          {t('send')}
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                  <p className="text-xs text-gray-500 mt-2 text-center hidden md:block">
+                    {t('enterToSend')}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="text-center p-4">
+                  <MessageSquare className="w-12 md:w-16 h-12 md:h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-base md:text-lg font-medium">{t('selectConversation')}</p>
+                  <p className="text-sm">{t('chooseContactToChat')}</p>
+                </div>
               </div>
             )}
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowReviewDialog(false)}
-              disabled={createReviewMutation.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmitReview}
-              disabled={createReviewMutation.isPending || !!existingReview}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              {createReviewMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Star className="w-4 h-4 mr-2" />
-                  Publicar valoración
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+            <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <Star className="w-6 h-6 text-amber-500" />
+                  {t('rateServiceOf', { name: getDisplayName(selectedProfessionalId) })}
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  {t('reviewHelpfulDescription')}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                <StarRating
+                  label="rapidez"
+                  value={reviewData.rapidez}
+                  onChange={(value) => setReviewData({ ...reviewData, rapidez: value })}
+                />
+
+                <StarRating
+                  label="comunicacion"
+                  value={reviewData.comunicacion}
+                  onChange={(value) => setReviewData({ ...reviewData, comunicacion: value })}
+                />
+
+                <StarRating
+                  label="calidadTrabajo"
+                  value={reviewData.calidad}
+                  onChange={(value) => setReviewData({ ...reviewData, calidad: value })}
+                />
+
+                <StarRating
+                  label="relacionCalidadPrecio"
+                  value={reviewData.precio_satisfaccion}
+                  onChange={(value) => setReviewData({ ...reviewData, precio_satisfaccion: value })}
+                />
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">{t('tellExperienceOptional')}</Label>
+                  <Textarea
+                    value={reviewData.comment}
+                    onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                    placeholder={t('experiencePlaceholder')}
+                    className="h-32 resize-none"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 text-right">
+                    {reviewData.comment.length}/500 {t('characters')}
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-900">
+                    <strong>💡 {t('tip')}:</strong> {t('honestReviewsHelpful')}
+                  </p>
+                </div>
+
+                {existingReview && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-sm text-amber-900">
+                      <strong>⚠️ {t('warning')}:</strong> {t('alreadyReviewedMessage')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReviewDialog(false)}
+                  disabled={createReviewMutation.isPending}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={createReviewMutation.isPending || !!existingReview}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  {createReviewMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {t('sending')}
+                    </>
+                  ) : (
+                    <>
+                      <Star className="w-4 h-4 mr-2" />
+                      {t('publishReview')}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </>
   );
 }

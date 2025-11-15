@@ -33,20 +33,14 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* ✅ ESTILOS GLOBALES MEJORADOS PARA MODALES */
-
-/* Overlay para todos los modales - OPACO con blur */
+/* ✅ MODAL Y OVERLAY STYLING - MÁXIMA OPACIDAD */
 [data-radix-dialog-overlay],
 [data-radix-alert-dialog-overlay] {
-  background-color: rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(4px) !important;
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 50 !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(6px) !important;
   animation: fadeIn 200ms ease-out !important;
 }
 
@@ -55,7 +49,7 @@
   to { opacity: 1; }
 }
 
-@keyframes dialogSlideIn {
+@keyframes slideIn {
   from { 
     opacity: 0;
     transform: translate(-50%, -48%) scale(0.96);
@@ -66,98 +60,111 @@
   }
 }
 
-/* Contenido de modales - 100% BLANCO OPACO */
+[role="dialog"],
+[role="alertdialog"],
 [data-radix-dialog-content],
 [data-radix-alert-dialog-content] {
   background-color: #FFFFFF !important;
   color: #1F2937 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
   border: 2px solid #E5E7EB !important;
-  border-radius: 16px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  border-radius: 20px !important;
+  animation: slideIn 250ms ease-out !important;
   max-height: 90vh !important;
-  max-width: 95vw !important;
   overflow-y: auto !important;
-  z-index: 51 !important;
-  animation: dialogSlideIn 250ms ease-out !important;
-  padding: 0 !important;
 }
 
-/* Títulos en modales */
-[data-dialog-title],
-[data-radix-dialog-title],
-[data-radix-alert-dialog-title] {
-  font-size: 1.5rem !important;
-  font-weight: 700 !important;
+/* Modal Headers */
+[role="dialog"] h2,
+[role="alertdialog"] h2,
+[data-dialog-title] {
+  background-color: transparent !important;
   color: #111827 !important;
+  font-weight: 700 !important;
+  font-size: 1.75rem !important;
   line-height: 1.3 !important;
-  margin-bottom: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
 }
 
-/* Descripciones en modales */
-[data-dialog-description],
-[data-radix-dialog-description],
-[data-radix-alert-dialog-description] {
-  color: #6B7280 !important;
-  font-size: 0.95rem !important;
-  line-height: 1.6 !important;
+/* Modal Descriptions */
+[role="dialog"] p,
+[role="alertdialog"] p,
+[data-dialog-description] {
+  color: #4B5563 !important;
+  line-height: 1.7 !important;
+  font-size: 1rem !important;
 }
 
-/* Inputs dentro de modales */
-[data-radix-dialog-content] input,
-[data-radix-dialog-content] select,
-[data-radix-dialog-content] textarea,
-[data-radix-alert-dialog-content] input,
-[data-radix-alert-dialog-content] select,
-[data-radix-alert-dialog-content] textarea {
+/* Form Inputs in Modals */
+[role="dialog"] input,
+[role="dialog"] select,
+[role="dialog"] textarea,
+[role="alertdialog"] input,
+[role="alertdialog"] select,
+[role="alertdialog"] textarea {
   background-color: #FFFFFF !important;
   color: #1F2937 !important;
   border: 2px solid #D1D5DB !important;
-  border-radius: 8px !important;
-  padding: 12px !important;
+  border-radius: 10px !important;
+  padding: 14px !important;
   font-size: 16px !important;
+  transition: all 150ms ease !important;
 }
 
-[data-radix-dialog-content] input:focus,
-[data-radix-dialog-content] select:focus,
-[data-radix-dialog-content] textarea:focus {
+[role="dialog"] input:focus,
+[role="dialog"] select:focus,
+[role="dialog"] textarea:focus {
   border-color: #3B82F6 !important;
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
 }
 
-/* Labels dentro de modales */
-[data-radix-dialog-content] label,
-[data-radix-alert-dialog-content] label {
+[role="dialog"] input:disabled,
+[role="dialog"] select:disabled,
+[role="dialog"] textarea:disabled {
+  background-color: #F3F4F6 !important;
+  color: #9CA3AF !important;
+  cursor: not-allowed !important;
+  border-color: #E5E7EB !important;
+}
+
+/* Labels in Modals */
+[role="dialog"] label,
+[role="alertdialog"] label {
   color: #374151 !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
-  margin-bottom: 8px !important;
+  font-size: 15px !important;
+  margin-bottom: 10px !important;
   display: block !important;
 }
 
-/* Select content (dropdowns) */
-[data-radix-select-content],
-[data-radix-dropdown-menu-content],
-[data-radix-popover-content] {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E5E7EB !important;
+/* Buttons in Modals */
+[role="dialog"] button,
+[role="alertdialog"] button {
+  font-weight: 600 !important;
   border-radius: 12px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-  z-index: 100 !important;
-  padding: 4px !important;
+  transition: all 150ms ease !important;
+  padding: 12px 24px !important;
 }
 
-/* Select items */
+/* Select Dropdowns and Popovers */
+[data-radix-popper-content-wrapper],
+[data-radix-select-content],
+[data-radix-dropdown-menu-content] {
+  background-color: #FFFFFF !important;
+  border: 2px solid #E5E7EB !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+  z-index: 100 !important;
+}
+
 [data-radix-select-item] {
   color: #1F2937 !important;
-  padding: 10px 12px !important;
-  border-radius: 8px !important;
+  padding: 12px 16px !important;
   cursor: pointer !important;
-  transition: all 150ms ease !important;
+  transition: background-color 150ms ease !important;
+  border-radius: 8px !important;
+  margin: 4px !important;
 }
 
 [data-radix-select-item]:hover {
@@ -171,72 +178,39 @@
   font-weight: 600 !important;
 }
 
-/* Scrollbar en modales */
-[data-radix-dialog-content]::-webkit-scrollbar,
-[data-radix-alert-dialog-content]::-webkit-scrollbar {
-  width: 8px;
+/* Scrollbar Styling */
+[role="dialog"]::-webkit-scrollbar,
+[role="alertdialog"]::-webkit-scrollbar {
+  width: 10px;
 }
 
-[data-radix-dialog-content]::-webkit-scrollbar-track,
-[data-radix-alert-dialog-content]::-webkit-scrollbar-track {
+[role="dialog"]::-webkit-scrollbar-track,
+[role="alertdialog"]::-webkit-scrollbar-track {
   background: #F3F4F6;
   border-radius: 10px;
 }
 
-[data-radix-dialog-content]::-webkit-scrollbar-thumb,
-[data-radix-alert-dialog-content]::-webkit-scrollbar-thumb {
+[role="dialog"]::-webkit-scrollbar-thumb,
+[role="alertdialog"]::-webkit-scrollbar-thumb {
   background: #D1D5DB;
   border-radius: 10px;
 }
 
-[data-radix-dialog-content]::-webkit-scrollbar-thumb:hover,
-[data-radix-alert-dialog-content]::-webkit-scrollbar-thumb:hover {
+[role="dialog"]::-webkit-scrollbar-thumb:hover,
+[role="alertdialog"]::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
 }
 
-/* ✅ Botones dentro de modales */
-[data-radix-dialog-content] button,
-[data-radix-alert-dialog-content] button {
-  font-weight: 600 !important;
-  border-radius: 10px !important;
-  transition: all 150ms ease !important;
-}
-
-/* ✅ Accesibilidad: Focus visible */
+/* Focus Visible States */
 button:focus-visible,
 a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #3B82F6 !important;
-  outline-offset: 2px !important;
+[role="button"]:focus-visible {
+  outline: 3px solid #3B82F6 !important;
+  outline-offset: 3px !important;
+  border-radius: 8px;
 }
 
-/* ✅ Animaciones suaves */
-@keyframes slideInFromBottom {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-in {
-  animation-fill-mode: both;
-}
-
-.fade-in {
-  animation: fadeIn 300ms ease-out;
-}
-
-.slide-in-from-bottom {
-  animation: slideInFromBottom 400ms ease-out;
-}
-
-/* ✅ Transiciones suaves globales */
+/* Global Transitions */
 * {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
