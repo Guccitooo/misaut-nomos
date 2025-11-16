@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -321,7 +320,53 @@ export default function MyProfilePage() {
     refetchOnWindowFocus: true,
   });
 
-  // Cargar métricas del profesional
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['myProfile', user?.id],
+    queryFn: async () => {
+      const profiles = await base44.entities.ProfessionalProfile.filter({
+        user_id: user.id
+      });
+      
+      if (profiles[0]) {
+        setProfileData({
+          business_name: profiles[0].business_name || "",
+          cif_nif: profiles[0].cif_nif || "",
+          email_contacto: profiles[0].email_contacto || user.email,
+          telefono_contacto: profiles[0].telefono_contacto || user.phone || "",
+          description: profiles[0].description || "",
+          descripcion_corta: profiles[0].descripcion_corta || "",
+          categories: profiles[0].categories || [],
+          provincia: profiles[0].provincia || "",
+          ciudad: profiles[0].ciudad || "",
+          municipio: profiles[0].municipio || "",
+          service_area: profiles[0].service_area || "",
+          radio_servicio_km: profiles[0].radio_servicio_km || 10,
+          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables",
+          horario_apertura: profiles[0].horario_apertura || "09:00",
+          horario_cierre: profiles[0].horario_cierre || "18:00",
+          website: profiles[0].website || "",
+          price_range: profiles[0].price_range || "€€",
+          tarifa_base: profiles[0].tarifa_base || "",
+          facturacion: profiles[0].facturacion || "autonomo",
+          formas_pago: profiles[0].formas_pago || [],
+          photos: profiles[0].photos || [],
+          social_links: profiles[0].social_links || {
+            facebook: "",
+            instagram: "",
+            linkedin: "",
+            tiktok: ""
+          },
+          activity_other: profiles[0].activity_other || "",
+          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'],
+          years_experience: profiles[0].years_experience || "",
+          certifications: profiles[0].certifications || [],
+        });
+      }
+      return profiles[0];
+    },
+    enabled: !!user,
+  });
+
   const { data: metrics = [] } = useQuery({
     queryKey: ['profileMetrics', user?.id],
     queryFn: async () => {
@@ -403,53 +448,6 @@ export default function MyProfilePage() {
       showReactivate: !isActive
     };
   };
-
-  const { data: profile, isLoading: loadingProfile } = useQuery({
-    queryKey: ['myProfile', user?.id],
-    queryFn: async () => {
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: user.id
-      });
-      
-      if (profiles[0]) {
-        setProfileData({
-          business_name: profiles[0].business_name || "",
-          cif_nif: profiles[0].cif_nif || "",
-          email_contacto: profiles[0].email_contacto || user.email,
-          telefono_contacto: profiles[0].telefono_contacto || user.phone || "",
-          description: profiles[0].description || "",
-          descripcion_corta: profiles[0].descripcion_corta || "",
-          categories: profiles[0].categories || [],
-          provincia: profiles[0].provincia || "",
-          ciudad: profiles[0].ciudad || "",
-          municipio: profiles[0].municipio || "",
-          service_area: profiles[0].service_area || "",
-          radio_servicio_km: profiles[0].radio_servicio_km || 10,
-          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables",
-          horario_apertura: profiles[0].horario_apertura || "09:00",
-          horario_cierre: profiles[0].horario_cierre || "18:00",
-          website: profiles[0].website || "",
-          price_range: profiles[0].price_range || "€€",
-          tarifa_base: profiles[0].tarifa_base || "",
-          facturacion: profiles[0].facturacion || "autonomo",
-          formas_pago: profiles[0].formas_pago || [],
-          photos: profiles[0].photos || [],
-          social_links: profiles[0].social_links || {
-            facebook: "",
-            instagram: "",
-            linkedin: "",
-            tiktok: ""
-          },
-          activity_other: profiles[0].activity_other || "",
-          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'],
-          years_experience: profiles[0].years_experience || "",
-          certifications: profiles[0].certifications || [],
-        });
-      }
-      return profiles[0];
-    },
-    enabled: !!user,
-  });
 
   const updateUserMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -741,7 +739,6 @@ export default function MyProfilePage() {
           </Card>
         )}
 
-        {/* Panel Premium para profesionales */}
         {isProfessional && profile && !isEditing && (
           <div className="mb-6">
             <PremiumDashboard 
@@ -780,7 +777,6 @@ export default function MyProfilePage() {
             )}
           </TabsList>
 
-          {/* ✅ TAB: INFORMACIÓN PERSONAL */}
           <TabsContent value="personal">
             <Card className="shadow-lg border-0 bg-white">
               <CardHeader>
@@ -865,7 +861,6 @@ export default function MyProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* ✅ TAB: PERFIL PROFESIONAL */}
           {isProfessional && (
             <TabsContent value="business">
               <div className="space-y-6">
@@ -1316,7 +1311,6 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
 
-          {/* ✅ TAB: PORTFOLIO */}
           {isProfessional && (
             <TabsContent value="portfolio">
               <Card className="shadow-lg border-0 bg-white">
@@ -1383,7 +1377,6 @@ export default function MyProfilePage() {
           )}
         </Tabs>
 
-        {/* ✅ MODAL ELIMINACIÓN CUENTA */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
