@@ -114,7 +114,6 @@ const translations = {
     consentsAndLegal: 'Consentimientos y Legales',
     finalReview: 'Revisión final',
     next: 'Siguiente',
-    back: 'Atrás',
     saving: 'Guardando...',
     publishing: 'Publicando...',
     publishProfile: 'Publicar perfil',
@@ -460,6 +459,25 @@ const translations = {
     legalNotice: 'Aviso legal',
     allRightsReserved: 'Todos los derechos reservados',
     
+    // Cookies Banner
+    cookiesBannerTitle: 'Este sitio web utiliza cookies',
+    cookiesBannerDescription: 'Utilizamos cookies propias y de terceros para mejorar tu experiencia de navegación y el funcionamiento del sitio. Al hacer clic en "Aceptar todas", aceptas el uso de todas las cookies. Puedes gestionar tus preferencias en "Configurar cookies".',
+    acceptAllCookies: 'Aceptar todas',
+    acceptEssentialCookies: 'Solo esenciales',
+    configureCookies: 'Configurar cookies',
+    rejectAllCookies: 'Rechazar todas',
+    cookiePreferences: 'Preferencias de cookies',
+    cookiePreferencesDescription: 'Gestiona qué cookies quieres permitir en MisAutónomos',
+    essentialCookies: 'Cookies esenciales',
+    essentialCookiesDescription: 'Necesarias para el funcionamiento básico del sitio web (autenticación, seguridad, navegación). No se pueden desactivar.',
+    analyticsCookies: 'Cookies analíticas',
+    analyticsCookiesDescription: 'Nos ayudan a entender cómo interactúan los usuarios con la web para mejorar la experiencia (Google Analytics).',
+    marketingCookies: 'Cookies de marketing',
+    marketingCookiesDescription: 'Utilizadas para mostrar publicidad relevante y medir la efectividad de nuestras campañas publicitarias.',
+    alwaysActive: 'Siempre activas',
+    savePreferences: 'Guardar preferencias',
+    learnMoreCookies: 'Más información:',
+    
     // Common
     loading: 'Cargando...',
     save: 'Guardar',
@@ -468,24 +486,6 @@ const translations = {
     previous: 'Anterior',
     confirm: 'Confirmar',
     close: 'Cerrar',
-    
-    // Cookie Banner
-    cookieBannerTitle: 'Uso de Cookies',
-    cookieBannerDescription: 'Utilizamos cookies propias y de terceros para mejorar tu experiencia, analizar el tráfico y personalizar el contenido. Al hacer clic en "Aceptar todas", aceptas el uso de todas las cookies. Puedes configurar tus preferencias o aceptar solo las cookies necesarias para el funcionamiento de la web.',
-    acceptAllCookies: 'Aceptar todas',
-    acceptNecessaryCookies: 'Solo necesarias',
-    rejectAllCookies: 'Rechazar todas',
-    configureCookies: 'Configurar',
-    cookieSettingsTitle: 'Configuración de Cookies',
-    cookieSettingsDescription: 'Personaliza qué cookies deseas permitir. Las cookies necesarias no se pueden desactivar.',
-    necessaryCookies: 'Cookies Necesarias',
-    necessaryCookiesDescription: 'Esenciales para el funcionamiento de la web (autenticación, seguridad, navegación).',
-    necessaryCookiesRequired: 'Estas cookies son obligatorias y no se pueden desactivar',
-    analyticsCookies: 'Cookies Analíticas',
-    analyticsCookiesDescription: 'Nos ayudan a entender cómo los visitantes interactúan con nuestra web mediante la recopilación de información anónima.',
-    marketingCookies: 'Cookies de Marketing',
-    marketingCookiesDescription: 'Se utilizan para mostrar anuncios relevantes y medir la efectividad de nuestras campañas publicitarias.',
-    savePreferences: 'Guardar preferencias',
   },
   en: {
     // Navigation
@@ -724,7 +724,7 @@ const translations = {
     ratesAndWorkMethod: 'Rates and Work Method',
     baseRate: 'Base rate',
     invoicingType: 'Invoice type',
-    paymentMethods: 'Formas de pago',
+    paymentMethods: 'Payment methods',
     photos: 'Photos',
     legalConfirmations: 'Legal confirmations',
     acceptTerms: 'I accept the terms and conditions',
@@ -936,6 +936,24 @@ const translations = {
     legalNotice: 'Legal Notice',
     allRightsReserved: 'All rights reserved',
     
+    // Cookies Banner - NEW
+    cookiesBannerTitle: 'This website uses cookies',
+    cookiesBannerDescription: 'We use our own and third-party cookies to improve your browsing experience and the operation of the site. By clicking "Accept all", you accept the use of all cookies. You can manage your preferences in "Configure cookies".',
+    acceptAllCookies: 'Accept all',
+    acceptEssentialCookies: 'Only essential',
+    configureCookies: 'Configure cookies',
+    rejectAllCookies: 'Reject all',
+    cookiePreferences: 'Cookie preferences',
+    cookiePreferencesDescription: 'Manage which cookies you want to allow on MisAutónomos',
+    essentialCookies: 'Essential cookies',
+    essentialCookiesDescription: 'Necessary for the basic functioning of the website (authentication, security, navigation). Cannot be disabled.',
+    analyticsCookies: 'Analytical cookies',
+    analyticsCookiesDescription: 'Help us understand how users interact with the website to improve the experience (Google Analytics).',
+    marketingCookies: 'Marketing cookies',
+    marketingCookiesDescription: 'Used to display relevant advertising and measure the effectiveness of our advertising campaigns.',
+    savePreferences: 'Save preferences',
+    learnMoreCookies: 'More information:',
+    
     // Common
     loading: 'Loading...',
     save: 'Save',
@@ -944,24 +962,6 @@ const translations = {
     previous: 'Previous',
     confirm: 'Confirm',
     close: 'Close',
-    
-    // Cookie Banner
-    cookieBannerTitle: 'Cookie Usage',
-    cookieBannerDescription: 'We use our own and third-party cookies to improve your experience, analyze traffic and personalize content. By clicking "Accept all", you accept the use of all cookies. You can configure your preferences or accept only the necessary cookies for the website to function.',
-    acceptAllCookies: 'Accept all',
-    acceptNecessaryCookies: 'Only necessary',
-    rejectAllCookies: 'Reject all',
-    configureCookies: 'Configure',
-    cookieSettingsTitle: 'Cookie Settings',
-    cookieSettingsDescription: 'Customize which cookies you want to allow. Necessary cookies cannot be disabled.',
-    necessaryCookies: 'Necessary Cookies',
-    necessaryCookiesDescription: 'Essential for the website to function (authentication, security, navigation).',
-    necessaryCookiesRequired: 'These cookies are mandatory and cannot be disabled',
-    analyticsCookies: 'Analytics Cookies',
-    analyticsCookiesDescription: 'Help us understand how visitors interact with our website by collecting anonymous information.',
-    marketingCookies: 'Marketing Cookies',
-    marketingCookiesDescription: 'Used to display relevant ads and measure the effectiveness of our advertising campaigns.',
-    savePreferences: 'Save preferences',
   }
 };
 
