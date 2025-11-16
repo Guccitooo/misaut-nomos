@@ -124,7 +124,6 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
-    // Define businessName from profile to be used in message creation
     const businessName = profile.business_name;
 
     const conversationId = [user.id, professionalId].sort().join('_');
@@ -199,12 +198,10 @@ export default function ProfessionalProfilePage() {
       console.log('🔍 [REVIEWS] User actual:', user?.email || 'SIN LOGIN');
       
       try {
-        // Intentar cargar TODAS las reviews sin filtro primero para debug
         const allReviewsInDB = await base44.entities.Review.list();
         console.log('📊 [REVIEWS] Total reviews en DB:', allReviewsInDB.length);
         console.log('📊 [REVIEWS] Todas las reviews:', allReviewsInDB);
         
-        // Ahora filtrar por professional_id
         const filteredReviews = allReviewsInDB.filter(r => r.professional_id === professionalId);
         console.log('✅ [REVIEWS] Reviews filtradas para este profesional:', filteredReviews.length);
         console.log('✅ [REVIEWS] Datos:', filteredReviews);
@@ -217,7 +214,7 @@ export default function ProfessionalProfilePage() {
     },
     enabled: !!professionalId,
     initialData: [],
-    staleTime: 0, // Sin caché para debug
+    staleTime: 0,
     cacheTime: 0,
     refetchOnMount: true,
   });
@@ -245,22 +242,57 @@ export default function ProfessionalProfilePage() {
 
   console.log('📊 Renderizando perfil con', reviews.length, 'reviews');
 
+  // Structured Data for Google (JSON-LD)
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": profile.business_name,
+    "description": profile.descripcion_corta || profile.description,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": profile.ciudad,
+      "addressRegion": profile.provincia,
+      "addressCountry": "ES"
+    },
+    "telephone": profile.telefono_contacto,
+    "email": profile.email_contacto,
+    ...(profile.average_rating > 0 && {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": profile.average_rating,
+        "reviewCount": profile.total_reviews,
+        "bestRating": 5,
+        "worstRating": 1
+      }
+    }),
+    ...(profile.website && { "url": profile.website }),
+    "priceRange": profile.price_range || "€€",
+    "image": profile.photos?.[0] || professionalUser?.profile_picture
+  };
+
   return (
     <>
       <SEOHead 
-        title={`${profile.business_name} - MisAutónomos`}
-        description={profile.descripcion_corta || profile.description || `Profesional verificado en ${profile.ciudad || 'España'}`}
+        title={`${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad} | MisAutónomos`}
+        description={profile.descripcion_corta || `${profile.business_name}: ${profile.categories?.join(', ')} en ${profile.ciudad}, ${profile.provincia}. Contacta ahora.`}
         image={profile.photos?.[0] || professionalUser?.profile_picture}
-        keywords={`${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo`}
+        keywords={`${profile.business_name}, ${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo, profesional, ${profile.categories?.[0]}`}
+        type="profile"
+        author={profile.business_name}
+      />
+      
+      {/* Structured Data para Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        {/* Header with Cover */}
-        <div className="relative h-64 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700">
+        <header className="relative h-64 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700">
           {profile.photos?.[0] && (
             <OptimizedImage
               src={profile.photos[0]}
-              alt={profile.business_name}
+              alt={`${profile.business_name} - ${profile.categories?.[0] || 'Trabajos'}`}
               className="w-full h-full absolute inset-0 opacity-30"
               objectFit="cover"
               priority={true}
@@ -274,14 +306,14 @@ export default function ProfessionalProfilePage() {
               size="icon"
               onClick={() => navigate(createPageUrl("Search"))}
               className="bg-white/90 hover:bg-white"
+              aria-label={t('back')}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </div>
-        </div>
+        </header>
 
         <div className="max-w-6xl mx-auto px-4 -mt-20 pb-12">
-          {/* Main Info Card */}
           <Card className="mb-6 shadow-2xl border-0">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -289,7 +321,7 @@ export default function ProfessionalProfilePage() {
                   {professionalUser?.profile_picture ? (
                     <OptimizedImage
                       src={professionalUser.profile_picture} 
-                      alt={profile.business_name}
+                      alt={`Foto de perfil de ${profile.business_name}`}
                       className="w-full h-full"
                       objectFit="cover"
                       width={96}
@@ -304,20 +336,18 @@ export default function ProfessionalProfilePage() {
                 </Avatar>
 
                 <div className="flex-1">
-                  {/* Name and Rating */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900 mb-2">
                         {profile.business_name}
                       </h1>
                       
-                      {/* ✅ NUEVO: Badge de disponibilidad dinámica */}
                       <div className="mb-3">
                         <AvailabilityBadge profile={profile} />
                       </div>
 
                       {profile.average_rating > 0 && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" aria-label={`${profile.average_rating} de 5 estrellas`}>
                           <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
@@ -327,6 +357,7 @@ export default function ProfessionalProfilePage() {
                                     ? "fill-amber-400 text-amber-400"
                                     : "text-gray-300"
                                 }`}
+                                aria-hidden="true"
                               />
                             ))}
                           </div>
@@ -341,8 +372,7 @@ export default function ProfessionalProfilePage() {
                     </div>
                   </div>
 
-                  {/* ✅ MODIFICADO: Botones de contacto según preferencias */}
-                  <div className="flex flex-wrap gap-2 mt-4">
+                  <nav className="flex flex-wrap gap-2 mt-4" aria-label="Opciones de contacto">
                     <div className="relative">
                       <Button
                         variant="outline"
@@ -353,6 +383,7 @@ export default function ProfessionalProfilePage() {
                             ? 'bg-red-50 border-red-300 hover:bg-red-100'
                             : 'hover:bg-gray-50'
                         }`}
+                        aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
                       >
                         <Heart
                           className={`w-5 h-5 transition-all ${
@@ -364,15 +395,14 @@ export default function ProfessionalProfilePage() {
                       </Button>
 
                       {favoriteCount > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg" aria-label={`${favoriteCount} personas han guardado este perfil`}>
                           {favoriteCount}
                         </div>
                       )}
                     </div>
 
-                    {/* ✅ NUEVO: Mostrar solo botones según metodos_contacto */}
                     {profile.telefono_contacto && profile.metodos_contacto?.includes('telefono') && (
-                      <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}>
+                      <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`} aria-label={`Llamar a ${profile.business_name}`}>
                         <Button variant="outline" className="hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600">
                           <Phone className="w-5 h-5 mr-2" />
                           {t('call')}
@@ -385,6 +415,7 @@ export default function ProfessionalProfilePage() {
                         href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label={`Contactar por WhatsApp a ${profile.business_name}`}
                       >
                         <Button className="bg-green-600 hover:bg-green-700">
                           <MessageCircle className="w-5 h-5 mr-2" />
@@ -393,23 +424,22 @@ export default function ProfessionalProfilePage() {
                       </a>
                     )}
                     
-                    {/* Chat interno siempre disponible (por defecto) */}
                     <Button
                       className="bg-blue-600 hover:bg-blue-700"
                       onClick={handleStartChat}
+                      aria-label={`Enviar mensaje a ${profile.business_name}`}
                     >
                       <MessageSquare className="w-5 h-5 mr-2" />
                       {t('chat')}
                     </Button>
-                  </div>
+                  </nav>
 
                   <div className="flex flex-wrap gap-2 mb-4 mt-4">
                     {profile.categories?.map((cat, idx) => (
                       <Badge key={idx} className="bg-blue-100 text-blue-900">
-                        {cat}
+                        {t(cat)}
                       </Badge>
                     ))}
-                    {/* ✅ NUEVO: Mostrar activity_other si existe */}
                     {profile.activity_other && (
                       <Badge className="bg-purple-100 text-purple-900">
                         {profile.activity_other}
@@ -431,7 +461,6 @@ export default function ProfessionalProfilePage() {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Details */}
             <div className="lg:col-span-2 space-y-6">
               <PhotoGallery photos={profile.photos || []} />
 
@@ -453,8 +482,7 @@ export default function ProfessionalProfilePage() {
               )}
             </div>
 
-            {/* Right Column - Contact Info */}
-            <div className="space-y-6">
+            <aside className="space-y-6">
               <Card className="shadow-lg border-0">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -465,7 +493,7 @@ export default function ProfessionalProfilePage() {
                 <CardContent className="space-y-4">
                   {profile.service_area && (
                     <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <MapPin className="w-5 h-5 text-gray-400 mt-0.5" aria-hidden="true" />
                       <div>
                         <p className="text-sm text-gray-500">{t('workArea')}</p>
                         <p className="font-medium text-gray-900">{profile.service_area}</p>
@@ -473,10 +501,9 @@ export default function ProfessionalProfilePage() {
                     </div>
                   )}
 
-                  {/* ✅ NUEVO: Mostrar horario dinámico */}
                   {profile.disponibilidad_tipo && profile.horario_apertura && profile.horario_cierre && (
                     <div className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <Clock className="w-5 h-5 text-gray-400 mt-0.5" aria-hidden="true" />
                       <div>
                         <p className="text-sm text-gray-500">{t('schedule')}</p>
                         <p className="font-medium text-gray-900">
@@ -490,10 +517,9 @@ export default function ProfessionalProfilePage() {
                     </div>
                   )}
 
-                  {/* ✅ NUEVO: Mostrar tarifa solo si existe */}
                   {profile.tarifa_base && profile.tarifa_base > 0 && (
                     <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 flex items-center justify-center text-gray-400 mt-0.5">
+                      <div className="w-5 h-5 flex items-center justify-center text-gray-400 mt-0.5" aria-hidden="true">
                         <span className="text-lg">€</span>
                       </div>
                       <div>
@@ -505,7 +531,7 @@ export default function ProfessionalProfilePage() {
 
                   {professionalUser?.email && (
                     <div className="flex items-start gap-3">
-                      <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" aria-hidden="true" />
                       <div>
                         <p className="text-sm text-gray-500">{t('email')}</p>
                         <p className="font-medium text-gray-900">{professionalUser.email}</p>
@@ -515,7 +541,7 @@ export default function ProfessionalProfilePage() {
 
                   {profile.telefono_contacto && (
                     <div className="flex items-start gap-3">
-                      <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <Phone className="w-5 h-5 text-gray-400 mt-0.5" aria-hidden="true" />
                       <div>
                         <p className="text-sm text-gray-500">{t('phone')}</p>
                         <p className="font-medium text-gray-900">{profile.telefono_contacto}</p>
@@ -531,6 +557,7 @@ export default function ProfessionalProfilePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-blue-700 hover:text-blue-900 transition-colors"
+                      aria-label={`Visitar sitio web de ${profile.business_name}`}
                     >
                       <Globe className="w-4 h-4" />
                       <span className="font-medium">{t('visitWebsite')}</span>
@@ -538,13 +565,14 @@ export default function ProfessionalProfilePage() {
                   )}
 
                   {profile.social_links && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-3" role="navigation" aria-label="Redes sociales">
                       {profile.social_links.facebook && (
                         <a
                           href={profile.social_links.facebook}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-700"
+                          aria-label="Facebook"
                         >
                           <Facebook className="w-6 h-6" />
                         </a>
@@ -555,6 +583,7 @@ export default function ProfessionalProfilePage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-pink-600 hover:text-pink-700"
+                          aria-label="Instagram"
                         >
                           <Instagram className="w-6 h-6" />
                         </a>
@@ -565,6 +594,7 @@ export default function ProfessionalProfilePage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-700 hover:text-blue-800"
+                          aria-label="LinkedIn"
                         >
                           <Linkedin className="w-6 h-6" />
                         </a>
@@ -582,7 +612,7 @@ export default function ProfessionalProfilePage() {
                   </CardContent>
                 </Card>
               )}
-            </div>
+            </aside>
           </div>
         </div>
       </div>

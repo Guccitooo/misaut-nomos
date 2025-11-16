@@ -20,9 +20,12 @@ import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import ModernCheckbox from "../components/ui/ModernCheckbox";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import SEOHead from "../components/seo/SEOHead";
 
 export default function ClientOnboardingPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
@@ -135,7 +138,7 @@ export default function ClientOnboardingPage() {
           
           completeOnboardingMutation.mutate(parsedData);
           
-          toast.info('Completando tu registro...', { duration: 2000 });
+          toast.info(t('completingRegistration'), { duration: 2000 });
         } catch (error) {
           console.error('Error procesando datos guardados:', error);
           localStorage.removeItem('client_onboarding_pending');
@@ -165,7 +168,7 @@ export default function ClientOnboardingPage() {
         }
 
         if (currentUser.user_type === "professionnel") {
-          setError("Ya tienes una cuenta profesional activa. No puedes crear una cuenta de cliente.");
+          setError(t('alreadyProfessionalAccount'));
           setTimeout(() => {
             navigate(createPageUrl("MyProfile"));
           }, 3000);
@@ -190,18 +193,18 @@ export default function ClientOnboardingPage() {
 
       await base44.integrations.Core.SendEmail({
         to: data.email,
-        subject: "¡Bienvenido a Misautónomos!",
+        subject: "¡Bienvenido a MisAutónomos!",
         body: `
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
     .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 50px; height: 50px; background: white; border-radius: 12px; display: inline-block; line-height: 50px; font-size: 24px; margin-bottom: 15px; }
+    .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: white; border-radius: 16px; padding: 12px; }
     .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
     .header p { color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px; }
     .content { padding: 40px 30px; }
@@ -217,16 +220,17 @@ export default function ClientOnboardingPage() {
     .services { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; }
     .services h4 { color: #1f2937; margin: 0 0 10px 0; font-size: 16px; }
     .services p { color: #6b7280; margin: 0; font-size: 14px; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 30px; text-align: center; font-size: 14px; }
-    .footer strong { color: #ffffff; display: block; margin-bottom: 10px; font-size: 16px; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
+    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
     .footer a { color: #60a5fa; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">💼</div>
-      <h1>Misautónomos</h1>
+      <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png" alt="MisAutónomos" class="logo" />
+      <h1>MisAutónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
     
@@ -234,7 +238,7 @@ export default function ClientOnboardingPage() {
       <p class="greeting">¡Hola ${data.nombre}!</p>
       
       <p class="message">
-        Bienvenido a <strong>Misautónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
+        Bienvenido a <strong>MisAutónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
       </p>
       
       <p class="message">
@@ -258,35 +262,35 @@ export default function ClientOnboardingPage() {
       </div>
       
       <div class="cta">
-        <a href="https://autonomosmil.es/search" class="button">
+        <a href="https://misautonomos.es/Search" class="button">
           Buscar Profesionales Ahora →
         </a>
       </div>
       
-      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar Misautónomos como cliente.
+      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
+        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar MisAutónomos como cliente.
       </p>
     </div>
     
     <div class="footer">
-      <strong>Equipo Misautónomos</strong>
-      <p>Tu autónomo de confianza</p>
-      <p style="margin-top: 15px;">
-        <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a> | 
-        <a href="https://autonomosmil.es">autonomosmil.es</a>
+      <strong>MisAutónomos</strong>
+      <p class="tagline">Tu autónomo de confianza</p>
+      <p>
+        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
+        <a href="https://misautonomos.es">misautonomos.es</a>
       </p>
     </div>
   </div>
 </body>
 </html>
         `,
-        from_name: "Misautónomos"
+        from_name: "MisAutónomos"
       });
 
       return data;
     },
     onSuccess: () => {
-      toast.success("✅ ¡Bienvenido a Misautónomos! Tu cuenta está lista.");
+      toast.success("✅ " + t('welcomeToMisAutonomos')); // Using t() for translation
       localStorage.removeItem('client_onboarding_pending');
       setTimeout(() => {
         navigate(createPageUrl("Search"));
@@ -294,8 +298,8 @@ export default function ClientOnboardingPage() {
     },
     onError: (error) => {
       console.error("Error completing onboarding:", error);
-      setError("Error al completar el registro: " + error.message);
-      toast.error("Error al completar el registro");
+      setError(t('errorCompletingRegistration') + ": " + error.message); // Using t() for translation
+      toast.error(t('errorCompletingRegistration')); // Using t() for translation
       localStorage.removeItem('client_onboarding_pending');
     }
   });
@@ -305,39 +309,39 @@ export default function ClientOnboardingPage() {
     setError(null);
 
     if (!formData.acepta_terminos) {
-      setError("❌ Debes aceptar los Términos y Condiciones para continuar.");
-      toast.error("Debes aceptar los Términos y Condiciones");
+      setError("❌ " + t('acceptTermsAndConditionsError')); // Using t() for translation
+      toast.error(t('acceptTermsAndConditionsError')); // Using t() for translation
       document.getElementById('acepta_terminos_client')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
     if (!formData.nombre || formData.nombre.trim().length < 2) {
-      setError("El nombre debe tener al menos 2 caracteres");
+      setError(t('nameLengthError')); // Using t() for translation
       return;
     }
 
     if (!formData.email || !formData.email.includes('@')) {
-      setError("Email inválido");
+      setError(t('invalidEmail')); // Using t() for translation
       return;
     }
 
     if (!formData.telefono || formData.telefono.replace(/\s/g, '').length < 9) {
-      setError("El teléfono debe tener al menos 9 dígitos");
+      setError(t('phoneLengthError')); // Using t() for translation
       return;
     }
 
     if (!formData.provincia || formData.provincia.trim().length === 0) {
-      setError("Selecciona una provincia");
+      setError(t('selectProvinceError')); // Using t() for translation
       return;
     }
 
     if (!formData.ciudad || formData.ciudad.trim().length === 0) {
-      setError("Selecciona una ciudad");
+      setError(t('selectCityError')); // Using t() for translation
       return;
     }
 
     if (formData.servicios_buscados.length === 0) {
-      setError("Selecciona al menos un tipo de servicio que buscas");
+      setError(t('selectServicesError')); // Using t() for translation
       return;
     }
 
@@ -353,7 +357,7 @@ export default function ClientOnboardingPage() {
         await base44.auth.redirectToLogin(window.location.href);
       } catch (error) {
         console.error('❌ Error en redirección:', error);
-        setError('Error al redirigir al sistema de login. Por favor, intenta de nuevo.');
+        setError(t('redirectionError')); // Using t() for translation
         setIsRedirecting(false);
       }
       
@@ -385,13 +389,13 @@ export default function ClientOnboardingPage() {
           <CardContent className="p-12 text-center">
             <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Redirigiendo al registro...
+              {t('redirectingToRegistration')}
             </h2>
             <p className="text-gray-600 mb-4">
-              Estamos guardando tus datos y preparando tu cuenta.
+              {t('savingYourData')}
             </p>
             <p className="text-sm text-gray-500">
-              Serás redirigido al sistema de registro en unos segundos...
+              {t('redirectInSeconds')}
             </p>
           </CardContent>
         </Card>
@@ -403,7 +407,7 @@ export default function ClientOnboardingPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-        <p className="ml-3 text-gray-600">Cargando...</p>
+        <p className="ml-3 text-gray-600">{t('loading')}</p>
       </div>
     );
   }
@@ -415,13 +419,13 @@ export default function ClientOnboardingPage() {
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Ya tienes una cuenta profesional
+              {t('alreadyProfessionalAccount')}
             </h2>
             <p className="text-gray-600 mb-6">
-              Tu cuenta ya está configurada como autónomo. No puedes crear una cuenta de cliente simultáneamente.
+              {t('cantCreateClientAccount')}
             </p>
             <p className="text-sm text-gray-500">
-              Redirigiendo a tu perfil...
+              {t('redirectingToProfile')}
             </p>
           </CardContent>
         </Card>
@@ -430,263 +434,286 @@ export default function ClientOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Search className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Crea tu cuenta de cliente
-          </h1>
-          <p className="text-lg text-gray-600">
-            Completa estos datos para empezar a buscar profesionales
-          </p>
-          <p className="text-sm text-green-700 font-semibold mt-2">
-            ✅ 100% GRATIS - Sin costes ocultos
-          </p>
-          {!user && (
-            <p className="text-sm text-blue-600 mt-2">
-              📝 Al enviar, crearemos tu cuenta y recibirás un email de verificación de Misautónomos
+    <>
+      <SEOHead 
+        title={`${t('createClientAccount')} - MisAutónomos`}
+        description="Crea tu cuenta gratuita como cliente en MisAutónomos y encuentra profesionales verificados cerca de ti"
+        keywords="crear cuenta cliente, buscar autónomos, servicios profesionales España"
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Search className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              {t('createClientAccount')}
+            </h1>
+            <p className="text-lg text-gray-600">
+              {t('completeDataToSearch')}
             </p>
+            <p className="text-sm text-green-700 font-semibold mt-2">
+              ✅ {t('freeNoHiddenCosts')}
+            </p>
+            {!user && (
+              <p className="text-sm text-blue-600 mt-2">
+                📝 {t('emailVerificationSent')}
+              </p>
+            )}
+          </div>
+
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        </div>
 
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Nombre */}
-              <div>
-                <Label>Nombre completo *</Label>
-                <Input
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="Ej: Juan Pérez"
-                  maxLength={100}
-                  className="h-12 mt-2"
-                  required
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <Label>Email *</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="tu@email.com"
-                  className="h-12 mt-2"
-                  required
-                  disabled={!!user}
-                />
-                {user && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Email de tu cuenta (no se puede cambiar aquí)
-                  </p>
-                )}
-                {!user && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Recibirás un email de verificación de Misautónomos en esta dirección
-                  </p>
-                )}
-              </div>
-
-              {/* Teléfono */}
-              <div>
-                <Label>Teléfono *</Label>
-                <Input
-                  type="tel"
-                  value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value.replace(/[^\d+]/g, '') })}
-                  placeholder="612345678"
-                  maxLength={15}
-                  className="h-12 mt-2"
-                  required
-                />
-              </div>
-
-              {/* ✅ NUEVO: Provincia */}
-              <div>
-                <Label>Provincia *</Label>
-                <Select
-                  value={formData.provincia}
-                  onValueChange={(value) => {
-                    setFormData({
-                      ...formData,
-                      provincia: value,
-                      ciudad: ""
-                    });
-                  }}
-                >
-                  <SelectTrigger className="h-12 mt-2">
-                    <SelectValue placeholder="Selecciona tu provincia" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {provincias.map((prov) => (
-                      <SelectItem key={prov} value={prov}>
-                        {prov}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* ✅ NUEVO: Ciudad (solo aparece si hay provincia seleccionada) */}
-              {formData.provincia && (
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Nombre */}
                 <div>
-                  <Label>Ciudad *</Label>
+                  <Label htmlFor="nombre">{t('fullName')} *</Label>
+                  <Input
+                    id="nombre"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    placeholder={t('fullNamePlaceholder')}
+                    maxLength={100}
+                    className="h-12 mt-2"
+                    required
+                    aria-required="true"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <Label htmlFor="email">{t('email')} *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder={t('contactEmailPlaceholder')}
+                    className="h-12 mt-2"
+                    required
+                    disabled={!!user}
+                    aria-required="true"
+                  />
+                  {user && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('emailCantChange')}
+                    </p>
+                  )}
+                  {!user && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('emailVerificationInfo')}
+                    </p>
+                  )}
+                </div>
+
+                {/* Teléfono */}
+                <div>
+                  <Label htmlFor="telefono">{t('phone')} *</Label>
+                  <Input
+                    id="telefono"
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value.replace(/[^\d+]/g, '') })}
+                    placeholder={t('contactPhonePlaceholder')}
+                    maxLength={15}
+                    className="h-12 mt-2"
+                    required
+                    aria-required="true"
+                  />
+                </div>
+
+                {/* ✅ NUEVO: Provincia */}
+                <div>
+                  <Label htmlFor="provincia">{t('province')} *</Label>
                   <Select
-                    value={formData.ciudad}
+                    value={formData.provincia}
                     onValueChange={(value) => {
                       setFormData({
                         ...formData,
-                        ciudad: value
+                        provincia: value,
+                        ciudad: ""
                       });
                     }}
                   >
-                    <SelectTrigger className="h-12 mt-2">
-                      <SelectValue placeholder="Selecciona tu ciudad" />
+                    <SelectTrigger id="provincia" className="h-12 mt-2" aria-required="true">
+                      <SelectValue placeholder={t('selectYourProvince')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
-                        ciudadesPorProvincia[formData.provincia].map((ciudad) => (
-                          <SelectItem key={ciudad} value={ciudad}>
-                            {ciudad}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value={formData.provincia}>
-                          {formData.provincia}
+                      {provincias.map((prov) => (
+                        <SelectItem key={prov} value={prov}>
+                          {prov}
                         </SelectItem>
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
 
-              {/* Servicios buscados */}
-              <div>
-                <Label>¿Qué tipo de servicios buscas? * (selecciona al menos uno)</Label>
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  {serviciosDisponibles.map((servicio) => (
-                    <div
-                      key={servicio}
-                      onClick={() => toggleServicio(servicio)}
-                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.servicios_buscados.includes(servicio)
-                          ? "border-blue-600 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-300"
-                      }`}
+                {/* ✅ NUEVO: Ciudad (solo aparece si hay provincia seleccionada) */}
+                {formData.provincia && (
+                  <div>
+                    <Label htmlFor="ciudad">{t('city')} *</Label>
+                    <Select
+                      value={formData.ciudad}
+                      onValueChange={(value) => {
+                        setFormData({
+                          ...formData,
+                          ciudad: value
+                        });
+                      }}
                     >
-                      <p className="text-sm font-medium">{servicio}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  {formData.servicios_buscados.length} seleccionado(s)
-                </p>
-              </div>
-
-              {/* ✅ MEJORADO: Checkbox moderno con enlace */}
-              <ModernCheckbox
-                id="acepta_terminos_client"
-                checked={formData.acepta_terminos}
-                onChange={(checked) => {
-                  setFormData({ ...formData, acepta_terminos: checked });
-                  if (checked && error?.includes('Términos')) setError(null);
-                }}
-                required
-                error={error?.includes('Términos')}
-                label="Acepto los Términos y Condiciones"
-                sublabel={
-                  <span>
-                    He leído y acepto los{" "}
-                    <Link 
-                      to={createPageUrl("TermsConditions")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Términos y Condiciones
-                    </Link>
-                    , la{" "}
-                    <Link 
-                      to={createPageUrl("PrivacyPolicy")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Política de Privacidad
-                    </Link>
-                    {" "}y el tratamiento de mis datos personales.
-                  </span>
-                }
-              />
-
-              {/* Submit */}
-              <Button
-                type="submit"
-                className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
-                disabled={completeOnboardingMutation.isPending || isRedirecting}
-              >
-                {completeOnboardingMutation.isPending || isRedirecting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {isRedirecting ? 'Redirigiendo...' : 'Creando tu cuenta...'}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    {!user ? 'Crear mi cuenta de cliente' : 'Completar registro'}
-                  </>
+                      <SelectTrigger id="ciudad" className="h-12 mt-2" aria-required="true">
+                        <SelectValue placeholder={t('selectYourCity')} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
+                          ciudadesPorProvincia[formData.provincia].map((ciudad) => (
+                            <SelectItem key={ciudad} value={ciudad}>
+                              {ciudad}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value={formData.provincia}>
+                            {formData.provincia}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
-              </Button>
 
-              <p className="text-xs text-center text-gray-500">
-                {!user 
-                  ? '📧 Recibirás un email de verificación de Misautónomos para confirmar tu cuenta'
-                  : 'Al completar el registro podrás buscar y contactar con profesionales de forma gratuita'
-                }
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+                {/* Servicios buscados */}
+                <div>
+                  <Label>{t('whatServicesLooking')}</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-3" role="group" aria-label="Servicios buscados">
+                    {serviciosDisponibles.map((servicio) => (
+                      <div
+                        key={servicio}
+                        onClick={() => toggleServicio(servicio)}
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.servicios_buscados.includes(servicio)
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
+                        }`}
+                        role="checkbox"
+                        aria-checked={formData.servicios_buscados.includes(servicio)}
+                        tabIndex={0}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleServicio(servicio);
+                          }
+                        }}
+                      >
+                        <p className="text-sm font-medium">{t(servicio)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.servicios_buscados.length} {formData.servicios_buscados.length === 1 ? t('selected') : t('selectedPlural')}
+                  </p>
+                </div>
 
-        {/* Benefits */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-sm font-semibold">100% Gratis</p>
-              <p className="text-xs text-gray-600">Sin costes ocultos</p>
+                {/* ✅ MEJORADO: Checkbox moderno con enlace */}
+                <ModernCheckbox
+                  id="acepta_terminos_client"
+                  checked={formData.acepta_terminos}
+                  onChange={(checked) => {
+                    setFormData({ ...formData, acepta_terminos: checked });
+                    if (checked && error?.includes('Términos')) setError(null);
+                  }}
+                  required
+                  error={error?.includes('Términos')}
+                  label={t('acceptTermsAndConditions')} // Using t() for translation
+                  sublabel={
+                    <span>
+                      {t('iHaveReadAndAccept')}{" "} {/* Using t() for translation */}
+                      <Link 
+                        to={createPageUrl("TermsConditions")}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {t('termsAndConditions')}
+                      </Link>
+                      , {t('the')}{" "} {/* Using t() for translation */}
+                      <Link 
+                        to={createPageUrl("PrivacyPolicy")}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {t('privacyPolicy')}
+                      </Link>
+                      {" "}{t('andDataProcessing')}. {/* Using t() for translation */}
+                    </span>
+                  }
+                />
+
+                {/* Submit */}
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
+                  disabled={completeOnboardingMutation.isPending || isRedirecting}
+                >
+                  {completeOnboardingMutation.isPending || isRedirecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {isRedirecting ? t('redirecting') : t('creatingAccount')}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      {!user ? t('createMyClientAccount') : t('completeRegistration')}
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-xs text-center text-gray-500">
+                  {!user 
+                    ? '📧 ' + t('emailVerificationInfo')
+                    : t('freeForClients')
+                  }
+                </p>
+              </form>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-sm font-semibold">Profesionales verificados</p>
-              <p className="text-xs text-gray-600">Con valoraciones reales</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-sm font-semibold">Chat directo</p>
-              <p className="text-xs text-gray-600">Contacto inmediato</p>
-            </CardContent>
-          </Card>
+
+          {/* Benefits */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold">{t('freeBenefit')}</p>
+                <p className="text-xs text-gray-600">{t('noHiddenCosts')}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold">{t('verifiedProfessionals')}</p>
+                <p className="text-xs text-gray-600">{t('realReviews')}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold">{t('directChat')}</p>
+                <p className="text-xs text-gray-600">{t('immediateContact')}</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
