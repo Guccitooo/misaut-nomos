@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -46,8 +45,6 @@ function LayoutContent({ children, currentPageName }) {
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -110,13 +107,10 @@ function LayoutContent({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    loadUnreadCount();
+    if (user) {
+      loadUnreadCount();
+    }
   }, [user]);
-
-  useEffect(() => {
-    checkOnboardingStatus();
-    checkSubscriptionStatus();
-  }, [user, location.pathname]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -140,7 +134,6 @@ function LayoutContent({ children, currentPageName }) {
         setProfessionalProfile(undefined);
       }
     } catch (error) {
-      console.error("Error loading user:", error);
       setUser(null);
       setProfessionalProfile(undefined);
     }
@@ -148,83 +141,13 @@ function LayoutContent({ children, currentPageName }) {
 
   const loadUnreadCount = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      if (currentUser) {
-        const messages = await base44.entities.Message.filter({
-          recipient_id: currentUser.id,
-          is_read: false
-        });
-        setUnreadCount(messages.length);
-      } else {
-        setUnreadCount(0);
-      }
+      const messages = await base44.entities.Message.filter({
+        recipient_id: user.id,
+        is_read: false
+      });
+      setUnreadCount(messages.length);
     } catch (error) {
-      console.error("Error loading unread count:", error);
       setUnreadCount(0);
-    }
-  };
-
-  const checkSubscriptionStatus = async () => {
-    if (!user || user.user_type !== "professionnel") {
-      setHasActiveSubscription(false);
-      return;
-    }
-
-    try {
-      const subscriptions = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-
-      const activeStates = ["activo", "en_prueba", "trialing"];
-      const hasActive = subscriptions.length > 0 &&
-                       activeStates.some(state => subscriptions[0].estado.includes(state));
-      
-      setHasActiveSubscription(hasActive);
-    } catch (error) {
-      console.error("Error checking subscription:", error);
-      setHasActiveSubscription(false);
-    }
-  };
-
-  const checkOnboardingStatus = async () => {
-    if (!user || user.user_type !== "professionnel") {
-      setNeedsOnboarding(false);
-      return;
-    }
-
-    const allowedPaths = [
-      createPageUrl("ProfileOnboarding"),
-      createPageUrl("UserTypeSelection"),
-      createPageUrl("MyProfile"),
-      createPageUrl("PricingPlans"),
-      createPageUrl("SubscriptionManagement"),
-      "/logout"
-    ];
-
-    if (allowedPaths.includes(location.pathname)) {
-      setNeedsOnboarding(false);
-      return;
-    }
-
-    try {
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: user.id
-      });
-
-      if (!profiles[0] || !profiles[0].onboarding_completed) {
-        setNeedsOnboarding(true);
-        
-        if (location.pathname !== createPageUrl("ProfileOnboarding")) {
-          setTimeout(() => {
-            navigate(createPageUrl("ProfileOnboarding"));
-          }, 2000);
-        }
-      } else {
-        setNeedsOnboarding(false);
-      }
-    } catch (error) {
-      console.error("Error checking onboarding status:", error);
-      setNeedsOnboarding(false);
     }
   };
 
@@ -295,19 +218,11 @@ function LayoutContent({ children, currentPageName }) {
   ];
 
   if (user?.user_type === "professionnel") {
-    if (hasActiveSubscription) {
-      navigationItems.push({
-        title: t('mySubscription'),
-        url: createPageUrl("SubscriptionManagement"),
-        icon: Briefcase,
-      });
-    } else {
-      navigationItems.push({
-        title: t('viewPlans'),
-        url: createPageUrl("PricingPlans"),
-        icon: CreditCard,
-      });
-    }
+    navigationItems.push({
+      title: t('mySubscription'),
+      url: createPageUrl("SubscriptionManagement"),
+      icon: Briefcase,
+    });
   } else if (!user || user?.user_type === "client") {
     navigationItems.push({
       title: t('viewPlans'),
@@ -322,27 +237,6 @@ function LayoutContent({ children, currentPageName }) {
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
-  }
-
-  if (needsOnboarding) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <Alert className="bg-white border-yellow-300 shadow-lg">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-gray-800">
-              <strong>Completa tu perfil profesional</strong>
-              <p className="mt-2">
-                Para activar tu cuenta y aparecer en las búsquedas, primero debes completar tu perfil profesional.
-              </p>
-              <p className="mt-2 text-sm">
-                Redirigiendo al quiz en 2 segundos...
-              </p>
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    );
   }
 
   return (
