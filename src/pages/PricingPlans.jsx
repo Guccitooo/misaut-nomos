@@ -355,7 +355,7 @@ export default function PricingPlansPage() {
                 )}
 
                 {plan.ahorro > 0 && plan.plan_id !== "plan_monthly_trial" && (
-                  <Badge className="absolute top-4 right-4 bg-orange-500 text-white">
+                  <Badge className="absolute top-4 right-4 bg-green-600 text-white font-semibold">
                     Ahorra {plan.ahorro}€
                   </Badge>
                 )}
