@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ChevronDown, ChevronUp, ArrowLeft, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import SEOHead from "../components/seo/SEOHead";
+import { FAQPageSchema } from "../components/seo/StructuredData";
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState(null);
@@ -16,8 +17,8 @@ export default function FAQPage() {
       category: "Para Clientes",
       questions: [
         {
-          q: "¿Es gratis usar MilAutónomos como cliente?",
-          a: "Sí, usar MilAutónomos es completamente gratuito para clientes. Puedes buscar profesionales, contactarlos y dejar valoraciones sin ningún coste."
+          q: "¿Es gratis usar MisAutónomos como cliente?",
+          a: "Sí, usar MisAutónomos es completamente gratuito para clientes. Puedes buscar profesionales, contactarlos y dejar valoraciones sin ningún coste."
         },
         {
           q: "¿Cómo busco un profesional?",
@@ -104,7 +105,7 @@ export default function FAQPage() {
         },
         {
           q: "¿Cómo elimino mi cuenta?",
-          a: "Contacta con soporte en soporte@milautonomos.com. Ten en cuenta que esta acción es irreversible."
+          a: "Contacta con soporte en soporte@misautonomos.es. Ten en cuenta que esta acción es irreversible."
         },
         {
           q: "¿Son seguros mis datos?",
@@ -123,108 +124,123 @@ export default function FAQPage() {
     )
   })).filter(category => category.questions.length > 0);
 
+  const allFaqsFlat = faqs.flatMap(cat => cat.questions.map(q => ({ question: q.q, answer: q.a })));
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Link to={createPageUrl("Search")}>
-          <Button variant="ghost" className="mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al inicio
-          </Button>
-        </Link>
-
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Preguntas Frecuentes
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            Encuentra respuestas rápidas a las dudas más comunes
-          </p>
-
-          <div className="max-w-xl mx-auto relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              placeholder="Buscar en preguntas frecuentes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-12"
-            />
-          </div>
-        </div>
-
-        {filteredFaqs.map((category, catIdx) => (
-          <div key={catIdx} className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {category.category}
-            </h2>
-            <div className="space-y-3">
-              {category.questions.map((faq, idx) => {
-                const globalIdx = `${catIdx}-${idx}`;
-                const isOpen = openIndex === globalIdx;
-
-                return (
-                  <Card key={idx} className="border-0 shadow-md overflow-hidden">
-                    <button
-                      onClick={() => setOpenIndex(isOpen ? null : globalIdx)}
-                      className="w-full text-left p-6 hover:bg-gray-50 transition-colors flex items-center justify-between gap-4"
-                    >
-                      <span className="font-semibold text-gray-900 flex-1">
-                        {faq.q}
-                      </span>
-                      {isOpen ? (
-                        <ChevronUp className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                      )}
-                    </button>
-                    {isOpen && (
-                      <CardContent className="px-6 pb-6 pt-0">
-                        <p className="text-gray-700 leading-relaxed">
-                          {faq.a}
-                        </p>
-                      </CardContent>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-
-        {filteredFaqs.length === 0 && (
-          <Card className="border-0 shadow-lg p-12 text-center">
-            <p className="text-gray-600 mb-4">
-              No se encontraron preguntas que coincidan con tu búsqueda
-            </p>
-            <Button onClick={() => setSearchTerm("")}>
-              Ver todas las preguntas
+    <>
+      <SEOHead 
+        title="Preguntas Frecuentes (FAQ) - MisAutónomos"
+        description="Encuentra respuestas a las preguntas más comunes sobre MisAutónomos: planes, pagos, cómo contactar profesionales, seguridad y más."
+        keywords="FAQ, preguntas frecuentes, ayuda MisAutónomos, soporte, planes profesionales"
+      />
+      
+      <FAQPageSchema faqs={allFaqsFlat} />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <Link to={createPageUrl("Search")}>
+            <Button variant="ghost" className="mb-6" aria-label="Volver al inicio">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
             </Button>
-          </Card>
-        )}
+          </Link>
 
-        <Card className="border-0 shadow-lg bg-blue-50 mt-12">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              ¿No encuentras tu respuesta?
-            </h3>
-            <p className="text-gray-700 mb-6">
-              Nuestro equipo de soporte está listo para ayudarte
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Preguntas Frecuentes
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+              Encuentra respuestas rápidas a las dudas más comunes
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to={createPageUrl("HelpCenter")}>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                  Centro de Ayuda
-                </Button>
-              </Link>
-              <a href="mailto:soporte@autonomosmil.es">
-                <Button variant="outline" size="lg">
-                  Contactar Soporte
-                </Button>
-              </a>
+
+            <div className="max-w-xl mx-auto relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder="Buscar en preguntas frecuentes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12"
+                aria-label="Buscar preguntas"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {filteredFaqs.map((category, catIdx) => (
+            <div key={catIdx} className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {category.category}
+              </h2>
+              <div className="space-y-3" role="list">
+                {category.questions.map((faq, idx) => {
+                  const globalIdx = `${catIdx}-${idx}`;
+                  const isOpen = openIndex === globalIdx;
+
+                  return (
+                    <Card key={idx} className="border-0 shadow-md overflow-hidden" role="listitem">
+                      <button
+                        onClick={() => setOpenIndex(isOpen ? null : globalIdx)}
+                        className="w-full text-left p-6 hover:bg-gray-50 transition-colors flex items-center justify-between gap-4"
+                        aria-expanded={isOpen}
+                        aria-controls={`faq-answer-${globalIdx}`}
+                      >
+                        <span className="font-semibold text-gray-900 flex-1">
+                          {faq.q}
+                        </span>
+                        {isOpen ? (
+                          <ChevronUp className="w-5 h-5 text-blue-600 flex-shrink-0" aria-hidden="true" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                        )}
+                      </button>
+                      {isOpen && (
+                        <CardContent className="px-6 pb-6 pt-0" id={`faq-answer-${globalIdx}`}>
+                          <p className="text-gray-700 leading-relaxed">
+                            {faq.a}
+                          </p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {filteredFaqs.length === 0 && (
+            <Card className="border-0 shadow-lg p-12 text-center">
+              <p className="text-gray-600 mb-4">
+                No se encontraron preguntas que coincidan con tu búsqueda
+              </p>
+              <Button onClick={() => setSearchTerm("")}>
+                Ver todas las preguntas
+              </Button>
+            </Card>
+          )}
+
+          <Card className="border-0 shadow-lg bg-blue-50 mt-12">
+            <CardContent className="p-8 text-center">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                ¿No encuentras tu respuesta?
+              </h3>
+              <p className="text-gray-700 mb-6">
+                Nuestro equipo de soporte está listo para ayudarte
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to={createPageUrl("HelpCenter")}>
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    Centro de Ayuda
+                  </Button>
+                </Link>
+                <a href="mailto:soporte@misautonomos.es">
+                  <Button variant="outline" size="lg">
+                    Contactar Soporte
+                  </Button>
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
