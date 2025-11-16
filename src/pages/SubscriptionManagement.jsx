@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +43,6 @@ export default function SubscriptionManagementPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -53,37 +51,18 @@ export default function SubscriptionManagementPage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', {
-        email: currentUser.email,
-        subscription_status: currentUser.subscription_status,
-        user_type: currentUser.user_type
-      });
       setUser(currentUser);
     } catch (error) {
-      console.error("Error loading user:", error);
       base44.auth.redirectToLogin();
     }
   };
 
-  const { data: subscription, isLoading: loadingSubscription, error: subscriptionError } = useQuery({
+  const { data: subscription, isLoading: loadingSubscription } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      console.log('🔍 Buscando suscripción para user_id:', user.id);
-      
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
       });
-      
-      console.log('📦 Suscripciones encontradas:', subs.length);
-      if (subs[0]) {
-        console.log('✅ Suscripción:', {
-          estado: subs[0].estado,
-          plan_nombre: subs[0].plan_nombre,
-          fecha_expiracion: subs[0].fecha_expiracion
-        });
-      } else {
-        console.log('❌ No se encontró suscripción');
-      }
       
       return subs[0];
     },
@@ -105,39 +84,29 @@ export default function SubscriptionManagementPage() {
   const handleFixSubscription = async () => {
     setIsFixing(true);
     try {
-      console.log('🔧 Diagnosticando suscripción...');
-      
       const debugResponse = await base44.functions.invoke('debugUserSubscription', {
         email: user.email
       });
       
-      console.log('📋 Diagnóstico:', debugResponse.data);
-      setDebugInfo(debugResponse.data);
-      
       if (!debugResponse.data.ok || debugResponse.data.issues?.length > 0) {
-        toast.info(t('inconsistenciesDetected'));
-        
         const fixResponse = await base44.functions.invoke('fixUserSubscription', {
           email: user.email,
           forceActivate: true
         });
         
-        console.log('✅ Resultado corrección:', fixResponse.data);
-        
         if (fixResponse.data.ok) {
-          toast.success(t('subscriptionFixedReloading'));
+          toast.success("Suscripción corregida, recargando...");
           
           await loadUser();
           await queryClient.invalidateQueries({ queryKey: ['subscription'] });
         } else {
-          toast.error(t('couldNotFixAutomatically'));
+          toast.error("No se pudo corregir automáticamente");
         }
       } else {
-        toast.info(t('subscriptionCorrectlyConfigured'));
+        toast.info("La suscripción está correctamente configurada");
       }
     } catch (error) {
-      console.error('❌ Error:', error);
-      toast.error(t('errorVerifyingSubscription'));
+      toast.error("Error al verificar la suscripción");
     } finally {
       setIsFixing(false);
     }
@@ -154,7 +123,7 @@ export default function SubscriptionManagementPage() {
       setShowCancelDialog(false);
     },
     onError: (error) => {
-      toast.error(error.message || t('errorCancellingSubscription'));
+      toast.error(error.message || "Error al cancelar la suscripción");
     }
   });
 
@@ -169,7 +138,7 @@ export default function SubscriptionManagementPage() {
       case "activo":
         return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />{t('active')}</Badge>;
       case "cancelado":
-        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />{t('canceled')}</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800"><AlertTriangle className="w-3 h-3 mr-1" />{t('canceled')}</Badge>;
       case "finalizada":
         return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />{t('finished')}</Badge>;
       case "en_prueba":
@@ -224,8 +193,8 @@ export default function SubscriptionManagementPage() {
           {!subscription ? (
             <Card className="shadow-lg border-0">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-yellow-600" />
+                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-amber-600" />
                 </div>
                 
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">
@@ -240,7 +209,7 @@ export default function SubscriptionManagementPage() {
                   <Button
                     onClick={() => navigate(createPageUrl("PricingPlans"))}
                     size="lg"
-                    className="bg-orange-500 hover:bg-orange-600"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     <CreditCard className="w-5 h-5 mr-2" />
                     {t('viewAvailablePlans')}
@@ -329,11 +298,11 @@ export default function SubscriptionManagementPage() {
                   )}
 
                   {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-yellow-900">
+                    <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+                      <p className="text-sm font-semibold text-amber-900">
                         ⚠️ {t('subscriptionCanceledActive')} {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
                       </p>
-                      <p className="text-xs text-yellow-700 mt-1">
+                      <p className="text-xs text-amber-700 mt-1">
                         {t('profileVisibleFor')} {getDaysLeft(subscription.fecha_expiracion)} {t('moreDays')}
                       </p>
                     </div>
@@ -366,9 +335,9 @@ export default function SubscriptionManagementPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {subscription.estado === "en_prueba" && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
                     <CardContent className="p-6 text-center">
-                      <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
+                      <TrendingUp className="w-12 h-12 text-blue-700 mx-auto mb-3" />
                       <h3 className="font-bold text-lg text-gray-900 mb-2">
                         {t('upgradeYourPlan')}
                       </h3>
@@ -376,7 +345,7 @@ export default function SubscriptionManagementPage() {
                         {t('saveUpTo')}
                       </p>
                       <Button
-                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={() => navigate(createPageUrl("PricingPlans"))}
                       >
                         <Zap className="w-4 h-4 mr-2" />
@@ -414,8 +383,8 @@ export default function SubscriptionManagementPage() {
                       </h3>
                       <p className="text-sm text-gray-600 mb-4">
                         {subscription.estado === "en_prueba" 
-                          ? t('cancelTrialNoChargeMsg')
-                          : t('cancelHideProfileMsg')}
+                          ? t('cancelTrialNoCharge')
+                          : t('cancelHideProfile')}
                       </p>
                       <Button
                         variant="destructive"
@@ -454,7 +423,7 @@ export default function SubscriptionManagementPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
                   {t('confirmCancelSubscription')}
                 </DialogTitle>
                 <DialogDescription className="space-y-3 pt-4">

@@ -48,22 +48,22 @@ export default function Footer() {
             <h4 className="font-semibold text-lg mb-4">{t('navigation')}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to={createPageUrl("Search")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("Search")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('searchFreelancers')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("PricingPlans")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("PricingPlans")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('becomeFreelancer')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("FAQ")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("FAQ")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('faq')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("HelpCenter")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("HelpCenter")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('helpCenter')}
                 </Link>
               </li>
@@ -74,22 +74,22 @@ export default function Footer() {
             <h4 className="font-semibold text-lg mb-4">{t('legal')}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to={createPageUrl("TermsConditions")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("TermsConditions")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('termsConditions')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("PrivacyPolicy")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("PrivacyPolicy")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('privacyPolicy')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("CookiePolicy")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("CookiePolicy")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('cookiePolicy')}
                 </Link>
               </li>
               <li>
-                <Link to={createPageUrl("LegalNotice")} className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link to={createPageUrl("LegalNotice")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('legalNotice')}
                 </Link>
               </li>
@@ -101,13 +101,13 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-gray-400">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="mailto:soporte@misautonomos.es" className="hover:text-white transition-colors">
+                <a href="mailto:soporte@misautonomos.es" className="hover:text-blue-400 transition-colors">
                   soporte@misautonomos.es
                 </a>
               </li>
               <li className="flex items-start gap-2 text-sm text-gray-400">
                 <Globe className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">
                   misautonomos.es
                 </a>
               </li>
@@ -162,16 +162,16 @@ export default function Footer() {
           </button>
           {openSection === 'navigation' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
-              <Link to={createPageUrl("Search")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("Search")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('searchFreelancers')}
               </Link>
-              <Link to={createPageUrl("PricingPlans")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("PricingPlans")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('becomeFreelancer')}
               </Link>
-              <Link to={createPageUrl("FAQ")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("FAQ")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('faq')}
               </Link>
-              <Link to={createPageUrl("HelpCenter")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("HelpCenter")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('helpCenter')}
               </Link>
             </div>
@@ -188,16 +188,16 @@ export default function Footer() {
           </button>
           {openSection === 'legal' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
-              <Link to={createPageUrl("TermsConditions")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("TermsConditions")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('termsConditions')}
               </Link>
-              <Link to={createPageUrl("PrivacyPolicy")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("PrivacyPolicy")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('privacyPolicy')}
               </Link>
-              <Link to={createPageUrl("CookiePolicy")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("CookiePolicy")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('cookiePolicy')}
               </Link>
-              <Link to={createPageUrl("LegalNotice")} className="block text-gray-400 hover:text-white transition-colors text-sm py-2">
+              <Link to={createPageUrl("LegalNotice")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('legalNotice')}
               </Link>
             </div>
@@ -214,11 +214,11 @@ export default function Footer() {
           </button>
           {openSection === 'contact' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-3">
-              <a href="mailto:soporte@misautonomos.es" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm">
+              <a href="mailto:soporte@misautonomos.es" className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors text-sm">
                 <Mail className="w-4 h-4" />
                 soporte@misautonomos.es
               </a>
-              <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm">
+              <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors text-sm">
                 <Globe className="w-4 h-4" />
                 misautonomos.es
               </a>

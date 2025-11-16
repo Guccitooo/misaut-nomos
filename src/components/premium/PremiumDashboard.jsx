@@ -27,7 +27,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
       subscription.estado?.toLowerCase().includes(s)
     );
 
-  // Calcular totales de los últimos 30 días
   const last30DaysMetrics = useMemo(() => {
     if (!metrics || metrics.length === 0) {
       return {
@@ -49,7 +48,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
     const totalSearches = sortedMetrics.reduce((sum, m) => sum + (m.search_appearances || 0), 0);
     const totalContacts = sortedMetrics.reduce((sum, m) => sum + (m.contact_clicks || 0), 0);
 
-    // Calcular tendencia (últimos 15 días vs anteriores 15 días)
     const recent15 = sortedMetrics.slice(0, 15);
     const previous15 = sortedMetrics.slice(15, 30);
     
@@ -70,7 +68,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
     };
   }, [metrics]);
 
-  // Calcular completitud del perfil
   const profileCompleteness = useMemo(() => {
     if (!profile) return { percentage: 0, missing: [] };
     
@@ -135,7 +132,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
 
   return (
     <div className="space-y-6">
-      {/* Header con estado de suscripción */}
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -148,7 +144,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
               </p>
             </div>
             {hasActiveSubscription && (
-              <Badge className="bg-yellow-500 text-yellow-900 text-lg px-4 py-2">
+              <Badge className="bg-amber-500 text-amber-900 text-lg px-4 py-2">
                 <Crown className="w-5 h-5 mr-2" />
                 Premium
               </Badge>
@@ -157,7 +153,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
         </CardContent>
       </Card>
 
-      {/* Métricas principales */}
       {hasActiveSubscription ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-2 border-blue-200">
@@ -165,7 +160,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
               <div className="flex items-center justify-between mb-2">
                 <Eye className="w-8 h-8 text-blue-600" />
                 {last30DaysMetrics.trend !== 0 && (
-                  <Badge variant={last30DaysMetrics.trend > 0 ? "default" : "secondary"} className="text-xs">
+                  <Badge className={last30DaysMetrics.trend > 0 ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                     {last30DaysMetrics.trend > 0 ? '+' : ''}{last30DaysMetrics.trend}%
                   </Badge>
                 )}
@@ -189,10 +184,10 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-purple-200">
+          <Card className="border-2 border-blue-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <Search className="w-8 h-8 text-purple-600" />
+                <Search className="w-8 h-8 text-blue-600" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalSearches}</p>
               <p className="text-sm text-gray-600">Apariciones en búsqueda</p>
@@ -200,10 +195,10 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-orange-200">
+          <Card className="border-2 border-green-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-8 h-8 text-orange-600" />
+                <TrendingUp className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalContacts}</p>
               <p className="text-sm text-gray-600">Clics en contacto</p>
@@ -233,7 +228,6 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Completitud del perfil */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -258,7 +252,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                   className={`h-3 rounded-full transition-all ${
                     profileCompleteness.percentage >= 90 ? 'bg-green-500' :
                     profileCompleteness.percentage >= 70 ? 'bg-blue-500' :
-                    'bg-yellow-500'
+                    'bg-amber-500'
                   }`}
                   style={{ width: `${profileCompleteness.percentage}%` }}
                 />
@@ -290,11 +284,10 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
           </CardContent>
         </Card>
 
-        {/* Ventajas Premium */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" />
+              <Star className="w-5 h-5 text-amber-500" />
               Ventajas de tu plan
             </CardTitle>
           </CardHeader>
@@ -340,31 +333,30 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
         </Card>
       </div>
 
-      {/* Consejos para mejorar */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
+            <Sparkles className="w-5 h-5 text-blue-600" />
             Consejos para destacar
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
               <h4 className="font-semibold text-blue-900 mb-2">📸 Añade más fotos</h4>
               <p className="text-sm text-blue-800">
                 Los perfiles con 5+ fotos reciben un 80% más de contactos
               </p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
               <h4 className="font-semibold text-green-900 mb-2">⚡ Responde rápido</h4>
               <p className="text-sm text-green-800">
                 Responder en menos de 1 hora mejora tu posicionamiento
               </p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-              <h4 className="font-semibold text-purple-900 mb-2">⭐ Pide valoraciones</h4>
-              <p className="text-sm text-purple-800">
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
+              <h4 className="font-semibold text-amber-900 mb-2">⭐ Pide valoraciones</h4>
+              <p className="text-sm text-amber-800">
                 Las valoraciones aumentan la confianza y las conversiones
               </p>
             </div>

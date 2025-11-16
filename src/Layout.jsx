@@ -12,7 +12,6 @@ import {
   Briefcase,
   LayoutDashboard,
   CreditCard,
-  AlertCircle,
   X
 } from "lucide-react";
 import {
@@ -29,7 +28,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
@@ -244,12 +242,18 @@ function LayoutContent({ children, currentPageName }) {
       <style>
         {`
           :root {
-            --primary: #1e40af;
-            --primary-light: #3b82f6;
-            --accent: #f97316;
-            --accent-light: #fb923c;
-            --background: #f8fafc;
-            --card: #ffffff;
+            --primary: #1D4ED8;
+            --primary-dark: #1E40AF;
+            --primary-light: #3B82F6;
+            --success: #22C55E;
+            --success-dark: #16A34A;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --error-dark: #DC2626;
+            --gray-bg: #F3F4F6;
+            --gray-border: #E5E7EB;
+            --gray-text: #6B7280;
+            --text-dark: #111827;
           }
           
           * {
@@ -362,7 +366,7 @@ function LayoutContent({ children, currentPageName }) {
           [role="dialog"] textarea:focus {
             border-color: #3B82F6 !important;
             outline: none !important;
-            ring: 2px solid rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
           }
           
           [role="dialog"] input:disabled,
@@ -501,7 +505,7 @@ function LayoutContent({ children, currentPageName }) {
           }
           
           .mobile-bottom-nav-item.active {
-            color: #1e40af;
+            color: #1D4ED8;
           }
           
           .mobile-bottom-nav-item span {
@@ -513,7 +517,7 @@ function LayoutContent({ children, currentPageName }) {
             position: absolute;
             top: 4px;
             right: 20%;
-            background: #f97316;
+            background: #EF4444;
             color: white;
             font-size: 10px;
             font-weight: bold;
@@ -602,7 +606,7 @@ function LayoutContent({ children, currentPageName }) {
                                 <item.icon className="w-5 h-5" aria-hidden="true" />
                                 <span className="font-medium">{item.title}</span>
                                 {item.badge && (
-                                  <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
+                                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
                                     {item.badge}
                                   </span>
                                 )}
@@ -727,7 +731,7 @@ function LayoutContent({ children, currentPageName }) {
                         <item.icon className="w-5 h-5" aria-hidden="true" />
                         <span className="font-medium flex-1">{item.title}</span>
                         {item.badge && (
-                          <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
+                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
                             {item.badge}
                           </span>
                         )}
@@ -749,7 +753,7 @@ function LayoutContent({ children, currentPageName }) {
                           {t('login')}
                         </Button>
                         <Link to={createPageUrl("PricingPlans")} className="block">
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                             <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeFreelancer')}
                           </Button>
@@ -803,7 +807,7 @@ function LayoutContent({ children, currentPageName }) {
                         {t('login')}
                       </Button>
                       <Link to={createPageUrl("PricingPlans")}>
-                        <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-md">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('becomeFreelancer')}
                         </Button>

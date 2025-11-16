@@ -49,7 +49,7 @@ export default function ProfileCompleteness({ profile, user, onEdit }) {
   if (percentage >= 100) return null;
   
   return (
-    <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50" role="region" aria-label={t('profileCompleteness')}>
+    <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100" role="region" aria-label={t('profileCompleteness')}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
@@ -57,9 +57,9 @@ export default function ProfileCompleteness({ profile, user, onEdit }) {
               {t('profileCompleteness')}
             </h3>
             <p className="text-sm text-gray-600">
-              {percentage < 50 && '🟡 ' + t('completeProfileForMore')}
-              {percentage >= 50 && percentage < 80 && '🟢 ' + t('goodProgress')}
-              {percentage >= 80 && '🎯 ' + t('almostPerfect')}
+              {percentage < 50 && t('completeProfileForMore')}
+              {percentage >= 50 && percentage < 80 && t('goodProgress')}
+              {percentage >= 80 && t('almostPerfect')}
             </p>
           </div>
           
