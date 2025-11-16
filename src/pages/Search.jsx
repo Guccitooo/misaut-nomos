@@ -599,6 +599,7 @@ export default function SearchPage() {
   };
 
   const isLoading = loadingProfiles || loadingSubscriptions;
+  const showHeroBanner = !isLoadingUser && !user;
 
   return (
     <>
@@ -615,46 +616,59 @@ export default function SearchPage() {
       />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        {!isLoadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
-            <div className="max-w-6xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
-                {t('heroTitle')}
-              </h1>
-              <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
-                {t('heroSubtitle')}
+        {/* HERO BANNER - Always rendered, visibility controlled by opacity */}
+        <div 
+          className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white shadow-xl transition-all duration-300"
+          style={{ 
+            minHeight: showHeroBanner ? '320px' : '0px',
+            maxHeight: showHeroBanner ? '500px' : '0px',
+            opacity: showHeroBanner ? 1 : 0,
+            overflow: 'hidden',
+            paddingTop: showHeroBanner ? '4rem' : '0',
+            paddingBottom: showHeroBanner ? '4rem' : '0',
+            paddingLeft: '1rem',
+            paddingRight: '1rem'
+          }}
+          aria-hidden={!showHeroBanner}
+        >
+          <div className="max-w-6xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+              {t('heroTitle')}
+            </h1>
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
+              {t('heroSubtitle')}
+            </p>
+            
+            <div className="space-y-4">
+              <p className="text-base text-blue-100 font-medium">
+                {t('chooseHow')}
               </p>
-              
-              <div className="space-y-4">
-                <p className="text-base text-blue-100 font-medium">
-                  {t('chooseHow')}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
-                  <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
-                    >
-                      <Briefcase className="w-5 h-5 mr-2" />
-                      {t('imFreelancer')}
-                    </Button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
-                    >
-                      <User className="w-5 h-5 mr-2" />
-                      {t('imClient')}
-                    </Button>
-                  </Link>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+                <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
+                  >
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    {t('imFreelancer')}
+                  </Button>
+                </Link>
+                
+                <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
+                  >
+                    <User className="w-5 h-5 mr-2" />
+                    {t('imClient')}
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
+        {/* MAIN CONTENT AREA */}
         <div className="max-w-7xl mx-auto px-4 py-6">
           <Card className="mb-8 shadow-lg border-0">
             <CardContent className="p-6">
