@@ -13,26 +13,27 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const {
-      email,
-      fullName,
-      userType,
-      cifNif,
-      phone,
-      activity,
-      activityOther,
-      address,
-      paymentMethod,
-      planId,
-      planPrice,
-      isTrial = false,
-      isReactivation = false
-    } = body;
+    const { planId, planPrice, isTrial = false, isReactivation = false } = body;
 
     if (isTrial && user.has_used_trial === true) {
       return Response.json({ 
         error: 'Ya has usado tu periodo de prueba gratuito. Por favor, selecciona un plan de pago.' 
       }, { status: 400 });
+    }
+
+    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({ 
+      user_id: user.id 
+    });
+    
+    if (!isReactivation && existingSubscriptions.length > 0) {
+      const activeSub = existingSubscriptions.find(sub => 
+        sub.estado === 'activo' || sub.estado === 'en_prueba'
+      );
+      if (activeSub) {
+        return Response.json({ 
+          error: 'Ya tienes una suscripción activa' 
+        }, { status: 400 });
+      }
     }
 
     const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
@@ -49,15 +50,15 @@ Deno.serve(async (req) => {
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     let sessionParams = {
-      customer_email: email,
-      mode: isTrial ? 'subscription' : 'subscription',
+      customer_email: user.email,
+      mode: 'subscription',
       allow_promotion_codes: false,
       billing_address_collection: 'required',
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         user_id: user.id,
-        user_email: email,
+        user_email: user.email,
         plan_id: planId,
         is_trial: isTrial.toString(),
         is_reactivation: isReactivation.toString()
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
       subscription_data: {
         metadata: {
           user_id: user.id,
-          user_email: email,
+          user_email: user.email,
           plan_id: planId,
           is_trial: isTrial.toString()
         }
@@ -119,7 +120,6 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error creating checkout session:', error);
     return Response.json({ 
       error: error.message || 'Error al crear la sesión de pago' 
     }, { status: 500 });

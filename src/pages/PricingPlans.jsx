@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,10 +16,8 @@ export default function PricingPlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
 
   const canceled = searchParams.get("canceled");
 
@@ -46,12 +43,10 @@ export default function PricingPlansPage() {
     initialData: [],
   });
 
-  // Initial user load on component mount
   useEffect(() => {
     loadUser();
   }, []);
 
-  // Show toast message if payment was canceled
   useEffect(() => {
     if (canceled) {
       toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
@@ -60,64 +55,37 @@ export default function PricingPlansPage() {
     }
   }, [canceled]);
 
-  // Procesar plan pendiente solo cuando todo esté listo
   useEffect(() => {
-    // Esperar a que todo esté cargado: user, plans, y que no haya carga activa
-    if (isLoadingUser || loadingPlans || !user || plans.length === 0) {
-      return;
-    }
+    if (!user || plans.length === 0) return;
 
     const pendingPlan = localStorage.getItem('pending_plan_selection');
     if (pendingPlan) {
       try {
         const planData = JSON.parse(pendingPlan);
-        console.log('🔄 Plan pendiente detectado tras login/carga:', planData);
-        
-        // Limpiar inmediatamente para evitar loops si algo falla más adelante
         localStorage.removeItem('pending_plan_selection');
         
-        // Buscar el plan completo en la lista de planes cargados
         const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
         
         if (fullPlan) {
-          console.log('✅ Plan completo encontrado:', fullPlan.plan_id);
-          setTimeout(() => {
-            handleSelectPlan(fullPlan);
-          }, 500); // Pequeño delay
-        } else {
-          console.error('❌ Plan no encontrado para continuar:', planData.plan_id);
-          toast.error('El plan seleccionado no está disponible actualmente.');
+          handleSelectPlan(fullPlan);
         }
       } catch (error) {
-        console.error('❌ Error procesando plan pendiente:', error);
-        localStorage.removeItem('pending_plan_selection'); // Asegurar limpieza
+        localStorage.removeItem('pending_plan_selection');
       }
     }
-  }, [user, isLoadingUser, plans, loadingPlans]); // Dependencias actualizadas
+  }, [user, plans]);
 
   const loadUser = async () => {
-    setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      console.log('👤 Usuario cargado:', currentUser?.email, 'Tipo:', currentUser?.user_type);
-      return currentUser;
     } catch (error) {
-      console.error("Error loading user:", error);
       setUser(null);
-      return null;
-    } finally {
-      setIsLoadingUser(false);
     }
   };
 
   const handleSelectPlan = async (plan) => {
-    console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
-    
-    // Si no hay usuario, guardar plan y redirigir a login
     if (!user) {
-      console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
-      
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_id: plan.plan_id,
         precio: plan.precio,
@@ -130,75 +98,41 @@ export default function PricingPlansPage() {
 
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
-    setError(null);
-
-    const loadingToast = toast.loading(
-      plan.plan_id === "plan_monthly_trial" 
-        ? "Preparando tu prueba gratuita..."
-        : "Abriendo checkout..."
-    );
 
     try {
-      console.log('💳 Llamando a createCheckoutSession...');
-      
-      // En este punto, `user` debe estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
-        email: user.email, 
-        fullName: user.full_name || user.email,
-        userType: "professionnel",  
-        cifNif: "", 
-        phone: user.phone || "",
-        activity: "Sin especificar", 
-        activityOther: "",
-        address: user.city || "Sin especificar", 
-        paymentMethod: "stripe",
         planId: plan.plan_id,
         planPrice: plan.precio,
         isTrial: plan.plan_id === "plan_monthly_trial",
-        isReactivation: false // As per outline, always false here, backend logic determines
+        isReactivation: false
       });
-
-      toast.dismiss(loadingToast);
-
-      console.log('📥 Respuesta de createCheckoutSession:', response.data);
 
       if (response.data.error) {
         throw new Error(response.data.error);
       }
 
       if (response.data.url) {
-        console.log('✅ Redirigiendo a Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      console.error("❌ Error selecting plan:", err);
-      toast.dismiss(loadingToast);
-      const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error("Error al procesar el pago. Inténtalo de nuevo.");
       setIsProcessing(false);
       setSelectedPlan(null);
     }
   };
 
-  // Intelligent back navigation logic
   const handleGoBack = () => {
     if (!user) {
-      // Without user → go to home/search page
       navigate(createPageUrl("Search"));
     } else if (user.user_type === "professionnel") {
-      // Professional → check if they have an active subscription
       if (user.subscription_status && user.subscription_status !== "inactivo") {
-        // Has active subscription → go to their profile
         navigate(createPageUrl("MyProfile"));
       } else {
-        // No active subscription → go to home/search page
         navigate(createPageUrl("Search"));
       }
     } else {
-      // Client → go to home/search page
       navigate(createPageUrl("Search"));
     }
   };
@@ -257,8 +191,7 @@ export default function PricingPlansPage() {
     }
   };
 
-  // Mostrar loading mientras se carga usuario o planes
-  if (isLoadingUser || loadingPlans) {
+  if (loadingPlans) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -327,12 +260,6 @@ export default function PricingPlansPage() {
               </Alert>
             )}
           </div>
-
-          {error && (
-            <Alert variant="destructive" className="mb-8 max-w-3xl mx-auto">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
             {plans.map((plan) => (
@@ -438,7 +365,6 @@ export default function PricingPlansPage() {
             ))}
           </div>
 
-          {/* Comparison Table */}
           <div className="max-w-5xl mx-auto mb-12">
             <h2 className="text-2xl font-bold text-center mb-8">Comparación de planes</h2>
             <Card className="border-0 shadow-lg overflow-hidden">
@@ -517,7 +443,6 @@ export default function PricingPlansPage() {
             </Card>
           </div>
 
-          {/* FAQ Section */}
           <div className="mt-16 max-w-3xl mx-auto">
             <h2 className="text-2xl font-bold text-center mb-8">Preguntas Frecuentes</h2>
             <div className="space-y-4">
