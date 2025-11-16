@@ -21,6 +21,8 @@ const translations = {
     logout: 'Cerrar sesión',
     login: 'Iniciar sesión',
     becomeFreelancer: 'Hazte autónomo',
+    back: 'Volver',
+    contact: 'Contacto',
     
     // Hero
     heroTitle: 'Encuentra tu autónomo de confianza',
@@ -156,7 +158,7 @@ const translations = {
     province: 'Provincia',
     selectYourProvince: 'Selecciona tu provincia',
     city: 'Ciudad',
-    locality: '/ Localidad',
+    locality: 'Localidad',
     selectFromList: '(selecciona de la lista)',
     selectYourCity: 'Selecciona tu ciudad',
     asMainCity: '(como ciudad principal)',
@@ -182,7 +184,7 @@ const translations = {
     availableAnyDay: 'Disponible cualquier día de la semana',
     startTime: 'Hora de inicio *',
     endTime: 'Hora de fin *',
-    schedulePreview: 'Horario:',
+    schedulePreview: 'Horario',
     
     // Onboarding - Pricing Step
     baseRateOptional: 'Tarifa base (€/hora o por servicio) - OPCIONAL',
@@ -240,8 +242,8 @@ const translations = {
     noDescription: 'Sin descripción',
     locationAndAvailability: 'Ubicación y Disponibilidad',
     neighborhood: 'Municipio',
-    availabilityColon: 'Disponibilidad',
-    scheduleColon: 'Horario',
+    availabilityColon: 'Disponibilidad:',
+    scheduleColon: 'Horario:',
     ratesAndWorkMethod: 'Tarifas y Forma de Trabajo',
     baseRate: 'Tarifa base',
     invoicingType: 'Tipo de facturación',
@@ -272,6 +274,34 @@ const translations = {
     professionalOnlyPage: 'Esta página es solo para profesionales. Si deseas ofrecer tus servicios, primero debes seleccionar un plan.',
     viewAvailablePlans: 'Ver planes disponibles',
     
+    // Validation errors
+    professionalNameMinChars: 'El nombre profesional debe tener al menos 2 caracteres',
+    cifNifMinChars: 'El NIF/CIF debe tener al menos 8 caracteres',
+    invalidEmail: 'Email inválido',
+    selectAtLeastOneContactMethod: 'Selecciona al menos un método de contacto',
+    selectAtLeastOneCategory: 'Selecciona al menos una categoría',
+    specifyServiceIfOther: 'Especifica tu servicio cuando seleccionas "Otro tipo de servicio profesional"',
+    serviceSpecMinChars: 'La especificación del servicio debe tener al menos 3 caracteres',
+    shortDescriptionMinChars: 'La descripción corta debe tener al menos 20 caracteres',
+    selectProvince: 'Selecciona una provincia',
+    selectCity: 'Selecciona una ciudad',
+    selectAvailabilityType: 'Selecciona un tipo de disponibilidad',
+    selectAtLeastOnePaymentMethod: 'Selecciona al menos una forma de pago',
+    uploadAtLeast1Photo: 'Sube al menos 1 foto de tus trabajos',
+    acceptTermsAndConditionsError: 'Debes aceptar los Términos y Condiciones',
+    acceptPrivacyPolicyError: 'Debes aceptar la Política de Privacidad',
+    consentClientContactError: 'Debes consentir ser contactado por clientes',
+    errorSavingStep: 'Error al guardar: ',
+    pleaseVerifyData: '. Verifica los datos.',
+    completeStep: 'Completa el paso',
+    beforePublishing: 'antes de publicar',
+    errorSavingProfile: 'Error al guardar el perfil',
+    profileCompletedAndPublished: '¡Perfil completado y publicado con éxito!',
+    photoUploadSuccess: '✅ Foto subida correctamente',
+    photoUploadError: '❌ Error al subir la foto',
+    terms: 'términos',
+    privacy: 'privacidad',
+    
     // Client Onboarding
     createClientAccount: 'Crea tu cuenta de cliente',
     completeDataToSearch: 'Completa estos datos para empezar a buscar profesionales',
@@ -292,7 +322,6 @@ const translations = {
     redirectingToProfile: 'Redirigiendo a tu perfil...',
     freeBenefit: '100% Gratis',
     noHiddenCosts: 'Sin costes ocultos',
-    verifiedProfessionals: 'Profesionales verificados',
     realReviews: 'Con valoraciones reales',
     directChat: 'Chat directo',
     immediateContact: 'Contacto inmediato',
@@ -301,7 +330,6 @@ const translations = {
     freeForClients: 'Al completar el registro podrás buscar y contactar con profesionales de forma gratuita',
     
     // Subscription Management
-    mySubscription: 'Mi Suscripción',
     manageProfessionalPlan: 'Gestiona tu plan profesional',
     backToProfile: 'Volver a Mi Perfil',
     noActiveSubscription: 'Sin suscripción activa',
@@ -413,7 +441,6 @@ const translations = {
     noFavorites: 'Aún no tienes favoritos',
     addFavorites: 'Guarda tus profesionales preferidos aquí',
     remove: 'Eliminar',
-    contact: 'Contactar',
     
     // Footer
     tagline: 'Tu autónomo de confianza',
@@ -428,8 +455,6 @@ const translations = {
     helpCenter: 'Centro de ayuda',
     createFreeAccount: 'Crear cuenta gratis',
     faq: 'Preguntas frecuentes',
-    privacyPolicy: 'Política de privacidad',
-    termsConditions: 'Términos y condiciones',
     cookiePolicy: 'Política de cookies',
     legalNotice: 'Aviso legal',
     allRightsReserved: 'Todos los derechos reservados',
@@ -455,6 +480,8 @@ const translations = {
     logout: 'Log out',
     login: 'Log in',
     becomeFreelancer: 'Become a professional',
+    back: 'Back',
+    contact: 'Contact',
     
     // Hero
     heroTitle: 'Find your trusted professional',
@@ -545,7 +572,6 @@ const translations = {
     consentsAndLegal: 'Consents & Legal',
     finalReview: 'Final Review',
     next: 'Next',
-    back: 'Back',
     saving: 'Saving...',
     publishing: 'Publishing...',
     publishProfile: 'Publish profile',
@@ -590,7 +616,7 @@ const translations = {
     province: 'Province',
     selectYourProvince: 'Select your province',
     city: 'City',
-    locality: '/ Locality',
+    locality: 'Locality',
     selectFromList: '(select from list)',
     selectYourCity: 'Select your city',
     asMainCity: '(as main city)',
@@ -616,7 +642,7 @@ const translations = {
     availableAnyDay: 'Available any day of the week',
     startTime: 'Start time *',
     endTime: 'End time *',
-    schedulePreview: 'Schedule:',
+    schedulePreview: 'Schedule',
     
     // Onboarding - Pricing Step
     baseRateOptional: 'Base rate (€/hour or per service) - OPTIONAL',
@@ -674,14 +700,12 @@ const translations = {
     noDescription: 'No description',
     locationAndAvailability: 'Location and Availability',
     neighborhood: 'Neighborhood',
-    availabilityColon: 'Availability',
-    scheduleColon: 'Schedule',
+    availabilityColon: 'Availability:',
+    scheduleColon: 'Schedule:',
     ratesAndWorkMethod: 'Rates and Work Method',
     baseRate: 'Base rate',
     invoicingType: 'Invoice type',
-    paymentMethods: 'Payment methods',
     photos: 'Photos',
-    noPhotosAdded: 'No photos added',
     legalConfirmations: 'Legal confirmations',
     acceptTerms: 'I accept the terms and conditions',
     acceptPrivacy: 'I accept the privacy policy',
@@ -705,6 +729,34 @@ const translations = {
     restrictedAccess: 'Restricted access',
     professionalOnlyPage: 'This page is only for professionals. If you want to offer your services, you must first select a plan.',
     viewAvailablePlans: 'View available plans',
+    
+    // Validation errors
+    professionalNameMinChars: 'Professional name must be at least 2 characters',
+    cifNifMinChars: 'Tax ID must be at least 8 characters',
+    invalidEmail: 'Invalid email',
+    selectAtLeastOneContactMethod: 'Select at least one contact method',
+    selectAtLeastOneCategory: 'Select at least one category',
+    specifyServiceIfOther: 'Specify your service when selecting "Other professional service"',
+    serviceSpecMinChars: 'Service specification must be at least 3 characters',
+    shortDescriptionMinChars: 'Short description must be at least 20 characters',
+    selectProvince: 'Select a province',
+    selectCity: 'Select a city',
+    selectAvailabilityType: 'Select an availability type',
+    selectAtLeastOnePaymentMethod: 'Select at least one payment method',
+    uploadAtLeast1Photo: 'Upload at least 1 photo of your work',
+    acceptTermsAndConditionsError: 'You must accept the Terms and Conditions',
+    acceptPrivacyPolicyError: 'You must accept the Privacy Policy',
+    consentClientContactError: 'You must consent to being contacted by clients',
+    errorSavingStep: 'Error saving: ',
+    pleaseVerifyData: '. Please verify the data.',
+    completeStep: 'Complete step',
+    beforePublishing: 'before publishing',
+    errorSavingProfile: 'Error saving profile',
+    profileCompletedAndPublished: 'Profile completed and published successfully!',
+    photoUploadSuccess: '✅ Photo uploaded successfully',
+    photoUploadError: '❌ Error uploading photo',
+    terms: 'terms',
+    privacy: 'privacy',
     
     // Client Onboarding
     createClientAccount: 'Create your client account',
@@ -735,7 +787,6 @@ const translations = {
     freeForClients: 'Upon completing registration, you will be able to search and contact professionals for free',
     
     // Subscription Management
-    mySubscription: 'My Subscription',
     manageProfessionalPlan: 'Manage your professional plan',
     backToProfile: 'Back to My Profile',
     noActiveSubscription: 'No active subscription',
@@ -847,7 +898,6 @@ const translations = {
     noFavorites: 'No favorites yet',
     addFavorites: 'Save your preferred professionals here',
     remove: 'Remove',
-    contact: 'Contact',
     
     // Footer
     tagline: 'Your trusted professional',
@@ -862,8 +912,6 @@ const translations = {
     helpCenter: 'Help center',
     createFreeAccount: 'Create free account',
     faq: 'FAQ',
-    privacyPolicy: 'Privacy Policy',
-    termsConditions: 'Terms & Conditions',
     cookiePolicy: 'Cookie Policy',
     legalNotice: 'Legal Notice',
     allRightsReserved: 'All rights reserved',
@@ -934,6 +982,7 @@ export default function LanguageSwitcher({ variant = "default" }) {
               ? 'bg-blue-600 text-white shadow-sm'
               : 'text-gray-600 hover:bg-gray-200'
           }`}
+          aria-label="Cambiar idioma a Español"
         >
           ES
         </button>
@@ -944,6 +993,7 @@ export default function LanguageSwitcher({ variant = "default" }) {
               ? 'bg-blue-600 text-white shadow-sm'
               : 'text-gray-600 hover:bg-gray-200'
           }`}
+          aria-label="Change language to English"
         >
           EN
         </button>
@@ -954,7 +1004,7 @@ export default function LanguageSwitcher({ variant = "default" }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+        <Button variant="ghost" size="icon" className="hover:bg-gray-100" aria-label="Cambiar idioma">
           <Globe className="h-5 w-5 text-gray-600" />
         </Button>
       </DropdownMenuTrigger>
