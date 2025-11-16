@@ -23,10 +23,12 @@ import { CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertCircle, Upload, X, Ed
 import { toast } from "sonner";
 import ModernCheckbox from "../components/ui/ModernCheckbox";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const fromCheckout = searchParams.get("from") === "checkout";
 
@@ -36,9 +38,9 @@ export default function ProfileOnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const [profile, setProfile] = useState(null); // This will hold the professional profile once loaded/created
-  const [existingProfile, setExistingProfile] = useState(null); // To store the initially loaded profile
-  const [uploadingPhoto, setUploadingPhoto] = useState(false); // Re-added this state
+  const [profile, setProfile] = useState(null);
+  const [existingProfile, setExistingProfile] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -53,8 +55,8 @@ export default function ProfileOnboardingPage() {
     ciudad: "",
     municipio: "",
     radio_servicio_km: 10,
-    horario_dias: [], // This field is still in formData for backward compatibility during loading, but won't be used for new logic
-    disponibilidad_tipo: "laborables", // ✅ NUEVO: Tipo de disponibilidad
+    horario_dias: [],
+    disponibilidad_tipo: "laborables",
     horario_apertura: "09:00",
     horario_cierre: "18:00",
     tarifa_base: "",
@@ -64,14 +66,12 @@ export default function ProfileOnboardingPage() {
     acepta_terminos: false,
     acepta_politica_privacidad: false,
     consiente_contacto_clientes: false,
-    // NUEVOS CAMPOS
     website: "",
     social_links: { facebook: "", instagram: "", linkedin: "" },
     activity_other: "",
     metodos_contacto: ['chat_interno'],
   });
 
-  // ✅ AMPLIADO: TODAS las provincias españolas ordenadas alfabéticamente
   const provincias = [
     "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
     "Badajoz", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria",
@@ -84,7 +84,6 @@ export default function ProfileOnboardingPage() {
     "Vizcaya", "Zamora", "Zaragoza"
   ];
 
-  // ✅ AMPLIADO: Ciudades principales por provincia (ordenadas alfabéticamente)
   const ciudadesPorProvincia = {
     "Álava": ["Amurrio", "Llodio", "Salvatierra", "Vitoria-Gasteiz"],
     "Albacete": ["Albacete", "Almansa", "Caudete", "Hellín", "La Roda", "Villarrobledo"],
@@ -138,7 +137,6 @@ export default function ProfileOnboardingPage() {
     "Zaragoza": ["Alagón", "Borja", "Calatayud", "Caspe", "Cuarte de Huerva", "Ejea de los Caballeros", "Tarazona", "Tudela", "Utebo", "Zaragoza", "Zuera"]
   };
 
-  // Días de la semana (still here but not used in new flow for selection)
   const diasSemana = [
     { value: "lunes", label: "Lunes" },
     { value: "martes", label: "Martes" },
@@ -149,7 +147,6 @@ export default function ProfileOnboardingPage() {
     { value: "domingo", label: "Domingo" }
   ];
 
-  // Horarios (cada 30 minutos) - still here but not used for selection inputs
   const horarios = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
@@ -158,7 +155,6 @@ export default function ProfileOnboardingPage() {
     }
   }
 
-  // toggleDia is no longer directly used in the new UI, but kept if any other part of the app relies on it
   const toggleDia = (dia) => {
     const dias = formData.horario_dias;
     if (dias.includes(dia)) {
@@ -203,9 +199,8 @@ export default function ProfileOnboardingPage() {
         setExistingProfile(existingProfileData);
         setProfile(existingProfileData);
 
-        // Pre-llenar formulario con datos existentes
         setFormData({
-          ...formData, // Keep initial state for website/social_links if not present in existingProfile
+          ...formData,
           business_name: existingProfileData.business_name || "",
           cif_nif: existingProfileData.cif_nif || "",
           email_contacto: existingProfileData.email_contacto || user.email,
@@ -218,8 +213,8 @@ export default function ProfileOnboardingPage() {
           ciudad: existingProfileData.ciudad || "",
           municipio: existingProfileData.municipio || "",
           radio_servicio_km: existingProfileData.radio_servicio_km || 10,
-          horario_dias: existingProfileData.horario_dias || [], // Keep for backward compatibility during load, though not used in new UI logic
-          disponibilidad_tipo: existingProfileData.disponibilidad_tipo || "laborables", // ✅ NEW FIELD
+          horario_dias: existingProfileData.horario_dias || [],
+          disponibilidad_tipo: existingProfileData.disponibilidad_tipo || "laborables",
           horario_apertura: existingProfileData.horario_apertura || "09:00",
           horario_cierre: existingProfileData.horario_cierre || "18:00",
           tarifa_base: existingProfileData.tarifa_base || "",
@@ -230,18 +225,16 @@ export default function ProfileOnboardingPage() {
           social_links: existingProfileData.social_links || { facebook: "", instagram: "", linkedin: "" },
           activity_other: existingProfileData.activity_other || "",
           metodos_contacto: existingProfileData.metodos_contacto || ['chat_interno'],
-          acepta_terminos: existingProfileData.acepta_terminos || false, // Default to false if not explicitly true
-          acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || false, // Default to false
-          consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || false, // Default to false
+          acepta_terminos: existingProfileData.acepta_terminos || false,
+          acepta_politica_privacidad: existingProfileData.acepta_politica_privacidad || false,
+          consiente_contacto_clientes: existingProfileData.consiente_contacto_clientes || false,
         });
 
-        // If profile is already completed and visible, navigate to MyProfile
         if (existingProfileData.onboarding_completed && existingProfileData.visible_en_busqueda) {
           navigate(createPageUrl("MyProfile"));
         }
 
       } else {
-        // If no profile, pre-fill contact info from user
         setFormData(prev => ({
           ...prev,
           email_contacto: user.email,
@@ -263,7 +256,6 @@ export default function ProfileOnboardingPage() {
     }
   }, [user]);
 
-  // Update service_area when location changes
   useEffect(() => {
     if (formData.provincia && formData.ciudad) {
       const area = formData.municipio
@@ -280,37 +272,37 @@ export default function ProfileOnboardingPage() {
   const steps = [
     {
       id: "identity",
-      title: "Identidad",
+      title: t('identity'),
       fields: ["business_name", "cif_nif", "email_contacto", "telefono_contacto", "metodos_contacto"]
     },
     {
       id: "activity",
-      title: "Actividad",
+      title: t('activity'),
       fields: ["categories", "activity_other", "descripcion_corta", "description"]
     },
     {
       id: "location_availability",
-      title: "Zona y disponibilidad",
-      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "disponibilidad_tipo", "horario_apertura", "horario_cierre"] // ✅ MODIFICADO: reemplazado horario_dias por disponibilidad_tipo
+      title: t('zoneAndAvailability'),
+      fields: ["provincia", "ciudad", "municipio", "radio_servicio_km", "disponibilidad_tipo", "horario_apertura", "horario_cierre"]
     },
     {
       id: "prices_work_method",
-      title: "Precios y forma de trabajo",
+      title: t('pricesAndWorkMethod'),
       fields: ["tarifa_base", "facturacion", "formas_pago"]
     },
     {
       id: "portfolio",
-      title: "Portfolio (fotos)",
+      title: t('portfolioPhotos'),
       fields: ["photos"]
     },
     {
       id: "legal_verification",
-      title: "Consentimientos y Legales",
+      title: t('consentsAndLegal'),
       fields: ["acepta_terminos", "acepta_politica_privacidad", "consiente_contacto_clientes"]
     },
     {
       id: "review",
-      title: "Revisión final",
+      title: t('finalReview'),
       fields: []
     }
   ];
@@ -320,7 +312,7 @@ export default function ProfileOnboardingPage() {
     "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
     "Asesoría o gestoría", "Empresa multiservicios",
     "Otro tipo de servicio profesional"
-  ].sort(); // ✅ Ordenar alfabéticamente
+  ].sort();
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
@@ -333,7 +325,7 @@ export default function ProfileOnboardingPage() {
 
       if (field === "business_name") {
         if (!value || value.trim().length < 2) {
-          setError("El nombre profesional debe tener al menos 2 caracteres");
+          setError(t('professionalNameMinChars'));
           return false;
         }
       }
@@ -341,35 +333,35 @@ export default function ProfileOnboardingPage() {
       if (field === "cif_nif") {
         const cleanValue = value.trim();
         if (!cleanValue || cleanValue.length < 8) {
-          setError("NIF/CIF debe tener al menos 8 caracteres");
+          setError(t('cifNifMinChars'));
           return false;
         }
       }
 
       if (field === "email_contacto") {
         if (!value || !value.includes('@')) {
-          setError("Email inválido");
+          setError(t('invalidEmail'));
           return false;
         }
       }
 
       if (field === "metodos_contacto") {
+        // Chat interno is always implicitly selected, so just check for length
         if (!value || !Array.isArray(value) || value.length === 0) {
-          setError("Selecciona al menos un método de contacto");
+          setError(t('selectAtLeastOneContactMethod'));
           return false;
         }
       }
 
       if (field === "categories") {
         if (!value || value.length === 0) {
-          setError("Selecciona al menos una categoría");
+          setError(t('selectAtLeastOneCategory'));
           return false;
         }
 
-        // ✅ NUEVO: Validar que si se selecciona "Otros", debe especificar el servicio
         if (value.includes("Otro tipo de servicio profesional")) {
           if (!formData.activity_other || formData.activity_other.trim().length < 3) {
-            setError('Debes especificar tu tipo de servicio en el campo "Especifica tu servicio"');
+            setError(t('specifyServiceIfOther'));
             return false;
           }
         }
@@ -378,7 +370,7 @@ export default function ProfileOnboardingPage() {
       if (field === "activity_other") {
         if (formData.categories.includes("Otro tipo de servicio profesional")) {
           if (!value || value.trim().length < 3) {
-            setError('La especificación del servicio debe tener al menos 3 caracteres.');
+            setError(t('serviceSpecMinChars'));
             return false;
           }
         }
@@ -386,79 +378,63 @@ export default function ProfileOnboardingPage() {
 
       if (field === "descripcion_corta") {
         if (!value || value.length < 20) {
-          setError("La descripción corta debe tener al menos 20 caracteres");
+          setError(t('shortDescriptionMinChars'));
           return false;
         }
       }
 
       if (field === "provincia") {
         if (!value || value.trim().length === 0) {
-          setError("Selecciona una provincia");
+          setError(t('selectProvince'));
           return false;
         }
       }
 
       if (field === "ciudad") {
         if (!value || value.trim().length === 0) {
-          setError("Selecciona una ciudad");
+          setError(t('selectCity'));
           return false;
         }
       }
 
-      // ✅ MODIFICADO: disponibilidad_tipo ahora es obligatorio, no horario_dias
       if (field === "disponibilidad_tipo") {
         if (!value || value.trim().length === 0) {
-          setError("Selecciona un tipo de disponibilidad");
+          setError(t('selectAvailabilityType'));
           return false;
         }
       }
-
-      // if (field === "horario_dias") { // REMOVED THIS VALIDATION
-      //   if (!value || value.length === 0) {
-      //     setError("Selecciona al menos un día de disponibilidad");
-      //     return false;
-      //   }
-      // }
-
-      // ✅ MODIFICADO: tarifa_base ahora es opcional
-      // if (field === "tarifa_base") { // REMOVED THIS VALIDATION
-      //   if (!value || parseFloat(value) <= 0) {
-      //     setError("La tarifa debe ser mayor a 0");
-      //     return false;
-      //   }
-      // }
 
       if (field === "formas_pago") {
         if (!value || value.length === 0) {
-          setError("Selecciona al menos una forma de pago");
+          setError(t('selectAtLeastOnePaymentMethod'));
           return false;
         }
       }
 
       if (field === "photos") {
         if (!value || value.length === 0) {
-          setError("Sube al menos 1 foto de tus trabajos");
+          setError(t('uploadAtLeast1Photo'));
           return false;
         }
       }
 
       if (field === "acepta_terminos") {
         if (!value) {
-          setError("Debes aceptar los términos y condiciones");
+          setError(t('acceptTermsAndConditionsError'));
           return false;
         }
       }
 
       if (field === "acepta_politica_privacidad") {
         if (!value) {
-          setError("Debes aceptar la política de privacidad");
+          setError(t('acceptPrivacyPolicyError'));
           return false;
         }
       }
 
       if (field === "consiente_contacto_clientes") {
         if (!value) {
-          setError("Debes dar consentimiento para que los clientes te contacten");
+          setError(t('consentClientContactError'));
           return false;
         }
       }
@@ -473,7 +449,6 @@ export default function ProfileOnboardingPage() {
 
     setError(null);
 
-    // Validar el paso actual
     if (!validateStep(currentStep)) {
       console.log("❌ Validación falló");
       return;
@@ -481,70 +456,61 @@ export default function ProfileOnboardingPage() {
 
     console.log("✅ Validación pasó");
 
-    // Only save relevant fields from the current step
     const stepFields = steps[currentStep].fields;
     const dataToSave = {};
 
-    // Include fields from the current step in dataToSave
     stepFields.forEach(field => {
       if (formData[field] !== undefined) {
         dataToSave[field] = formData[field];
       }
     });
 
-    // Always include base fields needed if not in current step
     dataToSave.user_id = user.id;
     dataToSave.business_name = formData.business_name || "Nombre provisional";
     dataToSave.email_contacto = formData.email_contacto || user.email;
 
-    // Make sure optional/new fields are handled correctly if they were just added to formData
     if (formData.activity_other !== undefined) dataToSave.activity_other = formData.activity_other;
     if (formData.metodos_contacto !== undefined) dataToSave.metodos_contacto = formData.metodos_contacto;
-    if (formData.disponibilidad_tipo !== undefined) dataToSave.disponibilidad_tipo = formData.disponibilidad_tipo; // ✅ NEW FIELD
+    if (formData.disponibilidad_tipo !== undefined) dataToSave.disponibilidad_tipo = formData.disponibilidad_tipo;
 
-    // Save in background, using isSubmitting to disable buttons during this
     setIsSubmitting(true);
     try {
       if (profile) {
-        // Actualizar perfil existente con el estado "pendiente"
         const updatedProfile = await base44.entities.ProfessionalProfile.update(profile.id, {
           ...dataToSave,
           estado_perfil: "pendiente",
           visible_en_busqueda: false,
           onboarding_completed: false
         });
-        setProfile(updatedProfile); // Update profile state with latest data
-        setExistingProfile(updatedProfile); // Also update existingProfile
+        setProfile(updatedProfile);
+        setExistingProfile(updatedProfile);
         console.log("💾 Guardado exitoso (actualización de paso)");
       } else {
-        // Crear un nuevo perfil con estado "pendiente"
         const newProfile = await base44.entities.ProfessionalProfile.create({
-          ...formData, // Use full formData for initial creation
+          ...formData,
           user_id: user.id,
           estado_perfil: "pendiente",
           visible_en_busqueda: false,
           onboarding_completed: false,
-          // Ensure defaults for numbers/objects
           radio_servicio_km: formData.radio_servicio_km || 10,
           tarifa_base: parseFloat(formData.tarifa_base) || 0,
           social_links: formData.social_links || { facebook: "", instagram: "", linkedin: "" },
           metodos_contacto: formData.metodos_contacto || ['chat_interno'],
-          disponibilidad_tipo: formData.disponibilidad_tipo || "laborables", // ✅ NEW FIELD
+          disponibilidad_tipo: formData.disponibilidad_tipo || "laborables",
         });
         setProfile(newProfile);
-        setExistingProfile(newProfile); // Also set existingProfile
+        setExistingProfile(newProfile);
         console.log("💾 Guardado exitoso (creación de perfil en estado PENDIENTE)");
       }
     } catch (error) {
       console.error("⚠️ Error guardando paso:", error);
       const errorMessage = error.message || error.toString();
-      setError("Error al guardar este paso: " + errorMessage + ". Por favor, verifica los datos.");
+      setError(t('errorSavingStep') + errorMessage + t('pleaseVerifyData'));
       setIsSubmitting(false);
-      return; // Stop progression on critical save error
+      return;
     }
     setIsSubmitting(false);
 
-    // Avanzar al siguiente paso
     console.log("➡️ Avanzando al siguiente paso");
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
@@ -560,17 +526,15 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  // Replaces handlePublish and publishProfileMutation
   const handleSubmit = async () => {
     console.log('💾 ========== INICIANDO GUARDADO DE PERFIL ==========');
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // ✅ Primero verificar que todos los pasos estén validados
       for (let i = 0; i < steps.length - 1; i++) {
         if (!validateStep(i)) {
-          toast.error(`Completa el paso ${i + 1}: ${steps[i].title} antes de publicar.`);
+          toast.error(`${t('completeStep')} ${i + 1}: ${steps[i].title} ${t('beforePublishing')}.`);
           setCurrentStep(i);
           setIsSubmitting(false);
           return;
@@ -579,7 +543,6 @@ export default function ProfileOnboardingPage() {
 
       console.log('✅ Usuario autenticado, procediendo a guardar perfil...');
 
-      // Preparar datos del perfil
       const now = new Date().toISOString();
       const slug = `${formData.business_name.toLowerCase().replace(/\s+/g, '-')}-${existingProfile?.id ? existingProfile.id.slice(-6) : Math.random().toString(36).substring(2, 8)}`;
 
@@ -639,7 +602,6 @@ export default function ProfileOnboardingPage() {
       setProfile(savedProfile);
       setExistingProfile(savedProfile);
 
-      // ✅ Actualizar usuario
       await base44.auth.updateMe({
         user_type: "professionnel",
         phone: formData.telefono_contacto || user.phone,
@@ -648,10 +610,9 @@ export default function ProfileOnboardingPage() {
       setUser(prevUser => ({ ...prevUser, user_type: "professionnel", phone: formData.telefono_contacto || prevUser.phone, city: formData.ciudad || prevUser.city }));
       console.log('✅ Usuario actualizado correctamente');
 
-      // ✅ Email de bienvenida profesional con diseño mejorado
       await base44.integrations.Core.SendEmail({
         to: user.email,
-        subject: "✅ Tu perfil profesional ya está activo en Misautónomos",
+        subject: "✅ Tu perfil profesional ya está activo en MisAutónomos",
         body: `
 <!DOCTYPE html>
 <html>
@@ -662,7 +623,7 @@ export default function ProfileOnboardingPage() {
     body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
     .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: white; border-radius: 16px; padding: 12px; }
     .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
     .header p { color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px; }
     .content { padding: 40px 30px; }
@@ -675,8 +636,7 @@ export default function ProfileOnboardingPage() {
     .profile-data h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
     .profile-data ul { margin: 0; padding-left: 20px; color: #4b5563; list-style: none; }
     .profile-data li { margin-bottom: 10px; padding-left: 25px; position: relative; }
-    .profile-data li:before { content: ''; position: absolute; left: 0; top: 6px; width: 16px; height: 16px; background: #10b981; border-radius: 50%; }
-    .profile-data li:after { content: '✓'; position: absolute; left: 4px; top: 4px; color: white; font-size: 12px; font-weight: bold; }
+    .profile-data li:before { content: '✓'; position: absolute; left: 0; top: 0; color: #10b981; font-weight: bold; }
     .tips { background: #eff6ff; padding: 25px; margin: 30px 0; border-radius: 12px; border: 2px solid #3b82f6; }
     .tips h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
     .tips ul { margin: 0; padding-left: 20px; color: #1e40af; }
@@ -687,14 +647,13 @@ export default function ProfileOnboardingPage() {
     .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
     .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
     .footer a { color: #60a5fa; text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">💼</div>
-      <h1>Misautónomos</h1>
+      <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png" alt="MisAutónomos" class="logo" />
+      <h1>MisAutónomos</h1>
       <p>Tu autónomo de confianza</p>
     </div>
 
@@ -707,7 +666,7 @@ export default function ProfileOnboardingPage() {
       </div>
 
       <p class="message">
-        Tu perfil en <strong>Misautónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
+        Tu perfil en <strong>MisAutónomos</strong> ha sido publicado correctamente y los clientes ya pueden encontrarte en las búsquedas.
       </p>
 
       <div class="profile-data">
@@ -732,33 +691,33 @@ export default function ProfileOnboardingPage() {
       </div>
 
       <div class="cta">
-        <a href="https://autonomosmil.es/perfil/${savedProfile.slug_publico}" class="button">
+        <a href="https://misautonomos.es/ProfessionalProfile?id=${user.id}" class="button">
           Ver mi perfil público →
         </a>
       </div>
 
       <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
         ¿Tienes alguna duda? Contacta con nuestro equipo de soporte:<br/>
-        <a href="mailto:soporte@autonomosmil.es" style="color: #3b82f6; text-decoration: none;">soporte@autonomosmil.es</a>
+        <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6; text-decoration: none;">soporte@misautonomos.es</a>
       </p>
     </div>
 
     <div class="footer">
-      <strong>Equipo Misautónomos</strong>
+      <strong>MisAutónomos</strong>
       <p class="tagline">Tu autónomo de confianza</p>
       <p>
-        <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>
-        <a href="https://autonomosmil.es">autonomosmil.es</a>
+        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
+        <a href="https://misautonomos.es">misautonomos.es</a>
       </p>
     </div>
   </div>
 </body>
 </html>
         `,
-        from_name: "Misautónomos"
+        from_name: "MisAutónomos"
       });
 
-      toast.success('¡Perfil completado y publicado correctamente!', {
+      toast.success(t('profileCompletedAndPublished'), {
         duration: 5000
       });
 
@@ -769,8 +728,8 @@ export default function ProfileOnboardingPage() {
 
     } catch (err) {
       console.error("❌ Error guardando perfil:", err);
-      setError(err.message || 'Error al guardar el perfil');
-      toast.error(err.message || 'Error al guardar el perfil');
+      setError(err.message || t('errorSavingProfile'));
+      toast.error(err.message || t('errorSavingProfile'));
     } finally {
       setIsSubmitting(false);
     }
@@ -787,10 +746,10 @@ export default function ProfileOnboardingPage() {
         ...formData,
         photos: [...formData.photos, file_url]
       });
-      toast.success("Foto subida correctamente");
+      toast.success(t('photoUploadSuccess'));
     } catch (error) {
       console.error("Error uploading photo:", error);
-      toast.error("Error al subir la foto");
+      toast.error(t('photoUploadError'));
     }
     setUploadingPhoto(false);
   };
@@ -835,27 +794,26 @@ export default function ProfileOnboardingPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-        <p className="ml-3 text-gray-600">Cargando...</p>
+        <p className="ml-3 text-gray-600">{t('loading')}</p>
       </div>
     );
   }
 
-  // Handle cases where user is not logged in or not a professional
   if (!user || user.user_type !== "professionnel") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Acceso restringido</h2>
+            <h2 className="text-xl font-bold mb-2">{t('restrictedAccess')}</h2>
             <p className="text-gray-600 mb-6">
-              Esta página es solo para profesionales. Si deseas ofrecer tus servicios, primero debes seleccionar un plan.
+              {t('professionalOnlyPage')}
             </p>
             <Button
               onClick={() => navigate(createPageUrl("PricingPlans"))}
               className="bg-orange-500 hover:bg-orange-600"
             >
-              Ver planes disponibles
+              {t('viewAvailablePlans')}
             </Button>
           </CardContent>
         </Card>
@@ -863,63 +821,54 @@ export default function ProfileOnboardingPage() {
     );
   }
 
-  // Success screen
   if (currentStep === steps.length) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex items-center justify-center p-4">
-        {/* ✅ Elementos decorativos de fondo */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
         </div>
 
         <Card className="max-w-3xl w-full border-0 shadow-2xl relative z-10 overflow-hidden">
-          {/* ✅ Barra de confetti decorativa */}
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"></div>
 
           <CardContent className="p-8 md:p-12">
-            {/* ✅ Icono de éxito con animación */}
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <div className="w-28 h-28 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
                   <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
                 </div>
-                {/* ✅ Anillo animado alrededor */}
                 <div className="absolute inset-0 w-28 h-28 rounded-full border-4 border-green-400 animate-ping opacity-75"></div>
               </div>
             </div>
 
-            {/* ✅ Título principal - MEJORADO CONTRASTE */}
             <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
-              ✅ ¡Tu perfil profesional está activo!
+              ✅ {t('profileActiveTitle')}
             </h1>
 
-            {/* ✅ Subtítulo - MEJORADO CONTRASTE */}
             <p className="text-lg md:text-xl text-center text-gray-800 font-semibold mb-3 max-w-2xl mx-auto">
-              Ya eres visible en las búsquedas de <span className="text-blue-700 font-bold">misautonomos</span>
+              {t('visibleInSearches')} <span className="text-blue-700 font-bold">MisAutónomos</span>
             </p>
 
             <p className="text-base text-center text-gray-700 mb-8 max-w-xl mx-auto">
-              Empieza a recibir contactos de clientes interesados en tus servicios profesionales.
+              {t('startReceivingContacts')}
             </p>
 
-            {/* ✅ Estadísticas rápidas */}
             <div className="grid grid-cols-3 gap-4 mb-8 max-w-xl mx-auto">
               <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <div className="text-2xl font-bold text-blue-700">✓</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Perfil activo</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">{t('profileActive')}</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
                 <div className="text-2xl font-bold text-green-700">👁️</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Visible en búsquedas</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">{t('visibleInSearch')}</div>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
                 <div className="text-2xl font-bold text-purple-700">🚀</div>
-                <div className="text-xs text-gray-700 mt-1 font-medium">Listo para clientes</div>
+                <div className="text-xs text-gray-700 mt-1 font-medium">{t('readyForClients')}</div>
               </div>
             </div>
 
-            {/* ✅ Botones de acción principales */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 size="lg"
@@ -930,7 +879,7 @@ export default function ProfileOnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                Ver mi ficha pública
+                {t('viewMyPublicProfile')}
               </Button>
 
               <Button
@@ -942,11 +891,10 @@ export default function ProfileOnboardingPage() {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                Ver búsquedas de clientes
+                {t('viewClientSearches')}
               </Button>
             </div>
 
-            {/* ✅ Botón secundario - Editar perfil */}
             <div className="text-center mb-8">
               <Button
                 variant="ghost"
@@ -954,14 +902,12 @@ export default function ProfileOnboardingPage() {
                 onClick={() => navigate(createPageUrl("MyProfile"))}
               >
                 <Edit className="w-4 h-4 mr-2" />
-                Editar mi perfil
+                {t('editMyProfile')}
               </Button>
             </div>
 
-            {/* ✅ Separador */}
             <div className="border-t border-gray-200 my-8"></div>
 
-            {/* ✅ Mensaje motivacional */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">
@@ -970,31 +916,30 @@ export default function ProfileOnboardingPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">💡 Consejos para destacar</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">💡 {t('tipsToStandOut')}</h3>
                   <ul className="text-sm text-gray-700 space-y-2">
                     <li className="flex items-start gap-2">
                       <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Mantén tu perfil actualizado con fotos recientes de tus trabajos</span>
+                      <span>{t('addMorePhotos')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
+                      <span>{t('respondFast')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-green-600 font-bold mt-0.5">✓</span>
-                      <span>Pide valoraciones a tus clientes satisfechos</span>
+                      <span>{t('askForReviews')}</span>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* ✅ Próximos pasos */}
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
-                ¿Necesitas ayuda? Contacta con soporte:{" "}
-                <a href="mailto:soporte@autonomosmil.es" className="text-blue-600 hover:text-blue-800 font-medium underline">
-                  soporte@autonomosmil.es
+                {t('needHelp')}{" "}
+                <a href="mailto:soporte@misautonomos.es" className="text-blue-600 hover:text-blue-800 font-medium underline">
+                  soporte@misautonomos.es
                 </a>
               </p>
             </div>
@@ -1012,68 +957,65 @@ export default function ProfileOnboardingPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label>Nombre profesional *</Label>
+              <Label>{t('professionalNameLabel')}</Label>
               <Input
                 value={formData.business_name}
                 onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                placeholder="Ej: Juan Pérez - Electricista"
+                placeholder={t('professionalNamePlaceholder')}
                 maxLength={100}
                 className="h-12"
               />
               <p className="text-sm text-gray-500 mt-1">
-                {formData.business_name.length}/100 caracteres
+                {formData.business_name.length}/100 {t('characters')}
               </p>
             </div>
 
             <div>
-              <Label>NIF / CIF *</Label>
+              <Label>{t('cifNifLabel')}</Label>
               <Input
                 value={formData.cif_nif}
                 onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
-                placeholder="12345678A o B12345678"
+                placeholder={t('cifNifPlaceholder')}
                 maxLength={9}
                 className="h-12"
               />
               <p className="text-sm text-gray-500 mt-1">
-                {formData.cif_nif.length}/9 caracteres
+                {formData.cif_nif.length}/9 {t('characters')}
               </p>
             </div>
 
             <div>
-              <Label>Email de contacto *</Label>
+              <Label>{t('contactEmailLabel')}</Label>
               <Input
                 type="email"
                 value={formData.email_contacto}
                 onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
-                placeholder="tu@email.com"
+                placeholder={t('contactEmailPlaceholder')}
                 className="h-12"
               />
             </div>
 
-            {/* ✅ MODIFICADO: Teléfono ahora es OPCIONAL */}
             <div>
-              <Label>Teléfono de contacto (opcional)</Label>
+              <Label>{t('contactPhoneOptional')}</Label>
               <Input
                 type="tel"
                 value={formData.telefono_contacto}
                 onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value.replace(/[^\d+]/g, '') })}
-                placeholder="612345678 o +34612345678"
+                placeholder={t('contactPhonePlaceholder')}
                 maxLength={15}
                 className="h-12"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Si no añades teléfono, solo podrán contactarte por chat interno
+                {t('noPhoneOnlyChat')}
               </p>
             </div>
 
-            {/* ✅ MODIFICADO: Métodos de contacto con mejor UX */}
             <div className="border-t border-gray-200 pt-4 mt-4">
-              <Label className="text-base font-semibold">Métodos de contacto visibles</Label>
+              <Label className="text-base font-semibold">{t('visibleContactMethods')}</Label>
               <p className="text-sm text-gray-500 mt-1 mb-3">
-                Selecciona cómo quieres que los clientes te contacten
+                {t('selectHowClientsContact')}
               </p>
               <div className="space-y-2">
-                {/* Chat interno - siempre disponible */}
                 <div
                   className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border-2 border-blue-300"
                 >
@@ -1083,17 +1025,16 @@ export default function ProfileOnboardingPage() {
                   />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-blue-900">
-                      💬 Chat interno
+                      💬 {t('internalChat')}
                     </span>
-                    <p className="text-xs text-blue-700 mt-0.5">Siempre activo (obligatorio)</p>
+                    <p className="text-xs text-blue-700 mt-0.5">{t('alwaysActive')}</p>
                   </div>
                 </div>
 
-                {/* WhatsApp */}
                 <div
                   onClick={() => {
                     if (!formData.telefono_contacto) {
-                      toast.warning('Añade un teléfono primero para activar WhatsApp');
+                      toast.warning(t('addPhoneFirstWhatsApp'));
                       return;
                     }
                     const metodos = formData.metodos_contacto || ['chat_interno'];
@@ -1121,10 +1062,10 @@ export default function ProfileOnboardingPage() {
                   <Checkbox
                     checked={formData.metodos_contacto?.includes('whatsapp') || false}
                     disabled={!formData.telefono_contacto}
-                    onChange={(e) => { // Added onChange to handle direct checkbox click
+                    onChange={(e) => {
                       e.stopPropagation();
                       if (!formData.telefono_contacto) {
-                        toast.warning('Añade un teléfono primero para activar WhatsApp');
+                        toast.warning(t('addPhoneFirstWhatsApp'));
                         return;
                       }
                       const metodos = formData.metodos_contacto || ['chat_interno'];
@@ -1142,16 +1083,15 @@ export default function ProfileOnboardingPage() {
                       📱 WhatsApp
                     </span>
                     {!formData.telefono_contacto && (
-                      <p className="text-xs text-gray-500 mt-0.5">Requiere teléfono</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('requiresPhone')}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Llamada telefónica */}
                 <div
                   onClick={() => {
                     if (!formData.telefono_contacto) {
-                      toast.warning('Añade un teléfono primero para activar las llamadas');
+                      toast.warning(t('addPhoneFirstCall'));
                       return;
                     }
                     const metodos = formData.metodos_contacto || ['chat_interno'];
@@ -1179,10 +1119,10 @@ export default function ProfileOnboardingPage() {
                   <Checkbox
                     checked={formData.metodos_contacto?.includes('telefono') || false}
                     disabled={!formData.telefono_contacto}
-                    onChange={(e) => { // Added onChange to handle direct checkbox click
+                    onChange={(e) => {
                       e.stopPropagation();
                       if (!formData.telefono_contacto) {
-                        toast.warning('Añade un teléfono primero para activar las llamadas');
+                        toast.warning(t('addPhoneFirstCall'));
                         return;
                       }
                       const metodos = formData.metodos_contacto || ['chat_interno'];
@@ -1197,10 +1137,10 @@ export default function ProfileOnboardingPage() {
                     <span className={`text-sm font-medium ${
                       !formData.telefono_contacto ? 'text-gray-400' : 'text-gray-900'
                     }`}>
-                      📞 Llamada telefónica
+                      📞 {t('phoneCall')}
                     </span>
                     {!formData.telefono_contacto && (
-                      <p className="text-xs text-gray-500 mt-0.5">Requiere teléfono</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('requiresPhone')}</p>
                     )}
                   </div>
                 </div>
@@ -1213,7 +1153,7 @@ export default function ProfileOnboardingPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label>Categorías de servicio * (selecciona al menos una)</Label>
+              <Label>{t('serviceCategories')} {t('selectAtLeastOne')}</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {categories.map((cat) => (
                   <div
@@ -1235,54 +1175,53 @@ export default function ProfileOnboardingPage() {
                     <p className={`text-sm font-medium transition-colors ${
                       formData.categories.includes(cat) ? "text-blue-900" : "text-gray-700"
                     }`}>
-                      {cat}
+                      {t(cat)}
                     </p>
                   </div>
                 ))}
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                {formData.categories.length} {formData.categories.length === 1 ? 'seleccionada' : 'seleccionadas'}
+                {formData.categories.length} {formData.categories.length === 1 ? t('selected') : t('selectedPlural')}
               </p>
             </div>
 
-            {/* ✅ NUEVO: Campo de texto para "Otros" */}
             {formData.categories.includes("Otro tipo de servicio profesional") && (
               <div className="mt-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                 <Label className="text-base font-semibold text-yellow-900">
-                  Especifica tu servicio *
+                  {t('specifyYourService')}
                 </Label>
                 <Input
                   value={formData.activity_other}
                   onChange={(e) => setFormData({ ...formData, activity_other: e.target.value })}
-                  placeholder="Ej: Instalador de paneles solares, Técnico de fibra óptica, etc."
+                  placeholder={t('specifyServicePlaceholder')}
                   maxLength={100}
                   className="h-12 mt-2 border-yellow-300"
                 />
                 <p className="text-sm text-yellow-800 mt-2">
-                  📝 Describe tu actividad profesional (mínimo 3 caracteres)
+                  📝 {t('describeYourActivity')}
                 </p>
               </div>
             )}
 
             <div>
-              <Label>Descripción corta * (máximo 220 caracteres)</Label>
+              <Label>{t('shortDescriptionLabel')} {t('shortDescriptionMax')}</Label>
               <Textarea
                 value={formData.descripcion_corta}
                 onChange={(e) => setFormData({ ...formData, descripcion_corta: e.target.value.slice(0, 220) })}
-                placeholder="Describe brevemente tus servicios..."
+                placeholder={t('shortDescriptionPlaceholder')}
                 className="h-24"
               />
               <p className="text-sm text-gray-500 mt-1">
-                {formData.descripcion_corta.length}/220 caracteres (mínimo 20)
+                {formData.descripcion_corta.length}/220 {t('characters')} ({t('minimum20')})
               </p>
             </div>
 
             <div>
-              <Label>Descripción detallada (opcional)</Label>
+              <Label>{t('detailedDescriptionOptional')}</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Añade más detalles sobre tu experiencia, servicios específicos, etc."
+                placeholder={t('detailedDescriptionPlaceholder')}
                 className="h-32"
               />
             </div>
@@ -1294,12 +1233,12 @@ export default function ProfileOnboardingPage() {
           <div className="space-y-6">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <p className="text-sm text-blue-900">
-                📍 Indica tu ubicación principal y zona de trabajo. Los clientes podrán encontrarte en estas áreas.
+                📍 {t('indicateMainLocation')}
               </p>
             </div>
 
             <div>
-              <Label>Provincia *</Label>
+              <Label>{t('province')} *</Label>
               <Select
                 value={formData.provincia}
                 onValueChange={(value) => {
@@ -1312,7 +1251,7 @@ export default function ProfileOnboardingPage() {
                 }}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Selecciona tu provincia" />
+                  <SelectValue placeholder={t('selectYourProvince')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] overflow-y-auto">
                   {provincias.map((prov) => (
@@ -1326,7 +1265,7 @@ export default function ProfileOnboardingPage() {
 
             {formData.provincia && (
               <div>
-                <Label>Ciudad / Localidad * (selecciona de la lista)</Label>
+                <Label>{t('city')} / {t('locality')} * {t('selectFromList')}</Label>
                 <Select
                   value={formData.ciudad}
                   onValueChange={(value) => {
@@ -1338,7 +1277,7 @@ export default function ProfileOnboardingPage() {
                   }}
                 >
                   <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Selecciona tu ciudad" />
+                    <SelectValue placeholder={t('selectYourCity')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] overflow-y-auto">
                     {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
@@ -1349,41 +1288,41 @@ export default function ProfileOnboardingPage() {
                       ))
                     ) : (
                       <SelectItem value={formData.provincia}>
-                        {formData.provincia} (como ciudad principal)
+                        {formData.provincia} ({t('asMainCity')})
                       </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500 mt-1">
-                  ⚠️ Solo se puede seleccionar de la lista. Si tu localidad no aparece, elige la ciudad más cercana.
+                  ⚠️ {t('onlyFromList')}
                 </p>
               </div>
             )}
 
             {formData.ciudad && (
               <div>
-                <Label>Barrio / Municipio (opcional - texto libre)</Label>
+                <Label>{t('neighborhoodOptional')}</Label>
                 <Input
                   value={formData.municipio}
                   onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
-                  placeholder="Ej: Centro, Chamartín, Eixample..."
+                  placeholder={t('neighborhoodPlaceholder')}
                   className="h-12"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Especifica un barrio o zona específica si quieres ser más preciso (opcional)
+                  {t('specifyNeighborhood')}
                 </p>
               </div>
             )}
 
             {formData.service_area && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Tu ubicación principal:</p>
+                <p className="text-sm text-gray-600 mb-1">{t('yourMainLocation')}:</p>
                 <p className="font-semibold text-gray-900">{formData.service_area}</p>
               </div>
             )}
 
             <div>
-              <Label>Radio de servicio *</Label>
+              <Label>{t('serviceRadius')} *</Label>
               <Select
                 value={formData.radio_servicio_km.toString()}
                 onValueChange={(value) => setFormData({ ...formData, radio_servicio_km: parseInt(value) })}
@@ -1392,23 +1331,22 @@ export default function ProfileOnboardingPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5 km - Solo mi zona</SelectItem>
-                  <SelectItem value="10">10 km - Ciudad y alrededores</SelectItem>
-                  <SelectItem value="25">25 km - Área metropolitana</SelectItem>
-                  <SelectItem value="50">50 km - Provincia</SelectItem>
-                  <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
+                  <SelectItem value="5">5 km - {t('onlyMyZone')}</SelectItem>
+                  <SelectItem value="10">10 km - {t('cityAndSurroundings')}</SelectItem>
+                  <SelectItem value="25">25 km - {t('metropolitanArea')}</SelectItem>
+                  <SelectItem value="50">50 km - {t('provinceWide')}</SelectItem>
+                  <SelectItem value="100">100+ km - {t('multipleProvinces')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-gray-500 mt-1">
-                ¿Hasta qué distancia estás dispuesto a desplazarte?
+                {t('howFarTravel')}
               </p>
             </div>
 
-            {/* ✅ NUEVO: Disponibilidad tipo */}
             <div>
-              <Label>Disponibilidad *</Label>
+              <Label>{t('availability')} *</Label>
               <p className="text-sm text-gray-500 mt-1 mb-3">
-                ¿Cuándo puedes trabajar?
+                {t('whenCanYouWork')}
               </p>
               <div className="grid grid-cols-1 gap-2">
                 <div
@@ -1429,8 +1367,8 @@ export default function ProfileOnboardingPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">📅 Días laborables (Lunes–Viernes)</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Trabajo de lunes a viernes</p>
+                    <p className="font-medium text-gray-900">📅 {t('weekdays')}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('workMondayFriday')}</p>
                   </div>
                 </div>
 
@@ -1452,8 +1390,8 @@ export default function ProfileOnboardingPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">🎉 Fines de semana y festivos</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Trabajo sábados, domingos y festivos</p>
+                    <p className="font-medium text-gray-900">🎉 {t('weekendsAndHolidays')}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('workWeekendsHolidays')}</p>
                   </div>
                 </div>
 
@@ -1475,17 +1413,16 @@ export default function ProfileOnboardingPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">✅ Ambos (Toda la semana)</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Disponible cualquier día de la semana</p>
+                    <p className="font-medium text-gray-900">✅ {t('allWeek')}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('availableAnyDay')}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ✅ NUEVO: Horario laboral con Input type="time" */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Hora de inicio *</Label>
+                <Label>{t('startTime')}</Label>
                 <Input
                   type="time"
                   value={formData.horario_apertura}
@@ -1495,7 +1432,7 @@ export default function ProfileOnboardingPage() {
               </div>
 
               <div>
-                <Label>Hora de fin *</Label>
+                <Label>{t('endTime')}</Label>
                 <Input
                   type="time"
                   value={formData.horario_cierre}
@@ -1508,7 +1445,11 @@ export default function ProfileOnboardingPage() {
             {formData.horario_apertura && formData.horario_cierre && (
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <p className="text-sm text-green-900">
-                  ✓ Horario: {formData.disponibilidad_tipo === 'laborables' ? 'Lunes–Viernes' : formData.disponibilidad_tipo === 'festivos' ? 'Fines de semana y festivos' : 'Todos los días'}
+                  ✓ {t('schedulePreview')}: {
+                    formData.disponibilidad_tipo === 'laborables' ? t('weekdays') :
+                    formData.disponibilidad_tipo === 'festivos' ? t('weekendsAndHolidays') :
+                    t('allWeek')
+                  }
                   {' • '}{formData.horario_apertura} – {formData.horario_cierre}
                 </p>
               </div>
@@ -1520,23 +1461,23 @@ export default function ProfileOnboardingPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label>Tarifa base (€/hora o por servicio) - OPCIONAL</Label>
+              <Label>{t('baseRateOptional')}</Label>
               <Input
                 type="number"
                 value={formData.tarifa_base}
                 onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
-                placeholder="Ej: 35 (déjalo vacío si prefieres no mostrar tarifa)"
+                placeholder={t('baseRatePlaceholder')}
                 min="0"
                 step="0.01"
                 className="h-12"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Si lo dejas vacío, no se mostrará información de tarifa en tu perfil
+                {t('emptyNoRate')}
               </p>
             </div>
 
             <div>
-              <Label>Tipo de facturación *</Label>
+              <Label>{t('invoiceType')} *</Label>
               <Select
                 value={formData.facturacion}
                 onValueChange={(value) => setFormData({ ...formData, facturacion: value })}
@@ -1545,56 +1486,60 @@ export default function ProfileOnboardingPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="autonomo">Autónomo</SelectItem>
-                  <SelectItem value="sociedad">Sociedad</SelectItem>
-                  <SelectItem value="otros">Otros</SelectItem>
+                  <SelectItem value="autonomo">{t('freelancer')}</SelectItem>
+                  <SelectItem value="sociedad">{t('company')}</SelectItem>
+                  <SelectItem value="otros">{t('other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label className="text-base font-semibold">Formas de pago aceptadas *</Label>
+              <Label className="text-base font-semibold">{t('acceptedPaymentMethods')}</Label>
               <p className="text-sm text-gray-500 mt-1 mb-3">
-                Selecciona al menos una forma de pago
+                {t('selectAtLeastOnePayment')}
               </p>
               <div className="space-y-2">
-                {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
+                {[
+                  { key: "Tarjeta", label: t('card') },
+                  { key: "Transferencia", label: t('transfer') },
+                  { key: "Efectivo", label: t('cash') },
+                  { key: "Bizum", label: t('bizum') }
+                ].map(({ key, label }) => (
                   <div
-                    key={forma}
-                    onClick={() => toggleFormaPago(forma)}
+                    key={key}
+                    onClick={() => toggleFormaPago(key)}
                     className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                      formData.formas_pago.includes(forma)
+                      formData.formas_pago.includes(key)
                         ? "border-purple-600 bg-purple-50 shadow-md"
                         : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
                     }`}
                   >
                     <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                      formData.formas_pago.includes(forma)
+                      formData.formas_pago.includes(key)
                         ? "bg-purple-600 border-purple-600"
                         : "border-gray-300"
                     }`}>
-                      {formData.formas_pago.includes(forma) && (
+                      {formData.formas_pago.includes(key) && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
                     <span className={`text-base font-medium flex-1 transition-colors ${
-                      formData.formas_pago.includes(forma) ? "text-purple-900" : "text-gray-700"
+                      formData.formas_pago.includes(key) ? "text-purple-900" : "text-gray-700"
                     }`}>
-                      {forma}
+                      {label}
                     </span>
-                    {formData.formas_pago.includes(forma) && (
-                      <span className="text-purple-600 text-sm font-semibold">✓ Seleccionado</span>
+                    {formData.formas_pago.includes(key) && (
+                      <span className="text-purple-600 text-sm font-semibold">✓ {t('selectedPayment')}</span>
                     )}
                   </div>
                 ))}
               </div>
               <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-sm font-medium text-blue-900">
-                  {formData.formas_pago.length === 0 && "⚠️ Selecciona al menos una forma de pago"}
-                  {formData.formas_pago.length === 1 && `✓ 1 forma de pago seleccionada`}
-                  {formData.formas_pago.length > 1 && `✓ ${formData.formas_pago.length} formas de pago seleccionadas`}
+                  {formData.formas_pago.length === 0 && "⚠️ " + t('selectAtLeastOnePayment')}
+                  {formData.formas_pago.length > 0 && `✓ ${formData.formas_pago.length} ${t('paymentMethodsSelected')}`}
                 </p>
               </div>
             </div>
@@ -1605,7 +1550,7 @@ export default function ProfileOnboardingPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label>Fotos de trabajos realizados * (mínimo 1)</Label>
+              <Label>{t('workPhotos')} * {t('minimum1Photo')}</Label>
               <div className="mt-2">
                 <label className="cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
@@ -1621,7 +1566,7 @@ export default function ProfileOnboardingPage() {
                     ) : (
                       <>
                         <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600">Haz clic para añadir una foto</p>
+                        <p className="text-sm text-gray-600">{t('clickToAddPhoto')}</p>
                       </>
                     )}
                   </div>
@@ -1633,7 +1578,7 @@ export default function ProfileOnboardingPage() {
                   <div key={idx} className="relative group">
                     <img
                       src={photo}
-                      alt={`Foto ${idx + 1}`}
+                      alt={`${t('photo')} ${idx + 1}`}
                       className="w-full h-32 object-cover rounded-lg shadow-md"
                     />
                     <button
@@ -1644,14 +1589,14 @@ export default function ProfileOnboardingPage() {
                     </button>
                     {idx === 0 && (
                       <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                        Principal
+                        {t('mainPhoto')}
                       </div>
                     )}
                   </div>
                 ))}
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                {formData.photos.length} foto(s) subida(s)
+                {formData.photos.length} {t('photosUploaded')}
               </p>
             </div>
           </div>
@@ -1662,11 +1607,10 @@ export default function ProfileOnboardingPage() {
           <div className="space-y-6">
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
               <p className="text-sm text-blue-900 font-medium">
-                📋 Lee y acepta los consentimientos necesarios para publicar tu perfil
+                📋 {t('readAndAcceptConsents')}
               </p>
             </div>
 
-            {/* ✅ BOTÓN "ACEPTAR TODO" */}
             <div className="mb-6">
               <Button
                 type="button"
@@ -1678,38 +1622,37 @@ export default function ProfileOnboardingPage() {
                     consiente_contacto_clientes: true
                   });
                   setError(null);
-                  toast.success('✅ Todos los consentimientos aceptados');
+                  toast.success('✅ ' + t('allConsentsAccepted'));
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
               >
-                ✅ Aceptar todos los consentimientos
+                ✅ {t('acceptAllConsents')}
               </Button>
             </div>
 
-            {/* ✅ NUEVO: Checkboxes modernos con enlaces */}
             <div className="space-y-4">
               <ModernCheckbox
                 id="acepta_terminos"
                 checked={formData.acepta_terminos}
                 onChange={(checked) => {
                   setFormData({ ...formData, acepta_terminos: checked });
-                  if (checked && error?.includes('términos')) setError(null);
+                  if (checked && error?.includes(t('terms'))) setError(null);
                 }}
                 required
-                error={error?.toLowerCase().includes('términos')}
-                label="Términos y Condiciones"
+                error={error?.toLowerCase().includes(t('terms'))}
+                label={t('termsAndConditionsLabel')}
                 sublabel={
                   <span>
-                    He leído y acepto los{" "}
+                    {t('acceptTermsAndConditions')}{" "}
                     <Link
                       to={createPageUrl("TermsConditions")}
                       target="_blank"
                       className="text-blue-600 hover:text-blue-800 underline font-semibold"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Términos y Condiciones
+                      {t('termsAndConditions')}
                     </Link>
-                    {" "}de uso de la plataforma Misautónomos.
+                    {" "}{t('ofPlatformUse')}
                   </span>
                 }
               />
@@ -1719,23 +1662,23 @@ export default function ProfileOnboardingPage() {
                 checked={formData.acepta_politica_privacidad}
                 onChange={(checked) => {
                   setFormData({ ...formData, acepta_politica_privacidad: checked });
-                  if (checked && error?.toLowerCase().includes('privacidad')) setError(null);
+                  if (checked && error?.toLowerCase().includes(t('privacy'))) setError(null);
                 }}
                 required
-                error={error?.toLowerCase().includes('privacidad')}
-                label="Política de Privacidad"
+                error={error?.toLowerCase().includes(t('privacy'))}
+                label={t('privacyPolicyLabel')}
                 sublabel={
                   <span>
-                    Acepto la{" "}
+                    {t('acceptPrivacyPolicy')}{" "}
                     <Link
                       to={createPageUrl("PrivacyPolicy")}
                       target="_blank"
                       className="text-blue-600 hover:text-blue-800 underline font-semibold"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Política de Privacidad
+                      {t('privacyPolicy')}
                     </Link>
-                    {" "}y el tratamiento de mis datos personales según el RGPD.
+                    {" "}{t('andDataTreatment')}
                   </span>
                 }
               />
@@ -1745,12 +1688,12 @@ export default function ProfileOnboardingPage() {
                 checked={formData.consiente_contacto_clientes}
                 onChange={(checked) => {
                   setFormData({ ...formData, consiente_contacto_clientes: checked });
-                  if (checked && error?.toLowerCase().includes('contacto')) setError(null);
+                  if (checked && error?.toLowerCase().includes(t('contact'))) setError(null);
                 }}
                 required
-                error={error?.toLowerCase().includes('contacto')}
-                label="Consentimiento de Contacto"
-                sublabel="Consiento en que los clientes puedan contactarme a través de la plataforma para solicitar presupuestos y servicios."
+                error={error?.toLowerCase().includes(t('contact'))}
+                label={t('contactConsentLabel')}
+                sublabel={t('consentClientContact')}
               />
             </div>
           </div>
@@ -1761,15 +1704,13 @@ export default function ProfileOnboardingPage() {
           <div className="space-y-6">
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
               <p className="text-sm text-blue-900">
-                📋 Revisa toda tu información antes de publicar tu perfil profesional.
-                Podrás editarla después desde tu panel de usuario.
+                📋 {t('reviewAllInfo')}
               </p>
             </div>
 
-            {/* Identity Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Identidad</h3>
+                <h3 className="font-bold text-lg">{t('identity')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1777,29 +1718,28 @@ export default function ProfileOnboardingPage() {
                   className="text-blue-600 hover:text-blue-700"
                 >
                   <Edit className="w-4 h-4 mr-1" />
-                  Editar
+                  {t('edit')}
                 </Button>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Nombre:</strong> {formData.business_name}</p>
-                <p><strong>NIF:</strong> {formData.cif_nif}</p>
-                <p><strong>Email:</strong> {formData.email_contacto || user?.email}</p>
-                <p><strong>Teléfono:</strong> {formData.telefono_contacto || "No especificado"}</p>
-                <p><strong>Métodos de contacto:</strong> {formData.metodos_contacto?.length > 0 ? formData.metodos_contacto.map(m => {
+                <p><strong>{t('name')}:</strong> {formData.business_name}</p>
+                <p><strong>{t('nif')}:</strong> {formData.cif_nif}</p>
+                <p><strong>{t('email')}:</strong> {formData.email_contacto || user?.email}</p>
+                <p><strong>{t('phone')}:</strong> {formData.telefono_contacto || t('notSpecified')}</p>
+                <p><strong>{t('contactMethods')}:</strong> {formData.metodos_contacto?.length > 0 ? formData.metodos_contacto.map(m => {
                   switch(m) {
-                    case 'chat_interno': return 'Chat Interno';
-                    case 'whatsapp': return 'WhatsApp';
-                    case 'telefono': return 'Llamada Telefónica';
+                    case 'chat_interno': return t('internalChatMethod');
+                    case 'whatsapp': return t('whatsappMethod');
+                    case 'telefono': return t('phoneCallMethod');
                     default: return m;
                   }
-                }).join(", ") : "Ninguno"}</p>
+                }).join(", ") : t('none')}</p>
               </div>
             </div>
 
-            {/* Activity Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Actividad</h3>
+                <h3 className="font-bold text-lg">{t('activity')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1807,22 +1747,21 @@ export default function ProfileOnboardingPage() {
                   className="text-blue-600 hover:text-blue-700"
                 >
                   <Edit className="w-4 h-4 mr-1" />
-                  Editar
+                  {t('edit')}
                 </Button>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Categorías:</strong> {formData.categories.join(", ") || "Sin especificar"}</p>
+                <p><strong>{t('categoryPlural')}:</strong> {formData.categories.map(c => t(c)).join(", ") || t('notSpecified')}</p>
                 {formData.categories.includes("Otro tipo de servicio profesional") && (
-                  <p><strong>Servicio específico:</strong> {formData.activity_other || "No especificado"}</p>
+                  <p><strong>{t('specificService')}:</strong> {formData.activity_other || t('notSpecified')}</p>
                 )}
-                <p><strong>Descripción:</strong> {formData.descripcion_corta || "Sin descripción"}</p>
+                <p><strong>{t('description')}:</strong> {formData.descripcion_corta || t('noDescription')}</p>
               </div>
             </div>
 
-            {/* Location Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Ubicación y Disponibilidad</h3>
+                <h3 className="font-bold text-lg">{t('locationAndAvailability')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1830,27 +1769,26 @@ export default function ProfileOnboardingPage() {
                   className="text-blue-600 hover:text-blue-700"
                 >
                   <Edit className="w-4 h-4 mr-1" />
-                  Editar
+                  {t('edit')}
                 </Button>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Provincia:</strong> {formData.provincia}</p>
-                <p><strong>Ciudad:</strong> {formData.ciudad}</p>
-                <p><strong>Municipio:</strong> {formData.municipio || "No especificado"}</p>
-                <p><strong>Radio de servicio:</strong> {formData.radio_servicio_km} km</p>
-                <p><strong>Disponibilidad:</strong> {
-                  formData.disponibilidad_tipo === 'laborables' ? 'Días laborables (L-V)' :
-                  formData.disponibilidad_tipo === 'festivos' ? 'Fines de semana y festivos' :
-                  'Toda la semana'
+                <p><strong>{t('province')}:</strong> {formData.provincia}</p>
+                <p><strong>{t('city')}:</strong> {formData.ciudad}</p>
+                <p><strong>{t('neighborhood')}:</strong> {formData.municipio || t('notSpecified')}</p>
+                <p><strong>{t('serviceRadius')}:</strong> {formData.radio_servicio_km} km</p>
+                <p><strong>{t('availabilityColon')}</strong> {
+                  formData.disponibilidad_tipo === 'laborables' ? t('weekdays') :
+                  formData.disponibilidad_tipo === 'festivos' ? t('weekendsAndHolidays') :
+                  t('allWeek')
                 }</p>
-                <p><strong>Horario:</strong> {formData.horario_apertura} - {formData.horario_cierre}</p>
+                <p><strong>{t('scheduleColon')}</strong> {formData.horario_apertura} - {formData.horario_cierre}</p>
               </div>
             </div>
 
-            {/* Schedule and Rates Section */}
             <div className="border-b pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Tarifas y Forma de Trabajo</h3>
+                <h3 className="font-bold text-lg">{t('ratesAndWorkMethod')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1858,20 +1796,27 @@ export default function ProfileOnboardingPage() {
                   className="text-blue-600 hover:text-blue-700"
                 >
                   <Edit className="w-4 h-4 mr-1" />
-                  Editar
+                  {t('edit')}
                 </Button>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <p><strong>Tarifa base:</strong> {formData.tarifa_base ? `${formData.tarifa_base}€` : "No especificada"}</p>
-                <p><strong>Tipo de facturación:</strong> {formData.facturacion}</p>
-                <p><strong>Formas de pago:</strong> {formData.formas_pago.join(", ") || "No especificado"}</p>
+                <p><strong>{t('baseRate')}:</strong> {formData.tarifa_base ? `${formData.tarifa_base}€` : t('notSpecified')}</p>
+                <p><strong>{t('invoicingType')}:</strong> {formData.facturacion === 'autonomo' ? t('freelancer') : formData.facturacion === 'sociedad' ? t('company') : t('other')}</p>
+                <p><strong>{t('paymentMethods')}:</strong> {formData.formas_pago.map(f => {
+                  switch(f) {
+                    case 'Tarjeta': return t('card');
+                    case 'Transferencia': return t('transfer');
+                    case 'Efectivo': return t('cash');
+                    case 'Bizum': return t('bizum');
+                    default: return f;
+                  }
+                }).join(", ") || t('notSpecified')}</p>
               </div>
             </div>
 
-            {/* Photos Section */}
             <div className="pb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Fotos</h3>
+                <h3 className="font-bold text-lg">{t('photos')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1879,7 +1824,7 @@ export default function ProfileOnboardingPage() {
                   className="text-blue-600 hover:text-blue-700"
                 >
                   <Edit className="w-4 h-4 mr-1" />
-                  Editar
+                  {t('edit')}
                 </Button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1888,23 +1833,22 @@ export default function ProfileOnboardingPage() {
                     <img
                       key={idx}
                       src={photo}
-                      alt={`Foto ${idx + 1}`}
+                      alt={`${t('photo')} ${idx + 1}`}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500 col-span-full">Sin fotos añadidas</p>
+                  <p className="text-sm text-gray-500 col-span-full">{t('noPhotosAdded')}</p>
                 )}
               </div>
             </div>
 
-            {/* Legal Confirmations */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-bold text-sm mb-3">Confirmaciones legales</h3>
+              <h3 className="font-bold text-sm mb-3">{t('legalConfirmations')}</h3>
               <div className="space-y-2 text-xs text-gray-700">
-                <p>{formData.acepta_terminos ? '✓' : '✗'} Acepto los términos y condiciones</p>
-                <p>{formData.acepta_politica_privacidad ? '✓' : '✗'} Acepto la política de privacidad</p>
-                <p>{formData.consiente_contacto_clientes ? '✓' : '✗'} Consiento ser contactado por clientes</p>
+                <p>{formData.acepta_terminos ? '✓' : '✗'} {t('acceptTerms')}</p>
+                <p>{formData.acepta_politica_privacidad ? '✓' : '✗'} {t('acceptPrivacy')}</p>
+                <p>{formData.consiente_contacto_clientes ? '✓' : '✗'} {t('consentContact')}</p>
               </div>
             </div>
           </div>
@@ -1921,9 +1865,9 @@ export default function ProfileOnboardingPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
-            <h1 className="text-2xl font-bold text-gray-900">Completa tu perfil profesional</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('completeYourProfile')}</h1>
             <span className="text-sm text-gray-600">
-              Paso {currentStep + 1} de {steps.length}
+              {t('step')} {currentStep + 1} {t('of')} {steps.length}
             </span>
           </div>
           <Progress value={progress} className="h-3" />
@@ -1946,7 +1890,6 @@ export default function ProfileOnboardingPage() {
 
             {renderStep()}
 
-            {/* Navigation */}
             <div className="flex gap-4 mt-8">
               {currentStep > 0 && (
                 <Button
@@ -1956,7 +1899,7 @@ export default function ProfileOnboardingPage() {
                   disabled={isSubmitting}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Atrás
+                  {t('back')}
                 </Button>
               )}
 
@@ -1974,11 +1917,11 @@ export default function ProfileOnboardingPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Guardando...
+                      {t('saving')}
                     </>
                   ) : (
                     <>
-                      Siguiente
+                      {t('next')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
@@ -1992,12 +1935,12 @@ export default function ProfileOnboardingPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Publicando...
+                      {t('publishing')}
                     </>
                   ) : (
                     <>
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      Publicar perfil
+                      {t('publishProfile')}
                     </>
                   )}
                 </Button>
