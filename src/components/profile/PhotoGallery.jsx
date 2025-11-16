@@ -1,24 +1,28 @@
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Camera, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import OptimizedImage from "../ui/OptimizedImage";
+import { useLanguage } from "../ui/LanguageSwitcher";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, X, Eye } from 'lucide-react'; // Added Eye import
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import OptimizedImage from '../ui/OptimizedImage';
-import { useLanguage } from "../ui/LanguageSwitcher"; // Added useLanguage import
-
-export default function PhotoGallery({ photos = [] }) { // Removed default prop assignment from here
-  const { t } = useLanguage(); // Added useLanguage hook
+export default function PhotoGallery({ photos = [] }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const { t } = useLanguage();
 
   if (!photos || photos.length === 0) {
     return (
       <Card className="shadow-lg border-0">
-        <CardContent className="p-12 text-center"> {/* Updated padding */}
-          <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" /> {/* Updated icon size and margin */}
-          <p className="text-gray-600">{t('noPhotosYet')}</p> {/* Changed text to use translation key and updated text color */}
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-5 h-5 text-blue-700" />
+            {t('workGallery')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">{t('noPhotosAdded')}</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -30,49 +34,65 @@ export default function PhotoGallery({ photos = [] }) { // Removed default prop 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-blue-700" />
-            {t('workGallery')} {/* Changed text to use translation key */}
+            {t('workGallery')} ({photos.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4" role="list" aria-label="Galería de trabajos">
             {photos.map((photo, idx) => (
               <div
                 key={idx}
+                className="relative group cursor-pointer overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
                 onClick={() => setSelectedPhoto(photo)}
-                className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group" // Reordered classes for clarity
+                role="listitem"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedPhoto(photo);
+                  }
+                }}
+                aria-label={`Ver foto ${idx + 1} ampliada`}
               >
                 <OptimizedImage
                   src={photo}
-                  alt={`${t('workGallery')} ${idx + 1}`} // Updated alt text to use translation key
-                  className="w-full h-full hover:scale-110 transition-transform duration-300" // Updated hover effect class
+                  alt={`Trabajo realizado - Foto ${idx + 1}`}
+                  className="w-full h-40 transition-transform group-hover:scale-110 duration-300"
                   objectFit="cover"
+                  width={300}
+                  height={160}
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"> {/* Updated overlay styles */}
-                  <Eye className="w-8 h-8 text-white" /> {/* Changed icon to Eye and updated size */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <p className="text-white font-semibold text-sm">
+                    {t('clickToAddPhoto')}
+                  </p>
                 </div>
-                {/* Removed the 'Principal' badge */}
+                {idx === 0 && (
+                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
+                    {t('mainPhoto')}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Modal para ver foto en grande */}
       <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <DialogContent className="max-w-4xl p-0">
           <div className="relative">
             <button
               onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-              aria-label={t('close')} // Added translation for accessibility label
+              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full z-10 transition-colors"
+              aria-label={t('close')}
             >
               <X className="w-5 h-5" />
             </button>
             {selectedPhoto && (
               <OptimizedImage
                 src={selectedPhoto}
-                alt={t('expandedView')} // Added translation for alt text
-                className="w-full max-h-[80vh]"
+                alt="Trabajo realizado - Vista ampliada"
+                className="w-full max-h-[80vh] rounded-lg"
                 objectFit="contain"
                 priority={true}
               />

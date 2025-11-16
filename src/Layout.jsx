@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -673,14 +674,16 @@ function LayoutContent({ children, currentPageName }) {
             {user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                  <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
                     <img
                       src={LOGO_URL}
-                      alt="MisAutónomos"
+                      alt="Logo MisAutónomos"
                       className="w-12 h-12 rounded-lg"
                       loading="eager"
                       fetchpriority="high"
                       decoding="sync"
+                      width={48}
+                      height={48}
                     />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
@@ -701,11 +704,11 @@ function LayoutContent({ children, currentPageName }) {
                                 location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
                               }`}
                             >
-                              <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                                <item.icon className="w-5 h-5" />
+                              <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
+                                <item.icon className="w-5 h-5" aria-hidden="true" />
                                 <span className="font-medium">{item.title}</span>
                                 {item.badge && (
-                                  <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                                  <span className="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
                                     {item.badge}
                                   </span>
                                 )}
@@ -725,9 +728,11 @@ function LayoutContent({ children, currentPageName }) {
                         {getProfilePicture() ? (
                           <OptimizedImage 
                             src={getProfilePicture()} 
-                            alt="Perfil" 
+                            alt={`Foto de perfil de ${getDisplayName()}`}
                             className="w-full h-full object-cover"
                             priority={true}
+                            width={40}
+                            height={40}
                           />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -740,7 +745,7 @@ function LayoutContent({ children, currentPageName }) {
                           {getDisplayName()}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                          {user.user_type === "professionnel" ? t('professional') : t('client')}
                         </p>
                       </div>
                     </div>
@@ -753,8 +758,9 @@ function LayoutContent({ children, currentPageName }) {
                       variant="outline"
                       className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
                       onClick={handleLogout}
+                      aria-label={t('logout')}
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
                       {t('logout')}
                     </Button>
                   </div>
@@ -770,7 +776,7 @@ function LayoutContent({ children, currentPageName }) {
                   role="presentation"
                   aria-hidden="true"
                 />
-                <div className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
+                <nav className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
                   <div className="flex items-center justify-between p-4 border-b">
                     <h2 className="font-bold text-lg">Menú</h2>
                     <Button
@@ -779,7 +785,7 @@ function LayoutContent({ children, currentPageName }) {
                       onClick={() => setMobileMenuOpen(false)}
                       aria-label="Cerrar menú"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-5 h-5" aria-hidden="true" />
                     </Button>
                   </div>
                   
@@ -790,9 +796,11 @@ function LayoutContent({ children, currentPageName }) {
                           {getProfilePicture() ? (
                             <OptimizedImage 
                               src={getProfilePicture()} 
-                              alt="Perfil" 
+                              alt={`Foto de perfil de ${getDisplayName()}`}
                               className="w-full h-full object-cover"
                               priority={true}
+                              width={40}
+                              height={40}
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -805,7 +813,7 @@ function LayoutContent({ children, currentPageName }) {
                             {getDisplayName()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
+                            {user.user_type === "professionnel" ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
@@ -820,11 +828,12 @@ function LayoutContent({ children, currentPageName }) {
                             ? 'bg-blue-600 text-white'
                             : 'hover:bg-gray-100'
                         }`}
+                        aria-label={item.title}
                       >
-                        <item.icon className="w-5 h-5" />
+                        <item.icon className="w-5 h-5" aria-hidden="true" />
                         <span className="font-medium flex-1">{item.title}</span>
                         {item.badge && (
-                          <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                          <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
                             {item.badge}
                           </span>
                         )}
@@ -840,13 +849,14 @@ function LayoutContent({ children, currentPageName }) {
                         <Button
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={handleLogin}
+                          aria-label={t('login')}
                         >
-                          <User className="w-4 h-4 mr-2" />
+                          <User className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('login')}
                         </Button>
                         <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                            <CreditCard className="w-4 h-4 mr-2" />
+                            <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeFreelancer')}
                           </Button>
                         </Link>
@@ -856,13 +866,14 @@ function LayoutContent({ children, currentPageName }) {
                         variant="outline"
                         className="w-full mt-4"
                         onClick={handleLogout}
+                        aria-label={t('logout')}
                       >
-                        <LogOut className="w-4 h-4 mr-2" />
+                        <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
                         {t('logout')}
                       </Button>
                     )}
                   </div>
-                </div>
+                </nav>
               </>
             )}
 
@@ -870,14 +881,16 @@ function LayoutContent({ children, currentPageName }) {
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <Link to={createPageUrl("Search")} className="flex items-center gap-3">
+                    <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
                       <img
                         src={LOGO_URL}
-                        alt="MisAutónomos"
+                        alt="Logo MisAutónomos"
                         className="w-12 h-12 rounded-lg"
                         loading="eager"
                         fetchpriority="high"
                         decoding="sync"
+                        width={48}
+                        height={48}
                       />
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
@@ -890,13 +903,14 @@ function LayoutContent({ children, currentPageName }) {
                         variant="ghost"
                         className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                         onClick={handleLogin}
+                        aria-label={t('login')}
                       >
-                        <User className="w-4 h-4 mr-2" />
+                        <User className="w-4 h-4 mr-2" aria-hidden="true" />
                         {t('login')}
                       </Button>
                       <Link to={createPageUrl("PricingPlans")}>
                         <Button className="bg-orange-500 hover:bg-orange-600 text-white shadow-md">
-                          <Briefcase className="w-4 h-4 mr-2" />
+                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('becomeFreelancer')}
                         </Button>
                       </Link>
@@ -915,15 +929,17 @@ function LayoutContent({ children, currentPageName }) {
                     className="hover:bg-gray-100"
                     aria-label="Abrir menú"
                   >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="w-6 h-6" aria-hidden="true" />
                   </Button>
                   <div className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
-                      alt="MisAutónomos"
+                      alt="Logo MisAutónomos"
                       className="w-8 h-8 rounded"
                       loading="eager"
                       fetchpriority="high"
+                      width={32}
+                      height={32}
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>
@@ -950,11 +966,12 @@ function LayoutContent({ children, currentPageName }) {
                         location.pathname === item.url ? 'active' : ''
                       }`}
                       aria-label={item.title}
+                      aria-current={location.pathname === item.url ? 'page' : undefined}
                     >
-                      <item.icon className="w-6 h-6" />
+                      <item.icon className="w-6 h-6" aria-hidden="true" />
                       <span>{item.title.split(' ')[0]}</span>
                       {item.badge && (
-                        <span className="mobile-bottom-nav-badge">{item.badge}</span>
+                        <span className="mobile-bottom-nav-badge" aria-label={`${item.badge} ${t('unread')}`}>{item.badge}</span>
                       )}
                     </Link>
                   ))}
