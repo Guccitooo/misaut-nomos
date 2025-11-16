@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -467,6 +468,24 @@ const translations = {
     previous: 'Anterior',
     confirm: 'Confirmar',
     close: 'Cerrar',
+    
+    // Cookie Banner
+    cookieBannerTitle: 'Uso de Cookies',
+    cookieBannerDescription: 'Utilizamos cookies propias y de terceros para mejorar tu experiencia, analizar el tráfico y personalizar el contenido. Al hacer clic en "Aceptar todas", aceptas el uso de todas las cookies. Puedes configurar tus preferencias o aceptar solo las cookies necesarias para el funcionamiento de la web.',
+    acceptAllCookies: 'Aceptar todas',
+    acceptNecessaryCookies: 'Solo necesarias',
+    rejectAllCookies: 'Rechazar todas',
+    configureCookies: 'Configurar',
+    cookieSettingsTitle: 'Configuración de Cookies',
+    cookieSettingsDescription: 'Personaliza qué cookies deseas permitir. Las cookies necesarias no se pueden desactivar.',
+    necessaryCookies: 'Cookies Necesarias',
+    necessaryCookiesDescription: 'Esenciales para el funcionamiento de la web (autenticación, seguridad, navegación).',
+    necessaryCookiesRequired: 'Estas cookies son obligatorias y no se pueden desactivar',
+    analyticsCookies: 'Cookies Analíticas',
+    analyticsCookiesDescription: 'Nos ayudan a entender cómo los visitantes interactúan con nuestra web mediante la recopilación de información anónima.',
+    marketingCookies: 'Cookies de Marketing',
+    marketingCookiesDescription: 'Se utilizan para mostrar anuncios relevantes y medir la efectividad de nuestras campañas publicitarias.',
+    savePreferences: 'Guardar preferencias',
   },
   en: {
     // Navigation
@@ -705,6 +724,7 @@ const translations = {
     ratesAndWorkMethod: 'Rates and Work Method',
     baseRate: 'Base rate',
     invoicingType: 'Invoice type',
+    paymentMethods: 'Formas de pago',
     photos: 'Photos',
     legalConfirmations: 'Legal confirmations',
     acceptTerms: 'I accept the terms and conditions',
@@ -924,6 +944,24 @@ const translations = {
     previous: 'Previous',
     confirm: 'Confirm',
     close: 'Close',
+    
+    // Cookie Banner
+    cookieBannerTitle: 'Cookie Usage',
+    cookieBannerDescription: 'We use our own and third-party cookies to improve your experience, analyze traffic and personalize content. By clicking "Accept all", you accept the use of all cookies. You can configure your preferences or accept only the necessary cookies for the website to function.',
+    acceptAllCookies: 'Accept all',
+    acceptNecessaryCookies: 'Only necessary',
+    rejectAllCookies: 'Reject all',
+    configureCookies: 'Configure',
+    cookieSettingsTitle: 'Cookie Settings',
+    cookieSettingsDescription: 'Customize which cookies you want to allow. Necessary cookies cannot be disabled.',
+    necessaryCookies: 'Necessary Cookies',
+    necessaryCookiesDescription: 'Essential for the website to function (authentication, security, navigation).',
+    necessaryCookiesRequired: 'These cookies are mandatory and cannot be disabled',
+    analyticsCookies: 'Analytics Cookies',
+    analyticsCookiesDescription: 'Help us understand how visitors interact with our website by collecting anonymous information.',
+    marketingCookies: 'Marketing Cookies',
+    marketingCookiesDescription: 'Used to display relevant ads and measure the effectiveness of our advertising campaigns.',
+    savePreferences: 'Save preferences',
   }
 };
 
