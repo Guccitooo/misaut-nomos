@@ -138,7 +138,7 @@ const CategoryBadge = React.memo(({ category }) => {
   );
 });
 
-const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, navigate, isFavorite, favoriteCount, profileUser }) => {
+const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, isFavorite, favoriteCount, profileUser, onProfileClick }) => {
   const { t } = useLanguage();
   
   const formatPhoneForCall = (phone) => {
@@ -185,7 +185,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
-                  onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}>
+                  onClick={() => onProfileClick(profile.user_id)}>
                 {profile.business_name}
               </h3>
               {profile.average_rating > 0 ? (
@@ -229,7 +229,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div 
           className="flex flex-wrap gap-1 mb-2 cursor-pointer"
-          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+          onClick={() => onProfileClick(profile.user_id)}
         >
           {profile.categories?.slice(0, 2).map((cat, idx) => (
             <CategoryBadge key={idx} category={cat} />
@@ -243,7 +243,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div 
           className="mb-2 cursor-pointer"
-          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+          onClick={() => onProfileClick(profile.user_id)}
         >
           {profile.service_area ? (
             <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -257,7 +257,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
         <div 
           className="mb-3 cursor-pointer"
-          onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`)}
+          onClick={() => onProfileClick(profile.user_id)}
         >
           <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
@@ -522,6 +522,43 @@ export default function SearchPage() {
     });
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
+  // Track search appearances when filters change
+  useEffect(() => {
+    if (filteredProfiles.length > 0) {
+      trackSearchAppearances(filteredProfiles.map(p => p.user_id));
+    }
+  }, [filteredProfiles]);
+
+  const trackSearchAppearances = async (professionalIds) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (const profId of professionalIds) {
+        const existingMetrics = await base44.entities.ProfileMetrics.filter({
+          professional_id: profId,
+          date: today
+        });
+
+        if (existingMetrics.length > 0) {
+          await base44.entities.ProfileMetrics.update(existingMetrics[0].id, {
+            search_appearances: (existingMetrics[0].search_appearances || 0) + 1
+          });
+        } else {
+          await base44.entities.ProfileMetrics.create({
+            professional_id: profId,
+            date: today,
+            profile_views: 0,
+            search_appearances: 1,
+            messages_received: 0,
+            contact_clicks: 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error tracking search appearances:', error);
+    }
+  };
+
   const handleToggleFavorite = async (professionalId) => {
     if (!user) {
       base44.auth.redirectToLogin();
@@ -591,6 +628,10 @@ export default function SearchPage() {
     }
 
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
+  };
+
+  const handleProfileClick = (professionalId) => {
+    navigate(createPageUrl("ProfessionalProfile") + `?id=${professionalId}`);
   };
 
   const getCategoryIcon = (categoryName) => {
@@ -838,7 +879,7 @@ export default function SearchPage() {
                   profileUser={profileUsers[profile.user_id]}
                   onToggleFavorite={handleToggleFavorite}
                   onStartChat={handleStartChat}
-                  navigate={navigate}
+                  onProfileClick={handleProfileClick}
                   isFavorite={userFavorites.has(profile.user_id)}
                   favoriteCount={favoriteCounts[profile.user_id] || 0}
                 />

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
+import PremiumDashboard from "../components/premium/PremiumDashboard";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -318,6 +319,23 @@ export default function MyProfilePage() {
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+  });
+
+  // Cargar métricas del profesional
+  const { data: metrics = [] } = useQuery({
+    queryKey: ['profileMetrics', user?.id],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const allMetrics = await base44.entities.ProfileMetrics.filter({
+        professional_id: user.id
+      });
+      
+      return allMetrics.filter(m => new Date(m.date) >= thirtyDaysAgo);
+    },
+    enabled: !!user && !!profile,
+    staleTime: 1000 * 60 * 5,
   });
 
   const getSubscriptionStatus = () => {
@@ -723,6 +741,17 @@ export default function MyProfilePage() {
           </Card>
         )}
 
+        {/* Panel Premium para profesionales */}
+        {isProfessional && profile && !isEditing && (
+          <div className="mb-6">
+            <PremiumDashboard 
+              metrics={metrics}
+              subscription={subscription}
+              profile={profile}
+            />
+          </div>
+        )}
+
         {isProfessional && profile && !isEditing && (
           <ProfileCompleteness 
             profile={profile} 
@@ -731,7 +760,7 @@ export default function MyProfilePage() {
           />
         )}
 
-        <Tabs defaultValue="personal" className="space-y-6">
+        <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
             <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
@@ -761,7 +790,6 @@ export default function MyProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* ✅ FOTO DE PERFIL - Disponible para TODOS (clientes y autónomos) */}
                 <div className="flex justify-center py-4">
                   <ProfilePictureUpload
                     user={user}
@@ -841,7 +869,6 @@ export default function MyProfilePage() {
           {isProfessional && (
             <TabsContent value="business">
               <div className="space-y-6">
-                {/* Identidad */}
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -945,7 +972,6 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Servicios */}
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
                     <CardTitle>Servicios y Descripción</CardTitle>
@@ -1014,7 +1040,6 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Ubicación y Disponibilidad */}
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1136,7 +1161,6 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Tarifas y Pago */}
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1203,7 +1227,6 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Redes Sociales */}
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
