@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/ui/separator"; // New import
 import {
   CreditCard,
   Calendar,
@@ -29,17 +29,14 @@ import {
   Info,
   TrendingUp,
   Zap,
-  AlertCircle,
-  Briefcase
+  AlertCircle, // New import
+  Briefcase // New import
 } from "lucide-react";
 import { toast } from "sonner";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import SEOHead from "../components/seo/SEOHead";
 
 export default function SubscriptionManagementPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -118,7 +115,7 @@ export default function SubscriptionManagementPage() {
       
       // 2. Si hay problemas, intentar corregir
       if (!debugResponse.data.ok || debugResponse.data.issues?.length > 0) {
-        toast.info(t('inconsistenciesDetected'));
+        toast.info('Detectamos inconsistencias. Intentando corregir automáticamente...');
         
         const fixResponse = await base44.functions.invoke('fixUserSubscription', {
           email: user.email,
@@ -128,20 +125,20 @@ export default function SubscriptionManagementPage() {
         console.log('✅ Resultado corrección:', fixResponse.data);
         
         if (fixResponse.data.ok) {
-          toast.success(t('subscriptionCorrected'));
+          toast.success('✅ Suscripción corregida correctamente. Recargando datos...');
           
           // Recargar todo
           await loadUser();
           await queryClient.invalidateQueries({ queryKey: ['subscription'] });
         } else {
-          toast.error(t('couldNotFix'));
+          toast.error('No se pudo corregir automáticamente. Contacta con soporte.');
         }
       } else {
-        toast.info(t('subscriptionOk'));
+        toast.info('Tu suscripción está correctamente configurada. No se necesita acción.');
       }
     } catch (error) {
       console.error('❌ Error:', error);
-      toast.error(t('errorVerifyingSubscription'));
+      toast.error('Error al verificar la suscripción. Inténtalo de nuevo.');
     } finally {
       setIsFixing(false);
     }
@@ -158,7 +155,7 @@ export default function SubscriptionManagementPage() {
       setShowCancelDialog(false);
     },
     onError: (error) => {
-      toast.error(error.message || t('errorCancellingSubscription'));
+      toast.error(error.message || 'Error al cancelar la suscripción');
     }
   });
 
@@ -171,13 +168,13 @@ export default function SubscriptionManagementPage() {
   const getStatusBadge = (estado) => {
     switch (estado) {
       case "activo":
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />{t('active')}</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Activo</Badge>;
       case "cancelado":
-        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />{t('canceled')}</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />Cancelado</Badge>;
       case "finalizada":
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />{t('ended')}</Badge>;
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Finalizado</Badge>;
       case "en_prueba":
-        return <Badge className="bg-blue-100 text-blue-800"><Info className="w-3 h-3 mr-1" />{t('trial')}</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800"><Info className="w-3 h-3 mr-1" />Prueba</Badge>;
       default:
         return <Badge variant="outline">{estado}</Badge>;
     }
@@ -201,319 +198,318 @@ export default function SubscriptionManagementPage() {
   }
 
   return (
-    <>
-      <SEOHead
-        title={`${t('mySubscription')} - MisAutónomos`}
-        description={t('manageSubscription')}
-      />
-      
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('mySubscription')}</h1>
-              <p className="text-gray-600">{t('manageSubscription')}</p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate(createPageUrl("MyProfile"))}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('backToProfile')}
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Suscripción</h1>
+            <p className="text-gray-600">Gestiona tu plan profesional</p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate(createPageUrl("MyProfile"))}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver a Mi Perfil
+          </Button>
+        </div>
 
-          {!subscription ? (
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-yellow-600" />
-                </div>
-                
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                  {t('noActiveSubscription')}
-                </h2>
-                
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  {t('needSubscription')}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    size="lg"
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    {t('viewPlans')}
-                  </Button>
-                  
-                  {user?.role === 'admin' && (
-                    <Button
-                      onClick={handleFixSubscription}
-                      disabled={isFixing}
-                      variant="outline"
-                      size="lg"
-                    >
-                      {isFixing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t('verifying')}...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          {t('verifyPayment')} (Admin)
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <Card className="mb-6 shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-6 h-6 text-blue-700" />
-                    {t('planInformation')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">{t('currentPlan')}</p>
-                      <p className="text-xl font-bold text-gray-900">{plan?.nombre || subscription.plan_nombre}</p>
-                    </div>
-                    {getStatusBadge(subscription.estado)}
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">{t('startDate')}</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(subscription.fecha_inicio).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">{t('renewalExpiration')}</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
-                        {getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                          <span className="text-sm text-blue-600 ml-2">
-                            ({getDaysLeft(subscription.fecha_expiracion)} {t('days')})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {subscription.estado === "activo" && (
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-green-900">
-                        ✅ {t('profileVisible')}
-                      </p>
-                    </div>
-                  )}
-
-                  {subscription.estado === "en_prueba" && (
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-blue-900">
-                        🎁 {t('trialActive')}
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        {t('daysRemaining', { days: getDaysLeft(subscription.fecha_expiracion) })}
-                      </p>
-                    </div>
-                  )}
-
-                  {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-yellow-900">
-                        ⚠️ {t('subscriptionCanceled')}
-                      </p>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        {t('activeUntil', { date: new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES') })}
-                      </p>
-                    </div>
-                  )}
-
-                  {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0 && (
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-red-900">
-                        ❌ {t('subscriptionEnded')}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {subscription.estado === "finalizada" && (
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-red-900">
-                        ❌ {t('subscriptionEnded')}
-                      </p>
-                    </div>
-                  )}
-
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* "Mejorar plan" card */}
-                {subscription.estado === "en_prueba" && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
-                    <CardContent className="p-6 text-center">
-                      <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('improvePlan')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {t('saveUpTo138')}
-                      </p>
-                      <Button
-                        className="w-full bg-purple-600 hover:bg-purple-700"
-                        onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        {t('viewSuperiorPlans')}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* "Reactiva tu plan" card */}
-                {(subscription.estado === "finalizada" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0)) && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
-                    <CardContent className="p-6 text-center">
-                      <RefreshCw className="w-12 h-12 text-blue-700 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('reactivatePlan')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {t('appearInSearches')}
-                      </p>
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      >
-                        {t('viewPlans')}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* "Cancelar suscripción" card */}
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0)) && (
-                  <Card className="shadow-lg border-0">
-                    <CardContent className="p-6">
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('cancelSubscription')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {t('cancelSubscriptionDesc', {
-                          isTrial: subscription.estado === "en_prueba",
-                          expiresDate: new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')
-                        })}
-                      </p>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        onClick={() => setShowCancelDialog(true)}
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        {t('cancelSubscription')}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* "Cambiar plan" card */}
-                <Card className="shadow-lg border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      {t('changePlan')}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {t('explorePlans')}
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    >
-                      {t('viewAllPlans')}
-                    </Button>
-                  </CardContent>
-                </Card>
+        {!subscription ? (
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-yellow-600" />
               </div>
-            </>
-          )}
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Sin suscripción activa
+              </h2>
+              
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Necesitas contratar un plan profesional para que tu perfil aparezca en las búsquedas y puedas recibir contactos de clientes.
+              </p>
 
-          {/* Cancellation Confirmation Dialog */}
-          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                  {t('cancelConfirm')}
-                </DialogTitle>
-                <DialogDescription className="space-y-3 pt-4">
-                  <p>
-                    {t('ifYouCancel')}:
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 text-sm">
-                    {subscription?.estado === "en_prueba" ? (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  size="lg"
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Ver planes disponibles
+                </Button>
+                
+                {user?.role === 'admin' && ( // Only show for admin
+                  <Button
+                    onClick={handleFixSubscription}
+                    disabled={isFixing}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {isFixing ? (
                       <>
-                        <li><strong>{t('noCharge')}</strong></li>
-                        <li>{t('profileHiddenImmediately')}</li>
-                        <li>{t('canReactivate')}</li>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Verificando...
                       </>
                     ) : (
                       <>
-                        <li>{t('profileWillBeHidden')}</li>
-                        <li>{t('noNewContacts')}</li>
-                        <li>{t('accessUntil', { date: new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES') })}</li>
-                        <li>{t('canReactivateAnytime')}</li>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Verificar pago (Admin)
                       </>
                     )}
-                  </ul>
-                  <p className="text-gray-900 font-semibold pt-2">
-                    {t('confirmAction')}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <Card className="mb-6 shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-6 h-6 text-blue-700" />
+                  Información de tu plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Plan actual</p>
+                    <p className="text-xl font-bold text-gray-900">{plan?.nombre || subscription.plan_nombre}</p>
+                  </div>
+                  {getStatusBadge(subscription.estado)}
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha de inicio</p>
+                    <p className="font-semibold text-gray-900">
+                      {new Date(subscription.fecha_inicio).toLocaleDateString('es-ES')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Renovación / Expiración</p>
+                    <p className="font-semibold text-gray-900">
+                      {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
+                      {getDaysLeft(subscription.fecha_expiracion) > 0 && (
+                        <span className="text-sm text-blue-600 ml-2">
+                          ({getDaysLeft(subscription.fecha_expiracion)} días)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {subscription.estado === "activo" && (
+                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-green-900">
+                      ✅ Tu perfil es visible para todos los clientes. Todo en orden.
+                    </p>
+                  </div>
+                )}
+
+                {subscription.estado === "en_prueba" && (
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-900">
+                      🎁 Periodo de prueba activa. Tu perfil es visible para clientes.
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {getDaysLeft(subscription.fecha_expiracion)} días restantes de prueba gratuita.
+                      Si no cancelas antes de la fecha indicada, se realizará el cobro automático.
+                    </p>
+                  </div>
+                )}
+
+                {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-yellow-900">
+                      ⚠️ Suscripción cancelada. Tu plan está activo hasta el {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
+                    </p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Tu perfil seguirá visible durante {getDaysLeft(subscription.fecha_expiracion)} días más.
+                    </p>
+                  </div>
+                )}
+
+                {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0 && (
+                  <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-red-900">
+                      ❌ Suscripción finalizada. Tu perfil ya no es visible.
+                    </p>
+                    <p className="text-xs text-red-700 mt-1">
+                      Considera reactivar tu plan para volver a aparecer en las búsquedas.
+                    </p>
+                  </div>
+                )}
+                
+                {subscription.estado === "finalizada" && (
+                  <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-red-900">
+                      ❌ Suscripción finalizada. Tu perfil ya no es visible.
+                    </p>
+                    <p className="text-xs text-red-700 mt-1">
+                      Considera reactivar tu plan para volver a aparecer en las búsquedas.
+                    </p>
+                  </div>
+                )}
+
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* "Mejorar plan" card */}
+              {subscription.estado === "en_prueba" && (
+                <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <CardContent className="p-6 text-center">
+                    <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      Mejora tu plan
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Ahorra hasta 138€/año cambiando a plan trimestral o anual
+                    </p>
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      Ver planes superiores
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* "Reactiva tu plan" card */}
+              {(subscription.estado === "finalizada" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0)) && (
+                <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <CardContent className="p-6 text-center">
+                    <RefreshCw className="w-12 h-12 text-blue-700 mx-auto mb-3" />
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      Reactiva tu plan
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Vuelve a aparecer en las búsquedas y recibe nuevos clientes
+                    </p>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    >
+                      Ver planes disponibles
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* "Cancelar suscripción" card */}
+              {(subscription.estado === "activo" || subscription.estado === "en_prueba" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0)) && (
+                <Card className="shadow-lg border-0">
+                  <CardContent className="p-6">
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      Cancelar suscripción
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {subscription.estado === "en_prueba" 
+                        ? "Si cancelas durante la prueba, no se te cobrará nada. Tu perfil dejará de aparecer inmediatamente."
+                        : "Tu perfil dejará de aparecer en las búsquedas inmediatamente, pero seguirás teniendo acceso hasta la fecha de expiración."}
+                    </p>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setShowCancelDialog(true)}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Cancelar suscripción
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* "Cambiar plan" card */}
+              <Card className="shadow-lg border-0">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-lg text-gray-900 mb-2">
+                    Cambiar plan
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Explora otros planes que se adapten mejor a tus necesidades
                   </p>
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCancelDialog(false)}
-                  disabled={isCancelling}
-                >
-                  {t('keepActive')}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleCancelSubscription}
-                  disabled={isCancelling}
-                >
-                  {isCancelling ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  >
+                    Ver todos los planes
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {/* Cancellation Confirmation Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                ¿Cancelar suscripción?
+              </DialogTitle>
+              <DialogDescription className="space-y-3 pt-4">
+                <p>
+                  Si cancelas tu suscripción:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-sm">
+                  {subscription?.estado === "en_prueba" ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('canceling')}
+                      <li><strong>NO se te cobrará nada</strong> (tu prueba gratuita se cancela)</li>
+                      <li>Tu perfil <strong>dejará de aparecer inmediatamente</strong></li>
+                      <li>Puedes reactivar en cualquier momento con otro plan</li>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-4 h-4 mr-2" />
-                      {t('yesCancelSubscription')}
+                      <li>Tu perfil <strong>dejará de aparecer en las búsquedas inmediatamente</strong></li>
+                      <li>No recibirás nuevos contactos de clientes</li>
+                      <li>Mantendrás acceso a tu cuenta hasta el <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
+                      <li>Podrás reactivar tu suscripción en cualquier momento</li>
                     </>
                   )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                </ul>
+                <p className="text-gray-900 font-semibold pt-2">
+                  ¿Estás seguro que deseas continuar?
+                </p>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+                disabled={isCancelling}
+              >
+                No, mantener activo
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelSubscription}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Sí, cancelar suscripción
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    </>
+    </div>
   );
 }

@@ -35,8 +35,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import SEOHead from "../components/seo/SEOHead";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -97,7 +95,6 @@ const categories = [
 export default function MyProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -174,7 +171,7 @@ export default function MyProfilePage() {
       startSubscriptionPolling();
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (onboardingCompleted) {
-      toast.success(t('profilePublishedSuccess'), {
+      toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
         duration: 8000
       });
       
@@ -183,10 +180,10 @@ export default function MyProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (reactivationSuccess === "canceled") {
-      toast.info(t('reactivationCancelled'));
+      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate, t]);
+  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
 
   const startSubscriptionPolling = async () => {
     for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
@@ -214,11 +211,11 @@ export default function MyProfilePage() {
           setPollingAttempts(0);
           
           if (reactivationSuccess === "success") {
-            toast.success(t('subscriptionReactivatedSuccess'), {
+            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
               duration: 6000
             });
           } else if (onboardingPending === "pending") {
-            toast.success(t('paymentConfirmedOnboarding'), {
+            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
               duration: 8000
             });
             
@@ -243,14 +240,14 @@ export default function MyProfilePage() {
               await queryClient.refetchQueries({ queryKey: ['subscription'] });
               
               if (syncResponse.data.needs_onboarding) {
-                toast.success(t('subscriptionActivatedOnboarding'), {
+                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
                   duration: 8000
                 });
                 setTimeout(() => {
                   navigate(createPageUrl("ProfileOnboarding"));
                 }, 2000);
               } else {
-                toast.success(t('subscriptionActiveSuccess'), {
+                toast.success("🎉 ¡Tu suscripción está activa!", {
                   duration: 6000
                 });
               }
@@ -279,8 +276,8 @@ export default function MyProfilePage() {
     
     toast.error(
       <div>
-        <p className="font-semibold">{t('subscriptionVerificationFailed')}</p>
-        <p className="text-sm mt-1">{t('contactSupport')}</p>
+        <p className="font-semibold">No se pudo verificar tu suscripción</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
       </div>,
       {
         duration: 15000
@@ -338,10 +335,10 @@ export default function MyProfilePage() {
     
     if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
       return {
-        text: t("trialPeriod"),
+        text: "Periodo de prueba",
         badge: "🟡",
         color: "bg-blue-100 text-blue-800 border border-blue-300",
-        details: isActive ? t("trialDaysLeft", { count: daysLeft }) : t("trialEnded"),
+        details: isActive ? `${daysLeft} días de prueba restantes` : "Prueba finalizada",
         isActive: isActive,
         showUpgrade: true,
         showReactivate: false
@@ -350,10 +347,10 @@ export default function MyProfilePage() {
     
     if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
       return {
-        text: t("subscriptionActive"),
+        text: "Suscripción activa",
         badge: "🟢",
         color: "bg-green-100 text-green-800 border border-green-300",
-        details: `${t('renewal')}: ${expirationDate.toLocaleDateString('es-ES')}`,
+        details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
         isActive: true,
         showUpgrade: false,
         showReactivate: false
@@ -362,14 +359,14 @@ export default function MyProfilePage() {
     
     if (normalizedState === "cancelado" || normalizedState === "canceled") {
       return {
-        text: isActive ? t("subscriptionCancelled") : t("subscriptionEnded"),
+        text: isActive ? "Suscripción cancelada" : "Suscripción finalizada",
         badge: isActive ? "⚪" : "🔴",
         color: isActive 
           ? "bg-yellow-100 text-yellow-800 border border-yellow-300" 
           : "bg-red-100 text-red-800 border border-red-300",
         details: isActive 
-          ? `${t('activeUntil')} ${expirationDate.toLocaleDateString('es-ES')} (${t('notRenewing')})`
-          : t("profileHidden"),
+          ? `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`
+          : "Tu perfil está oculto",
         isActive: isActive,
         showUpgrade: false,
         showReactivate: true
@@ -377,12 +374,12 @@ export default function MyProfilePage() {
     }
     
     return {
-      text: isActive ? t("subscriptionActive") : t("subscriptionInactive"),
+      text: isActive ? "Suscripción activa" : "Suscripción inactiva",
       badge: isActive ? "🟢" : "🔴",
       color: isActive 
         ? "bg-green-100 text-green-800 border border-green-300"
         : "bg-red-100 text-red-800 border border-red-300",
-      details: isActive ? `${t('validUntil')} ${expirationDate.toLocaleDateString('es-ES')}` : t("reactivatePlan"),
+      details: isActive ? `Válido hasta ${expirationDate.toLocaleDateString('es-ES')}` : "Reactiva tu plan para aparecer en búsquedas",
       isActive: isActive,
       showUpgrade: false,
       showReactivate: !isActive
@@ -440,7 +437,7 @@ export default function MyProfilePage() {
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success(t('personalDataUpdated'));
+      toast.success('✅ Datos personales actualizados');
     },
   });
 
@@ -462,7 +459,7 @@ export default function MyProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       setIsEditing(false);
       setSuccess(true);
-      toast.success(t('professionalProfileUpdated'));
+      toast.success('✅ Perfil profesional actualizado');
       setTimeout(() => setSuccess(false), 3000);
     },
   });
@@ -482,7 +479,7 @@ export default function MyProfilePage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('imageTooLarge'));
+      toast.error("La imagen no puede superar los 5MB");
       return;
     }
 
@@ -493,10 +490,10 @@ export default function MyProfilePage() {
         ...profileData,
         photos: [...(profileData.photos || []), file_url]
       });
-      toast.success(t('photoAdded'));
+      toast.success("✅ Foto añadida");
     } catch (error) {
       console.error("Error uploading photo:", error);
-      toast.error(t('errorUploadingPhoto'));
+      toast.error("Error al subir la foto");
     }
     setUploadingPhoto(false);
   };
@@ -563,7 +560,7 @@ export default function MyProfilePage() {
       });
       
       if (response.data.ok) {
-        toast.success(t('accountDeletedSuccessfully'), {
+        toast.success('Tu cuenta ha sido eliminada correctamente', {
           duration: 5000
         });
         
@@ -571,12 +568,12 @@ export default function MyProfilePage() {
           base44.auth.logout();
         }, 2000);
       } else {
-        toast.error(`${t('error')}: ${response.data.error}`);
+        toast.error(`Error: ${response.data.error}`);
         setIsDeleting(false);
       }
     } catch (error) {
       console.error('Error eliminando cuenta:', error);
-      toast.error(t('errorDeletingAccount'));
+      toast.error('Error al eliminar tu cuenta');
       setIsDeleting(false);
     }
   };
@@ -599,18 +596,18 @@ export default function MyProfilePage() {
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {t('verifyingSubscription')}
+                Verificando tu suscripción
               </h2>
               <p className="text-gray-600">
-                {t('confirmingPayment')}
+                Estamos confirmando tu pago y activando tu cuenta...
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-900">
-                  <strong>{t('attempt', { current: pollingAttempts, max: MAX_POLLING_ATTEMPTS })}</strong>
+                  <strong>Intento {pollingAttempts}/{MAX_POLLING_ATTEMPTS}</strong>
                 </p>
                 <p className="text-xs text-blue-700 mt-2">
-                  {t('pollingDelayMessage')}
-                  {pollingAttempts >= 5 && <><br />{t('manualSyncAttempt')}</>}
+                  Esto puede tardar unos segundos mientras procesamos tu pago.
+                  {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
                 </p>
               </div>
             </div>
@@ -624,810 +621,801 @@ export default function MyProfilePage() {
   const subscriptionStatus = getSubscriptionStatus();
 
   return (
-    <>
-      <SEOHead
-        title={`${t('myProfile')} - MisAutónomos`}
-        description={t('manageProfile')}
-      />
-      
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('myProfile')}</h1>
-              <p className="text-gray-600">
-                {isProfessional ? t('manageProfessionalProfile') : t('manageProfile')}
-              </p>
-              {profile && (
-                <div className="mt-2 flex gap-2">
-                  {subscriptionStatus?.isActive ? (
-                    <Badge className="bg-green-100 text-green-800">
-                      ✓ {t('visibleToClients')}
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-red-100 text-red-800">
-                      ⚠ {t('hiddenProfile')}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-            {!isEditing ? (
-              <div className="flex gap-2">
-                <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-                  {t('editProfile')}
-                </Button>
-                {!isProfessional && (
-                  <Button 
-                    onClick={() => navigate(createPageUrl("PricingPlans"))} 
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    {t('becomeFreelancer')}
-                  </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+            <p className="text-gray-600">
+              {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
+            </p>
+            {profile && (
+              <div className="mt-2 flex gap-2">
+                {subscriptionStatus?.isActive ? (
+                  <Badge className="bg-green-100 text-green-800">
+                    ✓ Visible para clientes
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-800">
+                    ⚠ Perfil oculto
+                  </Badge>
                 )}
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => {
-                  setIsEditing(false);
-                  queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-                }}>
-                  {t('cancel')}
-                </Button>
-                <Button 
-                  onClick={handleSave}
-                  disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {updateProfileMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      {t('saveChanges')}
-                    </>
-                  )}
-                </Button>
               </div>
             )}
           </div>
-
-          {success && (
-            <Alert className="mb-6 bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                ✅ {t('profileUpdatedSuccessfully')}
-              </AlertDescription>
-            </Alert>
+          {!isEditing ? (
+            <div className="flex gap-2">
+              <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
+                Editar Perfil
+              </Button>
+              {!isProfessional && (
+                <Button 
+                  onClick={() => navigate(createPageUrl("PricingPlans"))} 
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Hazte Autónomo
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsEditing(false);
+                queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+              }}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar cambios
+                  </>
+                )}
+              </Button>
+            </div>
           )}
+        </div>
 
-          {!isProfessional && user && (
-            <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-                      <Briefcase className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {t('wantToOfferServices')}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {t('becomeFreelancerDescription')}
-                      </p>
-                    </div>
+        {success && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ✅ Tu perfil se ha actualizado correctamente.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isProfessional && user && (
+          <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-white" />
                   </div>
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
-                  >
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    {t('viewPlans')}
-                  </Button>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">¿Quieres ofrecer tus servicios?</h3>
+                    <p className="text-sm text-gray-600">
+                      Conviértete en autónomo y aparece en las búsquedas de clientes
+                    </p>
+                  </div>
                 </div>
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Ver Planes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isProfessional && profile && !isEditing && (
+          <ProfileCompleteness 
+            profile={profile} 
+            user={user}
+            onEdit={() => setIsEditing(true)}
+          />
+        )}
+
+        <Tabs defaultValue="personal" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
+            <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <User className="w-4 h-4 mr-2" />
+              Información Personal
+            </TabsTrigger>
+            {isProfessional && (
+              <>
+                <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Perfil Profesional
+                </TabsTrigger>
+                <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Portfolio
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
+
+          {/* ✅ TAB: INFORMACIÓN PERSONAL */}
+          <TabsContent value="personal">
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-700" />
+                  Información personal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* ✅ FOTO DE PERFIL - Disponible para TODOS (clientes y autónomos) */}
+                <div className="flex justify-center py-4">
+                  <ProfilePictureUpload
+                    user={user}
+                    currentPicture={user?.profile_picture}
+                    onUpdate={(newUrl) => {
+                      console.log('🔄 Foto actualizada, recargando usuario...');
+                      loadUser();
+                    }}
+                    size="lg"
+                    allowedForClients={true}
+                  />
+                </div>
+
+                <div>
+                  <Label>Email</Label>
+                  <Input value={user.email} disabled className="bg-gray-50" />
+                </div>
+
+                <div>
+                  <Label>Nombre completo</Label>
+                  <Input
+                    value={userData.full_name}
+                    onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Teléfono</Label>
+                    <Input
+                      value={userData.phone}
+                      onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="+34 612 345 678"
+                    />
+                  </div>
+                  <div>
+                    <Label>Ciudad</Label>
+                    <Input
+                      value={userData.city}
+                      onChange={(e) => setUserData({ ...userData, city: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="Madrid"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Tipo de cuenta</Label>
+                  <Badge className="bg-blue-100 text-blue-900">
+                    {isProfessional ? "Autónomo" : "Cliente"}
+                  </Badge>
+                </div>
+
+                {!isEditing && (
+                  <div className="mt-8 pt-6 border-t border-red-200">
+                    <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ Zona de peligro</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Esta acción eliminará permanentemente tu cuenta, perfil, mensajes, favoritos, reseñas y cancelará tu suscripción activa.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Eliminar mi cuenta
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          )}
+          </TabsContent>
 
-          {isProfessional && profile && !isEditing && (
-            <ProfileCompleteness 
-              profile={profile} 
-              user={user}
-              onEdit={() => setIsEditing(true)}
-            />
-          )}
-
-          <Tabs defaultValue="personal" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
-              <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                <User className="w-4 h-4 mr-2" />
-                {t('personalInfo')}
-              </TabsTrigger>
-              {isProfessional && (
-                <>
-                  <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    {t('professionalProfile')}
-                  </TabsTrigger>
-                  <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                    <Camera className="w-4 h-4 mr-2" />
-                    {t('portfolio')}
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
-
-            {/* ✅ TAB: INFORMACIÓN PERSONAL */}
-            <TabsContent value="personal">
-              <Card className="shadow-lg border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-700" />
-                    {t('personalInfo')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* ✅ FOTO DE PERFIL - Disponible para TODOS (clientes y autónomos) */}
-                  <div className="flex justify-center py-4">
-                    <ProfilePictureUpload
-                      user={user}
-                      currentPicture={user?.profile_picture}
-                      onUpdate={(newUrl) => {
-                        console.log('🔄 Foto actualizada, recargando usuario...');
-                        loadUser();
-                      }}
-                      size="lg"
-                      allowedForClients={true}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>{t('email')}</Label>
-                    <Input value={user.email} disabled className="bg-gray-50" />
-                  </div>
-
-                  <div>
-                    <Label>{t('fullName')}</Label>
-                    <Input
-                      value={userData.full_name}
-                      onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
-                      disabled={!isEditing}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ✅ TAB: PERFIL PROFESIONAL */}
+          {isProfessional && (
+            <TabsContent value="business">
+              <div className="space-y-6">
+                {/* Identidad */}
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-blue-700" />
+                      Identidad Profesional
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('phone')}</Label>
+                      <Label>Nombre profesional *</Label>
                       <Input
-                        value={userData.phone}
-                        onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                        value={profileData.business_name}
+                        onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="Tu Empresa S.L."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>NIF/CIF</Label>
+                        <Input
+                          value={profileData.cif_nif}
+                          onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value.toUpperCase() })}
+                          disabled={!isEditing}
+                          placeholder="12345678A"
+                          maxLength={9}
+                        />
+                      </div>
+                      <div>
+                        <Label>Años de experiencia</Label>
+                        <Input
+                          type="number"
+                          value={profileData.years_experience}
+                          onChange={(e) => setProfileData({ ...profileData, years_experience: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="5"
+                          min="0"
+                          max="50"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Email de contacto</Label>
+                      <Input
+                        type="email"
+                        value={profileData.email_contacto}
+                        onChange={(e) => setProfileData({ ...profileData, email_contacto: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Teléfono de contacto</Label>
+                      <Input
+                        value={profileData.telefono_contacto}
+                        onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
                         disabled={!isEditing}
                         placeholder="+34 612 345 678"
                       />
                     </div>
+
                     <div>
-                      <Label>{t('city')}</Label>
-                      <Input
-                        value={userData.city}
-                        onChange={(e) => setUserData({ ...userData, city: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="Madrid"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>{t('accountType')}</Label>
-                    <Badge className="bg-blue-100 text-blue-900">
-                      {isProfessional ? t('Autónomo') : t('Cliente')}
-                    </Badge>
-                  </div>
-
-                  {!isEditing && (
-                    <div className="mt-8 pt-6 border-t border-red-200">
-                      <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ {t('dangerZone')}</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {t('deleteAccountWarning')}
-                      </p>
-                      <Button
-                        variant="destructive"
-                        onClick={() => setShowDeleteDialog(true)}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        {t('deleteAccount')}
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* ✅ TAB: PERFIL PROFESIONAL */}
-            {isProfessional && (
-              <TabsContent value="business">
-                <div className="space-y-6">
-                  {/* Identidad */}
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Building2 className="w-5 h-5 text-blue-700" />
-                        {t('professionalIdentity')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>{t('professionalName')} *</Label>
+                      <Label>Certificaciones y títulos</Label>
+                      <div className="flex gap-2 mb-2">
                         <Input
-                          value={profileData.business_name}
-                          onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
+                          value={newCertification}
+                          onChange={(e) => setNewCertification(e.target.value)}
                           disabled={!isEditing}
-                          placeholder="Tu Empresa S.L."
+                          placeholder="Certificación profesional, título..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addCertification();
+                            }
+                          }}
                         />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>NIF/CIF</Label>
-                          <Input
-                            value={profileData.cif_nif}
-                            onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value.toUpperCase() })}
-                            disabled={!isEditing}
-                            placeholder="12345678A"
-                            maxLength={9}
-                          />
-                        </div>
-                        <div>
-                          <Label>{t('yearsExperience')}</Label>
-                          <Input
-                            type="number"
-                            value={profileData.years_experience}
-                            onChange={(e) => setProfileData({ ...profileData, years_experience: e.target.value })}
-                            disabled={!isEditing}
-                            placeholder="5"
-                            min="0"
-                            max="50"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label>{t('emailContact')}</Label>
-                        <Input
-                          type="email"
-                          value={profileData.email_contacto}
-                          onChange={(e) => setProfileData({ ...profileData, email_contacto: e.target.value })}
-                          disabled={!isEditing}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>{t('phoneContact')}</Label>
-                        <Input
-                          value={profileData.telefono_contacto}
-                          onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="+34 612 345 678"
-                        />
-                      </div>
-
-                      <div>
-                        <Label>{t('certifications')}</Label>
-                        <div className="flex gap-2 mb-2">
-                          <Input
-                            value={newCertification}
-                            onChange={(e) => setNewCertification(e.target.value)}
-                            disabled={!isEditing}
-                            placeholder={t('addCertification')}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addCertification();
-                              }
-                            }}
-                          />
-                          <Button
-                            onClick={addCertification}
-                            disabled={!isEditing || !newCertification}
-                            size="icon"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(profileData.certifications || []).map((cert, idx) => (
-                            <Badge key={idx} className="bg-purple-100 text-purple-900 flex items-center gap-1">
-                              <Award className="w-3 h-3" />
-                              {cert}
-                              {isEditing && (
-                                <button onClick={() => removeCertification(cert)}>
-                                  <X className="w-3 h-3 ml-1" />
-                                </button>
-                              )}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Servicios */}
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle>{t('servicesDescription')}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>{t('serviceCategories')}</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {categories.map((cat) => (
-                            <div
-                              key={cat}
-                              onClick={() => isEditing && toggleCategory(cat)}
-                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
-                                isEditing ? 'cursor-pointer' : 'cursor-default'
-                              } ${
-                                profileData.categories.includes(cat)
-                                  ? "border-blue-600 bg-blue-50"
-                                  : "border-gray-200"
-                              }`}
-                            >
-                              <Checkbox
-                                checked={profileData.categories.includes(cat)}
-                                disabled={!isEditing}
-                                className="pointer-events-none"
-                              />
-                              <span className="text-sm">{t(cat)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {profileData.categories.includes("Otro tipo de servicio profesional") && (
-                        <div>
-                          <Label>{t('specifyService')}</Label>
-                          <Input
-                            value={profileData.activity_other}
-                            onChange={(e) => setProfileData({ ...profileData, activity_other: e.target.value })}
-                            disabled={!isEditing}
-                            placeholder="Instalador de paneles solares..."
-                          />
-                        </div>
-                      )}
-
-                      <div>
-                        <Label>{t('shortDescription')} (220 {t('characters')})</Label>
-                        <Textarea
-                          value={profileData.descripcion_corta}
-                          onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
-                          disabled={!isEditing}
-                          className="h-24"
-                          placeholder={t('describeBriefly')}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
-                      </div>
-
-                      <div>
-                        <Label>{t('detailedDescription')} (SEO)</Label>
-                        <Textarea
-                          value={profileData.description}
-                          onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
-                          disabled={!isEditing}
-                          className="h-40"
-                          placeholder={t('experienceSpecialtiesProjects')}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Ubicación y Disponibilidad */}
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-blue-700" />
-                        {t('locationAvailability')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>{t('province')}</Label>
-                          <Select
-                            value={profileData.provincia}
-                            onValueChange={(value) => setProfileData({
-                              ...profileData,
-                              provincia: value,
-                              ciudad: ""
-                            })}
-                            disabled={!isEditing}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('selectProvince')} />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[300px]">
-                              {provincias.map((prov) => (
-                                <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>{t('city')}</Label>
-                          <Input
-                            value={profileData.ciudad}
-                            onChange={(e) => setProfileData({ ...profileData, ciudad: e.target.value })}
-                            disabled={!isEditing}
-                            placeholder="Madrid"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label>{t('neighborhood')} ({t('optional')})</Label>
-                        <Input
-                          value={profileData.municipio}
-                          onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="Centro, Chamartín..."
-                        />
-                      </div>
-
-                      <div>
-                        <Label>{t('serviceRadius')}</Label>
-                        <Select
-                          value={profileData.radio_servicio_km?.toString()}
-                          onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
-                          disabled={!isEditing}
+                        <Button
+                          onClick={addCertification}
+                          disabled={!isEditing || !newCertification}
+                          size="icon"
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="5">5 km - {t('onlyMyArea')}</SelectItem>
-                            <SelectItem value="10">10 km - {t('city')}</SelectItem>
-                            <SelectItem value="25">25 km - {t('metroArea')}</SelectItem>
-                            <SelectItem value="50">50 km - {t('province')}</SelectItem>
-                            <SelectItem value="100">100+ km - {t('multipleProvinces')}</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <Plus className="w-4 h-4" />
+                        </Button>
                       </div>
-
-                      <Separator />
-
-                      <div>
-                        <Label className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          {t('availability')}
-                        </Label>
-                        <Select
-                          value={profileData.disponibilidad_tipo}
-                          onValueChange={(value) => setProfileData({ ...profileData, disponibilidad_tipo: value })}
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="laborables">{t('mondayFriday')}</SelectItem>
-                            <SelectItem value="festivos">{t('weekends')}</SelectItem>
-                            <SelectItem value="ambos">{t('everyday')}</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-wrap gap-2">
+                        {(profileData.certifications || []).map((cert, idx) => (
+                          <Badge key={idx} className="bg-purple-100 text-purple-900 flex items-center gap-1">
+                            <Award className="w-3 h-3" />
+                            {cert}
+                            {isEditing && (
+                              <button onClick={() => removeCertification(cert)}>
+                                <X className="w-3 h-3 ml-1" />
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>{t('startTime')}</Label>
-                          <Input
-                            type="time"
-                            value={profileData.horario_apertura}
-                            onChange={(e) => setProfileData({ ...profileData, horario_apertura: e.target.value })}
-                            disabled={!isEditing}
-                            className="mt-2"
-                          />
-                        </div>
-
-                        <div>
-                          <Label>{t('endTime')}</Label>
-                          <Input
-                            type="time"
-                            value={profileData.horario_cierre}
-                            onChange={(e) => setProfileData({ ...profileData, horario_cierre: e.target.value })}
-                            disabled={!isEditing}
-                            className="mt-2"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Tarifas y Pago */}
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Euro className="w-5 h-5 text-blue-700" />
-                        {t('ratesPayment')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>{t('baseRate')} (€/h) - {t('optional')}</Label>
-                        <Input
-                          type="number"
-                          value={profileData.tarifa_base}
-                          onChange={(e) => setProfileData({ ...profileData, tarifa_base: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="35"
-                          min="0"
-                        />
-                      </div>
-
-                      <div>
-                        <Label>{t('invoiceType')}</Label>
-                        <Select
-                          value={profileData.facturacion}
-                          onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="autonomo">{t('freelancer')}</SelectItem>
-                            <SelectItem value="sociedad">{t('company')}</SelectItem>
-                            <SelectItem value="otros">{t('other')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>{t('paymentMethods')}</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                            <div
-                              key={forma}
-                              onClick={() => isEditing && toggleFormaPago(forma)}
-                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
-                                isEditing ? 'cursor-pointer' : 'cursor-default'
-                              } ${
-                                profileData.formas_pago.includes(forma)
-                                  ? "border-purple-600 bg-purple-50"
-                                  : "border-gray-200"
-                              }`}
-                            >
-                              <Checkbox
-                                checked={profileData.formas_pago.includes(forma)}
-                                disabled={!isEditing}
-                                className="pointer-events-none"
-                              />
-                              <span className="text-sm">{t(forma)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Redes Sociales */}
-                  <Card className="shadow-lg border-0 bg-white">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-blue-700" />
-                        {t('onlinePresence')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
-                          {t('website')}
-                        </Label>
-                        <Input
-                          value={profileData.website}
-                          onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="https://tuweb.com"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label className="flex items-center gap-2">
-                            <Facebook className="w-4 h-4" />
-                            Facebook
-                          </Label>
-                          <Input
-                            value={profileData.social_links.facebook}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, facebook: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://facebook.com/tupagina"
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="flex items-center gap-2">
-                            <Instagram className="w-4 h-4" />
-                            Instagram
-                          </Label>
-                          <Input
-                            value={profileData.social_links.instagram}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, instagram: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://instagram.com/tuperfil"
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="flex items-center gap-2">
-                            <Linkedin className="w-4 h-4" />
-                            LinkedIn
-                          </Label>
-                          <Input
-                            value={profileData.social_links.linkedin}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, linkedin: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://linkedin.com/in/tuperfil"
-                          />
-                        </div>
-
-                        <div>
-                          <Label>TikTok</Label>
-                          <Input
-                            value={profileData.social_links.tiktok}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, tiktok: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://tiktok.com/@tuperfil"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-            )}
-
-            {/* ✅ TAB: PORTFOLIO */}
-            {isProfessional && (
-              <TabsContent value="portfolio">
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Camera className="w-5 h-5 text-blue-700" />
-                      {t('workGalleryTitle')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">
-                      {t('uploadPhotos')}
-                    </p>
-
-                    {isEditing && profileData.photos.length < 10 && (
-                      <label className="cursor-pointer block">
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handlePhotoUpload}
-                            disabled={uploadingPhoto}
-                          />
-                          {uploadingPhoto ? (
-                            <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
-                          ) : (
-                            <>
-                              <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                              <p className="text-sm text-gray-600">{t('addPhoto', { count: profileData.photos.length, max: 10 })}</p>
-                            </>
-                          )}
-                        </div>
-                      </label>
-                    )}
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {profileData.photos.map((photo, idx) => (
-                        <div key={idx} className="relative group">
-                          <img
-                            src={photo}
-                            alt={`Foto ${idx + 1}`}
-                            className="w-full h-32 object-cover rounded-lg shadow-md"
-                          />
-                          {isEditing && (
-                            <button
-                              onClick={() => removePhoto(idx)}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
-                          {idx === 0 && (
-                            <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
-                              {t('mainPhoto')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-            )}
-          </Tabs>
 
-          {/* ✅ MODAL ELIMINACIÓN CUENTA */}
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-                  <AlertCircle className="w-5 h-5" />
-                  {t('deleteAccountConfirm')}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
-                    <p className="text-sm font-semibold text-red-800">
-                      ⚠️ {t('warningIrreversible')}
-                    </p>
-                  </div>
+                {/* Servicios */}
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle>Servicios y Descripción</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Categorías de servicio</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {categories.map((cat) => (
+                          <div
+                            key={cat}
+                            onClick={() => isEditing && toggleCategory(cat)}
+                            className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
+                              isEditing ? 'cursor-pointer' : 'cursor-default'
+                            } ${
+                              profileData.categories.includes(cat)
+                                ? "border-blue-600 bg-blue-50"
+                                : "border-gray-200"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={profileData.categories.includes(cat)}
+                              disabled={!isEditing}
+                              className="pointer-events-none"
+                            />
+                            <span className="text-sm">{cat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <p className="font-semibold">{t('willBeDeleted')}:</p>
-                    <ul className="list-disc ml-5 space-y-1">
-                      <li>{t('accountAndProfile')}</li>
-                      <li>{t('allMessages')}</li>
-                      <li>{t('favoritesAndReviews')}</li>
-                      {isProfessional && (
-                        <>
-                          <li>{t('professionalProfilePhotos')}</li>
-                          <li>{t('activeSubscription')}</li>
-                        </>
-                      )}
-                    </ul>
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>
-                  {t('cancel')}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteAccount}
-                  disabled={isDeleting}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('deleting')}
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      {t('confirmDelete')}
-                    </>
+                    {profileData.categories.includes("Otro tipo de servicio profesional") && (
+                      <div>
+                        <Label>Especifica tu servicio</Label>
+                        <Input
+                          value={profileData.activity_other}
+                          onChange={(e) => setProfileData({ ...profileData, activity_other: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="Instalador de paneles solares..."
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <Label>Descripción corta (220 caracteres)</Label>
+                      <Textarea
+                        value={profileData.descripcion_corta}
+                        onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
+                        disabled={!isEditing}
+                        className="h-24"
+                        placeholder="Describe brevemente tus servicios..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
+                    </div>
+
+                    <div>
+                      <Label>Descripción detallada (para SEO)</Label>
+                      <Textarea
+                        value={profileData.description}
+                        onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
+                        disabled={!isEditing}
+                        className="h-40"
+                        placeholder="Experiencia, especialidades, proyectos destacados..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Ubicación y Disponibilidad */}
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-blue-700" />
+                      Ubicación y Disponibilidad
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Provincia</Label>
+                        <Select
+                          value={profileData.provincia}
+                          onValueChange={(value) => setProfileData({
+                            ...profileData,
+                            provincia: value,
+                            ciudad: ""
+                          })}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona provincia" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {provincias.map((prov) => (
+                              <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Ciudad</Label>
+                        <Input
+                          value={profileData.ciudad}
+                          onChange={(e) => setProfileData({ ...profileData, ciudad: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="Madrid"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Barrio/Municipio (opcional)</Label>
+                      <Input
+                        value={profileData.municipio}
+                        onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="Centro, Chamartín..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Radio de servicio</Label>
+                      <Select
+                        value={profileData.radio_servicio_km?.toString()}
+                        onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 km - Solo mi zona</SelectItem>
+                          <SelectItem value="10">10 km - Ciudad</SelectItem>
+                          <SelectItem value="25">25 km - Área metropolitana</SelectItem>
+                          <SelectItem value="50">50 km - Provincia</SelectItem>
+                          <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Disponibilidad
+                      </Label>
+                      <Select
+                        value={profileData.disponibilidad_tipo}
+                        onValueChange={(value) => setProfileData({ ...profileData, disponibilidad_tipo: value })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="laborables">Días laborables (L-V)</SelectItem>
+                          <SelectItem value="festivos">Fines de semana y festivos</SelectItem>
+                          <SelectItem value="ambos">Toda la semana</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Hora inicio</Label>
+                        <Input
+                          type="time"
+                          value={profileData.horario_apertura}
+                          onChange={(e) => setProfileData({ ...profileData, horario_apertura: e.target.value })}
+                          disabled={!isEditing}
+                          className="mt-2"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Hora fin</Label>
+                        <Input
+                          type="time"
+                          value={profileData.horario_cierre}
+                          onChange={(e) => setProfileData({ ...profileData, horario_cierre: e.target.value })}
+                          disabled={!isEditing}
+                          className="mt-2"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Tarifas y Pago */}
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Euro className="w-5 h-5 text-blue-700" />
+                      Tarifas y Forma de Trabajo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Tarifa base (€/hora) - opcional</Label>
+                      <Input
+                        type="number"
+                        value={profileData.tarifa_base}
+                        onChange={(e) => setProfileData({ ...profileData, tarifa_base: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="35"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Tipo de facturación</Label>
+                      <Select
+                        value={profileData.facturacion}
+                        onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="autonomo">Autónomo</SelectItem>
+                          <SelectItem value="sociedad">Sociedad</SelectItem>
+                          <SelectItem value="otros">Otros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Formas de pago aceptadas</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
+                          <div
+                            key={forma}
+                            onClick={() => isEditing && toggleFormaPago(forma)}
+                            className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
+                              isEditing ? 'cursor-pointer' : 'cursor-default'
+                            } ${
+                              profileData.formas_pago.includes(forma)
+                                ? "border-purple-600 bg-purple-50"
+                                : "border-gray-200"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={profileData.formas_pago.includes(forma)}
+                              disabled={!isEditing}
+                              className="pointer-events-none"
+                            />
+                            <span className="text-sm">{forma}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Redes Sociales */}
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-700" />
+                      Presencia Online
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        Sitio web
+                      </Label>
+                      <Input
+                        value={profileData.website}
+                        onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="https://tuweb.com"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="flex items-center gap-2">
+                          <Facebook className="w-4 h-4" />
+                          Facebook
+                        </Label>
+                        <Input
+                          value={profileData.social_links.facebook}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, facebook: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://facebook.com/tupagina"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="flex items-center gap-2">
+                          <Instagram className="w-4 h-4" />
+                          Instagram
+                        </Label>
+                        <Input
+                          value={profileData.social_links.instagram}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, instagram: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://instagram.com/tuperfil"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="flex items-center gap-2">
+                          <Linkedin className="w-4 h-4" />
+                          LinkedIn
+                        </Label>
+                        <Input
+                          value={profileData.social_links.linkedin}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, linkedin: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://linkedin.com/in/tuperfil"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>TikTok</Label>
+                        <Input
+                          value={profileData.social_links.tiktok}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, tiktok: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://tiktok.com/@tuperfil"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ✅ TAB: PORTFOLIO */}
+          {isProfessional && (
+            <TabsContent value="portfolio">
+              <Card className="shadow-lg border-0 bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-blue-700" />
+                    Galería de Trabajos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Sube fotos de tus trabajos realizados. Máximo 10 imágenes. La primera será tu foto principal.
+                  </p>
+
+                  {isEditing && profileData.photos.length < 10 && (
+                    <label className="cursor-pointer block">
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePhotoUpload}
+                          disabled={uploadingPhoto}
+                        />
+                        {uploadingPhoto ? (
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
+                        ) : (
+                          <>
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm text-gray-600">Haz clic para añadir foto ({profileData.photos.length}/10)</p>
+                          </>
+                        )}
+                      </div>
+                    </label>
                   )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {profileData.photos.map((photo, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Foto ${idx + 1}`}
+                          className="w-full h-32 object-cover rounded-lg shadow-md"
+                        />
+                        {isEditing && (
+                          <button
+                            onClick={() => removePhoto(idx)}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        {idx === 0 && (
+                          <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
+                            Principal
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
+
+        {/* ✅ MODAL ELIMINACIÓN CUENTA */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                ¿Eliminar tu cuenta definitivamente?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
+                  <p className="text-sm font-semibold text-red-800">
+                    ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p className="font-semibold">Se eliminará permanentemente:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>Tu cuenta y perfil completo</li>
+                    <li>Todos tus mensajes y conversaciones</li>
+                    <li>Tus favoritos y reseñas</li>
+                    {isProfessional && (
+                      <>
+                        <li>Tu perfil profesional y fotos</li>
+                        <li>Tu suscripción activa</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Sí, eliminar definitivamente
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </>
+    </div>
   );
 }

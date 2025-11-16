@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -263,7 +262,7 @@ function LayoutContent({ children, currentPageName }) {
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
     }
     
-    return t('user');
+    return "Usuario";
   };
 
   const getProfilePicture = () => {
@@ -726,7 +725,7 @@ function LayoutContent({ children, currentPageName }) {
                         {getProfilePicture() ? (
                           <OptimizedImage 
                             src={getProfilePicture()} 
-                            alt={t('profilePicture')} 
+                            alt="Perfil" 
                             className="w-full h-full object-cover"
                             priority={true}
                           />
@@ -741,7 +740,7 @@ function LayoutContent({ children, currentPageName }) {
                           {getDisplayName()}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.user_type === "professionnel" ? t('Autónomo') : t('Cliente')}
+                          {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
                         </p>
                       </div>
                     </div>
@@ -771,14 +770,14 @@ function LayoutContent({ children, currentPageName }) {
                   role="presentation"
                   aria-hidden="true"
                 />
-                <div className="mobile-menu lg:hidden" role="dialog" aria-label={t('navigation')}>
+                <div className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
                   <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="font-bold text-lg">{t('navigation')}</h2>
+                    <h2 className="font-bold text-lg">Menú</h2>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setMobileMenuOpen(false)}
-                      aria-label={t('close')}
+                      aria-label="Cerrar menú"
                     >
                       <X className="w-5 h-5" />
                     </Button>
@@ -791,7 +790,7 @@ function LayoutContent({ children, currentPageName }) {
                           {getProfilePicture() ? (
                             <OptimizedImage 
                               src={getProfilePicture()} 
-                              alt={t('profilePicture')} 
+                              alt="Perfil" 
                               className="w-full h-full object-cover"
                               priority={true}
                             />
@@ -806,7 +805,7 @@ function LayoutContent({ children, currentPageName }) {
                             {getDisplayName()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user.user_type === "professionnel" ? t('Autónomo') : t('Cliente')}
+                            {user.user_type === "professionnel" ? "Autónomo" : "Cliente"}
                           </p>
                         </div>
                       </div>
@@ -914,7 +913,7 @@ function LayoutContent({ children, currentPageName }) {
                     size="icon"
                     onClick={() => setMobileMenuOpen(true)}
                     className="hover:bg-gray-100"
-                    aria-label={t('openMenu')}
+                    aria-label="Abrir menú"
                   >
                     <Menu className="w-6 h-6" />
                   </Button>
@@ -942,7 +941,7 @@ function LayoutContent({ children, currentPageName }) {
               <Footer />
 
               {shouldShowBottomBar() && (
-                <nav className="mobile-bottom-nav" role="navigation" aria-label={t('navigation')}>
+                <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
                       key={item.title}
