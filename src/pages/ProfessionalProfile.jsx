@@ -32,6 +32,7 @@ import OptimizedImage from "../components/ui/OptimizedImage";
 import AvailabilityBadge from "../components/profile/AvailabilityBadge";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
+import { LocalBusinessSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
@@ -242,49 +243,29 @@ export default function ProfessionalProfilePage() {
 
   console.log('📊 Renderizando perfil con', reviews.length, 'reviews');
 
-  // Structured Data for Google (JSON-LD)
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": profile.business_name,
-    "description": profile.descripcion_corta || profile.description,
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": profile.ciudad,
-      "addressRegion": profile.provincia,
-      "addressCountry": "ES"
-    },
-    "telephone": profile.telefono_contacto,
-    "email": profile.email_contacto,
-    ...(profile.average_rating > 0 && {
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": profile.average_rating,
-        "reviewCount": profile.total_reviews,
-        "bestRating": 5,
-        "worstRating": 1
-      }
-    }),
-    ...(profile.website && { "url": profile.website }),
-    "priceRange": profile.price_range || "€€",
-    "image": profile.photos?.[0] || professionalUser?.profile_picture
-  };
-
   return (
     <>
       <SEOHead 
         title={`${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad} | MisAutónomos`}
-        description={profile.descripcion_corta || `${profile.business_name}: ${profile.categories?.join(', ')} en ${profile.ciudad}, ${profile.provincia}. Contacta ahora.`}
+        description={profile.descripcion_corta || `${profile.business_name}: ${profile.categories?.join(', ')} en ${profile.ciudad}, ${profile.provincia}. Valoración: ${profile.average_rating}/5. Contacta ahora para presupuesto sin compromiso.`}
         image={profile.photos?.[0] || professionalUser?.profile_picture}
-        keywords={`${profile.business_name}, ${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo, profesional, ${profile.categories?.[0]}`}
+        keywords={`${profile.business_name}, ${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo, profesional, ${profile.categories?.[0]}, presupuesto`}
         type="profile"
         author={profile.business_name}
       />
       
-      {/* Structured Data para Google */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      <LocalBusinessSchema 
+        profile={profile} 
+        reviews={reviews}
+        professionalUser={professionalUser}
+      />
+      
+      <BreadcrumbSchema 
+        items={[
+          { name: "Inicio", url: "https://misautonomos.es/Search" },
+          { name: profile.categories?.[0] || "Profesionales", url: "https://misautonomos.es/Search" },
+          { name: profile.business_name, url: `https://misautonomos.es/ProfessionalProfile?id=${professionalId}` }
+        ]}
       />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -292,7 +273,7 @@ export default function ProfessionalProfilePage() {
           {profile.photos?.[0] && (
             <OptimizedImage
               src={profile.photos[0]}
-              alt={`${profile.business_name} - ${profile.categories?.[0] || 'Trabajos'}`}
+              alt={`${profile.business_name} - ${profile.categories?.[0] || 'Trabajos'} en ${profile.ciudad}`}
               className="w-full h-full absolute inset-0 opacity-30"
               objectFit="cover"
               priority={true}

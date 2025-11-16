@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,7 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 import TranslatedText from "../components/ui/TranslatedText";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import SEOHead from "../components/seo/SEOHead";
+import { OrganizationSchema, ServiceSchema } from "../components/seo/StructuredData";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -167,7 +169,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                 {profileUser?.profile_picture ? (
                   <OptimizedImage
                     src={profileUser.profile_picture} 
-                    alt={profile.business_name}
+                    alt={`Foto de perfil de ${profile.business_name}`}
                     className="w-full h-full"
                     objectFit="cover"
                     width={48}
@@ -211,6 +213,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                 e.stopPropagation();
                 onToggleFavorite(profile.user_id);
               }}
+              aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
             >
               <Heart 
                 className={`w-5 h-5 transition-all ${
@@ -272,6 +275,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                 <a
                   href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
                   onClick={(e) => e.stopPropagation()}
+                  aria-label={`Llamar a ${profile.business_name}`}
                 >
                   <Button 
                     variant="outline" 
@@ -289,6 +293,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
+                  aria-label={`WhatsApp a ${profile.business_name}`}
                 >
                   <Button 
                     size="sm"
@@ -306,6 +311,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                   e.stopPropagation();
                   onStartChat(profile.user_id, profile.business_name);
                 }}
+                aria-label={`Chatear con ${profile.business_name}`}
               >
                 <MessageSquare className="w-4 h-4" />
               </Button>
@@ -602,6 +608,12 @@ export default function SearchPage() {
         keywords="autónomos españa, electricista, fontanero, carpintero, profesionales verificados, servicios locales, reformas, mantenimiento"
       />
       
+      <OrganizationSchema />
+      <ServiceSchema 
+        categories={selectedCategory !== "all" ? [selectedCategory] : availableCategories}
+        location={selectedCiudad !== "all" ? selectedCiudad : (selectedProvincia !== "all" ? selectedProvincia : "España")}
+      />
+      
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {!isLoadingUser && !user && (
           <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white py-16 px-4 shadow-xl">
@@ -659,11 +671,12 @@ export default function SearchPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 h-12"
+                    aria-label="Buscar profesionales"
                   />
                 </div>
 
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por categoría">
                     <SelectValue placeholder={t('allCategories')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -694,7 +707,7 @@ export default function SearchPage() {
                     setSelectedCiudad("all");
                   }}
                 >
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por provincia">
                     <SelectValue placeholder={t('allProvinces')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -719,7 +732,7 @@ export default function SearchPage() {
                   value={selectedCiudad} 
                   onValueChange={setSelectedCiudad}
                 >
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por ciudad">
                     <SelectValue placeholder={t('allCities')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
