@@ -21,7 +21,6 @@ export default function PricingPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [processingPendingPlan, setProcessingPendingPlan] = useState(false);
 
   const canceled = searchParams.get("canceled");
 
@@ -29,40 +28,22 @@ export default function PricingPlansPage() {
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
-      
       const planMap = new Map();
       
       allPlans.forEach(plan => {
         if (plan.plan_id === 'plan_monthly_trial' || 
             plan.plan_id === 'plan_quarterly' || 
             plan.plan_id === 'plan_annual') {
-          
           const existingPlan = planMap.get(plan.plan_id);
-          
           if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
             planMap.set(plan.plan_id, plan);
           }
         }
       });
       
-      const uniquePlans = Array.from(planMap.values());
-      return uniquePlans.sort((a, b) => a.precio - b.precio);
+      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
-  });
-
-  const { data: existingSubscription } = useQuery({
-    queryKey: ['existingSubscription', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null; // Ensure user ID exists before fetching
-      const subs = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-      // Assuming a user can only have one active subscription of a given type
-      // or we only care about the first one found
-      return subs.length > 0 ? subs[0] : null; 
-    },
-    enabled: !!user && user.user_type === "professionnel", // Only run if user is a professional and loaded
   });
 
   // Initial user load on component mount
@@ -79,11 +60,8 @@ export default function PricingPlansPage() {
     }
   }, [canceled]);
 
-  // ✅ CORREGIDO: Procesar plan pendiente solo cuando todo esté listo
+  // Procesar plan pendiente solo cuando todo esté listo
   useEffect(() => {
-    // Guard: evitar ejecución múltiple o si ya estamos procesando
-    if (processingPendingPlan) return;
-    
     // Esperar a que todo esté cargado: user, plans, y que no haya carga activa
     if (isLoadingUser || loadingPlans || !user || plans.length === 0) {
       return;
@@ -91,8 +69,6 @@ export default function PricingPlansPage() {
 
     const pendingPlan = localStorage.getItem('pending_plan_selection');
     if (pendingPlan) {
-      setProcessingPendingPlan(true); // Indicar que estamos procesando
-      
       try {
         const planData = JSON.parse(pendingPlan);
         console.log('🔄 Plan pendiente detectado tras login/carga:', planData);
@@ -105,44 +81,19 @@ export default function PricingPlansPage() {
         
         if (fullPlan) {
           console.log('✅ Plan completo encontrado:', fullPlan.plan_id);
-          
-          // Verificar/actualizar user_type a "professionnel" si no lo es ya
-          if (user.user_type !== "professionnel") {
-            console.log('⚙️ Actualizando user_type a professionnel para plan pendiente...');
-            base44.auth.updateMe({ user_type: "professionnel" })
-              .then(async () => {
-                console.log('✅ User actualizado a professionnel. Recargando usuario...');
-                // Recargar el usuario para que el estado `user` se actualice con el nuevo `user_type`
-                await loadUser(); 
-                // Dar un pequeño tiempo para que React procese la actualización del estado y luego procesar el plan
-                setTimeout(() => {
-                  handleSelectPlan(fullPlan);
-                }, 500); // Pequeño delay
-              })
-              .catch(error => {
-                console.error('❌ Error actualizando user_type para plan pendiente:', error);
-                toast.error('Hubo un error al configurar tu cuenta. Inténtalo de nuevo.');
-                setProcessingPendingPlan(false); // Finalizar procesamiento en caso de error
-              });
-          } else {
-            // Ya es profesional, procesar el plan directamente
-            console.log('✅ Usuario ya es professionnel, continuando con plan pendiente...');
-            setTimeout(() => {
-              handleSelectPlan(fullPlan);
-            }, 500); // Pequeño delay
-          }
+          setTimeout(() => {
+            handleSelectPlan(fullPlan);
+          }, 500); // Pequeño delay
         } else {
           console.error('❌ Plan no encontrado para continuar:', planData.plan_id);
           toast.error('El plan seleccionado no está disponible actualmente.');
-          setProcessingPendingPlan(false); // Finalizar procesamiento en caso de plan no encontrado
         }
       } catch (error) {
         console.error('❌ Error procesando plan pendiente:', error);
         localStorage.removeItem('pending_plan_selection'); // Asegurar limpieza
-        setProcessingPendingPlan(false); // Finalizar procesamiento en caso de error
       }
     }
-  }, [user, isLoadingUser, plans, loadingPlans, processingPendingPlan, existingSubscription]); // Dependencias actualizadas
+  }, [user, isLoadingUser, plans, loadingPlans]); // Dependencias actualizadas
 
   const loadUser = async () => {
     setIsLoadingUser(true);
@@ -163,41 +114,6 @@ export default function PricingPlansPage() {
   const handleSelectPlan = async (plan) => {
     console.log('🎯 handleSelectPlan llamado para:', plan.plan_id);
     
-    // ✅ NUEVO: Verificar si ya usó el trial
-    if (user && plan.plan_id === "plan_monthly_trial") {
-      if (user.has_used_trial === true) {
-        toast.error("Ya has usado tu periodo de prueba gratuito. Por favor, selecciona un plan de pago.", {
-          duration: 7000
-        });
-        return;
-      }
-      
-      // Double check en suscripciones
-      if (existingSubscription) {
-        const hasUsedTrial = existingSubscription.plan_id === "plan_monthly_trial" || 
-                            existingSubscription.estado === "en_prueba";
-        if (hasUsedTrial) {
-          toast.error("Ya has usado tu periodo de prueba gratuito anteriormente. Selecciona un plan de pago.", {
-            duration: 7000
-          });
-          return;
-        }
-      }
-    }
-
-    // ✅ Verificar si ya tiene este plan activo
-    if (existingSubscription) {
-      const activeStates = ["activo", "en_prueba"];
-      if (activeStates.includes(existingSubscription.estado) && 
-          existingSubscription.plan_id === plan.plan_id) {
-        toast.error("Ya tienes este plan activo. Puedes gestionarlo desde 'Mi Suscripción'.", {
-          duration: 5000
-        });
-        navigate(createPageUrl("SubscriptionManagement"));
-        return;
-      }
-    }
-
     // Si no hay usuario, guardar plan y redirigir a login
     if (!user) {
       console.log('🔑 Sin usuario, guardando plan y redirigiendo a login...');
@@ -212,45 +128,20 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // Verificar que sea profesional, si no, actualizar y luego continuar
-    // Esta lógica podría haberse ejecutado ya por el useEffect de pending_plan_selection,
-    // pero se mantiene aquí como un fallback robusto por si handleSelectPlan se llama directamente
-    if (user.user_type !== "professionnel") {
-      console.log('⚙️ Usuario no es profesional, intentando actualizar...');
-      try {
-        await base44.auth.updateMe({ user_type: "professionnel" });
-        console.log('✅ Usuario actualizado a professionnel');
-        // Recargar usuario para que el estado se actualice
-        const updatedUser = await loadUser();
-        setUser(updatedUser); 
-      } catch (error) {
-        console.error('❌ Error actualizando user_type en handleSelectPlan:', error);
-        toast.error('Error al configurar tu cuenta. Por favor, inténtalo de nuevo.');
-        setIsProcessing(false);
-        setSelectedPlan(null);
-        setProcessingPendingPlan(false); // Asegurar que el flag se resetee
-        return; 
-      }
-    }
-
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
     setError(null);
 
-    try {
-      const loadingToast = toast.loading(
-        plan.plan_id === "plan_monthly_trial" 
-          ? "Configurando tu prueba gratuita..."
-          : "Procesando pago..."
-      );
+    const loadingToast = toast.loading(
+      plan.plan_id === "plan_monthly_trial" 
+        ? "Preparando tu prueba gratuita..."
+        : "Abriendo checkout..."
+    );
 
+    try {
       console.log('💳 Llamando a createCheckoutSession...');
       
-      // ✅ NUEVO: Detectar si es reactivación
-      // A subscription exists but it's not the exact same active plan (e.g., cancelled, or different plan_id)
-      const isReactivation = !!existingSubscription; 
-      
-      // En este punto, `user` debe ser "professionnel" y estar cargado
+      // En este punto, `user` debe estar cargado
       const response = await base44.functions.invoke('createCheckoutSession', {
         email: user.email, 
         fullName: user.full_name || user.email,
@@ -264,7 +155,7 @@ export default function PricingPlansPage() {
         planId: plan.plan_id,
         planPrice: plan.precio,
         isTrial: plan.plan_id === "plan_monthly_trial",
-        isReactivation: isReactivation  // ✅ NUEVO: Flag de reactivación
+        isReactivation: false // As per outline, always false here, backend logic determines
       });
 
       toast.dismiss(loadingToast);
@@ -283,12 +174,12 @@ export default function PricingPlansPage() {
       }
     } catch (err) {
       console.error("❌ Error selecting plan:", err);
+      toast.dismiss(loadingToast);
       const errorMessage = "Ha habido un problema al procesar tu solicitud. Por favor, inténtalo de nuevo.";
       setError(errorMessage);
       toast.error(errorMessage);
       setIsProcessing(false);
       setSelectedPlan(null);
-      setProcessingPendingPlan(false); // Asegurar que el flag se resetee en caso de error
     }
   };
 
@@ -366,14 +257,11 @@ export default function PricingPlansPage() {
     }
   };
 
-  // ✅ Mostrar loading mientras se procesa plan pendiente
-  if (isLoadingUser || loadingPlans || processingPendingPlan) {
+  // Mostrar loading mientras se carga usuario o planes
+  if (isLoadingUser || loadingPlans) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-        {processingPendingPlan && (
-          <p className="text-gray-600">Continuando con tu selección...</p>
-        )}
       </div>
     );
   }
