@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -18,91 +18,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Upload, X } from "lucide-react";
+import { Paperclip, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../ui/LanguageSwitcher";
 
-export default function CreateTicketDialog({ open, onClose, user }) {
+const typeConfig = {
+  soporte_cliente: { text_es: "Soporte Cliente", text_en: "Client Support" },
+  soporte_autonomo: { text_es: "Soporte Autónomo", text_en: "Professional Support" },
+  reclamo: { text_es: "Reclamo", text_en: "Complaint" },
+  problema_trabajo: { text_es: "Problema con trabajo", text_en: "Job Issue" },
+  problema_pago: { text_es: "Problema de pago", text_en: "Payment Issue" },
+  consulta_general: { text_es: "Consulta general", text_en: "General Query" }
+};
+
+export default function CreateTicketDialog({ open, onClose, user, relatedProfessionalId = null }) {
   const queryClient = useQueryClient();
   const { language } = useLanguage();
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    type: "soporte_cliente",
-    priority: "media",
-    related_professional_id: ""
-  });
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState("consulta_general");
+  const [priority, setPriority] = useState("media");
+  const [assignedToId, setAssignedToId] = useState(relatedProfessionalId || "");
+  const [tags, setTags] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [attachments, setAttachments] = useState([]);
-  const [uploading, setUploading] = useState(false);
 
   const { data: professionals = [] } = useQuery({
-    queryKey: ['myContacts'],
+    queryKey: ['allProfessionals'],
     queryFn: async () => {
-      if (!user) return [];
-      const messages = await base44.entities.Message.filter({
-        $or: [
-          { sender_id: user.id },
-          { recipient_id: user.id }
-        ]
-      });
-      
-      const professionalIds = new Set();
-      messages.forEach(msg => {
-        if (msg.sender_id !== user.id) professionalIds.add(msg.sender_id);
-        if (msg.recipient_id !== user.id) professionalIds.add(msg.recipient_id);
-      });
-      
-      const profs = [];
-      for (const id of professionalIds) {
-        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: id });
-        if (profiles[0]) {
-          profs.push({ id, name: profiles[0].business_name });
-        }
-      }
-      return profs;
+      const profiles = await base44.entities.ProfessionalProfile.list();
+      return profiles;
     },
-    enabled: !!user && open,
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const ticketNumber = `TK-${Date.now().toString().slice(-8)}`;
+  const createTicketMutation = useMutation({
+    mutationFn: async (ticketData) => {
+      const ticketNumber = `TKT-${Date.now().toString().slice(-6)}`;
       
       const ticket = await base44.entities.Ticket.create({
+        ...ticketData,
         ticket_number: ticketNumber,
-        title: data.title,
-        description: data.description,
-        type: data.type,
-        priority: data.priority,
         creator_id: user.id,
         creator_name: user.full_name || user.email,
-        creator_email: user.email,
-        assigned_to_id: data.related_professional_id || '',
-        related_professional_id: data.related_professional_id || '',
-        attachments: attachments,
-        status: "abierto"
+        creator_type: user.user_type || 'client',
+        last_activity: new Date().toISOString()
       });
 
-      await base44.entities.TicketMessage.create({
+      await base44.entities.TicketEvent.create({
         ticket_id: ticket.id,
-        sender_id: user.id,
-        sender_name: user.full_name || user.email,
-        sender_role: user.role || 'user',
-        content: data.description,
-        action_type: "message"
+        event_type: 'created',
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Ticket creado: ${ticketData.title}`
       });
 
-      if (data.related_professional_id) {
-        await base44.entities.Notification.create({
-          user_id: data.related_professional_id,
-          type: 'system_update',
-          title: language === 'es' ? 'Nuevo ticket recibido' : 'New ticket received',
-          message: language === 'es' 
-            ? `Tienes un nuevo ticket: ${data.title}`
-            : `You have a new ticket: ${data.title}`,
-          link: `/tickets?id=${ticket.id}`,
-          priority: 'high'
+      if (ticketData.assigned_to_id) {
+        await base44.functions.invoke('sendTicketNotification', {
+          ticketId: ticket.id,
+          recipientId: ticketData.assigned_to_id,
+          type: 'new_ticket'
         });
       }
 
@@ -114,126 +88,139 @@ export default function CreateTicketDialog({ open, onClose, user }) {
       onClose();
       resetForm();
     },
-    onError: () => {
-      toast.error(language === 'es' ? 'Error al crear ticket' : 'Error creating ticket');
-    }
   });
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setUploading(true);
-    try {
-      const uploadedUrls = [];
-      for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploadedUrls.push(file_url);
-      }
-      setAttachments([...attachments, ...uploadedUrls]);
-      toast.success(language === 'es' ? 'Archivos subidos' : 'Files uploaded');
-    } catch (error) {
-      toast.error(language === 'es' ? 'Error subiendo archivos' : 'Error uploading files');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeAttachment = (url) => {
-    setAttachments(attachments.filter(a => a !== url));
-  };
-
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      type: "soporte_cliente",
-      priority: "media",
-      related_professional_id: ""
-    });
+    setTitle("");
+    setDescription("");
+    setType("consulta_general");
+    setPriority("media");
+    setAssignedToId(relatedProfessionalId || "");
+    setTags("");
     setAttachments([]);
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAttachments([...attachments, file_url]);
+      toast.success(language === 'es' ? 'Archivo adjunto' : 'File attached');
+    } catch (error) {
+      toast.error(language === 'es' ? 'Error subiendo archivo' : 'Error uploading file');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const handleSubmit = () => {
-    if (!formData.title || !formData.description) {
-      toast.error(language === 'es' ? 'Completa todos los campos' : 'Complete all fields');
+    if (!title.trim() || !description.trim()) {
+      toast.error(language === 'es' ? 'Completa título y descripción' : 'Complete title and description');
       return;
     }
-    createMutation.mutate(formData);
+
+    const selectedProfessional = professionals.find(p => p.user_id === assignedToId);
+
+    createTicketMutation.mutate({
+      title,
+      description,
+      type,
+      priority,
+      assigned_to_id: assignedToId || null,
+      assigned_to_name: selectedProfessional?.business_name || null,
+      related_professional_id: assignedToId || null,
+      tags: tags ? tags.split(',').map(t => t.trim()) : [],
+      attachments
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
+          <DialogTitle>
             {language === 'es' ? 'Crear Nuevo Ticket' : 'Create New Ticket'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div>
-            <Label>{language === 'es' ? 'Título *' : 'Title *'}</Label>
+            <label className="text-sm font-medium mb-2 block">
+              {language === 'es' ? 'Título *' : 'Title *'}
+            </label>
             <Input
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              placeholder={language === 'es' ? "Ej: Problema con pago de factura" : "E.g.: Invoice payment issue"}
-              className="mt-2"
+              placeholder={language === 'es' ? "Describe brevemente el problema..." : "Briefly describe the issue..."}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div>
-            <Label>{language === 'es' ? 'Tipo de ticket *' : 'Ticket type *'}</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value) => setFormData({...formData, type: value})}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(typeConfig).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>
-                    {language === 'es' ? config.label_es : config.label_en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium mb-2 block">
+              {language === 'es' ? 'Descripción *' : 'Description *'}
+            </label>
+            <Textarea
+              placeholder={language === 'es' ? "Explica detalladamente el problema..." : "Explain the issue in detail..."}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+            />
           </div>
 
-          <div>
-            <Label>{language === 'es' ? 'Prioridad' : 'Priority'}</Label>
-            <Select
-              value={formData.priority}
-              onValueChange={(value) => setFormData({...formData, priority: value})}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="baja">{language === 'es' ? 'Baja' : 'Low'}</SelectItem>
-                <SelectItem value="media">{language === 'es' ? 'Media' : 'Medium'}</SelectItem>
-                <SelectItem value="alta">{language === 'es' ? 'Alta' : 'High'}</SelectItem>
-                <SelectItem value="urgente">{language === 'es' ? 'Urgente' : 'Urgent'}</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                {language === 'es' ? 'Tipo de ticket' : 'Ticket type'}
+              </label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(typeConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {language === 'es' ? config.text_es : config.text_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                {language === 'es' ? 'Prioridad' : 'Priority'}
+              </label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baja">{language === 'es' ? 'Baja' : 'Low'}</SelectItem>
+                  <SelectItem value="media">{language === 'es' ? 'Media' : 'Medium'}</SelectItem>
+                  <SelectItem value="alta">{language === 'es' ? 'Alta' : 'High'}</SelectItem>
+                  <SelectItem value="urgente">{language === 'es' ? 'Urgente' : 'Urgent'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {professionals.length > 0 && (
             <div>
-              <Label>{language === 'es' ? 'Profesional relacionado (opcional)' : 'Related professional (optional)'}</Label>
-              <Select
-                value={formData.related_professional_id}
-                onValueChange={(value) => setFormData({...formData, related_professional_id: value})}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder={language === 'es' ? "Seleccionar..." : "Select..."} />
+              <label className="text-sm font-medium mb-2 block">
+                {language === 'es' ? 'Relacionado con profesional (opcional)' : 'Related to professional (optional)'}
+              </label>
+              <Select value={assignedToId} onValueChange={setAssignedToId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={language === 'es' ? "Seleccionar profesional..." : "Select professional..."} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>{language === 'es' ? 'Ninguno' : 'None'}</SelectItem>
                   {professionals.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.name}
+                    <SelectItem key={prof.user_id} value={prof.user_id}>
+                      {prof.business_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -242,56 +229,52 @@ export default function CreateTicketDialog({ open, onClose, user }) {
           )}
 
           <div>
-            <Label>{language === 'es' ? 'Descripción detallada *' : 'Detailed description *'}</Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder={language === 'es' 
-                ? "Describe tu problema o solicitud con el mayor detalle posible..."
-                : "Describe your problem or request in as much detail as possible..."}
-              rows={6}
-              className="mt-2"
+            <label className="text-sm font-medium mb-2 block">
+              {language === 'es' ? 'Etiquetas (separadas por comas)' : 'Tags (comma separated)'}
+            </label>
+            <Input
+              placeholder={language === 'es' ? "urgente, pago, problema técnico" : "urgent, payment, technical issue"}
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
             />
           </div>
 
           <div>
-            <Label>{language === 'es' ? 'Archivos adjuntos (opcional)' : 'Attachments (optional)'}</Label>
-            <div className="mt-2">
-              <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                <Upload className="w-5 h-5 text-gray-500" />
-                <span className="text-sm text-gray-600">
-                  {uploading 
-                    ? (language === 'es' ? 'Subiendo...' : 'Uploading...')
-                    : (language === 'es' ? 'Subir archivos' : 'Upload files')}
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
-              
-              {attachments.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {attachments.map((url, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm text-gray-700 truncate">
-                        {url.split('/').pop()}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeAttachment(url)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+            <label className="text-sm font-medium mb-2 block">
+              {language === 'es' ? 'Archivos adjuntos' : 'Attachments'}
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {attachments.map((url, idx) => (
+                <div key={idx} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs">Archivo {idx + 1}</span>
+                  <button
+                    onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
+            <input
+              type="file"
+              className="hidden"
+              id="ticket-file-upload"
+              onChange={handleFileUpload}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('ticket-file-upload').click()}
+              disabled={uploadingFile}
+            >
+              {uploadingFile ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Paperclip className="w-4 h-4 mr-2" />
+              )}
+              {language === 'es' ? 'Adjuntar archivo' : 'Attach file'}
+            </Button>
           </div>
         </div>
 
@@ -299,14 +282,15 @@ export default function CreateTicketDialog({ open, onClose, user }) {
           <Button variant="outline" onClick={onClose}>
             {language === 'es' ? 'Cancelar' : 'Cancel'}
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
-            disabled={createMutation.isPending}
+            disabled={createTicketMutation.isPending}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {createMutation.isPending 
-              ? (language === 'es' ? 'Creando...' : 'Creating...')
-              : (language === 'es' ? 'Crear Ticket' : 'Create Ticket')}
+            {createTicketMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : null}
+            {language === 'es' ? 'Crear Ticket' : 'Create Ticket'}
           </Button>
         </DialogFooter>
       </DialogContent>

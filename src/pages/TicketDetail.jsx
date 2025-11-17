@@ -6,25 +6,8 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import {
-  ArrowLeft,
-  Send,
-  Upload,
-  X,
-  Clock,
-  User,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Paperclip,
-  Tag,
-  Shield
-} from "lucide-react";
-import { toast } from "sonner";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import SEOHead from "../components/seo/SEOHead";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -32,12 +15,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  User,
+  Calendar,
+  Tag,
+  FileText,
+  Loader2
+} from "lucide-react";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import { toast } from "sonner";
+import SEOHead from "../components/seo/SEOHead";
 
 const statusConfig = {
-  abierto: { label_es: "Abierto", label_en: "Open", icon: AlertCircle, color: "bg-blue-500" },
-  en_progreso: { label_es: "En progreso", label_en: "In progress", icon: Clock, color: "bg-amber-500" },
-  resuelto: { label_es: "Resuelto", label_en: "Resolved", icon: CheckCircle2, color: "bg-green-500" },
-  cerrado: { label_es: "Cerrado", label_en: "Closed", icon: XCircle, color: "bg-gray-500" }
+  abierto: { icon: Clock, color: "bg-blue-500", text_es: "Abierto", text_en: "Open" },
+  en_progreso: { icon: AlertCircle, color: "bg-amber-500", text_es: "En progreso", text_en: "In progress" },
+  resuelto: { icon: CheckCircle, color: "bg-green-500", text_es: "Resuelto", text_en: "Resolved" },
+  cerrado: { icon: XCircle, color: "bg-gray-500", text_es: "Cerrado", text_en: "Closed" }
 };
 
 export default function TicketDetailPage() {
@@ -45,23 +45,21 @@ export default function TicketDetailPage() {
   const queryClient = useQueryClient();
   const { language } = useLanguage();
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  const [user, setUser] = useState(null);
+  const [messageContent, setMessageContent] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
   
   const urlParams = new URLSearchParams(window.location.search);
   const ticketId = urlParams.get("id");
-
-  const [user, setUser] = useState(null);
-  const [messageContent, setMessageContent] = useState("");
-  const [attachments, setAttachments] = useState([]);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadUser();
   }, []);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    scrollToBottom();
   }, []);
 
   const loadUser = async () => {
@@ -73,54 +71,69 @@ export default function TicketDetailPage() {
     }
   };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const { data: ticket, isLoading: loadingTicket } = useQuery({
     queryKey: ['ticket', ticketId],
     queryFn: async () => {
       const tickets = await base44.entities.Ticket.filter({ id: ticketId });
       return tickets[0] || null;
     },
-    enabled: !!ticketId && !!user,
+    enabled: !!ticketId,
   });
 
-  const { data: messages = [], isLoading: loadingMessages } = useQuery({
+  const { data: messages = [] } = useQuery({
     queryKey: ['ticketMessages', ticketId],
     queryFn: async () => {
       const msgs = await base44.entities.TicketMessage.filter({ ticket_id: ticketId });
       return msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
     },
     enabled: !!ticketId,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ['ticketEvents', ticketId],
+    queryFn: async () => {
+      const evts = await base44.entities.TicketEvent.filter({ ticket_id: ticketId });
+      return evts.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    },
+    enabled: !!ticketId,
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ content, attachments }) => {
+    mutationFn: async ({ content, attachments = [] }) => {
       const message = await base44.entities.TicketMessage.create({
         ticket_id: ticketId,
         sender_id: user.id,
         sender_name: user.full_name || user.email,
-        sender_role: user.role || 'user',
+        sender_type: user.user_type || 'client',
         content,
         attachments,
-        action_type: "message"
+        is_internal: false
       });
 
       await base44.entities.Ticket.update(ticketId, {
-        last_response_date: new Date().toISOString(),
-        response_count: (ticket.response_count || 0) + 1
+        last_activity: new Date().toISOString()
       });
 
-      const recipientId = ticket.creator_id === user.id 
-        ? ticket.assigned_to_id 
-        : ticket.creator_id;
+      await base44.entities.TicketEvent.create({
+        ticket_id: ticketId,
+        event_type: 'message_added',
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `${user.full_name || user.email} añadió un mensaje`
+      });
 
+      const recipientId = ticket.creator_id === user.id ? ticket.assigned_to_id : ticket.creator_id;
       if (recipientId) {
-        await base44.entities.Notification.create({
-          user_id: recipientId,
-          type: 'system_update',
-          title: language === 'es' ? `Nuevo mensaje en ticket #${ticket.ticket_number}` : `New message in ticket #${ticket.ticket_number}`,
-          message: content.substring(0, 100),
-          link: `/tickets?id=${ticketId}`,
-          priority: 'medium'
+        await base44.functions.invoke('sendTicketNotification', {
+          ticketId: ticketId,
+          recipientId: recipientId,
+          type: 'new_message',
+          message: content
         });
       }
 
@@ -128,12 +141,10 @@ export default function TicketDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticketMessages', ticketId] });
-      queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['ticketEvents', ticketId] });
       setMessageContent("");
-      setAttachments([]);
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      scrollToBottom();
+      toast.success(language === 'es' ? 'Mensaje enviado' : 'Message sent');
     },
   });
 
@@ -141,70 +152,82 @@ export default function TicketDetailPage() {
     mutationFn: async (newStatus) => {
       await base44.entities.Ticket.update(ticketId, {
         status: newStatus,
+        last_activity: new Date().toISOString(),
         ...(newStatus === 'resuelto' && { resolved_date: new Date().toISOString() }),
         ...(newStatus === 'cerrado' && { closed_date: new Date().toISOString() })
       });
 
-      await base44.entities.TicketMessage.create({
+      await base44.entities.TicketEvent.create({
         ticket_id: ticketId,
-        sender_id: user.id,
-        sender_name: user.full_name || user.email,
-        sender_role: user.role || 'user',
-        content: language === 'es' 
-          ? `Estado cambiado a: ${statusConfig[newStatus].label_es}`
-          : `Status changed to: ${statusConfig[newStatus].label_en}`,
-        action_type: "status_change"
+        event_type: 'status_changed',
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Estado cambiado a: ${newStatus}`,
+        old_value: ticket.status,
+        new_value: newStatus
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
-      queryClient.invalidateQueries({ queryKey: ['ticketMessages', ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['ticketEvents', ticketId] });
       toast.success(language === 'es' ? 'Estado actualizado' : 'Status updated');
     },
   });
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  const handleSendMessage = () => {
+    if (!messageContent.trim()) return;
+    sendMessageMutation.mutate({ content: messageContent });
+  };
 
-    setUploading(true);
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
     try {
-      const uploadedUrls = [];
-      for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploadedUrls.push(file_url);
-      }
-      setAttachments([...attachments, ...uploadedUrls]);
-      toast.success(language === 'es' ? 'Archivos adjuntados' : 'Files attached');
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      await base44.entities.Ticket.update(ticketId, {
+        attachments: [...(ticket.attachments || []), file_url],
+        last_activity: new Date().toISOString()
+      });
+
+      await base44.entities.TicketEvent.create({
+        ticket_id: ticketId,
+        event_type: 'attachment_added',
+        user_id: user.id,
+        user_name: user.full_name || user.email,
+        description: `Archivo adjunto añadido: ${file.name}`
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['ticketEvents', ticketId] });
+      toast.success(language === 'es' ? 'Archivo subido' : 'File uploaded');
     } catch (error) {
-      toast.error(language === 'es' ? 'Error subiendo archivos' : 'Error uploading files');
+      toast.error(language === 'es' ? 'Error subiendo archivo' : 'Error uploading file');
     } finally {
-      setUploading(false);
+      setUploadingFile(false);
     }
   };
 
-  const handleSend = () => {
-    if (!messageContent.trim() && attachments.length === 0) {
-      toast.error(language === 'es' ? 'Escribe un mensaje o adjunta archivos' : 'Write a message or attach files');
-      return;
-    }
-    sendMessageMutation.mutate({ content: messageContent, attachments });
+  const getStatusLabel = (status) => {
+    return language === 'es' ? statusConfig[status]?.text_es : statusConfig[status]?.text_en;
   };
 
   if (loadingTicket || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="spinner w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md p-8 text-center">
           <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold mb-2">
             {language === 'es' ? 'Ticket no encontrado' : 'Ticket not found'}
           </h2>
           <Button onClick={() => navigate(createPageUrl("Tickets"))}>
@@ -215,60 +238,54 @@ export default function TicketDetailPage() {
     );
   }
 
-  const StatusIcon = statusConfig[ticket.status].icon;
-  const isTicketOwner = ticket.creator_id === user.id;
-  const isAssigned = ticket.assigned_to_id === user.id;
-  const isAdmin = user.role === 'admin';
-  const canChangeStatus = isTicketOwner || isAssigned || isAdmin;
+  const StatusIcon = statusConfig[ticket.status]?.icon;
 
   return (
     <>
       <SEOHead 
-        title={`${language === 'es' ? 'Ticket' : 'Ticket'} #${ticket.ticket_number} - MisAutónomos`}
+        title={`Ticket ${ticket.ticket_number} - MisAutónomos`}
+        description={ticket.title}
         noindex={true}
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-6xl mx-auto">
           <Button
             variant="ghost"
             onClick={() => navigate(createPageUrl("Tickets"))}
-            className="mb-4 hover:bg-blue-50"
+            className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {language === 'es' ? 'Volver a tickets' : 'Back to tickets'}
           </Button>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <Card className="border-0 shadow-lg">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-10 h-10 ${statusConfig[ticket.status].color} rounded-lg flex items-center justify-center`}>
-                          <StatusIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-mono text-gray-600">#{ticket.ticket_number}</p>
-                          <Badge className={`${statusConfig[ticket.status].color} text-white border-0`}>
-                            {language === 'es' ? statusConfig[ticket.status].label_es : statusConfig[ticket.status].label_en}
-                          </Badge>
-                        </div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge variant="outline" className="font-mono">
+                          {ticket.ticket_number}
+                        </Badge>
+                        <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
+                          {StatusIcon && <StatusIcon className="w-3 h-3 mr-1" />}
+                          {getStatusLabel(ticket.status)}
+                        </Badge>
                       </div>
                       <h1 className="text-2xl font-bold text-gray-900 mb-2">
                         {ticket.title}
                       </h1>
-                      <p className="text-gray-700 leading-relaxed">
+                      <p className="text-gray-700">
                         {ticket.description}
                       </p>
                     </div>
                   </div>
 
                   {ticket.attachments && ticket.attachments.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Paperclip className="w-4 h-4" />
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-sm font-medium text-gray-700 mb-2">
                         {language === 'es' ? 'Archivos adjuntos:' : 'Attachments:'}
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -278,9 +295,10 @@ export default function TicketDetailPage() {
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
                           >
-                            📎 {url.split('/').pop()}
+                            <FileText className="w-4 h-4" />
+                            {language === 'es' ? 'Archivo' : 'File'} {idx + 1}
                           </a>
                         ))}
                       </div>
@@ -289,88 +307,52 @@ export default function TicketDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
+              <Card>
                 <CardContent className="p-6">
-                  <h2 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    {language === 'es' ? 'Cronología' : 'Timeline'}
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    {language === 'es' ? 'Conversación' : 'Conversation'}
                   </h2>
-
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {messages.map((msg, idx) => {
-                      const isSystem = msg.action_type !== "message";
-                      const isSender = msg.sender_id === user.id;
-
-                      if (msg.is_internal && user.role !== 'admin') return null;
-
+                  
+                  <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
+                    {messages.map((msg) => {
+                      const isOwn = msg.sender_id === user.id;
+                      const isAdmin = msg.sender_type === 'admin';
+                      
                       return (
-                        <div key={msg.id} className={`${isSystem ? 'text-center' : ''}`}>
-                          {isSystem ? (
-                            <div className="flex items-center justify-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                              <Clock className="w-4 h-4" />
-                              <span>{msg.content}</span>
-                              <span className="text-xs">
-                                {new Date(msg.created_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+                        <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] ${isOwn ? 'bg-blue-600 text-white' : isAdmin ? 'bg-amber-50 border border-amber-200' : 'bg-gray-100'} rounded-lg p-4`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="w-4 h-4" />
+                              <span className="text-sm font-semibold">
+                                {msg.sender_name}
                               </span>
-                            </div>
-                          ) : (
-                            <div className={`flex gap-3 ${isSender ? 'justify-end' : 'justify-start'}`}>
-                              {!isSender && (
-                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                  {msg.sender_role === 'admin' ? (
-                                    <Shield className="w-4 h-4 text-blue-600" />
-                                  ) : (
-                                    <User className="w-4 h-4 text-blue-600" />
-                                  )}
-                                </div>
+                              {isAdmin && (
+                                <Badge variant="secondary" className="text-xs">Admin</Badge>
                               )}
-                              <div className={`max-w-[70%] ${isSender ? 'items-end' : 'items-start'} flex flex-col`}>
-                                {msg.is_internal && (
-                                  <Badge variant="outline" className="mb-1 bg-amber-50 text-amber-700 border-amber-300">
-                                    {language === 'es' ? '🔒 Nota Interna' : '🔒 Internal Note'}
-                                  </Badge>
-                                )}
-                                <div className={`rounded-2xl px-4 py-3 ${
-                                  msg.is_internal 
-                                    ? 'bg-amber-50 border-2 border-amber-200'
-                                    : isSender 
-                                      ? 'bg-blue-600 text-white' 
-                                      : 'bg-white border-2 border-gray-200'
-                                }`}>
-                                  <p className="text-sm font-semibold mb-1">
-                                    {msg.sender_name}
-                                    {msg.sender_role === 'admin' && (
-                                      <Badge variant="secondary" className="ml-2 text-xs">Admin</Badge>
-                                    )}
-                                  </p>
-                                  <p className={`text-sm leading-relaxed ${isSender && !msg.is_internal ? 'text-white' : 'text-gray-800'}`}>
-                                    {msg.content}
-                                  </p>
-                                  {msg.attachments && msg.attachments.length > 0 && (
-                                    <div className="mt-2 space-y-1">
-                                      {msg.attachments.map((url, idx) => (
-                                        <a
-                                          key={idx}
-                                          href={url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className={`text-xs flex items-center gap-1 ${
-                                            isSender && !msg.is_internal ? 'text-blue-100 hover:text-white' : 'text-blue-600 hover:text-blue-700'
-                                          }`}
-                                        >
-                                          <Paperclip className="w-3 h-3" />
-                                          {url.split('/').pop()}
-                                        </a>
-                                      ))}
-                                    </div>
-                                  )}
-                                  <p className={`text-xs mt-2 ${isSender && !msg.is_internal ? 'text-blue-100' : 'text-gray-500'}`}>
-                                    {new Date(msg.created_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
-                                  </p>
-                                </div>
-                              </div>
                             </div>
-                          )}
+                            <p className={`text-sm ${isOwn ? 'text-white' : 'text-gray-800'}`}>
+                              {msg.content}
+                            </p>
+                            <p className={`text-xs mt-2 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
+                              {new Date(msg.created_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+                            </p>
+                            {msg.attachments && msg.attachments.length > 0 && (
+                              <div className="mt-2">
+                                {msg.attachments.map((url, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`text-xs flex items-center gap-1 ${isOwn ? 'text-blue-100 hover:text-white' : 'text-blue-600 hover:underline'}`}
+                                  >
+                                    <FileText className="w-3 h-3" />
+                                    Archivo adjunto {idx + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -378,62 +360,52 @@ export default function TicketDetailPage() {
                   </div>
 
                   {ticket.status !== 'cerrado' && (
-                    <div className="mt-6 pt-6 border-t">
+                    <div className="space-y-3">
                       <Textarea
+                        placeholder={language === 'es' ? "Escribe tu mensaje..." : "Write your message..."}
                         value={messageContent}
                         onChange={(e) => setMessageContent(e.target.value)}
-                        placeholder={language === 'es' ? "Escribe tu respuesta..." : "Write your response..."}
-                        rows={4}
-                        className="mb-3"
+                        rows={3}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
                       />
-
-                      {attachments.length > 0 && (
-                        <div className="mb-3 space-y-2">
-                          {attachments.map((url, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <span className="text-sm text-gray-700 truncate">
-                                {url.split('/').pop()}
-                              </span>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        <label className="flex-shrink-0">
-                          <Button variant="outline" disabled={uploading} asChild>
-                            <span>
-                              <Upload className="w-4 h-4 mr-2" />
-                              {uploading 
-                                ? (language === 'es' ? 'Subiendo...' : 'Uploading...')
-                                : (language === 'es' ? 'Adjuntar' : 'Attach')}
-                            </span>
-                          </Button>
+                      <div className="flex items-center justify-between">
+                        <div>
                           <input
+                            ref={fileInputRef}
                             type="file"
-                            multiple
-                            onChange={handleFileUpload}
                             className="hidden"
-                            disabled={uploading}
+                            onChange={handleFileUpload}
                           />
-                        </label>
-                        
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingFile}
+                          >
+                            {uploadingFile ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Paperclip className="w-4 h-4 mr-2" />
+                            )}
+                            {language === 'es' ? 'Adjuntar' : 'Attach'}
+                          </Button>
+                        </div>
                         <Button
-                          onClick={handleSend}
-                          disabled={sendMessageMutation.isPending || (!messageContent.trim() && attachments.length === 0)}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          onClick={handleSendMessage}
+                          disabled={!messageContent.trim() || sendMessageMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          <Send className="w-4 h-4 mr-2" />
-                          {sendMessageMutation.isPending 
-                            ? (language === 'es' ? 'Enviando...' : 'Sending...')
-                            : (language === 'es' ? 'Enviar' : 'Send')}
+                          {sendMessageMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4 mr-2" />
+                          )}
+                          {language === 'es' ? 'Enviar' : 'Send'}
                         </Button>
                       </div>
                     </div>
@@ -442,82 +414,81 @@ export default function TicketDetailPage() {
               </Card>
             </div>
 
-            <div className="space-y-4">
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-5">
-                  <h3 className="font-bold text-gray-900 mb-4">
-                    {language === 'es' ? 'Detalles' : 'Details'}
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    {language === 'es' ? 'Información del Ticket' : 'Ticket Information'}
                   </h3>
-
-                  <div className="space-y-3 text-sm">
+                  
+                  <div className="space-y-4">
                     <div>
-                      <p className="text-gray-600 mb-1">{language === 'es' ? 'Estado' : 'Status'}</p>
-                      {canChangeStatus ? (
-                        <Select
-                          value={ticket.status}
-                          onValueChange={(value) => updateStatusMutation.mutate(value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(statusConfig).map(([key, config]) => (
-                              <SelectItem key={key} value={key}>
-                                {language === 'es' ? config.label_es : config.label_en}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge className={`${statusConfig[ticket.status].color} text-white`}>
-                          {language === 'es' ? statusConfig[ticket.status].label_es : statusConfig[ticket.status].label_en}
-                        </Badge>
-                      )}
+                      <label className="text-sm text-gray-600 block mb-1">
+                        {language === 'es' ? 'Estado' : 'Status'}
+                      </label>
+                      <Select
+                        value={ticket.status}
+                        onValueChange={(value) => updateStatusMutation.mutate(value)}
+                        disabled={user.role !== 'admin' && ticket.status === 'cerrado'}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="abierto">{getStatusLabel('abierto')}</SelectItem>
+                          <SelectItem value="en_progreso">{getStatusLabel('en_progreso')}</SelectItem>
+                          <SelectItem value="resuelto">{getStatusLabel('resuelto')}</SelectItem>
+                          <SelectItem value="cerrado">{getStatusLabel('cerrado')}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
-                      <p className="text-gray-600 mb-1">{language === 'es' ? 'Tipo' : 'Type'}</p>
-                      <p className="font-medium text-gray-900">
+                      <label className="text-sm text-gray-600 block mb-1">
+                        {language === 'es' ? 'Tipo' : 'Type'}
+                      </label>
+                      <Badge variant="outline" className="w-full justify-center py-2">
                         {language === 'es' 
-                          ? typeConfig[ticket.type]?.label_es 
-                          : typeConfig[ticket.type]?.label_en}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-600 mb-1">{language === 'es' ? 'Prioridad' : 'Priority'}</p>
-                      <Badge variant="outline">
-                        {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
+                          ? typeConfig[ticket.type]?.text_es 
+                          : typeConfig[ticket.type]?.text_en}
                       </Badge>
                     </div>
 
                     <div>
-                      <p className="text-gray-600 mb-1">{language === 'es' ? 'Creado por' : 'Created by'}</p>
-                      <p className="font-medium text-gray-900">{ticket.creator_name}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-600 mb-1">{language === 'es' ? 'Creado el' : 'Created on'}</p>
-                      <p className="font-medium text-gray-900">
-                        {new Date(ticket.created_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+                      <label className="text-sm text-gray-600 block mb-1">
+                        {language === 'es' ? 'Creado por' : 'Created by'}
+                      </label>
+                      <p className="text-sm font-medium text-gray-900">
+                        {ticket.creator_name}
                       </p>
                     </div>
 
-                    {ticket.resolved_date && (
+                    {ticket.assigned_to_name && (
                       <div>
-                        <p className="text-gray-600 mb-1">{language === 'es' ? 'Resuelto el' : 'Resolved on'}</p>
-                        <p className="font-medium text-gray-900">
-                          {new Date(ticket.resolved_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+                        <label className="text-sm text-gray-600 block mb-1">
+                          {language === 'es' ? 'Asignado a' : 'Assigned to'}
+                        </label>
+                        <p className="text-sm font-medium text-gray-900">
+                          {ticket.assigned_to_name}
                         </p>
                       </div>
                     )}
 
+                    <div>
+                      <label className="text-sm text-gray-600 block mb-1">
+                        {language === 'es' ? 'Creado' : 'Created'}
+                      </label>
+                      <p className="text-sm text-gray-900 flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(ticket.created_date).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US')}
+                      </p>
+                    </div>
+
                     {ticket.tags && ticket.tags.length > 0 && (
                       <div>
-                        <p className="text-gray-600 mb-2 flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
+                        <label className="text-sm text-gray-600 block mb-2">
                           {language === 'es' ? 'Etiquetas' : 'Tags'}
-                        </p>
+                        </label>
                         <div className="flex flex-wrap gap-1">
                           {ticket.tags.map((tag, idx) => (
                             <Badge key={idx} variant="secondary" className="text-xs">
@@ -531,33 +502,34 @@ export default function TicketDetailPage() {
                 </CardContent>
               </Card>
 
-              {isAdmin && (
-                <Card className="border-2 border-amber-200 bg-amber-50">
-                  <CardContent className="p-5">
-                    <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-amber-600" />
-                      {language === 'es' ? 'Panel Admin' : 'Admin Panel'}
-                    </h3>
-                    <div className="space-y-3">
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          if (ticket.status === 'cerrado') {
-                            updateStatusMutation.mutate('abierto');
-                          } else {
-                            updateStatusMutation.mutate('cerrado');
-                          }
-                        }}
-                      >
-                        {ticket.status === 'cerrado'
-                          ? (language === 'es' ? 'Reabrir Ticket' : 'Reopen Ticket')
-                          : (language === 'es' ? 'Cerrar Ticket' : 'Close Ticket')}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    {language === 'es' ? 'Cronología' : 'Timeline'}
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {events.map((event, idx) => (
+                      <div key={event.id} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-2 h-2 rounded-full bg-blue-600" />
+                          {idx < events.length - 1 && (
+                            <div className="w-0.5 h-full bg-gray-200 mt-1" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <p className="text-sm font-medium text-gray-900">
+                            {event.description}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(event.created_date).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -567,11 +539,10 @@ export default function TicketDetailPage() {
 }
 
 const typeConfig = {
-  soporte_cliente: { label_es: "Soporte Cliente", label_en: "Client Support" },
-  soporte_autonomo: { label_es: "Soporte Autónomo", label_en: "Professional Support" },
-  reclamo: { label_es: "Reclamo", label_en: "Claim" },
-  problema_trabajo: { label_es: "Problema con Trabajo", label_en: "Work Issue" },
-  problema_pago: { label_es: "Problema de Pago", label_en: "Payment Issue" },
-  consulta_tecnica: { label_es: "Consulta Técnica", label_en: "Technical Query" },
-  otros: { label_es: "Otros", label_en: "Other" }
+  soporte_cliente: { text_es: "Soporte Cliente", text_en: "Client Support" },
+  soporte_autonomo: { text_es: "Soporte Autónomo", text_en: "Professional Support" },
+  reclamo: { text_es: "Reclamo", text_en: "Complaint" },
+  problema_trabajo: { text_es: "Problema con trabajo", text_en: "Job Issue" },
+  problema_pago: { text_es: "Problema de pago", text_en: "Payment Issue" },
+  consulta_general: { text_es: "Consulta general", text_en: "General Query" }
 };
