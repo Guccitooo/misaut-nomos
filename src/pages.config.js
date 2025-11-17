@@ -19,6 +19,9 @@ import LegalNotice from './pages/LegalNotice';
 import Notifications from './pages/Notifications';
 import FAQDetail from './pages/FAQDetail';
 import AdminFAQ from './pages/AdminFAQ';
+import Tickets from './pages/Tickets';
+import TicketDetail from './pages/TicketDetail';
+import AdminTickets from './pages/AdminTickets';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +47,9 @@ export const PAGES = {
     "Notifications": Notifications,
     "FAQDetail": FAQDetail,
     "AdminFAQ": AdminFAQ,
+    "Tickets": Tickets,
+    "TicketDetail": TicketDetail,
+    "AdminTickets": AdminTickets,
 }
 
 export const pagesConfig = {
