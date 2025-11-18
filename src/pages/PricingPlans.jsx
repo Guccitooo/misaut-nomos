@@ -3,14 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, TrendingUp, Crown, Loader2, Gift, Star, ArrowLeft, Info } from "lucide-react";
+import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
-import { ProductSchema } from "../components/seo/StructuredData";
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
@@ -41,6 +40,8 @@ export default function PricingPlansPage() {
       return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   useEffect(() => {
@@ -103,7 +104,6 @@ export default function PricingPlansPage() {
       const response = await base44.functions.invoke('createCheckoutSession', {
         planId: plan.plan_id,
         planPrice: plan.precio,
-        isTrial: plan.plan_id === "plan_monthly_trial",
         isReactivation: false
       });
 
@@ -117,79 +117,47 @@ export default function PricingPlansPage() {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      toast.error("Error al procesar el pago. Inténtalo de nuevo.");
+      toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
       setIsProcessing(false);
       setSelectedPlan(null);
     }
   };
 
   const handleGoBack = () => {
-    if (!user) {
-      navigate(createPageUrl("Search"));
-    } else if (user.user_type === "professionnel") {
-      if (user.subscription_status && user.subscription_status !== "inactivo") {
-        navigate(createPageUrl("MyProfile"));
-      } else {
-        navigate(createPageUrl("Search"));
-      }
-    } else {
-      navigate(createPageUrl("Search"));
-    }
+    navigate(createPageUrl("Search"));
   };
 
   const getPlanIcon = (planId) => {
     switch (planId) {
-      case "plan_monthly_trial": return <Gift className="w-8 h-8 text-blue-600" />;
-      case "plan_quarterly": return <TrendingUp className="w-8 h-8 text-green-600" />;
-      case "plan_annual": return <Crown className="w-8 h-8 text-orange-600" />;
-      default: return <CheckCircle className="w-8 h-8 text-gray-600" />;
+      case "plan_monthly_trial": return <Zap className="w-10 h-10" />;
+      case "plan_quarterly": return <TrendingUp className="w-10 h-10" />;
+      case "plan_annual": return <Crown className="w-10 h-10" />;
+      default: return <CheckCircle className="w-10 h-10" />;
     }
   };
 
-  const getPlanColor = (planId) => {
+  const getPlanBadge = (planId) => {
     switch (planId) {
-      case "plan_monthly_trial": return "from-blue-500 to-blue-700";
-      case "plan_quarterly": return "from-green-500 to-green-700";
-      case "plan_annual": return "from-orange-500 to-orange-700";
-      default: return "from-gray-500 to-gray-700";
+      case "plan_monthly_trial": 
+        return { text: "2 meses gratis", color: "bg-blue-500" };
+      case "plan_quarterly": 
+        return { text: "Más popular", color: "bg-green-500" };
+      case "plan_annual": 
+        return { text: "Mejor valor", color: "bg-orange-500" };
+      default: 
+        return null;
     }
   };
 
-  const getPlanFeatures = (planId) => {
-    const commonFeatures = [
-      "Aparece en búsquedas",
-      "Perfil profesional completo",
-      "Chat directo con clientes",
-      "Recibe valoraciones",
-      "Galería de fotos ilimitada",
-      "Renovación automática"
-    ];
-
-    switch (planId) {
-      case "plan_monthly_trial":
-        return [
-          ...commonFeatures.slice(0, 5),
-          "Soporte estándar"
-        ];
-      case "plan_quarterly":
-        return [
-          ...commonFeatures.slice(0, 5),
-          "⭐ Perfil destacado 2 semanas",
-          "Ahorro de 27€",
-          "Renovación automática"
-        ];
-      case "plan_annual":
-        return [
-          ...commonFeatures.slice(0, 5),
-          "⭐ Perfil destacado 1 mes completo",
-          "Ahorro de 138€",
-          "Soporte prioritario",
-          "Renovación automática"
-        ];
-      default:
-        return commonFeatures;
-    }
-  };
+  const getPlanFeatures = () => [
+    "Aparece en búsquedas",
+    "Perfil profesional completo",
+    "Chat directo con clientes",
+    "Recibe valoraciones",
+    "Galería de fotos ilimitada",
+    "Soporte preferente",
+    "Cancela cuando quieras"
+  ];
 
   if (loadingPlans) {
     return (
@@ -199,24 +167,16 @@ export default function PricingPlansPage() {
     );
   }
 
-  const productsForSchema = plans.map(plan => ({
-    name: plan.nombre,
-    description: plan.descripcion || `Plan ${plan.nombre} para profesionales en MisAutónomos`,
-    price: plan.precio
-  }));
-
   return (
     <>
       <SEOHead 
-        title="Planes y Precios - MisAutónomos | Hazte Visible para Clientes"
-        description="Elige el mejor plan para tu negocio: Mensual con 7 días gratis, Trimestral (ahorra 27€) o Anual (ahorra 138€). Perfil destacado incluido."
-        keywords="planes autónomos, precios profesionales, suscripción mensual, plan anual, perfil destacado"
+        title="Planes y Precios - MisAutónomos | 2 Meses Gratis"
+        description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 2 meses gratis. Sin permanencia."
+        keywords="planes autónomos, precios profesionales, 2 meses gratis, suscripción mensual, plan anual"
       />
       
-      <ProductSchema products={productsForSchema} />
-      
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <Button
             variant="ghost"
             onClick={handleGoBack}
@@ -227,276 +187,194 @@ export default function PricingPlansPage() {
             Volver
           </Button>
 
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Elige tu Plan
+          <div className="text-center mb-8">
+            <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 text-base font-bold mb-4">
+              <Gift className="w-4 h-4 mr-2 inline" />
+              2 MESES GRATIS EN TODOS LOS PLANES
+            </Badge>
+            
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+              Elige tu plan
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Selecciona el plan que mejor se adapte a tus necesidades y empieza a recibir clientes
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+              Empieza gratis 2 meses. Sin permanencia. Cancela cuando quieras.
             </p>
             
-            {!user && (
-              <p className="text-sm text-blue-600 mt-4">
-                Al seleccionar un plan, se te pedirá que inicies sesión o crees una cuenta
-              </p>
-            )}
-            
-            {canceled && (
-              <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
-                <Info className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-900">
-                  <strong>Pago cancelado.</strong> No te preocupes, puedes volver a elegir un plan cuando quieras. 
-                  Tu información se guardará y podrás continuar donde lo dejaste.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {user?.user_type === "client" && (
-              <Alert className="mt-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
-                <AlertDescription className="text-blue-900">
-                  <strong>ℹ️ Información:</strong> Estos planes son para autónomos que quieren ofrecer sus servicios. 
-                  Como cliente, puedes buscar y contactar profesionales de forma totalmente gratuita.
-                </AlertDescription>
-              </Alert>
-            )}
+            <div className="flex flex-wrap justify-center gap-4 mt-6">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-700">Cancela cuando quieras</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-700">Sin cargos ocultos</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-700">Pago 100% seguro</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.plan_id}
-                className={`relative overflow-hidden border-0 shadow-2xl transition-all duration-300 hover:scale-105 bg-white ${
-                  plan.plan_id === "plan_quarterly" ? "ring-4 ring-green-500" : ""
-                }`}
-              >
-                {plan.plan_id === "plan_quarterly" && (
-                  <Badge className="absolute top-4 right-4 bg-green-500 text-white">
-                    Más Popular
-                  </Badge>
-                )}
+          {canceled && (
+            <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                Pago cancelado. No te preocupes, puedes volver cuando quieras.
+              </AlertDescription>
+            </Alert>
+          )}
 
-                {plan.plan_id === "plan_monthly_trial" && (
-                  <Badge className="absolute top-4 right-4 bg-blue-500 text-white">
-                    7 Días Gratis
-                  </Badge>
-                )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {plans.map((plan) => {
+              const badge = getPlanBadge(plan.plan_id);
+              const isPopular = plan.plan_id === "plan_quarterly";
+              
+              return (
+                <Card 
+                  key={plan.plan_id}
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-white ${
+                    isPopular ? "border-green-500 shadow-xl" : "border-gray-200"
+                  }`}
+                >
+                  {badge && (
+                    <div className="absolute top-0 left-0 right-0">
+                      <div className={`${badge.color} text-white text-center py-2 text-sm font-bold`}>
+                        {badge.text}
+                      </div>
+                    </div>
+                  )}
 
-                {plan.ahorro > 0 && plan.plan_id !== "plan_monthly_trial" && (
-                  <Badge className="absolute top-4 right-4 bg-green-600 text-white font-semibold">
-                    Ahorra {plan.ahorro}€
-                  </Badge>
-                )}
+                  <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
+                    <div className="text-center mb-6">
+                      <div className={`w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center ${
+                        plan.plan_id === "plan_monthly_trial" ? "bg-blue-100 text-blue-600" :
+                        plan.plan_id === "plan_quarterly" ? "bg-green-100 text-green-600" :
+                        "bg-orange-100 text-orange-600"
+                      }`}>
+                        {getPlanIcon(plan.plan_id)}
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {plan.nombre}
+                      </h3>
+                      
+                      <div className="mb-2">
+                        <p className="text-4xl font-bold text-gray-900">
+                          {plan.precio}€
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {plan.plan_id === "plan_monthly_trial" ? "/mes" : 
+                           plan.plan_id === "plan_quarterly" ? "/3 meses" : 
+                           "/año"}
+                        </p>
+                      </div>
 
-                <CardHeader className={`bg-gradient-to-r ${getPlanColor(plan.plan_id)} text-white p-8`}>
-                  <div className="flex items-center justify-center mb-4" aria-hidden="true">
-                    {getPlanIcon(plan.plan_id)}
-                  </div>
-                  <CardTitle className="text-center text-2xl font-bold">
-                    {plan.plan_id === "plan_monthly_trial" ? "Mensual — 7 días gratis" : plan.nombre}
-                  </CardTitle>
-                  <div className="text-center mt-4">
-                    <p className="text-5xl font-bold">
-                      {plan.plan_id === "plan_monthly_trial" ? (
+                      {plan.plan_id !== "plan_monthly_trial" && (
+                        <p className="text-sm text-green-600 font-semibold">
+                          {plan.plan_id === "plan_quarterly" && "≈ 29.7€/mes (10% OFF)"}
+                          {plan.plan_id === "plan_annual" && "≈ 26.4€/mes (20% OFF)"}
+                        </p>
+                      )}
+
+                      <div className="mt-3 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-sm font-bold text-green-700">
+                          ✨ Empieza GRATIS 2 meses
+                        </p>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2.5 mb-6">
+                      {getPlanFeatures().map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      className={`w-full h-12 text-base font-bold transition-all ${
+                        isPopular 
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
+                          : "bg-blue-600 hover:bg-blue-700"
+                      }`}
+                      onClick={() => handleSelectPlan(plan)}
+                      disabled={isProcessing && selectedPlan === plan.plan_id}
+                      aria-label={`Seleccionar plan ${plan.nombre}`}
+                    >
+                      {isProcessing && selectedPlan === plan.plan_id ? (
                         <>
-                          <span className="text-2xl opacity-90">Luego {plan.precio}€/mes</span>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Procesando...
                         </>
                       ) : (
-                        `${plan.precio}€`
+                        "Empezar ahora"
                       )}
+                    </Button>
+
+                    <p className="text-xs text-center text-gray-500 mt-3">
+                      Al hacer clic, irás al checkout seguro de Stripe
                     </p>
-                    {plan.plan_id !== "plan_monthly_trial" && (
-                      <p className="text-sm opacity-90 mt-2">
-                        {plan.duracion_dias === 30 ? "/mes" : 
-                         plan.duracion_dias === 90 ? "/3 meses" : 
-                         "/año"}
-                      </p>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent className="p-8 bg-white">
-                  <p className="text-gray-600 mb-6 min-h-[60px] text-sm leading-relaxed">
-                    {plan.plan_id === "plan_monthly_trial" 
-                      ? "Prueba 7 días gratis. Luego 49€/mes. Cancela cuando quieras."
-                      : plan.descripcion}
-                  </p>
-
-                  <ul className="space-y-3 mb-8" role="list">
-                    {getPlanFeatures(plan.plan_id).map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        {feature.includes("⭐") ? (
-                          <>
-                            <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0 fill-amber-500" aria-hidden="true" />
-                            <span className="text-gray-900 font-semibold">{feature.replace("⭐ ", "")}</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                            <span className="text-gray-700">{feature}</span>
-                          </>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className={`w-full h-12 text-lg font-semibold bg-gradient-to-r ${getPlanColor(plan.plan_id)}`}
-                    onClick={() => handleSelectPlan(plan)}
-                    disabled={isProcessing && selectedPlan === plan.plan_id}
-                    aria-label={`Seleccionar plan ${plan.nombre}`}
-                  >
-                    {isProcessing && selectedPlan === plan.plan_id ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : (
-                      plan.plan_id === "plan_monthly_trial" ? "Comenzar Prueba Gratis" : "Seleccionar Plan"
-                    )}
-                  </Button>
-
-                  {plan.plan_id === "plan_monthly_trial" && (
-                    <p className="text-xs text-green-700 text-center mt-3 bg-green-50 p-2 rounded">
-                      ✓ Requiere tarjeta. Sin cobro hasta que acabe la prueba.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
-          <div className="max-w-5xl mx-auto mb-12">
-            <h2 className="text-2xl font-bold text-center mb-8">Comparación de planes</h2>
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Característica</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Mensual</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Trimestral</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Anual</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Precio</td>
-                      <td className="px-6 py-4 text-sm text-center">49€/mes</td>
-                      <td className="px-6 py-4 text-sm text-center">120€/3 meses</td>
-                      <td className="px-6 py-4 text-sm text-center">450€/año</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Prueba gratuita</td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center">-</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Duración prueba</td>
-                      <td className="px-6 py-4 text-sm text-center font-semibold text-green-700">7 días gratis</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Perfil completo</td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Chat con clientes</td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr className="bg-amber-50">
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">Perfil destacado</td>
-                      <td className="px-6 py-4 text-center text-gray-500">-</td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex flex-col items-center">
-                          <Star className="w-5 h-5 text-amber-500 mb-1 fill-amber-500" />
-                          <span className="text-xs font-semibold text-amber-700">2 semanas</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex flex-col items-center">
-                          <Star className="w-5 h-5 text-amber-500 mb-1 fill-amber-500" />
-                          <span className="text-xs font-semibold text-amber-700">1 mes completo</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Ahorro vs mensual</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                      <td className="px-6 py-4 text-center text-green-600 font-semibold">27€</td>
-                      <td className="px-6 py-4 text-center text-green-600 font-semibold">138€</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-sm text-gray-700">Soporte prioritario</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                      <td className="px-6 py-4 text-center">-</td>
-                      <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 mb-8">
+            <CardContent className="p-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                💳 ¿Por qué necesito añadir una tarjeta?
+              </h2>
+              <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed">
+                La tarjeta es necesaria para poder cobrar automáticamente después del periodo de prueba de <strong>2 meses</strong> si decides continuar. 
+                <span className="block mt-2 text-green-700 font-bold">
+                  ✅ NO se te cobrará NADA durante los 60 días.
+                </span>
+                <span className="block mt-1 text-gray-600">
+                  Puedes cancelar en cualquier momento antes de que finalice la prueba.
+                </span>
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="mt-16 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-8">Preguntas Frecuentes</h2>
-            <div className="space-y-4">
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">¿Qué significa "perfil destacado"?</h3>
-                  <p className="text-gray-600">
-                    Los perfiles destacados aparecen en las primeras posiciones de las búsquedas, con un badge especial que aumenta tu visibilidad y probabilidad de recibir contactos.
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-6">Preguntas frecuentes</h2>
+            <div className="space-y-3">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-5">
+                  <h3 className="font-semibold mb-2">¿Qué pasa después de los 2 meses gratis?</h3>
+                  <p className="text-sm text-gray-600">
+                    Si no cancelas antes de que terminen los 60 días, se cobrará automáticamente según el plan elegido. NO se realiza ningún cobro durante los 2 meses de prueba.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">¿Qué pasa después de los 7 días de prueba?</h3>
-                  <p className="text-gray-600">
-                    <strong>⚠️ IMPORTANTE:</strong> Se requiere tarjeta de crédito para activar la prueba. Si no cancelas antes de que terminen los 7 días, se cobrará automáticamente 49€/mes y tu plan se convertirá en el plan mensual. NO se realizará ningún cobro durante los 7 días de prueba.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">¿Por qué necesito añadir una tarjeta para la prueba gratuita?</h3>
-                  <p className="text-gray-600">
-                    La tarjeta es necesaria para poder cobrar automáticamente después del periodo de prueba si decides continuar. <strong>No se te cobrará nada durante los 7 días.</strong> Puedes cancelar en cualquier momento antes de que finalice la prueba.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">¿Cuándo se destaca mi perfil en los planes trimestral y anual?</h3>
-                  <p className="text-gray-600">
-                    <strong>Plan Trimestral:</strong> Tu perfil se destaca las primeras 2 semanas al inicio de cada trimestre.<br/>
-                    <strong>Plan Anual:</strong> Tu perfil se destaca durante el primer mes completo del año.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
-                  <p className="text-gray-600">
-                    Sí, puedes cancelar tu suscripción en cualquier momento desde tu panel de usuario. Si cancelas durante la prueba gratuita de 7 días, no se te cobrará nada. Si cancelas después, seguirás teniendo acceso hasta el final del periodo pagado.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-6">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-5">
                   <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral o anual?</h3>
-                  <p className="text-gray-600">
-                    Con el plan trimestral ahorras 27€ (120€ vs 147€). Con el plan anual ahorras 138€ (450€ vs 588€).
+                  <p className="text-sm text-gray-600">
+                    <strong>Trimestral:</strong> Pagas 89.1€ cada 3 meses (29.7€/mes) = 10% menos que el mensual.<br/>
+                    <strong>Anual:</strong> Pagas 316.8€ al año (26.4€/mes) = 20% menos que el mensual.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-5">
+                  <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
+                  <p className="text-sm text-gray-600">
+                    Sí. Si cancelas durante los 2 meses gratis, no se te cobrará nada. Si cancelas después, seguirás teniendo acceso hasta el final del periodo pagado.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-5">
+                  <h3 className="font-semibold mb-2">¿Puedo usar la prueba más de una vez?</h3>
+                  <p className="text-sm text-gray-600">
+                    No. La prueba gratuita de 2 meses solo se puede usar una vez por usuario. Si ya la usaste, tendrás que pagar desde el primer día.
                   </p>
                 </CardContent>
               </Card>

@@ -13,11 +13,11 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { planId, planPrice, isTrial = false, isReactivation = false } = body;
+    const { planId, planPrice, isReactivation = false } = body;
 
-    if (isTrial && user.has_used_trial === true) {
+    if (user.has_used_trial === true) {
       return Response.json({ 
-        error: 'Ya has usado tu periodo de prueba gratuito. Por favor, selecciona un plan de pago.' 
+        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses. Ahora el pago se aplicará inmediatamente.' 
       }, { status: 400 });
     }
 
@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
       : `${baseUrl}/MyProfile?onboarding=pending`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
+    const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
+    const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
+
     let sessionParams = {
       customer_email: user.email,
       mode: 'subscription',
@@ -60,46 +63,14 @@ Deno.serve(async (req) => {
         user_id: user.id,
         user_email: user.email,
         plan_id: planId,
-        is_trial: isTrial.toString(),
-        is_reactivation: isReactivation.toString()
+        is_reactivation: isReactivation.toString(),
+        trial_offered: 'true'
       },
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          user_email: user.email,
-          plan_id: planId,
-          is_trial: isTrial.toString()
-        }
-      }
-    };
-
-    if (isTrial) {
-      sessionParams.line_items = [{
+      line_items: [{
         price_data: {
           currency: 'eur',
           product_data: {
-            name: 'Plan Mensual - Prueba de 7 días',
-            description: '7 días gratis, luego 49€/mes. Cancela cuando quieras.',
-          },
-          unit_amount: planPrice * 100,
-          recurring: {
-            interval: 'month',
-            interval_count: 1
-          }
-        },
-        quantity: 1
-      }];
-      sessionParams.subscription_data.trial_period_days = 7;
-      sessionParams.payment_method_collection = 'always';
-    } else {
-      const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
-      const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
-
-      sessionParams.line_items = [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: plan.nombre,
+            name: `${plan.nombre} - 2 meses gratis`,
             description: plan.descripcion || `Suscripción ${plan.nombre}`,
           },
           unit_amount: planPrice * 100,
@@ -109,7 +80,18 @@ Deno.serve(async (req) => {
           }
         },
         quantity: 1
-      }];
+      }],
+      subscription_data: {
+        trial_period_days: 60,
+        metadata: {
+          user_id: user.id,
+          user_email: user.email,
+          plan_id: planId,
+          discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
+          trial: '2 meses'
+        }
+      },
+      payment_method_collection: 'always'
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

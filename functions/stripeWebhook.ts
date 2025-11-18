@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -149,8 +148,7 @@ Deno.serve(async (req) => {
                     subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
                 };
 
-                // ✅ Marcar que ya usó trial si es plan_monthly_trial
-                if (metadata.planId === 'plan_monthly_trial' || subscription.status === 'trialing') {
+                if (subscription.status === 'trialing' || metadata.trial_offered === 'true') {
                     userData.has_used_trial = true;
                 }
 
@@ -260,7 +258,7 @@ Deno.serve(async (req) => {
                 const isTrialing = subscription.status === 'trialing';
                 const planName = plan.nombre;
                 const planMessage = isTrialing 
-                    ? `¡Bienvenido a tu prueba de ${planName}!` 
+                    ? `¡Bienvenido! Disfruta 2 meses gratis con ${planName}` 
                     : `¡Tu suscripción a ${planName} está activa!`;
 
                 // ✅ Email de bienvenida profesional
@@ -313,7 +311,7 @@ Deno.serve(async (req) => {
       </p>
       <ul style="color: #4b5563; line-height: 1.8; margin-bottom: 25px;">
         <li><strong>Plan:</strong> ${planName}</li>
-        <li><strong>Estado:</strong> ${isTrialing ? 'Prueba gratuita (7 días)' : 'Activo'}</li>
+        <li><strong>Estado:</strong> ${isTrialing ? 'Prueba gratuita (2 meses)' : 'Activo'}</li>
         <li><strong>Renovación:</strong> ${new Date(subscription.current_period_end * 1000).toLocaleDateString('es-ES')}</li>
       </ul>
       
