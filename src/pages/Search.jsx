@@ -367,8 +367,14 @@ export default function SearchPage() {
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
       if (!userSub) return false;
       
-      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
-      if (!isActive) return false;
+      const today = new Date();
+      const expirationDate = new Date(userSub.fecha_expiracion);
+      const isStillInPeriod = expirationDate >= today;
+      
+      const validStates = ["activo", "active", "en_prueba", "trialing", "cancelado", "canceled"];
+      const hasValidState = validStates.includes(userSub.estado?.toLowerCase());
+      
+      if (!hasValidState || !isStillInPeriod) return false;
       
       return true;
     });

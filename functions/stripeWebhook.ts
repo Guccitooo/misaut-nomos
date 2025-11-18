@@ -96,13 +96,13 @@ Deno.serve(async (req) => {
                 };
             }
             
-            // ⚪ Cancelado pero con tiempo restante
+            // ⚪ Cancelado pero con tiempo restante (incluye trial cancelado)
             if (subscriptionStatus === 'canceled' && isSubscriptionActive(subscriptionStatus, endDate)) {
                 return {
                     estado: 'cancelado',
                     visible_en_busqueda: true,
                     estado_perfil: 'activo',
-                    mensaje: 'Cancelado - activo hasta fin de periodo'
+                    mensaje: 'Cancelado - visible hasta fin de periodo'
                 };
             }
             
@@ -224,12 +224,26 @@ Deno.serve(async (req) => {
                 });
 
                 if (profiles.length > 0) {
-                    console.log('🔄 Actualizando perfil existente ID:', profiles[0].id);
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                        visible_en_busqueda: profileStatus.visible_en_busqueda,
-                        estado_perfil: profileStatus.estado_perfil
+                    const profile = profiles[0];
+                    console.log('🔄 Actualizando perfil existente ID:', profile.id);
+                    
+                    const today = new Date();
+                    const expirationDate = new Date(subscriptionData.fecha_expiracion);
+                    const isStillInPeriod = expirationDate > today;
+                    const isTrial = subscription.status === 'trialing';
+                    const isCanceled = subscription.cancel_at_period_end === true;
+                    
+                    const shouldBeVisible = (
+                        (subscription.status === 'active' && isStillInPeriod) ||
+                        (isTrial && isStillInPeriod) ||
+                        (isCanceled && isStillInPeriod)
+                    );
+                    
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                        visible_en_busqueda: shouldBeVisible,
+                        estado_perfil: shouldBeVisible ? 'activo' : 'inactivo'
                     });
-                    console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
+                    console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (trial: ${isTrial}, cancelado: ${isCanceled}, vigente: ${isStillInPeriod})`);
                 } else {
                     console.log('ℹ️ Perfil aún no existe (se creará en onboarding)');
                 }
@@ -361,11 +375,23 @@ Deno.serve(async (req) => {
                 });
 
                 if (profiles.length > 0) {
+                    const today = new Date();
+                    const expirationDate = new Date(subscription.current_period_end * 1000);
+                    const isStillInPeriod = expirationDate > today;
+                    const isTrial = subscription.status === 'trialing';
+                    const isCanceled = subscription.cancel_at_period_end === true;
+                    
+                    const shouldBeVisible = (
+                        (subscription.status === 'active' && isStillInPeriod) ||
+                        (isTrial && isStillInPeriod) ||
+                        (isCanceled && isStillInPeriod)
+                    );
+                    
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                        visible_en_busqueda: profileStatus.visible_en_busqueda,
-                        estado_perfil: profileStatus.estado_perfil
+                        visible_en_busqueda: shouldBeVisible,
+                        estado_perfil: shouldBeVisible ? 'activo' : 'inactivo'
                     });
-                    console.log(`✅ Visibilidad actualizada: ${profileStatus.visible_en_busqueda}`);
+                    console.log(`✅ Visibilidad actualizada: ${shouldBeVisible} (trial: ${isTrial}, cancelado: ${isCanceled}, vigente: ${isStillInPeriod})`);
                 }
 
                 // Actualizar estado del usuario
