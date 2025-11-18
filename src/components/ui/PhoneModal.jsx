@@ -162,7 +162,13 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName 
         `}
       </style>
 
-      <div className="phone-modal-overlay" onClick={onClose}>
+      <div 
+        className="phone-modal-overlay" 
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      >
         <div className="phone-modal-box" onClick={(e) => e.stopPropagation()}>
           <button 
             className="phone-modal-close" 
