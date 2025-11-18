@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -25,11 +24,13 @@ import SEOHead from "../components/seo/SEOHead";
 
 export default function ClientOnboardingPage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [error, setError] = useState(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -304,60 +305,127 @@ export default function ClientOnboardingPage() {
     }
   });
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 9;
+  };
+
+  const validateName = (name) => {
+    const trimmed = name.trim();
+    const words = trimmed.split(/\s+/);
+    return words.length >= 2 && trimmed.length >= 4;
+  };
+
+  const validateField = (field, value) => {
+    const errors = {};
+    
+    switch(field) {
+      case 'nombre':
+        if (!validateName(value)) {
+          errors.nombre = language === 'es' 
+            ? 'Introduce nombre y apellido (mínimo 2 palabras)'
+            : 'Enter first and last name (minimum 2 words)';
+        }
+        break;
+      case 'email':
+        if (!validateEmail(value)) {
+          errors.email = language === 'es'
+            ? 'El email no es válido. Revisa el formato.'
+            : 'Invalid email format. Please check.';
+        }
+        break;
+      case 'telefono':
+        if (!validatePhone(value)) {
+          errors.telefono = language === 'es'
+            ? 'Introduce un número de teléfono válido (9 dígitos)'
+            : 'Enter a valid phone number (9 digits)';
+        }
+        break;
+    }
+    
+    setFieldErrors(prev => ({...prev, ...errors}));
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleBlur = (field) => {
+    setTouchedFields(prev => ({...prev, [field]: true}));
+    validateField(field, formData[field]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    
+    const errors = {};
 
-    if (!formData.acepta_terminos) {
-      setError("❌ " + t('acceptTermsAndConditionsError')); // Using t() for translation
-      toast.error(t('acceptTermsAndConditionsError')); // Using t() for translation
-      document.getElementById('acepta_terminos_client')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
+    if (!validateName(formData.nombre)) {
+      errors.nombre = language === 'es' 
+        ? 'Introduce nombre y apellido (mínimo 2 palabras)'
+        : 'Enter first and last name (minimum 2 words)';
     }
 
-    if (!formData.nombre || formData.nombre.trim().length < 2) {
-      setError(t('nameLengthError')); // Using t() for translation
-      return;
+    if (!validateEmail(formData.email)) {
+      errors.email = language === 'es'
+        ? 'El email no es válido. Revisa el formato.'
+        : 'Invalid email format. Please check.';
     }
 
-    if (!formData.email || !formData.email.includes('@')) {
-      setError(t('invalidEmail')); // Using t() for translation
-      return;
+    if (!validatePhone(formData.telefono)) {
+      errors.telefono = language === 'es'
+        ? 'Introduce un número de teléfono válido (9 dígitos)'
+        : 'Enter a valid phone number (9 digits)';
     }
 
-    if (!formData.telefono || formData.telefono.replace(/\s/g, '').length < 9) {
-      setError(t('phoneLengthError')); // Using t() for translation
-      return;
+    if (!formData.provincia) {
+      errors.provincia = language === 'es' ? 'Selecciona una provincia' : 'Select a province';
     }
 
-    if (!formData.provincia || formData.provincia.trim().length === 0) {
-      setError(t('selectProvinceError')); // Using t() for translation
-      return;
-    }
-
-    if (!formData.ciudad || formData.ciudad.trim().length === 0) {
-      setError(t('selectCityError')); // Using t() for translation
-      return;
+    if (!formData.ciudad) {
+      errors.ciudad = language === 'es' ? 'Selecciona una ciudad' : 'Select a city';
     }
 
     if (formData.servicios_buscados.length === 0) {
-      setError(t('selectServicesError')); // Using t() for translation
+      errors.servicios = language === 'es' ? 'Selecciona al menos un servicio' : 'Select at least one service';
+    }
+
+    if (!formData.acepta_terminos) {
+      errors.terminos = language === 'es' 
+        ? 'Debes aceptar los términos y condiciones'
+        : 'You must accept the terms and conditions';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setTouchedFields({
+        nombre: true,
+        email: true,
+        telefono: true,
+        provincia: true,
+        ciudad: true,
+        servicios: true,
+        terminos: true
+      });
+      
+      const firstError = Object.keys(errors)[0];
+      document.getElementById(firstError)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      toast.error(language === 'es' ? 'Por favor, corrige los errores del formulario' : 'Please fix the form errors');
       return;
     }
 
     if (!user) {
-      console.log('💾 Guardando datos y preparando redirección...');
-      
       setIsRedirecting(true);
-      
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
       try {
-        console.log('🔄 Redirigiendo a login...');
         await base44.auth.redirectToLogin(window.location.href);
       } catch (error) {
-        console.error('❌ Error en redirección:', error);
-        setError(t('redirectionError')); // Using t() for translation
+        setError(language === 'es' ? 'Error en la redirección' : 'Redirection error');
         setIsRedirecting(false);
       }
       
@@ -441,163 +509,216 @@ export default function ClientOnboardingPage() {
         keywords="crear cuenta cliente, buscar autónomos, servicios profesionales España"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Search className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-6 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               {t('createClientAccount')}
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-sm text-gray-600">
               {t('completeDataToSearch')}
             </p>
-            <p className="text-sm text-green-700 font-semibold mt-2">
-              ✅ {t('freeNoHiddenCosts')}
-            </p>
-            {!user && (
-              <p className="text-sm text-blue-600 mt-2">
-                📝 {t('emailVerificationSent')}
-              </p>
-            )}
           </div>
 
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
           <Card className="border-0 shadow-lg">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Nombre */}
-                <div>
-                  <Label htmlFor="nombre">{t('fullName')} *</Label>
-                  <Input
-                    id="nombre"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    placeholder={t('fullNamePlaceholder')}
-                    maxLength={100}
-                    className="h-12 mt-2"
-                    required
-                    aria-required="true"
-                  />
+            <CardContent className="p-6 md:p-8">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nombre">{t('fullName')} *</Label>
+                    <Input
+                      id="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => {
+                        setFormData({ ...formData, nombre: e.target.value });
+                        if (touchedFields.nombre) validateField('nombre', e.target.value);
+                      }}
+                      onBlur={() => handleBlur('nombre')}
+                      placeholder={t('fullNamePlaceholder')}
+                      maxLength={100}
+                      autoComplete="name"
+                      className={`h-11 mt-1 ${
+                        touchedFields.nombre 
+                          ? fieldErrors.nombre 
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                            : 'border-green-500 focus:border-green-500'
+                          : ''
+                      }`}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!fieldErrors.nombre}
+                      aria-describedby={fieldErrors.nombre ? "nombre-error" : undefined}
+                    />
+                    {touchedFields.nombre && fieldErrors.nombre && (
+                      <p id="nombre-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                        <span>❗</span> {fieldErrors.nombre}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="telefono">{t('phone')} *</Label>
+                    <Input
+                      id="telefono"
+                      type="tel"
+                      value={formData.telefono}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, '');
+                        setFormData({ ...formData, telefono: cleaned });
+                        if (touchedFields.telefono) validateField('telefono', cleaned);
+                      }}
+                      onBlur={() => handleBlur('telefono')}
+                      placeholder={t('contactPhonePlaceholder')}
+                      maxLength={15}
+                      autoComplete="tel"
+                      className={`h-11 mt-1 ${
+                        touchedFields.telefono 
+                          ? fieldErrors.telefono 
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                            : 'border-green-500 focus:border-green-500'
+                          : ''
+                      }`}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!fieldErrors.telefono}
+                      aria-describedby={fieldErrors.telefono ? "telefono-error" : undefined}
+                    />
+                    {touchedFields.telefono && fieldErrors.telefono && (
+                      <p id="telefono-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                        <span>❗</span> {fieldErrors.telefono}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Email */}
                 <div>
                   <Label htmlFor="email">{t('email')} *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (touchedFields.email) validateField('email', e.target.value);
+                    }}
+                    onBlur={() => handleBlur('email')}
                     placeholder={t('contactEmailPlaceholder')}
-                    className="h-12 mt-2"
+                    autoComplete="email"
+                    className={`h-11 mt-1 ${
+                      touchedFields.email 
+                        ? fieldErrors.email 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-green-500 focus:border-green-500'
+                        : ''
+                    }`}
                     required
                     disabled={!!user}
                     aria-required="true"
+                    aria-invalid={!!fieldErrors.email}
+                    aria-describedby={fieldErrors.email ? "email-error" : undefined}
                   />
+                  {touchedFields.email && fieldErrors.email && (
+                    <p id="email-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                      <span>❗</span> {fieldErrors.email}
+                    </p>
+                  )}
                   {user && (
                     <p className="text-xs text-gray-500 mt-1">
                       {t('emailCantChange')}
                     </p>
                   )}
-                  {!user && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t('emailVerificationInfo')}
-                    </p>
-                  )}
                 </div>
 
-                {/* Teléfono */}
-                <div>
-                  <Label htmlFor="telefono">{t('phone')} *</Label>
-                  <Input
-                    id="telefono"
-                    type="tel"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value.replace(/[^\d+]/g, '') })}
-                    placeholder={t('contactPhonePlaceholder')}
-                    maxLength={15}
-                    className="h-12 mt-2"
-                    required
-                    aria-required="true"
-                  />
-                </div>
-
-                {/* ✅ NUEVO: Provincia */}
-                <div>
-                  <Label htmlFor="provincia">{t('province')} *</Label>
-                  <Select
-                    value={formData.provincia}
-                    onValueChange={(value) => {
-                      setFormData({
-                        ...formData,
-                        provincia: value,
-                        ciudad: ""
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="provincia" className="h-12 mt-2" aria-required="true">
-                      <SelectValue placeholder={t('selectYourProvince')} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {provincias.map((prov) => (
-                        <SelectItem key={prov} value={prov}>
-                          {prov}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* ✅ NUEVO: Ciudad (solo aparece si hay provincia seleccionada) */}
-                {formData.provincia && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="ciudad">{t('city')} *</Label>
+                    <Label htmlFor="provincia">{t('province')} *</Label>
                     <Select
-                      value={formData.ciudad}
+                      value={formData.provincia}
                       onValueChange={(value) => {
                         setFormData({
                           ...formData,
-                          ciudad: value
+                          provincia: value,
+                          ciudad: ""
+                        });
+                        setFieldErrors(prev => {
+                          const {provincia, ciudad, ...rest} = prev;
+                          return rest;
                         });
                       }}
                     >
-                      <SelectTrigger id="ciudad" className="h-12 mt-2" aria-required="true">
-                        <SelectValue placeholder={t('selectYourCity')} />
+                      <SelectTrigger id="provincia" className="h-11 mt-1" aria-required="true">
+                        <SelectValue placeholder={t('selectYourProvince')} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
-                          ciudadesPorProvincia[formData.provincia].map((ciudad) => (
-                            <SelectItem key={ciudad} value={ciudad}>
-                              {ciudad}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value={formData.provincia}>
-                            {formData.provincia}
+                        {provincias.map((prov) => (
+                          <SelectItem key={prov} value={prov}>
+                            {prov}
                           </SelectItem>
-                        )}
+                        ))}
                       </SelectContent>
                     </Select>
+                    {touchedFields.provincia && fieldErrors.provincia && (
+                      <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                        <span>❗</span> {fieldErrors.provincia}
+                      </p>
+                    )}
                   </div>
-                )}
 
-                {/* Servicios buscados */}
+                  {formData.provincia && (
+                    <div>
+                      <Label htmlFor="ciudad">{t('city')} *</Label>
+                      <Select
+                        value={formData.ciudad}
+                        onValueChange={(value) => {
+                          setFormData({
+                            ...formData,
+                            ciudad: value
+                          });
+                          setFieldErrors(prev => {
+                            const {ciudad, ...rest} = prev;
+                            return rest;
+                          });
+                        }}
+                      >
+                        <SelectTrigger id="ciudad" className="h-11 mt-1" aria-required="true">
+                          <SelectValue placeholder={t('selectYourCity')} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
+                            ciudadesPorProvincia[formData.provincia].map((ciudad) => (
+                              <SelectItem key={ciudad} value={ciudad}>
+                                {ciudad}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value={formData.provincia}>
+                              {formData.provincia}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {touchedFields.ciudad && fieldErrors.ciudad && (
+                        <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                          <span>❗</span> {fieldErrors.ciudad}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                 <div>
                   <Label>{t('whatServicesLooking')}</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-3" role="group" aria-label="Servicios buscados">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2" role="group" aria-label="Servicios buscados">
                     {serviciosDisponibles.map((servicio) => (
                       <div
                         key={servicio}
-                        onClick={() => toggleServicio(servicio)}
-                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        onClick={() => {
+                          toggleServicio(servicio);
+                          setFieldErrors(prev => {
+                            const {servicios, ...rest} = prev;
+                            return rest;
+                          });
+                        }}
+                        className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
                           formData.servicios_buscados.includes(servicio)
                             ? "border-blue-600 bg-blue-50"
                             : "border-gray-200 hover:border-blue-300"
@@ -612,105 +733,132 @@ export default function ClientOnboardingPage() {
                           }
                         }}
                       >
-                        <p className="text-sm font-medium">{t(servicio)}</p>
+                        <p className="text-xs font-medium text-center">{t(servicio)}</p>
                       </div>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 mt-1.5">
                     {formData.servicios_buscados.length} {formData.servicios_buscados.length === 1 ? t('selected') : t('selectedPlural')}
                   </p>
+                  {touchedFields.servicios && fieldErrors.servicios && (
+                    <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
+                      <span>❗</span> {fieldErrors.servicios}
+                    </p>
+                  )}
                 </div>
 
-                {/* ✅ MEJORADO: Checkbox moderno con enlace */}
-                <ModernCheckbox
-                  id="acepta_terminos_client"
-                  checked={formData.acepta_terminos}
-                  onChange={(checked) => {
-                    setFormData({ ...formData, acepta_terminos: checked });
-                    if (checked && error?.includes('Términos')) setError(null);
-                  }}
-                  required
-                  error={error?.includes('Términos')}
-                  label={t('acceptTermsAndConditions')} // Using t() for translation
-                  sublabel={
-                    <span>
-                      {t('iHaveReadAndAccept')}{" "} {/* Using t() for translation */}
-                      <Link 
-                        to={createPageUrl("TermsConditions")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {t('termsAndConditions')}
-                      </Link>
-                      , {t('the')}{" "} {/* Using t() for translation */}
-                      <Link 
-                        to={createPageUrl("PrivacyPolicy")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {t('privacyPolicy')}
-                      </Link>
-                      {" "}{t('andDataProcessing')}. {/* Using t() for translation */}
-                    </span>
-                  }
-                />
-
-                {/* Submit */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700"
-                  disabled={completeOnboardingMutation.isPending || isRedirecting}
-                >
-                  {completeOnboardingMutation.isPending || isRedirecting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {isRedirecting ? t('redirecting') : t('creatingAccount')}
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      {!user ? t('createMyClientAccount') : t('completeRegistration')}
-                    </>
+                <div className={`border-2 rounded-xl p-4 transition-colors ${
+                  fieldErrors.terminos ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="acepta_terminos_client"
+                      checked={formData.acepta_terminos}
+                      onChange={(e) => {
+                        setFormData({ ...formData, acepta_terminos: e.target.checked });
+                        setFieldErrors(prev => {
+                          const {terminos, ...rest} = prev;
+                          return rest;
+                        });
+                      }}
+                      className="w-5 h-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <label htmlFor="acepta_terminos_client" className="text-sm text-gray-800 leading-relaxed cursor-pointer">
+                      {language === 'es' ? (
+                        <>
+                          He leído y acepto los{' '}
+                          <Link 
+                            to={createPageUrl("TermsConditions")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                          >
+                            Términos y Condiciones
+                          </Link>
+                          , la{' '}
+                          <Link 
+                            to={createPageUrl("PrivacyPolicy")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                          >
+                            Política de Privacidad
+                          </Link>
+                          {' '}y el Tratamiento de Datos.
+                        </>
+                      ) : (
+                        <>
+                          I have read and accept the{' '}
+                          <Link 
+                            to={createPageUrl("TermsConditions")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                          >
+                            Terms and Conditions
+                          </Link>
+                          , the{' '}
+                          <Link 
+                            to={createPageUrl("PrivacyPolicy")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
+                          >
+                            Privacy Policy
+                          </Link>
+                          {' '}and Data Processing.
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {touchedFields.terminos && fieldErrors.terminos && (
+                    <p className="text-red-600 text-xs mt-2 ml-8 flex items-center gap-1 animate-shake">
+                      <span>❗</span> {fieldErrors.terminos}
+                    </p>
                   )}
-                </Button>
+                </div>
 
-                <p className="text-xs text-center text-gray-500">
-                  {!user 
-                    ? '📧 ' + t('emailVerificationInfo')
-                    : t('freeForClients')
-                  }
-                </p>
+                <div className="sticky bottom-0 left-0 right-0 bg-white pt-4 pb-2 -mx-6 md:-mx-8 px-6 md:px-8 border-t border-gray-100 mt-6">
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
+                    disabled={completeOnboardingMutation.isPending || isRedirecting}
+                  >
+                    {completeOnboardingMutation.isPending || isRedirecting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        {isRedirecting ? t('redirecting') : t('creatingAccount')}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        {!user ? t('createMyClientAccount') : t('completeRegistration')}
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    ✅ {t('freeNoHiddenCosts')}
+                  </p>
+                </div>
               </form>
             </CardContent>
           </Card>
 
-          {/* Benefits */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold">{t('freeBenefit')}</p>
-                <p className="text-xs text-gray-600">{t('noHiddenCosts')}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold">{t('verifiedProfessionals')}</p>
-                <p className="text-xs text-gray-600">{t('realReviews')}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold">{t('directChat')}</p>
-                <p className="text-xs text-gray-600">{t('immediateContact')}</p>
-              </CardContent>
-            </Card>
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-xs font-semibold text-gray-900">{t('freeBenefit')}</p>
+            </div>
+            <div className="text-center">
+              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-xs font-semibold text-gray-900">{t('verifiedProfessionals')}</p>
+            </div>
+            <div className="text-center">
+              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-xs font-semibold text-gray-900">{t('directChat')}</p>
+            </div>
           </div>
         </div>
       </div>
