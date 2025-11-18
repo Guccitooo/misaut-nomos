@@ -196,26 +196,21 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
 
       <div 
         className="phone-modal-overlay" 
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onClose();
-        }}
+        onClick={handleOverlayClick}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       >
         <div 
           className="phone-modal-box" 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+          onClick={handleModalClick}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <button 
             className="phone-modal-close" 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }} 
+            onClick={handleCloseClick}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             aria-label="Cerrar"
             type="button"
           >
