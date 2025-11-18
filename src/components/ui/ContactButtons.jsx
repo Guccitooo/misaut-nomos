@@ -130,7 +130,7 @@ export default function ContactButtons({
     setShowPhoneModal(true);
   }, [isClosing, isMobile, phone]);
   
-  const handleCloseModal = (e) => {
+  const handleCloseModal = React.useCallback((e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -144,17 +144,17 @@ export default function ContactButtons({
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
     }
-  };
+  }, []);
 
-  const handleChatClick = (e) => {
+  const handleChatClick = React.useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
     
     if (onChatClick) {
       onChatClick();
     }
-  };
+  }, [onChatClick]);
 
   // Si solo hay chat interno
   if (!phone || (!enablePhone && !enableWhatsApp)) {
