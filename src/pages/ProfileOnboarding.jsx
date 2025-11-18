@@ -55,6 +55,7 @@ export default function ProfileOnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -83,10 +84,18 @@ export default function ProfileOnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (user && user.user_type === "professionnel") {
+    const paymentSuccess = searchParams.get('payment');
+    if (paymentSuccess === 'success') {
+      setIsVerifyingPayment(true);
+      verifySubscription();
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user && user.user_type === "professionnel" && !isVerifyingPayment) {
       loadExistingProfile();
     }
-  }, [user]);
+  }, [user, isVerifyingPayment]);
 
   const loadUser = async () => {
     setIsLoadingUser(true);
@@ -102,6 +111,35 @@ export default function ProfileOnboardingPage() {
       base44.auth.redirectToLogin();
     } finally {
       setIsLoadingUser(false);
+    }
+  };
+
+  const verifySubscription = async () => {
+    try {
+      // Wait a bit for webhook to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      
+      if (currentUser.user_type === 'professionnel') {
+        const subs = await base44.entities.Subscription.filter({
+          user_id: currentUser.id
+        });
+        
+        if (subs.length > 0) {
+          setIsVerifyingPayment(false);
+          toast.success("✅ ¡Pago confirmado! Completa tu perfil profesional.", {
+            duration: 4000
+          });
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          setTimeout(verifySubscription, 1000);
+        }
+      }
+    } catch (error) {
+      console.error("Error verificando suscripción:", error);
+      setTimeout(verifySubscription, 1000);
     }
   };
 
@@ -344,10 +382,24 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  if (isLoadingUser) {
+  if (isLoadingUser || isVerifyingPayment) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full shadow-lg bg-white border-0">
+          <CardContent className="p-8">
+            <div className="text-center space-y-4">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isVerifyingPayment ? "Confirmando tu pago" : "Cargando"}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {isVerifyingPayment ? "Esto toma solo unos segundos..." : "Preparando tu perfil..."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -108,7 +108,6 @@ export default function MyProfilePage() {
   const MAX_POLLING_ATTEMPTS = 5;
 
   const reactivationSuccess = searchParams.get("reactivation");
-  const onboardingPending = searchParams.get("onboarding");
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
   const [userData, setUserData] = useState({
@@ -169,7 +168,7 @@ export default function MyProfilePage() {
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
   useEffect(() => {
-    if (reactivationSuccess === "success" || onboardingPending === "pending") {
+    if (reactivationSuccess === "success") {
       setIsVerifyingSubscription(true);
       startSubscriptionPolling();
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -186,7 +185,7 @@ export default function MyProfilePage() {
       toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
+  }, [reactivationSuccess, onboardingCompleted, queryClient, navigate]);
 
   const startSubscriptionPolling = async () => {
     for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
@@ -212,15 +211,7 @@ export default function MyProfilePage() {
             queryClient.invalidateQueries({ queryKey: ['subscription'] });
             queryClient.invalidateQueries({ queryKey: ['myProfile'] });
             
-            if (onboardingPending === "pending") {
-              toast.success("✅ ¡Pago confirmado! Completa tu perfil profesional.", {
-                duration: 4000
-              });
-              
-              setTimeout(() => {
-                navigate(createPageUrl("ProfileOnboarding"));
-              }, 800);
-            } else if (reactivationSuccess === "success") {
+            if (reactivationSuccess === "success") {
               toast.success("🎉 Suscripción reactivada correctamente", {
                 duration: 3000
               });
