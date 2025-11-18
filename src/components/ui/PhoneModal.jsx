@@ -44,27 +44,33 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
 
   if (!isOpen) return null;
 
-  const handleOverlayClick = (e) => {
+  const handleOverlayClick = React.useCallback((e) => {
     if (e.target === e.currentTarget) {
       e.preventDefault();
       e.stopPropagation();
       e.nativeEvent?.stopImmediatePropagation?.();
-      onClose(e);
+      
+      setTimeout(() => {
+        onClose(e);
+      }, 0);
     }
-  };
+  }, [onClose]);
 
-  const handleModalClick = (e) => {
+  const handleModalClick = React.useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent?.stopImmediatePropagation?.();
-  };
+  }, []);
 
-  const handleCloseClick = (e) => {
+  const handleCloseClick = React.useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent?.stopImmediatePropagation?.();
-    onClose(e);
-  };
+    
+    setTimeout(() => {
+      onClose(e);
+    }, 0);
+  }, [onClose]);
 
   return (
     <>
