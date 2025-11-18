@@ -54,18 +54,23 @@ export default function ContactButtons({
   const isMobile = isMobileDevice();
   const closeTimeoutRef = React.useRef(null);
 
+  React.useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handlePhoneClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     
+    if (isClosing) return;
+    
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
-      return;
-    }
-    
-    if (modalJustClosed) {
-      setModalJustClosed(false);
       return;
     }
     
@@ -78,15 +83,12 @@ export default function ContactButtons({
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
     
+    if (isClosing) return;
+    
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
     if (isMobile) {
       window.open(`https://wa.me/${whatsappPhone}`, '_blank');
-      return;
-    }
-    
-    if (modalJustClosed) {
-      setModalJustClosed(false);
       return;
     }
     
@@ -101,13 +103,17 @@ export default function ContactButtons({
       e.nativeEvent?.stopImmediatePropagation?.();
     }
     
+    setIsClosing(true);
     setShowPhoneModal(false);
     setModalType(null);
-    setModalJustClosed(true);
     
-    setTimeout(() => {
-      setModalJustClosed(false);
-    }, 500);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsClosing(false);
+    }, 1000);
   };
 
   const handleChatClick = (e) => {
