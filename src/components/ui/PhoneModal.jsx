@@ -210,6 +210,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
           <button 
             className={`copy-btn ${copied ? 'copied' : ''}`} 
             onClick={handleCopy}
+            type="button"
           >
             {copied ? "✓ Copiado" : "Copiar número"}
           </button>
