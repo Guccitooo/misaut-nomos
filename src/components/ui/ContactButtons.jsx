@@ -52,13 +52,15 @@ export default function ContactButtons({
   const isMobile = isMobileDevice();
 
   const handlePhoneClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
-    } else {
-      setShowPhoneModal(true);
+      return;
     }
+    
+    setShowPhoneModal(true);
   };
 
   const handleWhatsAppClick = (e) => {
