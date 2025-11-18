@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +34,8 @@ import TranslatedText from "../components/ui/TranslatedText";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema } from "../components/seo/StructuredData";
-import { useLanguage } from "../components/ui/LanguageSwitcher"; // Keep this for translations
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import ContactButtons from "../components/ui/ContactButtons";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
@@ -197,24 +197,6 @@ export default function ProfessionalProfilePage() {
     }
 
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
-  };
-
-  const formatPhoneForCall = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/[^\d+]/g, '');
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+34' + cleaned;
-    }
-    return cleaned;
-  };
-
-  const formatPhoneForWhatsApp = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/\D/g, '');
-    if (!cleaned.startsWith('34') && cleaned.length === 9) {
-      cleaned = '34' + cleaned;
-    }
-    return cleaned;
   };
 
   const trackContactClick = async () => {
@@ -389,38 +371,17 @@ export default function ProfessionalProfilePage() {
             </div>
 
             <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {profile.telefono_contacto && profile.metodos_contacto?.includes('telefono') && (
-                  <a
-                    href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-                    onClick={trackContactClick}
-                  >
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 h-12">
-                      <Phone className="w-5 h-5 mr-2" />
-                      Llamar
-                    </Button>
-                  </a>
-                )}
-                {profile.telefono_contacto && profile.metodos_contacto?.includes('whatsapp') && (
-                  <a
-                    href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={trackContactClick}
-                  >
-                    <Button className="w-full bg-green-600 hover:bg-green-700 h-12">
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      WhatsApp
-                    </Button>
-                  </a>
-                )}
-                <Button
-                  onClick={handleStartChat}
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-12"
-                >
-                  <MessageSquare className="w-5 h-5 mr-2" />
-                  Chat directo
-                </Button>
+              <div className="mb-8" onClick={trackContactClick}>
+                <ContactButtons
+                  phone={profile.telefono_contacto}
+                  businessName={profile.business_name}
+                  enablePhone={profile.metodos_contacto?.includes('telefono')}
+                  enableWhatsApp={profile.metodos_contacto?.includes('whatsapp')}
+                  enableChat={true}
+                  onChatClick={handleStartChat}
+                  size="lg"
+                  layout="inline"
+                />
               </div>
 
               {profile.descripcion_corta && (
