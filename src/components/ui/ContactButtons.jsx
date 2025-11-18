@@ -201,9 +201,10 @@ export default function ContactButtons({
       {showPhoneModal && (
         <PhoneModal
           isOpen={showPhoneModal}
-          onClose={() => setShowPhoneModal(false)}
+          onClose={handleCloseModal}
           phoneNumber={formatPhoneForDisplay(phone)}
           businessName={businessName}
+          modalType={modalType}
         />
       )}
     </>
