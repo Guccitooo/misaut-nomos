@@ -5,7 +5,7 @@ import PhoneModal from "./PhoneModal";
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 };
 
 const formatPhoneForCall = (phone) => {
@@ -46,9 +46,10 @@ export default function ContactButtons({
   enableChat = true,
   onChatClick,
   size = "sm",
-  layout = "grid" // "grid" o "single"
+  layout = "grid"
 }) {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [modalType, setModalType] = useState(null);
   const isMobile = isMobileDevice();
 
   const handlePhoneClick = (e) => {
@@ -60,19 +61,28 @@ export default function ContactButtons({
       return;
     }
     
+    setModalType('phone');
     setShowPhoneModal(true);
   };
 
   const handleWhatsAppClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
     if (isMobile) {
       window.open(`https://wa.me/${whatsappPhone}`, '_blank');
-    } else {
-      window.open(`https://web.whatsapp.com/send?phone=${whatsappPhone}`, '_blank');
+      return;
     }
+    
+    setModalType('whatsapp');
+    setShowPhoneModal(true);
+  };
+  
+  const handleCloseModal = () => {
+    setShowPhoneModal(false);
+    setModalType(null);
   };
 
   const handleChatClick = (e) => {
