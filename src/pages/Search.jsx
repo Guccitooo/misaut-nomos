@@ -143,71 +143,70 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
   const { t } = useLanguage();
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
-      <CardContent className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100">
-                {profileUser?.profile_picture ? (
-                  <OptimizedImage
-                    src={profileUser.profile_picture} 
-                    alt={`Foto de perfil de ${profile.business_name}`}
-                    className="w-full h-full"
-                    objectFit="cover"
-                    width={48}
-                    height={48}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-lg">
-                    {profile.business_name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
-                  onClick={() => onProfileClick(profile.user_id)}>
-                {profile.business_name}
-              </h3>
-              {profile.average_rating > 0 ? (
-                <div className="flex items-center gap-1 mt-1">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-semibold text-gray-700">
-                    {profile.average_rating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    ({profile.total_reviews})
-                  </span>
-                </div>
+    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col active:scale-[0.98]">
+      <CardContent className="p-3 flex flex-col flex-1 min-h-[280px]">
+        <div className="flex items-start gap-2.5 mb-2.5">
+          <div className="flex-shrink-0">
+            <div 
+              className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100 cursor-pointer"
+              onClick={() => onProfileClick(profile.user_id)}
+            >
+              {profileUser?.profile_picture ? (
+                <OptimizedImage
+                  src={profileUser.profile_picture} 
+                  alt={`Foto de perfil de ${profile.business_name}`}
+                  className="w-full h-full"
+                  objectFit="cover"
+                  width={56}
+                  height={56}
+                  priority={false}
+                />
               ) : (
-                <div className="h-5 mt-1"></div>
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-xl">
+                  {profile.business_name?.charAt(0)}
+                </div>
               )}
             </div>
           </div>
-          
-          <div className="flex flex-col items-end gap-1 ml-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              className={`h-10 w-10 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(profile.user_id);
-              }}
-              aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
+
+          <div className="flex-1 min-w-0">
+            <h3 
+              className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors line-clamp-1 cursor-pointer"
+              onClick={() => onProfileClick(profile.user_id)}
             >
-              <Heart 
-                className={`w-5 h-5 transition-all ${
-                  isFavorite ? 'fill-red-500' : ''
-                }`}
-              />
-            </Button>
-            {favoriteCount > 0 && (
-              <span className="text-xs text-gray-500">{favoriteCount}</span>
+              {profile.business_name}
+            </h3>
+            {profile.average_rating > 0 ? (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
+                <span className="text-sm font-semibold text-gray-700">
+                  {profile.average_rating.toFixed(1)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({profile.total_reviews})
+                </span>
+              </div>
+            ) : (
+              <div className="h-5 mt-0.5"></div>
             )}
           </div>
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className={`h-9 w-9 flex-shrink-0 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(profile.user_id);
+            }}
+            aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
+          >
+            <Heart 
+              className={`w-4.5 h-4.5 transition-all ${
+                isFavorite ? 'fill-red-500' : ''
+              }`}
+            />
+          </Button>
         </div>
 
         <div 
@@ -218,40 +217,36 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             <CategoryBadge key={idx} category={cat} />
           ))}
           {profile.categories?.length > 2 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs py-0.5 px-1.5">
               +{profile.categories.length - 2}
             </Badge>
           )}
         </div>
 
-        <div 
-          className="mb-2 cursor-pointer"
-          onClick={() => onProfileClick(profile.user_id)}
-        >
-          {profile.service_area ? (
+        {profile.service_area && (
+          <div 
+            className="mb-2 cursor-pointer"
+            onClick={() => onProfileClick(profile.user_id)}
+          >
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.service_area}</span>
             </div>
-          ) : (
-            <div className="h-5"></div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div 
-          className="mb-3 cursor-pointer"
+          className="mb-3 cursor-pointer flex-1"
           onClick={() => onProfileClick(profile.user_id)}
         >
-          <p className="text-sm text-gray-600 line-clamp-2 leading-5">
+          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
             <TranslatedText 
               text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
             />
           </p>
         </div>
 
-        <div className="flex-1"></div>
-
-        <div className="mt-auto pt-3">
+        <div className="mt-auto pt-2 border-t border-gray-100">
           <ContactButtons
             phone={profile.telefono_contacto}
             businessName={profile.business_name}
@@ -598,48 +593,48 @@ export default function SearchPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {/* HERO BANNER - Always rendered, visibility controlled by opacity */}
         <div 
-          className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white shadow-xl transition-all duration-300"
+          className="bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg transition-all duration-300"
           style={{ 
-            minHeight: showHeroBanner ? '320px' : '0px',
-            maxHeight: showHeroBanner ? '500px' : '0px',
+            minHeight: showHeroBanner ? 'auto' : '0px',
+            maxHeight: showHeroBanner ? '600px' : '0px',
             opacity: showHeroBanner ? 1 : 0,
             overflow: 'hidden',
-            paddingTop: showHeroBanner ? '4rem' : '0',
-            paddingBottom: showHeroBanner ? '4rem' : '0',
+            paddingTop: showHeroBanner ? '2.5rem' : '0',
+            paddingBottom: showHeroBanner ? '2.5rem' : '0',
             paddingLeft: '1rem',
             paddingRight: '1rem'
           }}
           aria-hidden={!showHeroBanner}
         >
-          <div className="max-w-6xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
+          <div className="max-w-5xl mx-auto text-center">
+            <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight leading-tight">
               {t('heroTitle')}
             </h1>
-            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
+            <p className="text-base md:text-lg text-blue-100 max-w-xl mx-auto mb-6">
               {t('heroSubtitle')}
             </p>
-            
-            <div className="space-y-4">
-              <p className="text-base text-blue-100 font-medium">
+
+            <div className="space-y-3">
+              <p className="text-sm md:text-base text-blue-100 font-medium">
                 {t('chooseHow')}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+              <div className="flex flex-col sm:flex-row gap-2.5 justify-center items-center max-w-md mx-auto">
                 <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                   <Button 
                     size="lg" 
-                    className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
+                    className="w-full sm:min-w-[180px] h-12 bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg transition-all active:scale-95 text-sm"
                   >
-                    <Briefcase className="w-5 h-5 mr-2" />
+                    <Briefcase className="w-4 h-4 mr-2" />
                     {t('imFreelancer')}
                   </Button>
                 </Link>
-                
+
                 <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
                   <Button 
                     size="lg" 
-                    className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
+                    className="w-full sm:min-w-[180px] h-12 bg-white hover:bg-gray-50 text-blue-700 font-semibold shadow-lg transition-all active:scale-95 text-sm"
                   >
-                    <User className="w-5 h-5 mr-2" />
+                    <User className="w-4 h-4 mr-2" />
                     {t('imClient')}
                   </Button>
                 </Link>
