@@ -164,7 +164,14 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName 
 
       <div className="phone-modal-overlay" onClick={onClose}>
         <div className="phone-modal-box" onClick={(e) => e.stopPropagation()}>
-          <button className="phone-modal-close" onClick={onClose} aria-label="Cerrar">
+          <button 
+            className="phone-modal-close" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }} 
+            aria-label="Cerrar"
+          >
             <X className="w-5 h-5" />
           </button>
 
