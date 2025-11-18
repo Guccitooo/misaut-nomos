@@ -506,28 +506,29 @@ export default function SubscriptionManagementPage() {
               ¿Cancelar suscripción?
             </DialogTitle>
             <DialogDescription className="space-y-3 pt-4">
-              <p className="text-gray-700">
-                Si cancelas tu suscripción:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
-                {inTrial ? (
-                  <>
-                    <li><strong>NO se te cobrará nada</strong> (tu prueba gratuita se cancela)</li>
-                    <li>Tu perfil <strong>dejará de aparecer inmediatamente</strong></li>
-                    <li>Puedes reactivar en cualquier momento con otro plan</li>
-                  </>
-                ) : (
-                  <>
-                    <li>Tu perfil <strong>dejará de aparecer en las búsquedas inmediatamente</strong></li>
-                    <li>No recibirás nuevos contactos de clientes</li>
-                    <li>Mantendrás acceso a tu cuenta hasta el <strong>{new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
-                    <li>Podrás reactivar tu suscripción en cualquier momento</li>
-                  </>
-                )}
-              </ul>
-              <p className="text-gray-900 font-semibold pt-2">
-                ¿Estás seguro que deseas continuar?
-              </p>
+            <p className="text-gray-700">
+            Si cancelas tu suscripción:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
+            {inTrial ? (
+              <>
+                <li><strong>NO se te cobrará nada</strong> (seguirás usando tus días gratuitos)</li>
+                <li>Tu perfil <strong>seguirá visible hasta el final de tu periodo de prueba</strong> ({new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')})</li>
+                <li>Al finalizar el periodo gratuito, tu perfil dejará de aparecer automáticamente</li>
+                <li>Puedes reactivar tu suscripción cuando quieras</li>
+              </>
+            ) : (
+              <>
+                <li>Tu perfil seguirá visible hasta el <strong>{new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
+                <li>Después de esa fecha, tu perfil dejará de aparecer en las búsquedas</li>
+                <li>No se renovará automáticamente</li>
+                <li>Podrás reactivar tu suscripción en cualquier momento</li>
+              </>
+            )}
+            </ul>
+            <p className="text-gray-900 font-semibold pt-2">
+            ¿Estás seguro que deseas continuar?
+            </p>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
