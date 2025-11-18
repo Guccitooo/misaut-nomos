@@ -439,8 +439,8 @@ export default function SubscriptionManagementPage() {
                   </h3>
                   <p className="text-sm text-gray-600 mb-4">
                     {inTrial 
-                      ? "Si cancelas durante la prueba, no se te cobrará nada. Tu perfil dejará de aparecer inmediatamente."
-                      : "Tu perfil dejará de aparecer en las búsquedas inmediatamente, pero seguirás teniendo acceso hasta la fecha de expiración."}
+                      ? "Si cancelas durante la prueba, no se te cobrará nada. Tu perfil seguirá visible hasta el final del periodo gratuito."
+                      : "Tu perfil seguirá visible hasta la fecha de expiración de tu plan actual. Después dejará de aparecer en búsquedas."}
                   </p>
                   <Button
                     variant="destructive"
