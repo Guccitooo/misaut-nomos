@@ -9,9 +9,11 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import SubscriptionStatus from "./SubscriptionStatus";
 import ProfileCompleteness from "./ProfileCompleteness";
+import { useLanguage } from "../ui/LanguageSwitcher";
 
 export default function ProfessionalDashboard({ user, onboardingCompleted = false }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { data: subscription, isLoading: loadingSubscription } = useQuery({
     queryKey: ['subscription', user?.id],
@@ -68,12 +70,12 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
 
   useEffect(() => {
     if (onboardingCompleted) {
-      toast.success("🎉 ¡Suscripción activada correctamente!", {
-        description: "Tu perfil ya está listo. Completa los detalles para aparecer en búsquedas.",
+      toast.success(t('profileCompletedAndPublished'), {
+        description: t('completeProfileStart'),
         duration: 5000
       });
     }
-  }, [onboardingCompleted]);
+  }, [onboardingCompleted, t]);
 
   if (loadingSubscription || loadingProfile) {
     return (
@@ -88,13 +90,13 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <Card className="max-w-2xl mx-auto mt-12">
           <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Sin suscripción activa</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('noActiveSubscription')}</h2>
             <p className="text-gray-600 mb-6">
-              Necesitas una suscripción activa para acceder al panel profesional.
+              {t('needPlanToAppear')}
             </p>
             <Link to={createPageUrl("PricingPlans")}>
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Ver planes disponibles
+                {t('viewPlans')}
               </Button>
             </Link>
           </CardContent>
@@ -111,12 +113,12 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
         {/* Welcome Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            ¡Bienvenido, {profile?.business_name || user?.full_name || 'Profesional'}! 🎉
+            {t('welcomeProfessional', { name: profile?.business_name || user?.full_name || 'Professional' })} 🎉
           </h1>
           <p className="text-gray-600">
             {isProfileVisible 
-              ? 'Tu perfil está activo y visible para clientes'
-              : 'Completa tu perfil para empezar a recibir clientes'
+              ? t('profileActiveVisible')
+              : t('completeProfileStart')
             }
           </p>
         </div>
@@ -137,7 +139,7 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{metrics.profile_views}</p>
-                  <p className="text-xs text-gray-600">Visitas (7d)</p>
+                  <p className="text-xs text-gray-600">{t('views7Days')}</p>
                 </div>
               </div>
             </CardContent>
@@ -151,7 +153,7 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{metrics.messages_received}</p>
-                  <p className="text-xs text-gray-600">Mensajes (7d)</p>
+                  <p className="text-xs text-gray-600">{t('messages7Days')}</p>
                 </div>
               </div>
             </CardContent>
@@ -165,7 +167,7 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{favoriteCount}</p>
-                  <p className="text-xs text-gray-600">Favoritos</p>
+                  <p className="text-xs text-gray-600">{t('favoritesCount')}</p>
                 </div>
               </div>
             </CardContent>
@@ -179,7 +181,7 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{metrics.search_appearances}</p>
-                  <p className="text-xs text-gray-600">Apariciones (7d)</p>
+                  <p className="text-xs text-gray-600">{t('appearances7Days')}</p>
                 </div>
               </div>
             </CardContent>
@@ -190,15 +192,15 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="hover:shadow-md transition-shadow border-2 border-blue-200">
             <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Ver tu perfil público</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{t('viewPublicProfile')}</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Comprueba cómo ven tu perfil los clientes que buscan servicios como el tuyo.
+                {t('checkHowClientsView')}
               </p>
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={() => navigate(createPageUrl("ProfessionalProfile") + `?id=${user.id}`)}
               >
-                Ver mi perfil
+                {t('viewMyProfile')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
@@ -206,16 +208,16 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
 
           <Card className="hover:shadow-md transition-shadow border-2 border-purple-200">
             <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Editar perfil</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{t('editProfileDashboard')}</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Actualiza tus datos, añade fotos de trabajos y mejora tu descripción.
+                {t('updateDataPhotos')}
               </p>
               <Button 
                 variant="outline"
                 className="w-full border-purple-300 hover:bg-purple-50"
                 onClick={() => navigate(createPageUrl("MyProfile"))}
               >
-                Ir a Mi Perfil
+                {t('goToMyProfile')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
@@ -226,23 +228,23 @@ export default function ProfessionalDashboard({ user, onboardingCompleted = fals
         {!isProfileVisible && (
           <Card className="mt-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">💡 Consejos para empezar</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">💡 {t('tipsToStart')}</h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <span className="text-orange-600 font-bold">1.</span>
-                  <span>Completa todos los campos obligatorios de tu perfil</span>
+                  <span>{t('completeAllFields')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-orange-600 font-bold">2.</span>
-                  <span>Añade al menos 3 fotos de trabajos realizados</span>
+                  <span>{t('addAtLeast3Photos')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-orange-600 font-bold">3.</span>
-                  <span>Escribe una descripción clara y profesional de tus servicios</span>
+                  <span>{t('writeClearDescription')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-orange-600 font-bold">4.</span>
-                  <span>Responde rápido a los mensajes para mejorar tu posición en búsquedas</span>
+                  <span>{t('respondFastMessages')}</span>
                 </li>
               </ul>
             </CardContent>

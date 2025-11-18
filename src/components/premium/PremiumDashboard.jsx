@@ -17,6 +17,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { useLanguage } from "../ui/LanguageSwitcher";
+import TranslatedText from "../ui/TranslatedText";
 
 export default function PremiumDashboard({ metrics, subscription, profile }) {
   const navigate = useNavigate();
@@ -106,26 +107,26 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
   const premiumFeatures = [
     {
       icon: Star,
-      title: "Perfil destacado",
-      description: "Aparece en las primeras posiciones de búsqueda",
+      title: t('featuredProfile'),
+      description: t('featuredProfileDesc'),
       active: hasActiveSubscription
     },
     {
       icon: Crown,
-      title: "Badge Premium",
-      description: "Insignia visible que genera confianza",
+      title: t('premiumBadge'),
+      description: t('premiumBadgeDesc'),
       active: hasActiveSubscription
     },
     {
       icon: BarChart3,
-      title: "Estadísticas avanzadas",
-      description: "Métricas detalladas de tu perfil",
+      title: t('advancedStatistics'),
+      description: t('advancedStatsDesc'),
       active: hasActiveSubscription
     },
     {
       icon: Sparkles,
-      title: "Mayor visibilidad",
-      description: "Multiplica tus oportunidades de negocio",
+      title: t('higherVisibility'),
+      description: t('higherVisibilityDesc'),
       active: hasActiveSubscription
     }
   ];
@@ -136,17 +137,17 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Panel Premium</h2>
+              <h2 className="text-2xl font-bold mb-2">{t('premiumPanel')}</h2>
               <p className="text-blue-100">
                 {hasActiveSubscription 
-                  ? "Disfruta de todas las ventajas de tu plan"
-                  : "Mejora tu plan para desbloquear todas las funciones"}
+                  ? t('enjoyPlanBenefits')
+                  : t('upgradePlanUnlock')}
               </p>
             </div>
             {hasActiveSubscription && (
               <Badge className="bg-amber-500 text-amber-900 text-lg px-4 py-2">
                 <Crown className="w-5 h-5 mr-2" />
-                Premium
+                {t('premium')}
               </Badge>
             )}
           </div>
@@ -166,9 +167,9 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                 )}
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalViews}</p>
-              <p className="text-sm text-gray-600">Visitas al perfil (30 días)</p>
+              <p className="text-sm text-gray-600">{t('profileViews30Days')}</p>
               <p className="text-xs text-gray-500 mt-1">
-                ~{Math.round(last30DaysMetrics.avgViewsPerDay)} por día
+                ~{Math.round(last30DaysMetrics.avgViewsPerDay)} {t('perDay')}
               </p>
             </CardContent>
           </Card>
@@ -179,8 +180,8 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                 <MessageSquare className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalMessages}</p>
-              <p className="text-sm text-gray-600">Mensajes recibidos</p>
-              <p className="text-xs text-gray-500 mt-1">Últimos 30 días</p>
+              <p className="text-sm text-gray-600">{t('messagesReceived')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('last30Days')}</p>
             </CardContent>
           </Card>
 
@@ -190,8 +191,8 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                 <Search className="w-8 h-8 text-blue-600" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalSearches}</p>
-              <p className="text-sm text-gray-600">Apariciones en búsqueda</p>
-              <p className="text-xs text-gray-500 mt-1">Últimos 30 días</p>
+              <p className="text-sm text-gray-600">{t('searchAppearances')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('last30Days')}</p>
             </CardContent>
           </Card>
 
@@ -201,8 +202,8 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                 <TrendingUp className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-3xl font-bold text-gray-900">{last30DaysMetrics.totalContacts}</p>
-              <p className="text-sm text-gray-600">Clics en contacto</p>
-              <p className="text-xs text-gray-500 mt-1">Teléfono, WhatsApp, etc.</p>
+              <p className="text-sm text-gray-600">{t('contactClicks')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('phoneWhatsAppEtc')}</p>
             </CardContent>
           </Card>
         </div>
@@ -211,16 +212,16 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
           <CardContent className="p-8 text-center">
             <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Desbloquea tus estadísticas
+              {t('unlockStatistics')}
             </h3>
             <p className="text-gray-600 mb-6">
-              Con un plan premium podrás ver todas tus métricas y optimizar tu perfil
+              {t('premiumPlanMetrics')}
             </p>
             <Button 
               onClick={() => navigate(createPageUrl("PricingPlans"))}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              Ver planes premium
+              {t('viewPremiumPlans')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -232,19 +233,19 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-blue-600" />
-              Completitud del perfil
+              {t('profileCompletenessTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-medium">
-                  {profileCompleteness.percentage}% completo
+                  {t('percentComplete', { percentage: profileCompleteness.percentage })}
                 </span>
                 <span className="text-sm text-gray-500">
-                  {profileCompleteness.percentage >= 90 ? '¡Excelente!' : 
-                   profileCompleteness.percentage >= 70 ? 'Buen progreso' : 
-                   'Añade más información'}
+                  {profileCompleteness.percentage >= 90 ? t('excellent') : 
+                   profileCompleteness.percentage >= 70 ? t('goodProgressStatus') : 
+                   t('addMoreInfo')}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
@@ -262,7 +263,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
             {profileCompleteness.missing.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-700 mb-3">
-                  Completa estos elementos para mejorar tu visibilidad:
+                  {t('completeElementsVisibility')}
                 </p>
                 {profileCompleteness.missing.slice(0, 5).map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
@@ -278,7 +279,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
               className="w-full mt-4"
               onClick={() => navigate(createPageUrl("MyProfile"))}
             >
-              Editar perfil
+              {t('editProfileButton')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -288,7 +289,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Star className="w-5 h-5 text-amber-500" />
-              Ventajas de tu plan
+              {t('planBenefits')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -326,7 +327,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
                 onClick={() => navigate(createPageUrl("PricingPlans"))}
               >
                 <Crown className="w-4 h-4 mr-2" />
-                Activar plan premium
+                {t('activatePremiumPlan')}
               </Button>
             )}
           </CardContent>
@@ -337,27 +338,27 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-600" />
-            Consejos para destacar
+            {t('tipsToStandOutTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-blue-900 mb-2">📸 Añade más fotos</h4>
+              <h4 className="font-semibold text-blue-900 mb-2">📸 {t('addMorePhotosTip')}</h4>
               <p className="text-sm text-blue-800">
-                Los perfiles con 5+ fotos reciben un 80% más de contactos
+                {t('addPhotosDesc')}
               </p>
             </div>
             <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-              <h4 className="font-semibold text-green-900 mb-2">⚡ Responde rápido</h4>
+              <h4 className="font-semibold text-green-900 mb-2">⚡ {t('respondFastTip')}</h4>
               <p className="text-sm text-green-800">
-                Responder en menos de 1 hora mejora tu posicionamiento
+                {t('respondFastDesc')}
               </p>
             </div>
             <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
-              <h4 className="font-semibold text-amber-900 mb-2">⭐ Pide valoraciones</h4>
+              <h4 className="font-semibold text-amber-900 mb-2">⭐ {t('askForReviewsTip')}</h4>
               <p className="text-sm text-amber-800">
-                Las valoraciones aumentan la confianza y las conversiones
+                {t('askReviewsDesc')}
               </p>
             </div>
           </div>
