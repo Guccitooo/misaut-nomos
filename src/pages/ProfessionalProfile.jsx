@@ -240,7 +240,8 @@ export default function ProfessionalProfilePage() {
   const { data: professionalUser } = useQuery({
     queryKey: ['professionalUser', professionalId],
     queryFn: async () => {
-      const users = await base44.entities.User.filter({
+      // Use service role to see profile pictures
+      const users = await base44.asServiceRole.entities.User.filter({
         id: professionalId
       });
       return users[0];
