@@ -61,10 +61,19 @@ function LayoutContent({ children, currentPageName }) {
       window.dataLayer.push(arguments);
     }
     window.gtag = gtag;
-    
+
+    gtag('consent', 'default', {
+      'analytics_storage': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'functionality_storage': 'granted',
+      'security_storage': 'granted'
+    });
+
     gtag('js', new Date());
     gtag('config', 'G-P9DN7YN239', {
-      'send_page_view': true
+      'send_page_view': false
     });
   }, []);
 
