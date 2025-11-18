@@ -60,7 +60,8 @@ export default function FavoritesPage() {
     queryKey: ['favoriteUsers', professionalIds],
     queryFn: async () => {
       if (professionalIds.length === 0) return [];
-      const allUsers = await base44.entities.User.list();
+      // Use service role to see profile pictures
+      const allUsers = await base44.asServiceRole.entities.User.list();
       return allUsers.filter(u => professionalIds.includes(u.id));
     },
     enabled: professionalIds.length > 0,
