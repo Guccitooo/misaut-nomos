@@ -15,9 +15,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { planId, planPrice, isReactivation = false } = body;
 
-    if (user.has_used_trial === true) {
+    console.log(`👤 Usuario: ${user.email}, has_used_trial: ${user.has_used_trial}, first_trial_date: ${user.first_trial_date}`);
+    
+    if (user.has_used_trial === true && !isReactivation) {
+      console.log('⚠️ Usuario ya usó trial - NO SE PUEDE OFRECER GRATIS DE NUEVO');
       return Response.json({ 
-        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses. Ahora el pago se aplicará inmediatamente.' 
+        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses anteriormente. Contacta con soporte si crees que es un error.' 
       }, { status: 400 });
     }
 
@@ -62,9 +65,14 @@ Deno.serve(async (req) => {
       metadata: {
         user_id: user.id,
         user_email: user.email,
+        email: user.email,
+        fullName: user.full_name || email.split('@')[0],
+        phone: user.phone || '',
+        address: user.city || '',
+        planId: planId,
         plan_id: planId,
         is_reactivation: isReactivation.toString(),
-        trial_offered: 'true'
+        trial_offered: user.has_used_trial === true ? 'false' : 'true'
       },
       line_items: [{
         price_data: {
@@ -82,13 +90,17 @@ Deno.serve(async (req) => {
         quantity: 1
       }],
       subscription_data: {
-        trial_period_days: 60,
+        trial_period_days: user.has_used_trial === true ? 0 : 60,
         metadata: {
           user_id: user.id,
           user_email: user.email,
           plan_id: planId,
+          email: user.email,
+          fullName: user.full_name || email.split('@')[0],
+          phone: user.phone || '',
+          address: user.city || '',
           discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
-          trial: '2 meses'
+          trial: user.has_used_trial === true ? 'no_trial' : '2_meses_gratis'
         }
       },
       payment_method_collection: 'always'

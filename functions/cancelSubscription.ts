@@ -78,32 +78,30 @@ Deno.serve(async (req) => {
 
         const today = new Date();
         const expirationDate = new Date(subscription.fecha_expiracion);
-        const isStillActive = expirationDate > today;
-        const isTrial = subscription.estado === 'en_prueba' || subscription.estado === 'trialing';
+        const isStillInPeriod = expirationDate > today;
+        const isTrial = subscription.estado === 'en_prueba';
 
-        await base44.entities.Subscription.update(subscription.id, {
+        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
             estado: "cancelado",
-            renovacion_automatica: false
+            renovacion_automatica: false,
+            cancel_at_period_end: true
         });
-        console.log('✅ Suscripción actualizada en BD local: estado = cancelado');
+        console.log('✅ Suscripción actualizada: estado=cancelado, cancel_at_period_end=true');
 
-        await base44.auth.updateMe({
-            subscription_status: isStillActive ? "cancelado_vigente" : "cancelado"
-        });
-        console.log(`✅ Usuario actualizado: subscription_status = ${isStillActive ? 'cancelado_vigente' : 'cancelado'}`);
-
-        const profiles = await base44.entities.ProfessionalProfile.filter({
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
             user_id: user.id
         });
 
-        if (profiles.length > 0 && !isStillActive) {
-            await base44.entities.ProfessionalProfile.update(profiles[0].id, {
-                visible_en_busqueda: false,
-                estado_perfil: "inactivo"
-            });
-            console.log(`✅ Perfil ocultado de búsquedas (periodo expirado)`);
-        } else if (profiles.length > 0 && isStillActive) {
-            console.log(`✅ Perfil sigue visible hasta ${expirationDate.toLocaleDateString('es-ES')} (${isTrial ? 'trial' : 'periodo pagado'})`);
+        if (profiles.length > 0) {
+            if (isStillInPeriod) {
+                console.log(`✅ Perfil MANTIENE visibilidad hasta ${expirationDate.toLocaleDateString('es-ES')} (${isTrial ? 'trial cancelado' : 'periodo pagado cancelado'})`);
+            } else {
+                await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                    visible_en_busqueda: false,
+                    estado_perfil: "inactivo"
+                });
+                console.log(`❌ Perfil ocultado (periodo ya expirado)`);
+            }
         }
 
         try {

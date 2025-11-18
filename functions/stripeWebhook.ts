@@ -145,11 +145,8 @@ Deno.serve(async (req) => {
                     phone: metadata.phone || '',
                     city: metadata.address || '',
                     user_type: 'professionnel',
-                    subscription_status: profileStatus.estado,
-                    subscription_start_date: new Date(subscription.current_period_start * 1000).toISOString().split('T')[0],
-                    subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0],
                     has_used_trial: true,
-                    trial_start_date: isTrialing ? new Date().toISOString() : undefined
+                    first_trial_date: isTrialing ? new Date().toISOString() : undefined
                 };
 
                 if (users.length === 0) {
@@ -199,9 +196,12 @@ Deno.serve(async (req) => {
                     fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
                     estado: profileStatus.estado,
                     renovacion_automatica: subscription.cancel_at_period_end === false,
+                    cancel_at_period_end: subscription.cancel_at_period_end === true,
                     metodo_pago: 'stripe',
                     stripe_subscription_id: subscription.id,
-                    stripe_customer_id: subscription.customer
+                    stripe_customer_id: subscription.customer,
+                    trial_start: isTrialing ? new Date(subscription.current_period_start * 1000).toISOString() : null,
+                    trial_end: isTrialing ? new Date(subscription.current_period_end * 1000).toISOString() : null
                 };
 
                 console.log('💳 Datos de suscripción:', subscriptionData);
@@ -360,11 +360,15 @@ Deno.serve(async (req) => {
 
                 console.log('📋 Nuevo estado:', profileStatus);
 
+                const isTrial = subscription.status === 'trialing';
+                
                 // Actualizar suscripción
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: profileStatus.estado,
                     fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
-                    renovacion_automatica: subscription.cancel_at_period_end === false
+                    renovacion_automatica: subscription.cancel_at_period_end === false,
+                    cancel_at_period_end: subscription.cancel_at_period_end === true,
+                    trial_end: isTrial ? new Date(subscription.current_period_end * 1000).toISOString() : dbSub.trial_end
                 });
 
                 console.log('💳 Renovación automática:', subscription.cancel_at_period_end === false);
@@ -394,10 +398,7 @@ Deno.serve(async (req) => {
                     console.log(`✅ Visibilidad actualizada: ${shouldBeVisible} (trial: ${isTrial}, cancelado: ${isCanceled}, vigente: ${isStillInPeriod})`);
                 }
 
-                // Actualizar estado del usuario
-                await base44.asServiceRole.entities.User.update(dbSub.user_id, {
-                    subscription_status: profileStatus.estado
-                });
+
 
                 console.log('✅ Suscripción actualizada:', profileStatus.mensaje);
                 break;
@@ -425,10 +426,11 @@ Deno.serve(async (req) => {
                 // Marcar como finalizada
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: 'finalizada',
-                    renovacion_automatica: false
+                    renovacion_automatica: false,
+                    cancel_at_period_end: false
                 });
 
-                // ✅ OCULTAR PERFIL INMEDIATAMENTE
+                // Ocultar perfil
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: dbSub.user_id
                 });
@@ -438,13 +440,8 @@ Deno.serve(async (req) => {
                         visible_en_busqueda: false,
                         estado_perfil: 'inactivo'
                     });
-                    console.log('❌ Perfil ocultado de búsquedas');
+                    console.log('❌ Perfil ocultado (suscripción eliminada/expirada)');
                 }
-
-                // Actualizar usuario
-                await base44.asServiceRole.entities.User.update(dbSub.user_id, {
-                    subscription_status: 'finalizada'
-                });
 
                 // ✅ Ejecutar limpieza automática
                 console.log('🧹 Ejecutando limpieza automática...');
