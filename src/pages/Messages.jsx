@@ -228,7 +228,8 @@ export default function MessagesPage() {
         return cached;
       }
       
-      const users = await base44.entities.User.filter({ id: selectedProfessionalId });
+      // Use service role to see profile pictures
+      const users = await base44.asServiceRole.entities.User.filter({ id: selectedProfessionalId });
       const otherUser = users[0];
       
       if (!otherUser) return null;
@@ -343,14 +344,21 @@ export default function MessagesPage() {
     if (!userId) return t("user");
     
     if (userId === user?.id) {
-      return user.full_name || user.email?.split('@')[0] || t("you");
+      // For current user: prioritize full_name
+      if (user.full_name && user.full_name.trim()) return user.full_name;
+      return user.email?.split('@')[0] || t("you");
     }
     
     if (otherUserData && otherUserData.id === userId) {
+      // For professionals: prioritize business_name
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
         return otherUserData.profile.business_name;
       }
-      return otherUserData.full_name || otherUserData.email?.split('@')[0] || t("user");
+      // For others: prioritize full_name
+      if (otherUserData.full_name && otherUserData.full_name.trim()) {
+        return otherUserData.full_name;
+      }
+      return otherUserData.email?.split('@')[0] || t("user");
     }
     
     if (usersCache[userId]) {
@@ -358,7 +366,10 @@ export default function MessagesPage() {
       if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
         return cachedUser.profile.business_name;
       }
-      return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
+      if (cachedUser.full_name && cachedUser.full_name.trim()) {
+        return cachedUser.full_name;
+      }
+      return cachedUser.email?.split('@')[0] || t("user");
     }
     
     const conversation = conversations[selectedConversation];
@@ -754,17 +765,24 @@ export default function MessagesPage() {
         }
       }
 
+      // PRIORITY: Use business_name for professionals, full_name for everyone
+      const professionalName = user.user_type === "professionnel" 
+        ? (currentProfile?.business_name || user.full_name || user.email)
+        : (recipientUser?.user_type === "professionnel" && otherUserData?.profile?.business_name 
+            ? otherUserData.profile.business_name 
+            : conversations[selectedConversation]?.otherUserName);
+      
+      const clientName = user.user_type === "client"
+        ? (user.full_name || user.email)
+        : (recipientUser?.full_name || recipientUser?.email || 'Usuario');
+
       const messageData = {
         conversation_id: selectedConversation,
         sender_id: user.id,
         recipient_id: otherUserId,
         content: newMessage.trim(),
-        professional_name: user.user_type === "professionnel" ? 
-          (currentProfile?.business_name || user.full_name || user.email) : 
-          conversations[selectedConversation]?.otherUserName,
-        client_name: user.user_type === "client" ? 
-          (user.full_name || user.email) : 
-          (recipientUser?.full_name || recipientUser?.email || 'Usuario'),
+        professional_name: professionalName,
+        client_name: clientName,
         is_read: false
       };
 
