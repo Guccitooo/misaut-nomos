@@ -24,7 +24,10 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
     };
   }, [isOpen]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
       await navigator.clipboard.writeText(phoneNumber);
       setCopied(true);
