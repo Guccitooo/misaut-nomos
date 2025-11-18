@@ -55,6 +55,7 @@ export default function ContactButtons({
   const handlePhoneClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
     
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
@@ -68,6 +69,7 @@ export default function ContactButtons({
   const handleWhatsAppClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
@@ -80,13 +82,22 @@ export default function ContactButtons({
     setShowPhoneModal(true);
   };
   
-  const handleCloseModal = () => {
+  const handleCloseModal = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent?.stopImmediatePropagation?.();
+    }
+    
     setShowPhoneModal(false);
     setModalType(null);
   };
 
   const handleChatClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    
     if (onChatClick) {
       onChatClick();
     }
