@@ -187,12 +187,14 @@ export default function ContactButtons({
         )}
       </div>
 
-      <PhoneModal
-        isOpen={showPhoneModal}
-        onClose={() => setShowPhoneModal(false)}
-        phoneNumber={formatPhoneForDisplay(phone)}
-        businessName={businessName}
-      />
+      {showPhoneModal && (
+        <PhoneModal
+          isOpen={showPhoneModal}
+          onClose={() => setShowPhoneModal(false)}
+          phoneNumber={formatPhoneForDisplay(phone)}
+          businessName={businessName}
+        />
+      )}
     </>
   );
 }
