@@ -5,7 +5,10 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      document.body.style.overflow = 'unset';
+      return;
+    }
 
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -15,10 +18,13 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
+    const timer = setTimeout(() => {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }, 0);
 
     return () => {
+      clearTimeout(timer);
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
