@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ProfessionalDashboard from "../components/dashboard/ProfessionalDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,7 +101,6 @@ export default function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
@@ -157,16 +157,7 @@ export default function MyProfilePage() {
     loadUser();
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('onboarding') === 'completed' && user?.user_type === 'professionnel') {
-      // Show professional dashboard for new professionals
-      const timer = setTimeout(() => {
-        window.history.replaceState({}, '', window.location.pathname);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
+
 
   useEffect(() => {
     if (profileData.provincia && profileData.ciudad) {
@@ -608,6 +599,12 @@ export default function MyProfilePage() {
 
   const isProfessional = profile || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
+  
+  // Show dashboard for professionals who just completed onboarding
+  const onboardingJustCompleted = searchParams.get('onboarding') === 'completed';
+  if (user.user_type === 'professionnel' && onboardingJustCompleted) {
+    return <ProfessionalDashboard user={user} onboardingCompleted={true} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
