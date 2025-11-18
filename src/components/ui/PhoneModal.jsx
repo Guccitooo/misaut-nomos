@@ -3,6 +3,7 @@ import { Phone, X } from "lucide-react";
 
 export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName, modalType = 'phone' }) {
   const [copied, setCopied] = useState(false);
+  const overlayRef = React.useRef(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -10,25 +11,23 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
       return;
     }
 
+    document.body.style.overflow = 'hidden';
+
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        onClose();
+        onClose(e);
       }
     };
 
-    const timer = setTimeout(() => {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }, 0);
+    document.addEventListener('keydown', handleEscape, true);
 
     return () => {
-      clearTimeout(timer);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleEscape, true);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const handleCopy = async (e) => {
     e.preventDefault();
