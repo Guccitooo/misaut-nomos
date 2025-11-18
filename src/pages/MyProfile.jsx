@@ -103,10 +103,6 @@ export default function MyProfilePage() {
   const [success, setSuccess] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
-  const [pollingAttempts, setPollingAttempts] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 5;
-
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
@@ -168,11 +164,7 @@ export default function MyProfilePage() {
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
   useEffect(() => {
-    if (reactivationSuccess === "success") {
-      setIsVerifyingSubscription(true);
-      startSubscriptionPolling();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (onboardingCompleted) {
+    if (onboardingCompleted) {
       toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
         duration: 8000
       });
@@ -185,64 +177,7 @@ export default function MyProfilePage() {
       toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [reactivationSuccess, onboardingCompleted, queryClient, navigate]);
-
-  const startSubscriptionPolling = async () => {
-    for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
-      setPollingAttempts(attempt);
-      
-      try {
-        const currentUser = await loadUser();
-        if (!currentUser) throw new Error("User not loaded during polling");
-        
-        const subs = await base44.entities.Subscription.filter({
-          user_id: currentUser.id
-        });
-        
-        const subscription = subs[0];
-        
-        if (subscription && (currentUser.user_type === "professionnel" || currentUser.user_type === "autonomo")) {
-          const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
-          
-          if (isActive) {
-            setIsVerifyingSubscription(false);
-            setPollingAttempts(0);
-            
-            queryClient.invalidateQueries({ queryKey: ['subscription'] });
-            queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-            
-            if (reactivationSuccess === "success") {
-              toast.success("🎉 Suscripción reactivada correctamente", {
-                duration: 3000
-              });
-              setTimeout(() => {
-                navigate(createPageUrl("SubscriptionManagement"));
-              }, 800);
-            }
-            
-            return;
-          }
-        }
-        
-        if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      } catch (error) {
-        console.error(`Error en intento ${attempt}:`, error);
-        if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-    
-    setIsVerifyingSubscription(false);
-    setPollingAttempts(0);
-    
-    toast.error(
-      "No se pudo verificar tu suscripción. Contacta con soporte: soporte@misautonomos.es",
-      { duration: 10000 }
-    );
-  };
+  }, [reactivationSuccess, onboardingCompleted, queryClient]);
 
   const loadUser = async () => {
     try {
@@ -272,11 +207,11 @@ export default function MyProfilePage() {
       
       return subs.length > 0 ? subs[0] : null;
     },
-    enabled: !!user && !isVerifyingSubscription,
+    enabled: !!user,
     retry: 1,
-    staleTime: 0,
+    staleTime: 1000 * 30,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -553,37 +488,10 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
+  if (!user || loadingProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-      </div>
-    );
-  }
-
-  if (isVerifyingSubscription) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full shadow-lg bg-white border-0">
-          <CardContent className="p-8">
-            <div className="text-center space-y-4">
-              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Activando tu cuenta
-              </h2>
-              <p className="text-sm text-gray-600">
-                Confirmando tu pago...
-              </p>
-              <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                <p className="text-xs text-blue-700">
-                  {pollingAttempts}/5 - Esto toma solo unos segundos
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }

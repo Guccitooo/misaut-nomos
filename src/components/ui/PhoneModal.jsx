@@ -47,13 +47,22 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
   if (!isOpen || !mounted) return null;
 
   const handleOverlayClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
   const handleModalClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
+  };
+
+  const handleClose = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
   };
 
   const modalContent = (
@@ -194,7 +203,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
         >
           <button 
             className="phone-modal-close" 
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Cerrar"
             type="button"
           >

@@ -943,6 +943,11 @@ export default function MessagesPage() {
                             objectFit="cover"
                             width={40}
                             height={40}
+                            fallback={
+                              <AvatarFallback className="bg-blue-100 text-blue-900">
+                                {(conv.otherUserName || "?").charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            }
                           />
                         ) : (
                           <AvatarFallback className="bg-blue-100 text-blue-900">
@@ -1003,6 +1008,11 @@ export default function MessagesPage() {
                         width={40}
                         height={40}
                         priority={true}
+                        fallback={
+                          <AvatarFallback className="bg-blue-700 text-white">
+                            {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        }
                       />
                     ) : (
                       <AvatarFallback className="bg-blue-700 text-white">

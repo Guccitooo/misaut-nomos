@@ -164,6 +164,11 @@ export default function FavoritesPage() {
                               objectFit="cover"
                               width={48}
                               height={48}
+                              fallback={
+                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold">
+                                  {profile.business_name ? profile.business_name.charAt(0) : 'P'}
+                                </AvatarFallback>
+                              }
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold">

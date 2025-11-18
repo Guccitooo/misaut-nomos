@@ -68,14 +68,7 @@ export default function ContactButtons({
     e.stopPropagation();
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
-    
-    if (isMobile) {
-      window.open(`https://wa.me/${whatsappPhone}`, '_blank');
-      return;
-    }
-    
-    setModalType('whatsapp');
-    setShowPhoneModal(true);
+    window.open(`https://wa.me/${whatsappPhone}`, '_blank');
   };
   
   const handleCloseModal = () => {
