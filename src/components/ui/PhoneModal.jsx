@@ -173,10 +173,12 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName 
           <button 
             className="phone-modal-close" 
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onClose();
             }} 
             aria-label="Cerrar"
+            type="button"
           >
             <X className="w-5 h-5" />
           </button>
