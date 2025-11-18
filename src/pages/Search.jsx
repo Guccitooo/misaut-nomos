@@ -144,11 +144,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col active:scale-[0.98]">
-      <CardContent className="p-3 flex flex-col flex-1 min-h-[280px]">
-        <div className="flex items-start gap-2.5 mb-2.5">
+      <CardContent className="p-2.5 flex flex-col flex-1">
+        <div className="flex items-start gap-2 mb-1.5">
           <div className="flex-shrink-0">
             <div 
-              className="w-14 h-14 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100 cursor-pointer"
+              className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100 cursor-pointer"
               onClick={() => onProfileClick(profile.user_id)}
             >
               {profileUser?.profile_picture ? (
@@ -157,12 +157,12 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                   alt={`Foto de perfil de ${profile.business_name}`}
                   className="w-full h-full"
                   objectFit="cover"
-                  width={56}
-                  height={56}
+                  width={40}
+                  height={40}
                   priority={false}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-xl">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
                   {profile.business_name?.charAt(0)}
                 </div>
               )}
@@ -171,30 +171,28 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
 
           <div className="flex-1 min-w-0">
             <h3 
-              className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors line-clamp-1 cursor-pointer"
+              className="font-bold text-sm text-gray-900 hover:text-blue-700 transition-colors line-clamp-1 cursor-pointer"
               onClick={() => onProfileClick(profile.user_id)}
             >
               {profile.business_name}
             </h3>
-            {profile.average_rating > 0 ? (
-              <div className="flex items-center gap-1 mt-0.5">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
-                <span className="text-sm font-semibold text-gray-700">
+            {profile.average_rating > 0 && (
+              <div className="flex items-center gap-0.5">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400 flex-shrink-0" />
+                <span className="text-xs font-semibold text-gray-700">
                   {profile.average_rating.toFixed(1)}
                 </span>
                 <span className="text-xs text-gray-500">
                   ({profile.total_reviews})
                 </span>
               </div>
-            ) : (
-              <div className="h-5 mt-0.5"></div>
             )}
           </div>
 
           <Button
             size="icon"
             variant="ghost"
-            className={`h-9 w-9 flex-shrink-0 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
+            className={`h-7 w-7 flex-shrink-0 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(profile.user_id);
@@ -202,7 +200,7 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
             aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
           >
             <Heart 
-              className={`w-4.5 h-4.5 transition-all ${
+              className={`w-3.5 h-3.5 transition-all ${
                 isFavorite ? 'fill-red-500' : ''
               }`}
             />
@@ -210,22 +208,22 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
         </div>
 
         <div 
-          className="flex flex-wrap gap-1 mb-2 cursor-pointer"
+          className="flex flex-wrap gap-1 mb-1.5 cursor-pointer"
           onClick={() => onProfileClick(profile.user_id)}
         >
-          {profile.categories?.slice(0, 2).map((cat, idx) => (
+          {profile.categories?.slice(0, 1).map((cat, idx) => (
             <CategoryBadge key={idx} category={cat} />
           ))}
-          {profile.categories?.length > 2 && (
-            <Badge variant="outline" className="text-xs py-0.5 px-1.5">
-              +{profile.categories.length - 2}
+          {profile.categories?.length > 1 && (
+            <Badge variant="outline" className="text-xs py-0 px-1.5 h-5">
+              +{profile.categories.length - 1}
             </Badge>
           )}
         </div>
 
         {profile.service_area && (
           <div 
-            className="mb-2 cursor-pointer"
+            className="mb-1.5 cursor-pointer"
             onClick={() => onProfileClick(profile.user_id)}
           >
             <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -236,17 +234,17 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
         )}
 
         <div 
-          className="mb-3 cursor-pointer flex-1"
+          className="mb-2 cursor-pointer"
           onClick={() => onProfileClick(profile.user_id)}
         >
-          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-600 line-clamp-1">
             <TranslatedText 
               text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
             />
           </p>
         </div>
 
-        <div className="mt-auto pt-2 border-t border-gray-100">
+        <div className="mt-auto pt-1.5 border-t border-gray-100">
           <ContactButtons
             phone={profile.telefono_contacto}
             businessName={profile.business_name}
