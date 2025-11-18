@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,6 +70,7 @@ export default function AdminDashboardPage() {
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendDays, setExtendDays] = useState(7);
   const [isCleaningOrphans, setIsCleaningOrphans] = useState(false);
+  const [isSyncingVisibility, setIsSyncingVisibility] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -122,6 +122,49 @@ export default function AdminDashboardPage() {
       }
     } catch (error) {
       console.error('⚠️ Error en limpieza automática:', error);
+    }
+  };
+
+  // ✅ NUEVO: Sincronizar visibilidad de perfiles
+  const handleSyncVisibility = async () => {
+    setIsSyncingVisibility(true);
+    try {
+      console.log('🔄 Sincronizando visibilidad de perfiles...');
+      const response = await base44.functions.invoke('syncProfileVisibility');
+      
+      if (response.data.ok) {
+        const corrected = response.data.stats.corrected;
+        
+        if (corrected > 0) {
+          toast.success(`✅ ${corrected} perfil(es) sincronizado(s)`);
+          
+          // Mostrar detalles de correcciones
+          if (response.data.corrections && response.data.corrections.length > 0) {
+            setTimeout(() => {
+              const details = response.data.corrections.map(c => 
+                `${c.business_name || 'Perfil'}: ${c.was_visible ? 'Visible' : 'Oculto'} → ${c.now_visible ? 'Visible' : 'Oculto'}`
+              ).join('\n');
+              
+              toast.info(`Correcciones:\n${details}`, {
+                duration: 8000
+              });
+            }, 1000);
+          }
+        } else {
+          toast.success('✅ Todos los perfiles ya están correctos');
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['professionalProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['allSubscriptions'] });
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        toast.error(`Error: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error sincronizando visibilidad:', error);
+      toast.error('Error al sincronizar visibilidad');
+    } finally {
+      setIsSyncingVisibility(false);
     }
   };
 
@@ -492,24 +535,45 @@ export default function AdminDashboardPage() {
                 ✅ Limpieza automática activada - Los datos huérfanos se eliminan al cargar el panel
               </p>
             </div>
-            <Button
-              onClick={handleForceCleanup}
-              disabled={isCleaningOrphans}
-              variant="outline"
-              size="sm"
-              className="text-gray-600 border-gray-300 hover:bg-gray-50"
-            >
-              {isCleaningOrphans ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Limpiando...
-                </>
-              ) : (
-                <>
-                  🧹 Forzar limpieza
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSyncVisibility}
+                disabled={isSyncingVisibility}
+                variant="default"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSyncingVisibility ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    🔄 Sincronizar visibilidad
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleForceCleanup}
+                disabled={isCleaningOrphans}
+                variant="outline"
+                size="sm"
+                className="text-gray-600 border-gray-300 hover:bg-gray-50"
+              >
+                {isCleaningOrphans ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Limpiando...
+                  </>
+                ) : (
+                  <>
+                    🧹 Limpiar huérfanos
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
