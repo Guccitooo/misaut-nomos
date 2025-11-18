@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,17 +96,18 @@ const CATEGORY_ICONS = {
 };
 
 const BASE_CATEGORIES = [
-  { name: "Electricista", icon: "Zap" },
-  { name: "Carpintero", icon: "Hammer" },
-  { name: "Fontanero", icon: "Wrench" },
   { name: "Albañil / Reformas", icon: "Home" },
-  { name: "Pintor", icon: "Paintbrush" },
-  { name: "Jardinero", icon: "Leaf" },
-  { name: "Transportista", icon: "Truck" },
   { name: "Autónomo de limpieza", icon: "Trash2" },
+  { name: "Carpintero", icon: "Hammer" },
   { name: "Cerrajero", icon: "Key" },
+  { name: "Electricista", icon: "Zap" },
+  { name: "Fontanero", icon: "Wrench" },
   { name: "Instalador de aire acondicionado", icon: "Wind" },
-  { name: "Mantenimiento general", icon: "Settings" }
+  { name: "Jardinero", icon: "Leaf" },
+  { name: "Mantenimiento de piscinas", icon: "Settings" },
+  { name: "Mantenimiento general", icon: "Settings" },
+  { name: "Pintor", icon: "Paintbrush" },
+  { name: "Transportista", icon: "Truck" }
 ];
 
 function useDebounce(value, delay) {

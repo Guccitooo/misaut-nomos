@@ -86,11 +86,11 @@ const provincias = [
 ];
 
 const categories = [
-  "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
-  "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
-  "Asesoría o gestoría", "Empresa multiservicios",
-  "Otro tipo de servicio profesional"
-].sort();
+  "Albañil / Reformas", "Autónomo de limpieza", "Carpintero", "Cerrajero",
+  "Electricista", "Fontanero", "Instalador de aire acondicionado",
+  "Jardinero", "Mantenimiento de piscinas", "Mantenimiento general",
+  "Pintor", "Transportista", "Otro tipo de servicio profesional"
+];
 
 export default function MyProfilePage() {
   const navigate = useNavigate();
