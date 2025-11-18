@@ -704,6 +704,7 @@ export default function ClientOnboardingPage() {
                       )}
                     </div>
                   )}
+                </div>
 
                 <div>
                   <Label>{t('whatServicesLooking')}</Label>
