@@ -73,6 +73,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName 
             border-radius: 6px;
             transition: background 0.2s;
             color: #9ca3af;
+            z-index: 10;
           }
 
           .phone-modal-close:hover {
