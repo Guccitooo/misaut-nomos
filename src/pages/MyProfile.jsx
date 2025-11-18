@@ -104,7 +104,7 @@ export default function MyProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const [pollingAttempts, setPollingAttempts] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 10;
+  const MAX_POLLING_ATTEMPTS = 5;
 
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingPending = searchParams.get("onboarding");
@@ -193,80 +193,47 @@ export default function MyProfilePage() {
         const currentUser = await loadUser();
         if (!currentUser) throw new Error("User not loaded during polling");
         
-        await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
-        const result = await queryClient.fetchQuery({
-          queryKey: ['subscription', currentUser.id],
-          queryFn: async () => {
-            const subs = await base44.entities.Subscription.filter({
-              user_id: currentUser.id
-            });
-            return subs[0] || null;
-          },
-          staleTime: 0,
-          gcTime: 0,
+        const subs = await base44.entities.Subscription.filter({
+          user_id: currentUser.id
         });
         
-        if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
-          setIsVerifyingSubscription(false);
-          setPollingAttempts(0);
-          
-          if (reactivationSuccess === "success") {
-            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
-              duration: 6000
-            });
-          } else if (onboardingPending === "pending") {
-            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
-              duration: 8000
-            });
-            
-            setTimeout(() => {
-              navigate(createPageUrl("ProfileOnboarding"));
-            }, 2000);
-          }
-          
-          queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-          return;
-        }
+        const subscription = subs[0];
         
-        if (attempt === 5 && currentUser) {
-          try {
-            const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
-              user_id: currentUser.id
-            });
+        if (subscription && (currentUser.user_type === "professionnel" || currentUser.user_type === "autonomo")) {
+          const isActive = isSubscriptionActive(subscription.estado, subscription.fecha_expiracion);
+          
+          if (isActive) {
+            setIsVerifyingSubscription(false);
+            setPollingAttempts(0);
             
-            if (syncResponse.data.ok) {
-              await loadUser();
-              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-              await queryClient.refetchQueries({ queryKey: ['subscription'] });
+            queryClient.invalidateQueries({ queryKey: ['subscription'] });
+            queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+            
+            if (onboardingPending === "pending") {
+              toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
+                duration: 5000
+              });
               
-              if (syncResponse.data.needs_onboarding) {
-                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
-                  duration: 8000
-                });
-                setTimeout(() => {
-                  navigate(createPageUrl("ProfileOnboarding"));
-                }, 2000);
-              } else {
-                toast.success("🎉 ¡Tu suscripción está activa!", {
-                  duration: 6000
-                });
-              }
-              
-              setIsVerifyingSubscription(false);
-              return;
+              setTimeout(() => {
+                navigate(createPageUrl("ProfileOnboarding"));
+              }, 1000);
+            } else if (reactivationSuccess === "success") {
+              toast.success("🎉 ¡Tu suscripción ha sido reactivada!", {
+                duration: 4000
+              });
             }
-          } catch (syncError) {
-            console.error('❌ Error en sincronización forzada:', syncError);
+            
+            return;
           }
         }
         
         if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
-        console.error(`❌ Error en intento ${attempt}:`, error);
+        console.error(`Error en intento ${attempt}:`, error);
         if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
@@ -275,13 +242,8 @@ export default function MyProfilePage() {
     setPollingAttempts(0);
     
     toast.error(
-      <div>
-        <p className="font-semibold">No se pudo verificar tu suscripción</p>
-        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
-      </div>,
-      {
-        duration: 15000
-      }
+      "No se pudo verificar tu suscripción. Contacta con soporte: soporte@misautonomos.es",
+      { duration: 10000 }
     );
   };
 
@@ -605,25 +567,21 @@ export default function MyProfilePage() {
   if (isVerifyingSubscription) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-xl bg-white">
+        <Card className="max-w-sm w-full shadow-lg bg-white border-0">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Verificando tu suscripción
+              <h2 className="text-xl font-bold text-gray-900">
+                Activando tu cuenta
               </h2>
-              <p className="text-gray-600">
-                Estamos confirmando tu pago y activando tu cuenta...
+              <p className="text-sm text-gray-600">
+                Confirmando tu pago...
               </p>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  <strong>Intento {pollingAttempts}/{MAX_POLLING_ATTEMPTS}</strong>
-                </p>
-                <p className="text-xs text-blue-700 mt-2">
-                  Esto puede tardar unos segundos mientras procesamos tu pago.
-                  {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
+              <div className="bg-blue-50 px-4 py-2 rounded-lg">
+                <p className="text-xs text-blue-700">
+                  {pollingAttempts}/5 - Esto toma solo unos segundos
                 </p>
               </div>
             </div>

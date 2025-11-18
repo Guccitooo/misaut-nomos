@@ -142,38 +142,24 @@ Deno.serve(async (req) => {
                     full_name: metadata.fullName || email.split('@')[0],
                     phone: metadata.phone || '',
                     city: metadata.address || '',
-                    user_type: metadata.userType || 'professionnel', // Use metadata for userType
-                    subscription_status: profileStatus.estado, // Use calculated status
+                    user_type: 'professionnel',
+                    subscription_status: profileStatus.estado,
                     subscription_start_date: new Date(subscription.current_period_start * 1000).toISOString().split('T')[0],
-                    subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
+                    subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0],
+                    has_used_trial: true
                 };
-
-                if (subscription.status === 'trialing' || metadata.trial_offered === 'true') {
-                    userData.has_used_trial = true;
-                }
 
                 if (users.length === 0) {
                     console.log('➕ Creando nuevo usuario...');
-                    try {
-                        const newUser = await base44.asServiceRole.entities.User.create(userData);
-                        userId = newUser.id;
-                        console.log('✅ Usuario creado:', userId);
-                    } catch (createError) {
-                        console.error('❌ Error creando usuario:', createError);
-                        throw createError; // Re-throw to be caught by the main try-catch
-                    }
+                    const newUser = await base44.asServiceRole.entities.User.create(userData);
+                    userId = newUser.id;
+                    console.log('✅ Usuario creado:', userId);
                 } else {
                     userId = users[0].id;
                     console.log('✅ Usuario encontrado:', userId);
                     
-                    // ✅ ACTUALIZAR USUARIO CON ESTADO NORMALIZADO
-                    try {
-                        await base44.asServiceRole.entities.User.update(userId, userData); // Use the prepared userData
-                        console.log('✅ Usuario actualizado con detalles de suscripción y tipo');
-                    } catch (updateError) {
-                        console.error('❌ Error actualizando usuario:', updateError);
-                        // Log the error but continue as the user exists and we need to proceed with subscription/profile updates.
-                    }
+                    await base44.asServiceRole.entities.User.update(userId, userData);
+                    console.log('✅ Usuario actualizado con detalles de suscripción y tipo');
                 }
 
                 console.log('2️⃣ Calculando estado del perfil...');
@@ -217,22 +203,17 @@ Deno.serve(async (req) => {
 
                 console.log('💳 Datos de suscripción:', subscriptionData);
 
-                try {
-                    if (existingSubs.length > 0) {
-                        console.log('🔄 Actualizando suscripción existente ID:', existingSubs[0].id);
-                        await base44.asServiceRole.entities.Subscription.update(
-                            existingSubs[0].id,
-                            subscriptionData
-                        );
-                    } else {
-                        console.log('➕ Creando nueva suscripción...');
-                        await base44.asServiceRole.entities.Subscription.create(subscriptionData);
-                    }
-                    console.log('✅ Suscripción guardada correctamente');
-                } catch (subError) {
-                    console.error('❌ Error guardando suscripción:', subError);
-                    throw subError; // Re-throw to be caught by the main try-catch
+                if (existingSubs.length > 0) {
+                    console.log('🔄 Actualizando suscripción existente ID:', existingSubs[0].id);
+                    await base44.asServiceRole.entities.Subscription.update(
+                        existingSubs[0].id,
+                        subscriptionData
+                    );
+                } else {
+                    console.log('➕ Creando nueva suscripción...');
+                    await base44.asServiceRole.entities.Subscription.create(subscriptionData);
                 }
+                console.log('✅ Suscripción guardada correctamente');
 
                 console.log('5️⃣ Actualizando perfil profesional si existe...');
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
@@ -241,16 +222,11 @@ Deno.serve(async (req) => {
 
                 if (profiles.length > 0) {
                     console.log('🔄 Actualizando perfil existente ID:', profiles[0].id);
-                    try {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: profileStatus.visible_en_busqueda,
-                            estado_perfil: profileStatus.estado_perfil
-                        });
-                        console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
-                    } catch (profileError) {
-                        console.error('❌ Error actualizando perfil:', profileError);
-                        // Log the error but continue, as the subscription is already handled.
-                    }
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: profileStatus.visible_en_busqueda,
+                        estado_perfil: profileStatus.estado_perfil
+                    });
+                    console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
                 } else {
                     console.log('ℹ️ Perfil aún no existe (se creará en onboarding)');
                 }
