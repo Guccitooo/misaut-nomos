@@ -80,7 +80,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
             justify-content: center;
             align-items: center;
             animation: fadeInModal 0.2s ease-out;
-            z-index: 9999;
+            z-index: 99999;
             pointer-events: all;
           }
 
