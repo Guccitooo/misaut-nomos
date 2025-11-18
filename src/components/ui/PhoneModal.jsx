@@ -91,6 +91,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
             text-align: center;
             position: relative;
             animation: scaleIn 0.25s ease-out;
+            pointer-events: all;
           }
 
           .phone-modal-close {
