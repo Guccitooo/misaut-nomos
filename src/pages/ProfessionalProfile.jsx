@@ -334,11 +334,11 @@ export default function ProfessionalProfilePage() {
                     </div>
                   )}
                   
-                  {profile.average_rating > 0 && (
+                  {reviews.length > 0 && profile.average_rating > 0 && (
                     <div className="flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span className="font-semibold text-gray-900">{profile.average_rating.toFixed(1)}</span>
-                      <span className="text-gray-500">({profile.total_reviews})</span>
+                      <span className="text-gray-500">({reviews.length})</span>
                     </div>
                   )}
                 </div>
