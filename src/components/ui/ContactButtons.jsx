@@ -50,8 +50,9 @@ export default function ContactButtons({
 }) {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [modalType, setModalType] = useState(null);
-  const [modalJustClosed, setModalJustClosed] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const isMobile = isMobileDevice();
+  const closeTimeoutRef = React.useRef(null);
 
   const handlePhoneClick = (e) => {
     e.preventDefault();
