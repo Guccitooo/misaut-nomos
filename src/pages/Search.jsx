@@ -45,6 +45,7 @@ import TranslatedText from "../components/ui/TranslatedText";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import SEOHead from "../components/seo/SEOHead";
 import { OrganizationSchema, ServiceSchema } from "../components/seo/StructuredData";
+import ContactButtons from "../components/ui/ContactButtons";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -140,24 +141,6 @@ const CategoryBadge = React.memo(({ category }) => {
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, isFavorite, favoriteCount, profileUser, onProfileClick }) => {
   const { t } = useLanguage();
-  
-  const formatPhoneForCall = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/[^\d+]/g, '');
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+34' + cleaned;
-    }
-    return cleaned;
-  };
-
-  const formatPhoneForWhatsApp = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/\D/g, '');
-    if (!cleaned.startsWith('34') && cleaned.length === 9) {
-      cleaned = '34' + cleaned;
-    }
-    return cleaned;
-  };
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
@@ -269,66 +252,16 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
         <div className="flex-1"></div>
 
         <div className="mt-auto pt-3">
-          {profile.telefono_contacto && (profile.metodos_contacto?.includes('telefono') || profile.metodos_contacto?.includes('whatsapp')) ? (
-            <div className="grid grid-cols-3 gap-1.5">
-              {profile.metodos_contacto?.includes('telefono') && (
-                <a
-                  href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Llamar a ${profile.business_name}`}
-                >
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
-                  >
-                    <Phone className="w-4 h-4" />
-                  </Button>
-                </a>
-              )}
-              
-              {profile.metodos_contacto?.includes('whatsapp') && (
-                <a
-                  href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`WhatsApp a ${profile.business_name}`}
-                >
-                  <Button 
-                    size="sm"
-                    className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </Button>
-                </a>
-              )}
-              
-              <Button
-                size="sm"
-                className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartChat(profile.user_id, profile.business_name);
-                }}
-                aria-label={`Chatear con ${profile.business_name}`}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartChat(profile.user_id, profile.business_name);
-              }}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Chat directo
-            </Button>
-          )}
+          <ContactButtons
+            phone={profile.telefono_contacto}
+            businessName={profile.business_name}
+            enablePhone={profile.metodos_contacto?.includes('telefono')}
+            enableWhatsApp={profile.metodos_contacto?.includes('whatsapp')}
+            enableChat={true}
+            onChatClick={() => onStartChat(profile.user_id, profile.business_name)}
+            size="sm"
+            layout="grid"
+          />
         </div>
       </CardContent>
     </Card>
