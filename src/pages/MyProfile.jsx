@@ -95,6 +95,7 @@ const categories = [
 export default function MyProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -155,6 +156,17 @@ export default function MyProfilePage() {
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('onboarding') === 'completed' && user?.user_type === 'professionnel') {
+      // Show professional dashboard for new professionals
+      const timer = setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (profileData.provincia && profileData.ciudad) {
