@@ -50,73 +50,22 @@ export default function ContactButtons({
 }) {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [modalType, setModalType] = useState(null);
-  const [isClosing, setIsClosing] = useState(false);
   const isMobile = isMobileDevice();
-  const closeTimeoutRef = React.useRef(null);
 
-  React.useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (!showPhoneModal && isClosing) {
-      const blockClicks = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      };
-      
-      window.addEventListener('click', blockClicks, true);
-      
-      const cleanup = setTimeout(() => {
-        window.removeEventListener('click', blockClicks, true);
-        setIsClosing(false);
-      }, 2000);
-      
-      return () => {
-        clearTimeout(cleanup);
-        window.removeEventListener('click', blockClicks, true);
-      };
-    }
-  }, [showPhoneModal, isClosing]);
-
-  const handlePhoneClick = React.useCallback((e) => {
-    if (isClosing) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.nativeEvent?.stopImmediatePropagation?.();
-      return;
-    }
-    
-    e.preventDefault();
+  const handlePhoneClick = (e) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
       return;
     }
     
-    setIsClosing(false);
     setModalType('phone');
     setShowPhoneModal(true);
-  }, [isClosing, isMobile, phone]);
+  };
 
-  const handleWhatsAppClick = React.useCallback((e) => {
-    if (isClosing) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.nativeEvent?.stopImmediatePropagation?.();
-      return;
-    }
-    
-    e.preventDefault();
+  const handleWhatsAppClick = (e) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
@@ -125,36 +74,22 @@ export default function ContactButtons({
       return;
     }
     
-    setIsClosing(false);
     setModalType('whatsapp');
     setShowPhoneModal(true);
-  }, [isClosing, isMobile, phone]);
+  };
   
-  const handleCloseModal = React.useCallback((e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.nativeEvent?.stopImmediatePropagation?.();
-    }
-    
+  const handleCloseModal = () => {
     setShowPhoneModal(false);
     setModalType(null);
-    setIsClosing(true);
-    
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-    }
-  }, []);
+  };
 
-  const handleChatClick = React.useCallback((e) => {
-    e.preventDefault();
+  const handleChatClick = (e) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     
     if (onChatClick) {
       onChatClick();
     }
-  }, [onChatClick]);
+  };
 
   // Si solo hay chat interno
   if (!phone || (!enablePhone && !enableWhatsApp)) {
@@ -181,10 +116,7 @@ export default function ContactButtons({
               size={size}
               className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
               onClick={handlePhoneClick}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
               aria-label={`Llamar a ${businessName}`}
-              disabled={isClosing}
             >
               <Phone className="w-4 h-4" />
             </Button>
@@ -195,10 +127,7 @@ export default function ContactButtons({
               size={size}
               className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
               onClick={handleWhatsAppClick}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
               aria-label={`WhatsApp a ${businessName}`}
-              disabled={isClosing}
             >
               <MessageCircle className="w-4 h-4" />
             </Button>
@@ -209,8 +138,6 @@ export default function ContactButtons({
               size={size}
               className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
               onClick={handleChatClick}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
               aria-label={`Chatear con ${businessName}`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -218,15 +145,13 @@ export default function ContactButtons({
           )}
         </div>
 
-        {showPhoneModal && (
-          <PhoneModal
-            isOpen={showPhoneModal}
-            onClose={handleCloseModal}
-            phoneNumber={formatPhoneForDisplay(phone)}
-            businessName={businessName}
-            modalType={modalType}
-          />
-        )}
+        <PhoneModal
+          isOpen={showPhoneModal}
+          onClose={handleCloseModal}
+          phoneNumber={formatPhoneForDisplay(phone)}
+          businessName={businessName}
+          modalType={modalType}
+        />
       </>
     );
   }
@@ -241,9 +166,6 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] hover:bg-blue-50 hover:border-blue-600"
             onClick={handlePhoneClick}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            disabled={isClosing}
           >
             <Phone className="w-5 h-5 mr-2" />
             Llamar
@@ -255,9 +177,6 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700"
             onClick={handleWhatsAppClick}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            disabled={isClosing}
           >
             <MessageCircle className="w-5 h-5 mr-2" />
             WhatsApp
@@ -269,8 +188,6 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700"
             onClick={handleChatClick}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
           >
             <MessageSquare className="w-5 h-5 mr-2" />
             Chat directo
@@ -278,15 +195,13 @@ export default function ContactButtons({
         )}
       </div>
 
-      {showPhoneModal && (
-        <PhoneModal
-          isOpen={showPhoneModal}
-          onClose={handleCloseModal}
-          phoneNumber={formatPhoneForDisplay(phone)}
-          businessName={businessName}
-          modalType={modalType}
-        />
-      )}
+      <PhoneModal
+        isOpen={showPhoneModal}
+        onClose={handleCloseModal}
+        phoneNumber={formatPhoneForDisplay(phone)}
+        businessName={businessName}
+        modalType={modalType}
+      />
     </>
   );
 }

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Phone, X } from "lucide-react";
 
 export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName, modalType = 'phone' }) {
   const [copied, setCopied] = useState(false);
-  const overlayRef = React.useRef(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -15,22 +20,19 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
 
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose(e);
+        onClose();
       }
     };
 
-    document.addEventListener('keydown', handleEscape, true);
+    document.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.removeEventListener('keydown', handleEscape, true);
+      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
   const handleCopy = async (e) => {
-    e.preventDefault();
     e.stopPropagation();
     
     try {
@@ -42,51 +44,32 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  const handleOverlayClick = React.useCallback((e) => {
+  const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.nativeEvent?.stopImmediatePropagation?.();
-      
-      setTimeout(() => {
-        onClose(e);
-      }, 0);
+      onClose();
     }
-  }, [onClose]);
+  };
 
-  const handleModalClick = React.useCallback((e) => {
-    e.preventDefault();
+  const handleModalClick = (e) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
-  }, []);
+  };
 
-  const handleCloseClick = React.useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
-    
-    setTimeout(() => {
-      onClose(e);
-    }, 0);
-  }, [onClose]);
-
-  return (
+  const modalContent = (
     <>
       <style>
         {`
           .phone-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(3px);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             display: flex;
             justify-content: center;
             align-items: center;
             animation: fadeInModal 0.2s ease-out;
-            z-index: 99999;
-            pointer-events: all;
+            z-index: 999999;
           }
 
           .phone-modal-box {
@@ -99,7 +82,6 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
             text-align: center;
             position: relative;
             animation: scaleIn 0.25s ease-out;
-            pointer-events: all;
           }
 
           .phone-modal-close {
@@ -205,20 +187,14 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
       <div 
         className="phone-modal-overlay" 
         onClick={handleOverlayClick}
-        onMouseDown={(e) => e.stopPropagation()}
-        onTouchStart={(e) => e.stopPropagation()}
       >
         <div 
           className="phone-modal-box" 
           onClick={handleModalClick}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
         >
           <button 
             className="phone-modal-close" 
-            onClick={handleCloseClick}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
+            onClick={onClose}
             aria-label="Cerrar"
             type="button"
           >
@@ -252,4 +228,6 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
       </div>
     </>
   );
+
+  return createPortal(modalContent, document.body);
 }
