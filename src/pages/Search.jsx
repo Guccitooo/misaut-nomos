@@ -392,13 +392,15 @@ export default function SearchPage() {
     queryKey: ['profileUsers'],
     queryFn: async () => {
       const userIds = [...new Set(profiles.map(p => p.user_id))];
+
+      // Use service role to see all profile pictures (public visibility)
       const users = await Promise.all(
         userIds.map(async (id) => {
-          const u = await base44.entities.User.filter({ id });
+          const u = await base44.asServiceRole.entities.User.filter({ id });
           return u[0];
         })
       );
-      
+
       const usersMap = {};
       users.forEach(u => {
         if (u) usersMap[u.id] = u;

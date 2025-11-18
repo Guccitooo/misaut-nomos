@@ -170,29 +170,22 @@ function LayoutContent({ children, currentPageName }) {
 
   const getDisplayName = () => {
     if (!user) return "";
-    
+
+    // PRIORITY 1: Professional business name (for professionals)
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
-    
+
+    // PRIORITY 2: User's full name
     if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
-    
+
+    // PRIORITY 3: Fallback to email (only if no full_name)
     if (user.email) {
-      const username = user.email.split('@')[0];
-      const cleaned = username.replace(/\d+$/g, '');
-      
-      if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
-        return cleaned
-          .split(/[-._]/)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
-      }
-      
-      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+      return user.email.split('@')[0];
     }
-    
+
     return "Usuario";
   };
 
