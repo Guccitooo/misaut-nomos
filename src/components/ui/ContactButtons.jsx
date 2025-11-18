@@ -62,12 +62,39 @@ export default function ContactButtons({
     };
   }, []);
 
+  React.useEffect(() => {
+    if (!showPhoneModal && isClosing) {
+      const blockClicks = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      };
+      
+      window.addEventListener('click', blockClicks, true);
+      
+      const cleanup = setTimeout(() => {
+        window.removeEventListener('click', blockClicks, true);
+        setIsClosing(false);
+      }, 2000);
+      
+      return () => {
+        clearTimeout(cleanup);
+        window.removeEventListener('click', blockClicks, true);
+      };
+    }
+  }, [showPhoneModal, isClosing]);
+
   const handlePhoneClick = (e) => {
+    if (isClosing) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
-    
-    if (isClosing) return;
     
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
@@ -79,11 +106,16 @@ export default function ContactButtons({
   };
 
   const handleWhatsAppClick = (e) => {
+    if (isClosing) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
-    
-    if (isClosing) return;
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
@@ -103,17 +135,13 @@ export default function ContactButtons({
       e.nativeEvent?.stopImmediatePropagation?.();
     }
     
-    setIsClosing(true);
     setShowPhoneModal(false);
     setModalType(null);
+    setIsClosing(true);
     
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
     }
-    
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsClosing(false);
-    }, 1000);
   };
 
   const handleChatClick = (e) => {
