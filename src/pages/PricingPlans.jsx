@@ -176,7 +176,7 @@ export default function PricingPlansPage() {
       />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-3 lg:px-4 py-4 lg:py-8">
           <Button
             variant="ghost"
             onClick={handleGoBack}
@@ -225,7 +225,7 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 mb-8 lg:mb-12">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isPopular = plan.plan_id === "plan_quarterly";

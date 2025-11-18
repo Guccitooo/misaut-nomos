@@ -644,28 +644,28 @@ export default function SearchPage() {
         </div>
 
         {/* MAIN CONTENT AREA */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <Card className="mb-8 shadow-lg border-0">
-            <CardContent className="p-6">
+        <div className="max-w-7xl mx-auto px-3 lg:px-4 py-4 lg:py-6">
+          <Card className="mb-6 lg:mb-8 shadow-md lg:shadow-lg border-0">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-5 h-5 text-blue-700" />
                 <h2 className="font-semibold text-lg text-gray-900">{t('filters')}</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder={t('search')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-12"
+                    className="pl-10 h-11"
                     aria-label="Buscar profesionales"
                   />
                 </div>
 
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-12" aria-label="Filtrar por categoría">
+                  <SelectTrigger className="h-11" aria-label="Filtrar por categoría">
                     <SelectValue placeholder={t('allCategories')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -696,7 +696,7 @@ export default function SearchPage() {
                     setSelectedCiudad("all");
                   }}
                 >
-                  <SelectTrigger className="h-12" aria-label="Filtrar por provincia">
+                  <SelectTrigger className="h-11" aria-label="Filtrar por provincia">
                     <SelectValue placeholder={t('allProvinces')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -721,7 +721,7 @@ export default function SearchPage() {
                   value={selectedCiudad} 
                   onValueChange={setSelectedCiudad}
                 >
-                  <SelectTrigger className="h-12" aria-label="Filtrar por ciudad">
+                  <SelectTrigger className="h-11" aria-label="Filtrar por ciudad">
                     <SelectValue placeholder={t('allCities')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -804,7 +804,7 @@ export default function SearchPage() {
               )}
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 items-stretch">
               {filteredProfiles.map((profile) => (
                 <ProfileCard
                   key={profile.id}

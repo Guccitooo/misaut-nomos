@@ -25,6 +25,7 @@ const isSubscriptionActive = (subscriptionStatus, endDate) => {
 };
 
 Deno.serve(async (req) => {
+    const startTime = Date.now();
     console.log('🔔 ========== WEBHOOK STRIPE RECIBIDO ==========');
     console.log('⏰ Timestamp:', new Date().toISOString());
     
@@ -33,9 +34,6 @@ Deno.serve(async (req) => {
         
         const body = await req.text();
         const signature = req.headers.get('stripe-signature');
-        
-        console.log('📝 Body length:', body.length);
-        console.log('🔏 Signature present:', !!signature);
         
         if (!signature) {
             console.error('❌ Sin firma de Stripe');
@@ -49,7 +47,7 @@ Deno.serve(async (req) => {
                 signature,
                 webhookSecret
             );
-            console.log('✅ Evento verificado:', event.type);
+            console.log(`✅ Evento verificado en ${Date.now() - startTime}ms: ${event.type}`);
             console.log('🆔 Event ID:', event.id);
         } catch (err) {
             console.error('❌ Error verificando firma:', err.message);
@@ -498,15 +496,25 @@ Deno.serve(async (req) => {
                 console.log('ℹ️ Evento no manejado:', event.type);
         }
 
-        return Response.json({ received: true, processed: true });
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ Webhook procesado en ${totalTime}ms`);
+        return Response.json({ 
+            received: true, 
+            processed: true,
+            processing_time_ms: totalTime,
+            event_type: event.type 
+        });
 
     } catch (error) {
+        const totalTime = Date.now() - startTime;
         console.error('❌ ========== ERROR EN WEBHOOK ==========');
+        console.error(`❌ Falló después de ${totalTime}ms`);
         console.error('❌ Message:', error.message);
         console.error('❌ Stack:', error.stack);
         return Response.json({ 
             error: error.message,
-            stack: error.stack 
+            stack: error.stack,
+            processing_time_ms: totalTime
         }, { status: 500 });
     }
 });
