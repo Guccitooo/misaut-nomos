@@ -210,17 +210,20 @@ export default function MyProfilePage() {
             queryClient.invalidateQueries({ queryKey: ['myProfile'] });
             
             if (onboardingPending === "pending") {
-              toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
-                duration: 5000
+              toast.success("✅ ¡Pago confirmado! Completa tu perfil profesional.", {
+                duration: 4000
               });
               
               setTimeout(() => {
                 navigate(createPageUrl("ProfileOnboarding"));
-              }, 1000);
+              }, 800);
             } else if (reactivationSuccess === "success") {
-              toast.success("🎉 ¡Tu suscripción ha sido reactivada!", {
-                duration: 4000
+              toast.success("🎉 Suscripción reactivada correctamente", {
+                duration: 3000
               });
+              setTimeout(() => {
+                navigate(createPageUrl("SubscriptionManagement"));
+              }, 800);
             }
             
             return;

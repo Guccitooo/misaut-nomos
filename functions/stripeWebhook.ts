@@ -137,6 +137,8 @@ Deno.serve(async (req) => {
                 let users = await base44.asServiceRole.entities.User.filter({ email });
                 let userId;
 
+                const isTrialing = subscription.status === 'trialing';
+                
                 const userData = {
                     email,
                     full_name: metadata.fullName || email.split('@')[0],
@@ -146,7 +148,8 @@ Deno.serve(async (req) => {
                     subscription_status: profileStatus.estado,
                     subscription_start_date: new Date(subscription.current_period_start * 1000).toISOString().split('T')[0],
                     subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0],
-                    has_used_trial: true
+                    has_used_trial: true,
+                    trial_start_date: isTrialing ? new Date().toISOString() : undefined
                 };
 
                 if (users.length === 0) {

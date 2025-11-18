@@ -200,6 +200,20 @@ function LayoutContent({ children, currentPageName }) {
     return user?.profile_picture || null;
   };
 
+  const shouldShowSubscription = () => {
+    if (!user || user.user_type !== "professionnel") return false;
+    return true;
+  };
+
+  const shouldShowViewPlans = () => {
+    if (!user) return true;
+    if (user.user_type === "client") return true;
+    if (user.user_type === "professionnel") {
+      return false;
+    }
+    return false;
+  };
+
   const navigationItems = [
     {
       title: t('searchFreelancers'),
@@ -224,17 +238,19 @@ function LayoutContent({ children, currentPageName }) {
     },
   ];
 
-  if (user?.user_type === "professionnel") {
+  if (shouldShowSubscription()) {
     navigationItems.push({
       title: t('mySubscription'),
       url: createPageUrl("SubscriptionManagement"),
-      icon: Briefcase,
+      icon: CreditCard,
     });
-  } else if (!user || user?.user_type === "client") {
+  }
+
+  if (shouldShowViewPlans()) {
     navigationItems.push({
       title: t('viewPlans'),
       url: createPageUrl("PricingPlans"),
-      icon: CreditCard,
+      icon: Briefcase,
     });
   }
 
