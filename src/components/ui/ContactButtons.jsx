@@ -241,6 +241,9 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] hover:bg-blue-50 hover:border-blue-600"
             onClick={handlePhoneClick}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            disabled={isClosing}
           >
             <Phone className="w-5 h-5 mr-2" />
             Llamar
@@ -252,6 +255,9 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700"
             onClick={handleWhatsAppClick}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            disabled={isClosing}
           >
             <MessageCircle className="w-5 h-5 mr-2" />
             WhatsApp
@@ -263,6 +269,8 @@ export default function ContactButtons({
             size="lg"
             className="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700"
             onClick={handleChatClick}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <MessageSquare className="w-5 h-5 mr-2" />
             Chat directo
