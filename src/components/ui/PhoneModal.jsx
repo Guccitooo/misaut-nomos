@@ -45,6 +45,25 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
 
   if (!isOpen) return null;
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
+  };
+
+  const handleModalClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleCloseClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
     <>
       <style>
@@ -59,6 +78,7 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
             align-items: center;
             animation: fadeInModal 0.2s ease-out;
             z-index: 9999;
+            pointer-events: all;
           }
 
           .phone-modal-box {
