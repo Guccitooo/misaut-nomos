@@ -63,6 +63,11 @@ export default function ContactButtons({
       return;
     }
     
+    if (modalJustClosed) {
+      setModalJustClosed(false);
+      return;
+    }
+    
     setModalType('phone');
     setShowPhoneModal(true);
   };
@@ -79,6 +84,11 @@ export default function ContactButtons({
       return;
     }
     
+    if (modalJustClosed) {
+      setModalJustClosed(false);
+      return;
+    }
+    
     setModalType('whatsapp');
     setShowPhoneModal(true);
   };
@@ -92,6 +102,11 @@ export default function ContactButtons({
     
     setShowPhoneModal(false);
     setModalType(null);
+    setModalJustClosed(true);
+    
+    setTimeout(() => {
+      setModalJustClosed(false);
+    }, 500);
   };
 
   const handleChatClick = (e) => {
