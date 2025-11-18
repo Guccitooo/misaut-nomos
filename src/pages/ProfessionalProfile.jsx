@@ -293,6 +293,11 @@ export default function ProfessionalProfilePage() {
                       priority={true}
                       width={80}
                       height={80}
+                      fallback={
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-bold">
+                          {profile.business_name?.charAt(0).toUpperCase()}
+                        </div>
+                      }
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-bold">

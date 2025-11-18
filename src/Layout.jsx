@@ -668,6 +668,11 @@ function LayoutContent({ children, currentPageName }) {
                             priority={true}
                             width={40}
                             height={40}
+                            fallback={
+                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                                {getDisplayName().charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            }
                           />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -737,6 +742,11 @@ function LayoutContent({ children, currentPageName }) {
                               priority={true}
                               width={36}
                               height={36}
+                              fallback={
+                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold text-sm">
+                                  {getDisplayName().charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              }
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold text-sm">

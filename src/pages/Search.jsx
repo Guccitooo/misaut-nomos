@@ -160,6 +160,11 @@ const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, 
                   width={40}
                   height={40}
                   priority={false}
+                  fallback={
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
+                      {profile.business_name?.charAt(0)}
+                    </div>
+                  }
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
