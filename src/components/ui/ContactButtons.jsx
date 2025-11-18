@@ -84,38 +84,39 @@ export default function ContactButtons({
     }
   }, [showPhoneModal, isClosing]);
 
-  const handlePhoneClick = (e) => {
+  const handlePhoneClick = React.useCallback((e) => {
     if (isClosing) {
       e.preventDefault();
       e.stopPropagation();
-      e.nativeEvent.stopImmediatePropagation();
+      e.nativeEvent?.stopImmediatePropagation?.();
       return;
     }
     
     e.preventDefault();
     e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
     
     if (isMobile) {
       window.location.href = `tel:${formatPhoneForCall(phone)}`;
       return;
     }
     
+    setIsClosing(false);
     setModalType('phone');
     setShowPhoneModal(true);
-  };
+  }, [isClosing, isMobile, phone]);
 
-  const handleWhatsAppClick = (e) => {
+  const handleWhatsAppClick = React.useCallback((e) => {
     if (isClosing) {
       e.preventDefault();
       e.stopPropagation();
-      e.nativeEvent.stopImmediatePropagation();
+      e.nativeEvent?.stopImmediatePropagation?.();
       return;
     }
     
     e.preventDefault();
     e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
     
     const whatsappPhone = formatPhoneForWhatsApp(phone);
     
@@ -124,9 +125,10 @@ export default function ContactButtons({
       return;
     }
     
+    setIsClosing(false);
     setModalType('whatsapp');
     setShowPhoneModal(true);
-  };
+  }, [isClosing, isMobile, phone]);
   
   const handleCloseModal = (e) => {
     if (e) {
