@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -200,67 +200,71 @@ function LayoutContent({ children, currentPageName }) {
     return user?.profile_picture || null;
   };
 
-  const shouldShowSubscription = () => {
+  const shouldShowSubscription = useMemo(() => {
     if (!user || user.user_type !== "professionnel") return false;
     return true;
-  };
+  }, [user]);
 
-  const shouldShowViewPlans = () => {
+  const shouldShowViewPlans = useMemo(() => {
     if (!user) return true;
     if (user.user_type === "client") return true;
     if (user.user_type === "professionnel") {
       return false;
     }
     return false;
-  };
+  }, [user]);
 
-  const navigationItems = [
-    {
-      title: t('searchFreelancers'),
-      url: createPageUrl("Search"),
-      icon: Search,
-    },
-    {
-      title: t('messages'),
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      badge: unreadCount > 0 ? unreadCount : null
-    },
-    {
-      title: t('favorites'),
-      url: createPageUrl("Favorites"),
-      icon: Heart,
-    },
-    {
-      title: t('myProfile'),
-      url: createPageUrl("MyProfile"),
-      icon: User,
-    },
-  ];
+  const navigationItems = useMemo(() => {
+    const items = [
+      {
+        title: t('searchFreelancers'),
+        url: createPageUrl("Search"),
+        icon: Search,
+      },
+      {
+        title: t('messages'),
+        url: createPageUrl("Messages"),
+        icon: MessageSquare,
+        badge: unreadCount > 0 ? unreadCount : null
+      },
+      {
+        title: t('favorites'),
+        url: createPageUrl("Favorites"),
+        icon: Heart,
+      },
+      {
+        title: t('myProfile'),
+        url: createPageUrl("MyProfile"),
+        icon: User,
+      },
+    ];
 
-  if (shouldShowSubscription()) {
-    navigationItems.push({
-      title: t('mySubscription'),
-      url: createPageUrl("SubscriptionManagement"),
-      icon: CreditCard,
-    });
-  }
+    if (shouldShowSubscription) {
+      items.push({
+        title: t('mySubscription'),
+        url: createPageUrl("SubscriptionManagement"),
+        icon: CreditCard,
+      });
+    }
 
-  if (shouldShowViewPlans()) {
-    navigationItems.push({
-      title: t('viewPlans'),
-      url: createPageUrl("PricingPlans"),
-      icon: Briefcase,
-    });
-  }
+    if (shouldShowViewPlans) {
+      items.push({
+        title: t('viewPlans'),
+        url: createPageUrl("PricingPlans"),
+        icon: Briefcase,
+      });
+    }
 
-  if (user?.role === "admin") {
-    navigationItems.push({
-      title: t('administration'),
-      url: createPageUrl("AdminDashboard"),
-      icon: LayoutDashboard,
-    });
-  }
+    if (user?.role === "admin") {
+      items.push({
+        title: t('administration'),
+        url: createPageUrl("AdminDashboard"),
+        icon: LayoutDashboard,
+      });
+    }
+
+    return items;
+  }, [user, unreadCount, shouldShowSubscription, shouldShowViewPlans]);
 
   return (
     <>

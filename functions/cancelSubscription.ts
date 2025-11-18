@@ -76,6 +76,11 @@ Deno.serve(async (req) => {
             stripeCanceled = true;
         }
 
+        const today = new Date();
+        const expirationDate = new Date(subscription.fecha_expiracion);
+        const isStillActive = expirationDate > today;
+        const isTrial = subscription.estado === 'en_prueba' || subscription.estado === 'trialing';
+
         await base44.entities.Subscription.update(subscription.id, {
             estado: "cancelado",
             renovacion_automatica: false
@@ -83,20 +88,22 @@ Deno.serve(async (req) => {
         console.log('✅ Suscripción actualizada en BD local: estado = cancelado');
 
         await base44.auth.updateMe({
-            subscription_status: "cancelado"
+            subscription_status: isStillActive ? "cancelado_vigente" : "cancelado"
         });
-        console.log('✅ Usuario actualizado: subscription_status = cancelado');
+        console.log(`✅ Usuario actualizado: subscription_status = ${isStillActive ? 'cancelado_vigente' : 'cancelado'}`);
 
         const profiles = await base44.entities.ProfessionalProfile.filter({
             user_id: user.id
         });
 
-        if (profiles.length > 0) {
+        if (profiles.length > 0 && !isStillActive) {
             await base44.entities.ProfessionalProfile.update(profiles[0].id, {
                 visible_en_busqueda: false,
                 estado_perfil: "inactivo"
             });
-            console.log(`✅ Perfil ocultado de búsquedas (ID: ${profiles[0].id})`);
+            console.log(`✅ Perfil ocultado de búsquedas (periodo expirado)`);
+        } else if (profiles.length > 0 && isStillActive) {
+            console.log(`✅ Perfil sigue visible hasta ${expirationDate.toLocaleDateString('es-ES')} (${isTrial ? 'trial' : 'periodo pagado'})`);
         }
 
         try {
@@ -216,12 +223,15 @@ Deno.serve(async (req) => {
 
         return Response.json({
             ok: true,
-            message: 'Suscripción cancelada correctamente',
+            message: isStillActive 
+                ? `Suscripción cancelada. Tu perfil seguirá visible hasta el ${expirationDate.toLocaleDateString('es-ES')}`
+                : 'Suscripción cancelada correctamente',
             details: {
                 stripe_canceled: stripeCanceled,
                 stripe_error: stripeError,
                 fecha_expiracion: subscription.fecha_expiracion,
-                profile_hidden: profiles.length > 0
+                profile_still_visible: isStillActive,
+                is_trial: isTrial
             }
         });
 
