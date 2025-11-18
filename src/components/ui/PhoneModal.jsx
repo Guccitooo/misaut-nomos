@@ -49,19 +49,22 @@ export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName,
     if (e.target === e.currentTarget) {
       e.preventDefault();
       e.stopPropagation();
-      onClose();
+      e.nativeEvent?.stopImmediatePropagation?.();
+      onClose(e);
     }
   };
 
   const handleModalClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent?.stopImmediatePropagation?.();
   };
 
   const handleCloseClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onClose();
+    e.nativeEvent?.stopImmediatePropagation?.();
+    onClose(e);
   };
 
   return (
