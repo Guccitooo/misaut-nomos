@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Phone, X } from "lucide-react";
 
-export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName }) {
+export default function PhoneModal({ isOpen, onClose, phoneNumber, businessName, modalType = 'phone' }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const handleCopy = async () => {
     try {
