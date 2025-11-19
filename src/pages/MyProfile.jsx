@@ -39,10 +39,19 @@ import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 import PremiumDashboard from "../components/premium/PremiumDashboard";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) return false;
+  if (!estado) {
+    console.log('⚠️ Sin estado de suscripción');
+    return false;
+  }
   
   const normalizedState = estado.toLowerCase().trim();
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
+  
+  console.log('🔍 Verificando estado suscripción:', {
+    estado: normalizedState,
+    fecha_expiracion: fechaExpiracion,
+    es_estado_valido: validStates.includes(normalizedState)
+  });
   
   if (validStates.includes(normalizedState)) {
     try {
@@ -51,9 +60,16 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      if (isNaN(expiration.getTime())) return true;
-      return expiration >= today;
+      if (isNaN(expiration.getTime())) {
+        console.log('⚠️ Fecha de expiración inválida - asumiendo activo');
+        return true;
+      }
+      
+      const isActive = expiration >= today;
+      console.log(`${isActive ? '✅' : '❌'} Suscripción ${isActive ? 'ACTIVA' : 'EXPIRADA'}`);
+      return isActive;
     } catch (error) {
+      console.log('⚠️ Error verificando fecha - asumiendo activo');
       return true;
     }
   }
@@ -66,12 +82,15 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       expiration.setHours(0, 0, 0, 0);
       
       if (isNaN(expiration.getTime())) return false;
-      return expiration >= today;
+      const stillActive = expiration >= today;
+      console.log(`${stillActive ? '⚪' : '🔴'} Suscripción cancelada - ${stillActive ? 'aún vigente' : 'expirada'}`);
+      return stillActive;
     } catch (error) {
       return false;
     }
   }
   
+  console.log('❌ Estado no reconocido:', normalizedState);
   return false;
 };
 
@@ -189,8 +208,11 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', currentUser.email);
-      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
+      console.log('👤 Usuario cargado:', {
+        email: currentUser.email,
+        user_type: currentUser.user_type,
+        onboarding_completed: currentUser.professional_onboarding_completed
+      });
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -519,9 +541,17 @@ export default function MyProfilePage() {
   const isProfessional = profile || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
   
+  console.log('🔍 Estado actual MyProfile:', {
+    user_type: user.user_type,
+    has_profile: !!profile,
+    subscription_status: subscriptionStatus,
+    is_professional: isProfessional
+  });
+  
   // Show dashboard for professionals who just completed onboarding
   const onboardingJustCompleted = searchParams.get('onboarding') === 'completed';
   if (user.user_type === 'professionnel' && onboardingJustCompleted) {
+    console.log('✅ Mostrando dashboard profesional - onboarding recién completado');
     return <ProfessionalDashboard user={user} onboardingCompleted={true} />;
   }
 
