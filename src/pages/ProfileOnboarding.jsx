@@ -48,7 +48,6 @@ export default function ProfileOnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [waitingForPayment, setWaitingForPayment] = useState(false);
 
   const paymentSuccess = searchParams.get("payment") === "success";
 
@@ -107,44 +106,6 @@ export default function ProfileOnboardingPage() {
       base44.auth.redirectToLogin();
     } finally {
       setIsLoadingUser(false);
-    }
-  };
-
-  const waitForSubscription = async () => {
-    setWaitingForPayment(true);
-    try {
-      let attempts = 0;
-      const maxAttempts = 30;
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const subs = await base44.entities.Subscription.filter({ user_id: user.id });
-        
-        if (subs.length > 0) {
-          const sub = subs[0];
-          const estado = sub.estado?.toLowerCase();
-          
-          console.log(`🔍 Intento ${attempts + 1}: Estado = ${estado}`);
-          
-          if (estado === 'activo' || estado === 'active' || estado === 'en_prueba' || estado === 'trialing') {
-            console.log('✅ SUSCRIPCIÓN ACTIVA - Continuando onboarding');
-            toast.success('✅ Pago confirmado. Completa tu perfil profesional', { duration: 4000 });
-            setWaitingForPayment(false);
-            return;
-          }
-        }
-        
-        attempts++;
-      }
-      
-      console.log('⚠️ Timeout - permitiendo continuar');
-      toast.warning('Continúa con tu perfil. Tu suscripción se activará pronto.', { duration: 5000 });
-      setWaitingForPayment(false);
-      
-    } catch (error) {
-      console.error('Error:', error);
-      setWaitingForPayment(false);
     }
   };
 
@@ -377,19 +338,15 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  if (isLoadingUser || waitingForPayment) {
+  if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-sm w-full shadow-lg bg-white border-0">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
               <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-              <h2 className="text-xl font-bold text-gray-900">
-                {waitingForPayment ? 'Verificando pago...' : 'Cargando...'}
-              </h2>
-              <p className="text-sm text-gray-600">
-                {waitingForPayment ? 'Esperando confirmación de Stripe' : 'Preparando tu perfil'}
-              </p>
+              <h2 className="text-xl font-bold text-gray-900">Cargando...</h2>
+              <p className="text-sm text-gray-600">Preparando tu perfil</p>
             </div>
           </CardContent>
         </Card>
