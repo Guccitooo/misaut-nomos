@@ -29,8 +29,8 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       mode: 'subscription',
-      success_url: `${baseUrl}/ProfileOnboarding?payment=success`,
-      cancel_url: `${baseUrl}/PricingPlans?canceled=true`,
+      success_url: `${baseUrl}/#/ProfileOnboarding?payment=success`,
+      cancel_url: `${baseUrl}/#/PricingPlans?canceled=true`,
       metadata: {
         user_id: user.id,
         email: user.email,
