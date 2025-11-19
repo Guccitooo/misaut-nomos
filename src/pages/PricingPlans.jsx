@@ -10,9 +10,11 @@ import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info } f
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -50,11 +52,11 @@ export default function PricingPlansPage() {
 
   useEffect(() => {
     if (canceled) {
-      toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
+      toast.info(t('paymentCanceled') + ". " + t('comeBackAnytime'), {
         duration: 5000
       });
     }
-  }, [canceled]);
+  }, [canceled, t]);
 
   useEffect(() => {
     if (!user || plans.length === 0) return;
@@ -117,14 +119,20 @@ export default function PricingPlansPage() {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-      toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
-      setIsProcessing(false);
-      setSelectedPlan(null);
+    toast.error(err.message || t('paymentError'));
+    setIsProcessing(false);
+    setSelectedPlan(null);
     }
-  };
+    };
 
   const handleGoBack = () => {
     navigate(createPageUrl("Search"));
+  };
+  
+  const getLocalizedInterval = (planId) => {
+    if (planId === "plan_monthly_trial") return `/${t('month')}`;
+    if (planId === "plan_quarterly") return `/${t('threeMonths')}`;
+    return `/${t('year')}`;
   };
 
   const getPlanIcon = (planId) => {
@@ -139,24 +147,24 @@ export default function PricingPlansPage() {
   const getPlanBadge = (planId) => {
     switch (planId) {
       case "plan_monthly_trial": 
-        return { text: "2 meses gratis", color: "bg-blue-500" };
+        return { text: t('twoMonthsFree'), color: "bg-blue-500" };
       case "plan_quarterly": 
-        return { text: "Más popular", color: "bg-green-500" };
+        return { text: t('mostPopular'), color: "bg-green-500" };
       case "plan_annual": 
-        return { text: "Mejor valor", color: "bg-orange-500" };
+        return { text: t('bestValue'), color: "bg-orange-500" };
       default: 
         return null;
     }
   };
 
   const getPlanFeatures = () => [
-    "Aparece en búsquedas",
-    "Perfil profesional completo",
-    "Chat directo con clientes",
-    "Recibe valoraciones",
-    "Galería de fotos ilimitada",
-    "Soporte preferente",
-    "Cancela cuando quieras"
+    t('featureSearches'),
+    t('featureFullProfile'),
+    t('featureDirectChat'),
+    t('featureReviews'),
+    t('featurePhotoGallery'),
+    t('featureSupport'),
+    t('featureCancelAnytime')
   ];
 
   if (loadingPlans) {
@@ -181,37 +189,37 @@ export default function PricingPlansPage() {
             variant="ghost"
             onClick={handleGoBack}
             className="mb-6 hover:bg-blue-50"
-            aria-label="Volver"
+            aria-label={t('back')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
+            {t('back')}
           </Button>
 
           <div className="text-center mb-8">
             <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 text-base font-bold mb-4">
               <Gift className="w-4 h-4 mr-2 inline" />
-              2 MESES GRATIS EN TODOS LOS PLANES
+              {t('twoMonthsFreeAllPlans')}
             </Badge>
             
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-              Elige tu plan
+              {t('chooseYourPlan')}
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
-              Empieza gratis 2 meses. Sin permanencia. Cancela cuando quieras.
+              {t('startFree2Months')}
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 mt-6">
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                 <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Cancela cuando quieras</span>
+                <span className="text-sm font-medium text-gray-700">{t('cancelAnytime')}</span>
               </div>
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                 <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Sin cargos ocultos</span>
+                <span className="text-sm font-medium text-gray-700">{t('noHiddenCosts')}</span>
               </div>
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                 <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Pago 100% seguro</span>
+                <span className="text-sm font-medium text-gray-700">{t('secure100')}</span>
               </div>
             </div>
           </div>
@@ -220,7 +228,7 @@ export default function PricingPlansPage() {
             <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Pago cancelado. No te preocupes, puedes volver cuando quieras.
+                {t('paymentCanceledComeBack')}
               </AlertDescription>
             </Alert>
           )}
@@ -264,22 +272,20 @@ export default function PricingPlansPage() {
                           {plan.precio}€
                         </p>
                         <p className="text-sm text-gray-500 mt-1">
-                          {plan.plan_id === "plan_monthly_trial" ? "/mes" : 
-                           plan.plan_id === "plan_quarterly" ? "/3 meses" : 
-                           "/año"}
+                          {getLocalizedInterval(plan.plan_id)}
                         </p>
                       </div>
 
                       {plan.plan_id !== "plan_monthly_trial" && (
                         <p className="text-sm text-green-600 font-semibold">
-                          {plan.plan_id === "plan_quarterly" && "≈ 29.7€/mes (10% OFF)"}
-                          {plan.plan_id === "plan_annual" && "≈ 26.4€/mes (20% OFF)"}
+                          {plan.plan_id === "plan_quarterly" && t('quarterlyDiscount')}
+                          {plan.plan_id === "plan_annual" && t('annualDiscount')}
                         </p>
                       )}
 
                       <div className="mt-3 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
                         <p className="text-sm font-bold text-green-700">
-                          ✨ Empieza GRATIS 2 meses
+                          ✨ {t('startFree2Months')}
                         </p>
                       </div>
                     </div>
@@ -301,20 +307,20 @@ export default function PricingPlansPage() {
                       }`}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}
-                      aria-label={`Seleccionar plan ${plan.nombre}`}
+                      aria-label={`${t('selectPlan')} ${plan.nombre}`}
                     >
                       {isProcessing && selectedPlan === plan.plan_id ? (
                         <>
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Procesando...
+                          {t('processing')}
                         </>
                       ) : (
-                        "Empezar ahora"
+                        t('startNow')
                       )}
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 mt-3">
-                      Al hacer clic, irás al checkout seguro de Stripe
+                      {t('secureCheckoutStripe')}
                     </p>
                   </CardContent>
                 </Card>
@@ -325,56 +331,56 @@ export default function PricingPlansPage() {
           <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 mb-8">
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                💳 ¿Por qué necesito añadir una tarjeta?
+                💳 {t('whyNeedCard')}
               </h2>
               <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed">
-                La tarjeta es necesaria para poder cobrar automáticamente después del periodo de prueba de <strong>2 meses</strong> si decides continuar. 
+                {t('cardNeededForAuto')}
                 <span className="block mt-2 text-green-700 font-bold">
-                  ✅ NO se te cobrará NADA durante los 60 días.
+                  ✅ {t('noChargeFirst60Days')}
                 </span>
                 <span className="block mt-1 text-gray-600">
-                  Puedes cancelar en cualquier momento antes de que finalice la prueba.
+                  {t('cancelAnytimeBeforeTrial')}
                 </span>
               </p>
             </CardContent>
           </Card>
 
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-6">Preguntas frecuentes</h2>
+            <h2 className="text-2xl font-bold text-center mb-6">{t('faq')}</h2>
             <div className="space-y-3">
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Qué pasa después de los 2 meses gratis?</h3>
+                  <h3 className="font-semibold mb-2">{t('faqAfter2Months')}</h3>
                   <p className="text-sm text-gray-600">
-                    Si no cancelas antes de que terminen los 60 días, se cobrará automáticamente según el plan elegido. NO se realiza ningún cobro durante los 2 meses de prueba.
+                    {t('faqAfter2MonthsAnswer')}
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral o anual?</h3>
+                  <h3 className="font-semibold mb-2">{t('faqHowMuchSave')}</h3>
                   <p className="text-sm text-gray-600">
-                    <strong>Trimestral:</strong> Pagas 89.1€ cada 3 meses (29.7€/mes) = 10% menos que el mensual.<br/>
-                    <strong>Anual:</strong> Pagas 316.8€ al año (26.4€/mes) = 20% menos que el mensual.
+                    <strong>{t('quarterly')}:</strong> {t('faqQuarterlySavings')}<br/>
+                    <strong>{t('annual')}:</strong> {t('faqAnnualSavings')}
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
+                  <h3 className="font-semibold mb-2">{t('faqCanCancelAnytime')}</h3>
                   <p className="text-sm text-gray-600">
-                    Sí. Si cancelas durante los 2 meses gratis, no se te cobrará nada. Si cancelas después, seguirás teniendo acceso hasta el final del periodo pagado.
+                    {t('faqCanCancelAnswer')}
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Puedo usar la prueba más de una vez?</h3>
+                  <h3 className="font-semibold mb-2">{t('faqTrialMultipleTimes')}</h3>
                   <p className="text-sm text-gray-600">
-                    No. La prueba gratuita de 2 meses solo se puede usar una vez por usuario. Si ya la usaste, tendrás que pagar desde el primer día.
+                    {t('faqTrialOnceAnswer')}
                   </p>
                 </CardContent>
               </Card>

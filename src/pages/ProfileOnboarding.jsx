@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, ArrowRight, ArrowLeft, Loader2, AlertCircle, Upload, X, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 const CATEGORIES = [
   "Albañil / Reformas",
@@ -47,6 +48,7 @@ const PROVINCIAS = [
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   
   const [user, setUser] = useState(null);
@@ -139,7 +141,7 @@ export default function ProfileOnboardingPage() {
         if (subs.length > 0) {
           console.log('✅ Suscripción detectada:', subs[0]);
           setIsVerifyingPayment(false);
-          toast.success("✅ ¡Pago confirmado! Completa tu perfil profesional.", {
+          toast.success(t('paymentConfirmed'), {
             duration: 4000
           });
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -154,7 +156,7 @@ export default function ProfileOnboardingPage() {
       } else {
         console.error('❌ Timeout: no se pudo verificar el pago después de 15 intentos');
         setIsVerifyingPayment(false);
-        toast.error("No se pudo verificar el pago. Contacta con soporte.", {
+        toast.error(t('paymentVerificationError'), {
           duration: 8000
         });
       }
@@ -185,57 +187,57 @@ export default function ProfileOnboardingPage() {
   const validateStep = () => {
     if (currentStep === 0) {
       if (!formData.business_name || formData.business_name.trim().length < 2) {
-        setError("El nombre profesional debe tener al menos 2 caracteres");
+        setError(t('professionalNameMinChars'));
         return false;
       }
       if (!formData.cif_nif || formData.cif_nif.trim().length < 8) {
-        setError("El NIF/CIF debe tener al menos 8 caracteres");
+        setError(t('cifNifMinChars'));
         return false;
       }
       if (!formData.email_contacto || !formData.email_contacto.includes('@')) {
-        setError("Email inválido");
+        setError(t('invalidEmail'));
         return false;
       }
       if (!formData.telefono_contacto || formData.telefono_contacto.replace(/\D/g, '').length < 9) {
-        setError("El teléfono es obligatorio y debe tener al menos 9 dígitos");
+        setError(t('phoneRequired'));
         return false;
       }
     }
 
     if (currentStep === 1) {
       if (!formData.category) {
-        setError("Selecciona una categoría");
+        setError(t('selectAtLeastOneCategory'));
         return false;
       }
       if (formData.category === "Otro tipo de servicio profesional" && (!formData.activity_other || formData.activity_other.trim().length < 3)) {
-        setError("Especifica tu servicio cuando seleccionas 'Otro tipo de servicio profesional'");
+        setError(t('specifyServiceIfOther'));
         return false;
       }
       if (!formData.descripcion_corta || formData.descripcion_corta.length < 20) {
-        setError("La descripción corta debe tener al menos 20 caracteres");
+        setError(t('shortDescriptionMinChars'));
         return false;
       }
       if (!formData.provincia) {
-        setError("Selecciona una provincia");
+        setError(t('selectProvince'));
         return false;
       }
     }
 
     if (currentStep === 2) {
       if (formData.formas_pago.length === 0) {
-        setError("Selecciona al menos una forma de pago");
+        setError(t('selectAtLeastOnePaymentMethod'));
         return false;
       }
       if (!formData.acepta_terminos) {
-        setError("Debes aceptar los Términos y Condiciones");
+        setError(t('acceptTermsAndConditionsError'));
         return false;
       }
       if (!formData.acepta_politica_privacidad) {
-        setError("Debes aceptar la Política de Privacidad");
+        setError(t('acceptPrivacyPolicyError'));
         return false;
       }
       if (!formData.consiente_contacto_clientes) {
-        setError("Debes consentir ser contactado por clientes");
+        setError(t('consentClientContactError'));
         return false;
       }
     }
@@ -342,7 +344,7 @@ export default function ProfileOnboardingPage() {
         from_name: "MisAutónomos"
       });
 
-      toast.success("¡Perfil completado y publicado con éxito!", { duration: 5000 });
+      toast.success(t('profileCompletedAndPublished'), { duration: 5000 });
       queryClient.invalidateQueries();
 
       setTimeout(() => {
@@ -351,8 +353,8 @@ export default function ProfileOnboardingPage() {
 
     } catch (err) {
       console.error("Error guardando perfil:", err);
-      setError(err.message || "Error al guardar el perfil");
-      toast.error(err.message || "Error al guardar el perfil");
+      setError(err.message || t('errorSavingProfile'));
+      toast.error(err.message || t('errorSavingProfile'));
     } finally {
       setIsSubmitting(false);
     }
@@ -363,7 +365,7 @@ export default function ProfileOnboardingPage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no puede superar los 5MB");
+      toast.error(t('photoUploadError'));
       return;
     }
 
@@ -374,9 +376,9 @@ export default function ProfileOnboardingPage() {
         ...formData,
         photos: [...formData.photos, file_url]
       });
-      toast.success("✅ Foto añadida");
+      toast.success(t('photoUploadSuccess'));
     } catch (error) {
-      toast.error("Error al subir la foto");
+      toast.error(t('photoUploadError'));
     }
     setUploadingPhoto(false);
   };
@@ -417,10 +419,10 @@ export default function ProfileOnboardingPage() {
                 <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isVerifyingPayment ? "Confirmando tu pago" : "Cargando"}
+                {isVerifyingPayment ? t('confirmingPayment') : t('loading')}
               </h2>
               <p className="text-sm text-gray-600">
-                {isVerifyingPayment ? "Esto toma solo unos segundos..." : "Preparando tu perfil..."}
+                {isVerifyingPayment ? t('fewSecondsWait') : t('preparingProfile')}
               </p>
             </div>
           </CardContent>
@@ -435,15 +437,15 @@ export default function ProfileOnboardingPage() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Acceso restringido</h2>
+            <h2 className="text-xl font-bold mb-2">{t('restrictedAccess')}</h2>
             <p className="text-gray-600 mb-6">
-              Esta página es solo para profesionales. Primero debes seleccionar un plan.
+              {t('professionalOnlyPage')}
             </p>
             <Button
               onClick={() => navigate(createPageUrl("PricingPlans"))}
               className="bg-orange-500 hover:bg-orange-600"
             >
-              Ver planes disponibles
+              {t('viewAvailablePlans')}
             </Button>
           </CardContent>
         </Card>
@@ -452,9 +454,9 @@ export default function ProfileOnboardingPage() {
   }
 
   const steps = [
-    { title: "Identidad y contacto", progress: 33 },
-    { title: "Actividad y zona de trabajo", progress: 66 },
-    { title: "Precios, portfolio y legal", progress: 100 }
+    { title: t('identityAndContact'), progress: 33 },
+    { title: t('activityAndZone'), progress: 66 },
+    { title: t('pricesPortfolioLegal'), progress: 100 }
   ];
 
   return (
@@ -462,8 +464,8 @@ export default function ProfileOnboardingPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
-            <h1 className="text-2xl font-bold text-gray-900">Completa tu perfil profesional</h1>
-            <span className="text-sm text-gray-600">Paso {currentStep + 1} de 3</span>
+            <h1 className="text-2xl font-bold text-gray-900">{t('completeYourProfile')}</h1>
+            <span className="text-sm text-gray-600">{t('step')} {currentStep + 1} {t('of')} 3</span>
           </div>
           <Progress value={steps[currentStep].progress} className="h-2" />
         </div>
