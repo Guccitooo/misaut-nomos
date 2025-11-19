@@ -167,14 +167,19 @@ export default function MyProfilePage() {
 
   useEffect(() => {
     if (onboardingCompleted) {
+      console.log('🎉 Onboarding completado - recargando datos del usuario y perfil');
+      
+      // Reload user data to get updated user_type
+      loadUser().then(() => {
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      });
+      
       toast.success(t('profileCompletedAndPublished'), {
         duration: 8000
       });
       
       window.history.replaceState({}, document.title, window.location.pathname);
-      
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (reactivationSuccess === "canceled") {
       toast.info(t('areYouSureContinue'));
       window.history.replaceState({}, document.title, window.location.pathname);
