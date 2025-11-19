@@ -171,8 +171,8 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
 
   return (
     <>
-      <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full">
-        <CardContent className="p-4">
+      <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col">
+        <CardContent className="p-4 flex flex-col flex-1">
           <div className="flex items-start gap-3 mb-3">
             <Avatar 
               className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0"
@@ -221,14 +221,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
             </Button>
           </div>
 
-          <div className="space-y-2 mb-3">
+          <div className="space-y-2 mb-3 flex-1">
             <div className="flex items-center gap-1.5 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
             </div>
 
             {profile.descripcion_corta && (
-              <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed h-[2.5rem]">
                 {profile.descripcion_corta}
               </p>
             )}
@@ -246,7 +246,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
             )}
           </div>
 
-          <div className="flex gap-1.5 items-center">
+          <div className="flex gap-1.5 mt-auto">
             <Button 
               onClick={onClick}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
