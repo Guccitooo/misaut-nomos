@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   MapPin,
   Clock,
@@ -22,27 +20,30 @@ import {
   Linkedin,
   Star,
   Award,
-  Briefcase,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  X,
+  Music
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import ReviewSection from "../components/profile/ReviewSection";
-import PhotoGallery from "../components/profile/PhotoGallery";
-import AvailabilityBadge from "../components/profile/AvailabilityBadge";
-import TranslatedText from "../components/ui/TranslatedText";
-import OptimizedImage from "../components/ui/OptimizedImage";
 import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema } from "../components/seo/StructuredData";
-import { useLanguage } from "../components/ui/LanguageSwitcher"; // Keep this for translations
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { t } = useLanguage(); // Keep this for translations
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get("id");
@@ -55,7 +56,6 @@ export default function ProfessionalProfilePage() {
     checkIfFavorite();
   }, [user, professionalId]);
 
-  // Track profile view
   useEffect(() => {
     if (professionalId && user) {
       trackProfileView();
@@ -65,7 +65,6 @@ export default function ProfessionalProfilePage() {
   const trackProfileView = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      
       const existingMetrics = await base44.entities.ProfileMetrics.filter({
         professional_id: professionalId,
         date: today
@@ -173,7 +172,6 @@ export default function ProfessionalProfilePage() {
         is_read: false
       });
 
-      // Track message metric
       const today = new Date().toISOString().split('T')[0];
       const metrics = await base44.entities.ProfileMetrics.filter({
         professional_id: professionalId,
@@ -199,15 +197,6 @@ export default function ProfessionalProfilePage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
-  const formatPhoneForCall = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/[^\d+]/g, '');
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+34' + cleaned;
-    }
-    return cleaned;
-  };
-
   const formatPhoneForWhatsApp = (phone) => {
     if (!phone) return null;
     let cleaned = phone.replace(/\D/g, '');
@@ -215,6 +204,22 @@ export default function ProfessionalProfilePage() {
       cleaned = '34' + cleaned;
     }
     return cleaned;
+  };
+
+  const handlePhoneClick = () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      let cleaned = profile.telefono_contacto.replace(/[^\d+]/g, '');
+      if (!cleaned.startsWith('+')) {
+        cleaned = '+34' + cleaned;
+      }
+      window.location.href = `tel:${cleaned}`;
+    } else {
+      setShowPhoneModal(true);
+    }
+    
+    trackContactClick();
   };
 
   const trackContactClick = async () => {
@@ -242,6 +247,41 @@ export default function ProfessionalProfilePage() {
     } catch (error) {
       console.error('Error tracking contact click:', error);
     }
+  };
+
+  const isAvailableNow = (profile) => {
+    if (!profile) return false;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentDay = now.getDay();
+
+    const isWeekday = currentDay >= 1 && currentDay <= 5;
+    const isWeekend = currentDay === 0 || currentDay === 6;
+
+    let isAvailableBySchedule = false;
+
+    if (profile.disponibilidad_tipo === "laborables" && isWeekday) {
+      isAvailableBySchedule = true;
+    } else if (profile.disponibilidad_tipo === "festivos" && isWeekend) {
+      isAvailableBySchedule = true;
+    } else if (profile.disponibilidad_tipo === "ambos") {
+      isAvailableBySchedule = true;
+    }
+
+    if (isAvailableBySchedule && profile.horario_apertura && profile.horario_cierre) {
+      const [openHour, openMinute] = profile.horario_apertura.split(':').map(Number);
+      const [closeHour, closeMinute] = profile.horario_cierre.split(':').map(Number);
+
+      const currentTime = currentHour * 60 + currentMinute;
+      const openTime = openHour * 60 + openMinute;
+      const closeTime = closeHour * 60 + closeMinute;
+
+      return currentTime >= openTime && currentTime < closeTime;
+    }
+
+    return false;
   };
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -279,10 +319,10 @@ export default function ProfessionalProfilePage() {
 
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <Skeleton className="h-64 w-full rounded-xl" />
-          <Skeleton className="h-96 w-full rounded-xl" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -290,8 +330,8 @@ export default function ProfessionalProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-xl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-xl border-0">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -300,7 +340,7 @@ export default function ProfessionalProfilePage() {
             <p className="text-gray-600 mb-6">
               El perfil que buscas no existe o ha sido eliminado.
             </p>
-            <Button onClick={() => navigate(createPageUrl("Search"))}>
+            <Button onClick={() => navigate(createPageUrl("Search"))} className="bg-blue-600 hover:bg-blue-700">
               Volver a búsqueda
             </Button>
           </CardContent>
@@ -309,8 +349,13 @@ export default function ProfessionalProfilePage() {
     );
   }
 
-  const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || 'España'} | MisAutónomos`;
-  const seoDescription = profile.descripcion_corta || profile.description || `${profile.business_name} ofrece servicios profesionales en ${profile.ciudad || 'tu zona'}. Contacta ahora y solicita presupuesto.`;
+  const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || 'España'}`;
+  const seoDescription = profile.descripcion_corta || profile.description || `${profile.business_name} ofrece servicios profesionales en ${profile.ciudad || 'tu zona'}. Contacta ahora.`;
+
+  const availableContactMethods = profile.metodos_contacto || [];
+  const showPhone = availableContactMethods.includes('telefono') && profile.telefono_contacto;
+  const showWhatsApp = availableContactMethods.includes('whatsapp') && profile.telefono_contacto;
+  const showChat = availableContactMethods.includes('chat_interno');
 
   return (
     <>
@@ -327,212 +372,239 @@ export default function ProfessionalProfilePage() {
         professionalUser={professionalUser}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <Card className="shadow-xl border-0 bg-white overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex items-start gap-6">
-                  <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
-                    {professionalUser?.profile_picture ? (
-                      <OptimizedImage 
-                        src={professionalUser.profile_picture} 
-                        alt={`Foto de perfil de ${profile.business_name}`}
-                        className="w-full h-full"
-                        objectFit="cover"
-                        priority={true}
-                        width={96}
-                        height={96}
-                      />
-                    ) : (
-                      <AvatarFallback className="bg-gradient-to-br from-blue-700 to-blue-900 text-white text-3xl font-bold">
-                        {profile.business_name?.charAt(0)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card className="shadow-xl border-0 bg-white overflow-hidden rounded-2xl">
+            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 md:p-8">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-white shadow-2xl ring-4 ring-blue-400/30">
+                  {professionalUser?.profile_picture ? (
+                    <AvatarImage 
+                      src={professionalUser.profile_picture}
+                      alt={profile.business_name}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-white text-blue-700 text-3xl font-bold">
+                      {profile.business_name?.charAt(0)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                
+                <div className="flex-1 text-center md:text-left">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                    {profile.business_name}
+                  </h1>
                   
-                  <div>
-                    <h1 className="text-3xl font-bold mb-2">{profile.business_name}</h1>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {profile.categories?.map((cat, idx) => (
-                        <Badge key={idx} className="bg-white/20 text-white border-white/30">
-                          {cat}
-                        </Badge>
-                      ))}
-                    </div>
-                    {profile.average_rating > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full">
-                          <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-                          <span className="font-semibold">{profile.average_rating.toFixed(1)}</span>
-                          <span className="text-sm opacity-90">({profile.total_reviews} opiniones)</span>
-                        </div>
-                        <AvailabilityBadge profile={profile} />
-                      </div>
-                    ) : (
-                      <AvailabilityBadge profile={profile} />
-                    )}
+                  <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-3">
+                    {profile.categories?.slice(0, 3).map((cat, idx) => (
+                      <Badge key={idx} className="bg-white/25 hover:bg-white/35 text-white border-0 backdrop-blur-sm">
+                        {cat}
+                      </Badge>
+                    ))}
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-2 w-full md:w-auto">
-                  <Button
-                    onClick={handleToggleFavorite}
-                    variant={isFavorite ? "default" : "outline"}
-                    className={`w-full md:w-auto ${isFavorite ? 'bg-red-500 hover:bg-red-600' : 'bg-white text-blue-700 hover:bg-blue-50'}`}
-                  >
-                    <Heart className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-white' : ''}`} />
-                    {isFavorite ? 'Guardado' : 'Guardar'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {profile.telefono_contacto && profile.metodos_contacto?.includes('telefono') && (
-                  <a
-                    href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-                    onClick={trackContactClick}
-                  >
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 h-12">
-                      <Phone className="w-5 h-5 mr-2" />
-                      Llamar
-                    </Button>
-                  </a>
-                )}
-                {profile.telefono_contacto && profile.metodos_contacto?.includes('whatsapp') && (
-                  <a
-                    href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={trackContactClick}
-                  >
-                    <Button className="w-full bg-green-600 hover:bg-green-700 h-12">
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      WhatsApp
-                    </Button>
-                  </a>
-                )}
-                <Button
-                  onClick={handleStartChat}
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-12"
-                >
-                  <MessageSquare className="w-5 h-5 mr-2" />
-                  Chat directo
-                </Button>
-              </div>
-
-              {profile.descripcion_corta && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-gray-800 leading-relaxed">
-                    <TranslatedText text={profile.descripcion_corta} />
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-blue-600" />
-                    Información
-                  </h3>
-                  <div className="space-y-3">
-                    {profile.service_area && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-gray-600">Zona de trabajo</p>
-                          <p className="font-medium text-gray-900">{profile.service_area}</p>
-                        </div>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                    {profile.total_reviews > 0 && (
+                      <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                        <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
+                        <span className="text-white font-semibold">{profile.average_rating.toFixed(1)}</span>
+                        <span className="text-white/90 text-sm">({profile.total_reviews})</span>
                       </div>
                     )}
                     
-                    {profile.years_experience > 0 && (
-                      <div className="flex items-start gap-3">
-                        <Award className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-gray-600">Experiencia</p>
-                          <p className="font-medium text-gray-900">{profile.years_experience} años</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {profile.tarifa_base > 0 && (
-                      <div className="flex items-start gap-3">
-                        <Euro className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-gray-600">Tarifa media</p>
-                          <p className="font-medium text-gray-900">{profile.tarifa_base}€/hora</p>
-                        </div>
-                      </div>
+                    {isAvailableNow(profile) && (
+                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                        Disponible ahora
+                      </Badge>
                     )}
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    Horario
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      {profile.disponibilidad_tipo === "laborables" ? "Lunes a Viernes" :
-                       profile.disponibilidad_tipo === "festivos" ? "Sábados, domingos y festivos" :
-                       "Todos los días"}
-                    </p>
-                    <p className="font-medium text-gray-900">
-                      {profile.horario_apertura} - {profile.horario_cierre}
-                    </p>
-                  </div>
-
-                  {(profile.certifications && profile.certifications.length > 0) && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600 mb-2">Certificaciones</p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.certifications.map((cert, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            <Award className="w-3 h-3 mr-1" />
-                            {cert}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <Button
+                  onClick={handleToggleFavorite}
+                  variant="ghost"
+                  size="icon"
+                  className={`${isFavorite ? 'bg-red-500 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'} h-12 w-12 rounded-full backdrop-blur-sm`}
+                >
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white text-white' : 'text-white'}`} />
+                </Button>
               </div>
+            </div>
 
-              {profile.description && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">Descripción</h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    <TranslatedText text={profile.description} />
+            <CardContent className="p-6 md:p-8">
+              {profile.descripcion_corta && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <p className="text-gray-800 leading-relaxed text-center md:text-left">
+                    {profile.descripcion_corta}
                   </p>
                 </div>
               )}
 
-              {profile.photos && profile.photos.length > 0 && (
-                <div className="mt-8">
-                  <PhotoGallery photos={profile.photos} businessName={profile.business_name} />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+                {showPhone && (
+                  <Button 
+                    onClick={handlePhoneClick}
+                    className="bg-blue-600 hover:bg-blue-700 h-12 font-semibold shadow-md"
+                  >
+                    <Phone className="w-5 h-5 mr-2" />
+                    Llamar
+                  </Button>
+                )}
+                
+                {showWhatsApp && (
+                  <Button
+                    onClick={() => {
+                      window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+                      trackContactClick();
+                    }}
+                    className="bg-green-600 hover:bg-green-700 h-12 font-semibold shadow-md"
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    WhatsApp
+                  </Button>
+                )}
+                
+                {showChat && (
+                  <Button
+                    onClick={handleStartChat}
+                    className="bg-blue-600 hover:bg-blue-700 h-12 font-semibold shadow-md"
+                  >
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    Chat directo
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-blue-600" />
+                      Ubicación y disponibilidad
+                    </h3>
+                    <div className="space-y-3">
+                      {profile.service_area && (
+                        <div>
+                          <p className="text-sm text-gray-500">Zona de trabajo</p>
+                          <p className="font-medium text-gray-900">{profile.service_area}</p>
+                        </div>
+                      )}
+                      
+                      {(profile.horario_apertura && profile.horario_cierre) && (
+                        <div>
+                          <p className="text-sm text-gray-500">Horario</p>
+                          <p className="font-medium text-gray-900">
+                            {profile.disponibilidad_tipo === "laborables" ? "L-V" :
+                             profile.disponibilidad_tipo === "festivos" ? "S-D" : "L-D"} • {profile.horario_apertura} - {profile.horario_cierre}
+                          </p>
+                        </div>
+                      )}
+
+                      {profile.years_experience > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-500">Experiencia</p>
+                          <p className="font-medium text-gray-900 flex items-center gap-1">
+                            <Award className="w-4 h-4 text-blue-600" />
+                            {profile.years_experience} años
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Euro className="w-5 h-5 text-blue-600" />
+                      Información de servicio
+                    </h3>
+                    <div className="space-y-3">
+                      {profile.tarifa_base > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-500">Tarifa aproximada</p>
+                          <p className="font-bold text-2xl text-blue-600">{profile.tarifa_base}€<span className="text-sm text-gray-500 font-normal">/hora</span></p>
+                        </div>
+                      )}
+
+                      {profile.formas_pago && profile.formas_pago.length > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-500 mb-2">Formas de pago</p>
+                          <div className="flex flex-wrap gap-2">
+                            {profile.formas_pago.map((forma, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {forma}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {profile.certifications && profile.certifications.length > 0 && (
+                        <div>
+                          <p className="text-sm text-gray-500 mb-2">Certificaciones</p>
+                          <div className="flex flex-wrap gap-2">
+                            {profile.certifications.slice(0, 2).map((cert, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs flex items-center gap-1">
+                                <Award className="w-3 h-3" />
+                                {cert}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {profile.description && (
+                <Card className="border-gray-200 shadow-sm mb-8">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Sobre el servicio</h3>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                      {profile.description}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
-              <Separator className="my-8" />
+              {profile.photos && profile.photos.length > 0 && (
+                <Card className="border-gray-200 shadow-sm mb-8">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Galería de trabajos</h3>
+                    <div className={`grid ${profile.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'} gap-4`}>
+                      {profile.photos.map((photo, idx) => (
+                        <div 
+                          key={idx} 
+                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                          onClick={() => setSelectedImage(photo)}
+                        >
+                          <img
+                            src={photo}
+                            alt={`Trabajo ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
-
-              {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin) && (
-                <>
-                  <Separator className="my-8" />
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
+                <Card className="border-gray-200 shadow-sm mb-8">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                       <Globe className="w-5 h-5 text-blue-600" />
-                      Enlaces
+                      Redes sociales
                     </h3>
                     <div className="flex flex-wrap gap-3">
                       {profile.website && (
                         <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
                             <Globe className="w-4 h-4 mr-2" />
                             Sitio web
                           </Button>
@@ -540,36 +612,86 @@ export default function ProfessionalProfilePage() {
                       )}
                       {profile.social_links?.facebook && (
                         <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <Facebook className="w-4 h-4 mr-2" />
+                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                            <Facebook className="w-4 h-4 mr-2 text-blue-600" />
                             Facebook
                           </Button>
                         </a>
                       )}
                       {profile.social_links?.instagram && (
                         <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <Instagram className="w-4 h-4 mr-2" />
+                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                            <Instagram className="w-4 h-4 mr-2 text-pink-600" />
                             Instagram
                           </Button>
                         </a>
                       )}
                       {profile.social_links?.linkedin && (
                         <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <Linkedin className="w-4 h-4 mr-2" />
+                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                            <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
                             LinkedIn
                           </Button>
                         </a>
                       )}
+                      {profile.social_links?.tiktok && (
+                        <a href={profile.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                            <Music className="w-4 h-4 mr-2" />
+                            TikTok
+                          </Button>
+                        </a>
+                      )}
                     </div>
-                  </div>
-                </>
+                  </CardContent>
+                </Card>
               )}
+
+              <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Número de teléfono</DialogTitle>
+            <DialogDescription>
+              Puedes llamar directamente al profesional
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 w-full text-center">
+              <p className="text-3xl font-bold text-blue-700 tracking-wide">
+                {profile.telefono_contacto}
+              </p>
+            </div>
+            <p className="text-sm text-gray-600">
+              Llama desde tu teléfono a este número
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img
+            src={selectedImage}
+            alt="Vista ampliada"
+            className="max-w-full max-h-full object-contain rounded-lg"
+          />
+        </div>
+      )}
     </>
   );
 }
