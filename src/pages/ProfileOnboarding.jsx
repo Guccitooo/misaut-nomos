@@ -317,11 +317,17 @@ export default function ProfileOnboardingPage() {
         user_id: user.id
       });
 
+      console.log('📝 Guardando perfil profesional...');
+      
       if (profiles[0]) {
+        console.log('🔄 Actualizando perfil existente con datos completos');
         await base44.entities.ProfessionalProfile.update(profiles[0].id, profileData);
       } else {
+        console.log('➕ Creando perfil profesional completo');
         await base44.entities.ProfessionalProfile.create(profileData);
       }
+
+      console.log('✅ Perfil guardado y publicado');
 
       // Update user to professionnel with onboarding completed
       await base44.auth.updateMe({
@@ -355,15 +361,20 @@ export default function ProfileOnboardingPage() {
         from_name: "MisAutónomos"
       });
 
-      toast.success(t('profileCompletedAndPublished'), { duration: 5000 });
+      console.log('🎉 ONBOARDING COMPLETADO - Perfil activado y visible');
+      
+      toast.success('¡Perfil profesional activado! Ya eres visible para clientes', { 
+        duration: 5000 
+      });
+      
       queryClient.invalidateQueries();
 
       setTimeout(() => {
-        navigate(createPageUrl("MyProfile") + "?onboarding=completed");
+        navigate(createPageUrl("MyProfile") + "?onboarding=completed", { replace: true });
       }, 1500);
 
     } catch (err) {
-      console.error("Error guardando perfil:", err);
+      console.error("❌ Error guardando perfil:", err);
       setError(err.message || t('errorSavingProfile'));
       toast.error(err.message || t('errorSavingProfile'));
     } finally {
