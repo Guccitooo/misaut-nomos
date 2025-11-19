@@ -319,7 +319,8 @@ export default function ProfileOnboardingPage() {
       await base44.auth.updateMe({
         user_type: "professionnel",
         phone: formData.telefono_contacto,
-        city: formData.ciudad || formData.provincia
+        city: formData.ciudad || formData.provincia,
+        professional_onboarding_pending: false
       });
 
       await base44.integrations.Core.SendEmail({
