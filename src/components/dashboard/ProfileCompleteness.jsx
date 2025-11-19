@@ -5,48 +5,50 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Circle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useLanguage } from "../ui/LanguageSwitcher";
 
 export default function ProfileCompleteness({ profile, user }) {
+  const { t } = useLanguage();
   const checklistItems = [
     {
       key: 'business_name',
-      label: 'Nombre profesional',
+      label: t('professionalName'),
       completed: !!profile?.business_name,
       required: true
     },
     {
       key: 'cif_nif',
-      label: 'NIF/CIF',
+      label: t('cifNif'),
       completed: !!profile?.cif_nif,
       required: true
     },
     {
       key: 'profile_picture',
-      label: 'Foto de perfil',
+      label: t('profilePicture'),
       completed: !!user?.profile_picture,
       required: false
     },
     {
       key: 'descripcion_corta',
-      label: 'Descripción del servicio',
+      label: t('shortDescription'),
       completed: !!profile?.descripcion_corta && profile.descripcion_corta.length >= 20,
       required: true
     },
     {
       key: 'photos',
-      label: 'Galería de fotos',
+      label: t('photoGallery'),
       completed: profile?.photos && profile.photos.length > 0,
       required: false
     },
     {
       key: 'provincia',
-      label: 'Zona de trabajo',
+      label: t('location'),
       completed: !!profile?.provincia,
       required: true
     },
     {
       key: 'telefono_contacto',
-      label: 'Teléfono de contacto',
+      label: t('telephoneContact'),
       completed: !!profile?.telefono_contacto && profile.telefono_contacto.length >= 9,
       required: true
     }
@@ -63,9 +65,9 @@ export default function ProfileCompleteness({ profile, user }) {
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Completitud del perfil</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t('profileCompletenessTitle')}</h3>
             <p className="text-sm text-gray-600">
-              {isProfileComplete ? '¡Perfil completo!' : 'Completa tu perfil para atraer más clientes'}
+              {isProfileComplete ? t('excellent') : t('completeProfileForMore')}
             </p>
           </div>
           <div className="text-right">
@@ -95,7 +97,7 @@ export default function ProfileCompleteness({ profile, user }) {
         {!isProfileComplete && (
           <Link to={createPageUrl("MyProfile")}>
             <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-              Completar perfil
+              {t('completeNow')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
@@ -104,7 +106,7 @@ export default function ProfileCompleteness({ profile, user }) {
         {isProfileComplete && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <p className="text-xs text-green-900 font-medium text-center">
-              ✅ Tu perfil está completo y visible para clientes
+              ✅ {t('profileVisibleOk')}
             </p>
           </div>
         )}
