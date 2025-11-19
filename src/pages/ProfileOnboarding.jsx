@@ -111,57 +111,67 @@ export default function ProfileOnboardingPage() {
   const waitForWebhookToProcess = async () => {
     try {
       let attempts = 0;
-      const maxAttempts = 30;
-      let subscriptionFound = false;
+      const maxAttempts = 40;
+      let subscriptionActive = false;
       
-      while (attempts < maxAttempts && !subscriptionFound) {
+      while (attempts < maxAttempts && !subscriptionActive) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         const freshUser = await base44.auth.me();
         
-        // Check if subscription exists
+        // Check if subscription exists AND is active
         try {
           const subs = await base44.entities.Subscription.filter({
             user_id: freshUser.id
           });
           
           if (subs.length > 0) {
-            subscriptionFound = true;
-            console.log('✅ Suscripción detectada:', subs[0]);
-            
-            if (freshUser.user_type !== 'professional_pending' && freshUser.user_type !== 'professionnel') {
-              await base44.auth.updateMe({
-                user_type: 'professional_pending'
-              });
-              const updatedUser = await base44.auth.me();
-              setUser(updatedUser);
-            } else {
-              setUser(freshUser);
-            }
-            
-            setFormData(prev => ({
-              ...prev,
-              email_contacto: freshUser.email,
-              telefono_contacto: freshUser.phone || "",
-            }));
-            
-            toast.success('✅ Pago confirmado. Completa tu perfil profesional', {
-              duration: 4000
+            const sub = subs[0];
+            const estado = sub.estado?.toLowerCase();
+            console.log('📊 Suscripción encontrada:', {
+              estado: sub.estado,
+              fecha_expiracion: sub.fecha_expiracion
             });
-            return;
+            
+            // Check if subscription is in an active state
+            if (estado === 'activo' || estado === 'active' || estado === 'trialing' || estado === 'en_prueba') {
+              subscriptionActive = true;
+              console.log('✅ Suscripción ACTIVA detectada');
+              
+              if (freshUser.user_type !== 'professional_pending' && freshUser.user_type !== 'professionnel') {
+                await base44.auth.updateMe({
+                  user_type: 'professional_pending'
+                });
+                const updatedUser = await base44.auth.me();
+                setUser(updatedUser);
+              } else {
+                setUser(freshUser);
+              }
+              
+              setFormData(prev => ({
+                ...prev,
+                email_contacto: freshUser.email,
+                telefono_contacto: freshUser.phone || "",
+              }));
+              
+              toast.success('✅ Pago confirmado y suscripción activa. Completa tu perfil', {
+                duration: 5000
+              });
+              return;
+            }
           }
         } catch (subError) {
-          console.log('⏳ Suscripción aún no creada, esperando...');
+          console.log('⏳ Esperando suscripción activa...');
         }
         
-        console.log(`🔍 Intento ${attempts + 1}/${maxAttempts} - esperando webhook...`);
+        console.log(`🔍 Intento ${attempts + 1}/${maxAttempts} - esperando suscripción activa...`);
         attempts++;
       }
       
-      if (!subscriptionFound) {
-        console.log('⚠️ Timeout esperando suscripción');
-        toast.warning('El proceso está tardando más de lo esperado. Si pagaste, tu suscripción se activará pronto.', {
-          duration: 8000
+      if (!subscriptionActive) {
+        console.log('⚠️ Timeout - permitiendo continuar de todos modos');
+        toast.warning('Continúa con tu perfil. La suscripción se activará en breve.', {
+          duration: 6000
         });
       }
       
@@ -363,15 +373,17 @@ export default function ProfileOnboardingPage() {
 
       console.log('🎉 ONBOARDING COMPLETADO - Perfil activado y visible');
       
-      toast.success('¡Perfil profesional activado! Ya eres visible para clientes', { 
-        duration: 5000 
+      toast.success('¡Perfil profesional activado! Redirigiendo...', { 
+        duration: 3000 
       });
       
+      // Invalidate all queries to ensure fresh data
       queryClient.invalidateQueries();
 
       setTimeout(() => {
+        console.log('🔄 Navegando a MyProfile con flag de onboarding completado');
         navigate(createPageUrl("MyProfile") + "?onboarding=completed", { replace: true });
-      }, 1500);
+      }, 2000);
 
     } catch (err) {
       console.error("❌ Error guardando perfil:", err);

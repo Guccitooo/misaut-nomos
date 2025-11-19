@@ -167,19 +167,19 @@ export default function MyProfilePage() {
 
   useEffect(() => {
     if (onboardingCompleted) {
-      console.log('🎉 Onboarding completado - recargando datos del usuario y perfil');
-      
-      // Reload user data to get updated user_type
-      loadUser().then(() => {
-        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-        queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      });
-      
-      toast.success(t('profileCompletedAndPublished'), {
-        duration: 8000
-      });
+      console.log('🎉 Onboarding completado - forzando recarga completa');
       
       window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Force complete reload
+      setTimeout(async () => {
+        await loadUser();
+        queryClient.invalidateQueries();
+        
+        toast.success('¡Perfil profesional activado! Ya eres visible para clientes', {
+          duration: 8000
+        });
+      }, 500);
     } else if (reactivationSuccess === "canceled") {
       toast.info(t('areYouSureContinue'));
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -212,13 +212,26 @@ export default function MyProfilePage() {
         user_id: user.id
       });
       
-      return subs.length > 0 ? subs[0] : null;
+      console.log('🔍 Suscripciones encontradas:', subs);
+      
+      if (subs.length > 0) {
+        const sub = subs[0];
+        console.log('✅ Suscripción cargada:', {
+          estado: sub.estado,
+          fecha_expiracion: sub.fecha_expiracion,
+          isActive: isSubscriptionActive(sub.estado, sub.fecha_expiracion)
+        });
+        return sub;
+      }
+      
+      console.log('⚠️ No se encontró suscripción para el usuario');
+      return null;
     },
     enabled: !!user,
-    retry: 1,
-    staleTime: 1000 * 30,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    retry: 2,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
