@@ -116,58 +116,75 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const verifySubscription = async (attempt = 1, maxAttempts = 15) => {
-    try {
-      console.log(`🔍 Verificando pago - Intento ${attempt}/${maxAttempts}`);
+  const verifySubscription = async () => {
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkPayment = async () => {
+      attempts++;
+      console.log(`🔍 Verificando pago - Intento ${attempts}/${maxAttempts}`);
       
-      // Wait progressively longer
-      await new Promise(resolve => setTimeout(resolve, attempt === 1 ? 3000 : 2000));
-      
-      // Force refresh user data
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      
-      console.log('👤 Usuario cargado:', currentUser.email);
-      console.log('👤 Tipo de usuario:', currentUser.user_type);
-      console.log('👤 has_used_trial:', currentUser.has_used_trial);
-      
-      if (currentUser.user_type === 'professionnel') {
-        const subs = await base44.entities.Subscription.filter({
-          user_id: currentUser.id
-        });
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
         
-        console.log('📋 Suscripciones encontradas:', subs.length);
+        console.log('👤 Usuario:', currentUser.email, 'Tipo:', currentUser.user_type);
         
-        if (subs.length > 0) {
-          console.log('✅ Suscripción detectada:', subs[0]);
-          setIsVerifyingPayment(false);
-          toast.success(t('paymentConfirmed'), {
-            duration: 4000
+        if (currentUser.user_type === 'professionnel') {
+          const subs = await base44.entities.Subscription.filter({
+            user_id: currentUser.id
           });
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
+          
+          console.log('📋 Suscripciones:', subs.length);
+          
+          if (subs.length > 0) {
+            console.log('✅ Pago confirmado');
+            setIsVerifyingPayment(false);
+            toast.success(t('paymentConfirmed'), { duration: 3000 });
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return true;
+          }
         }
-      } else {
-        console.log('⚠️ Usuario aún no es profesional, esperando webhook...');
+        
+        if (attempts >= maxAttempts) {
+          console.error('❌ Timeout verificando pago');
+          setIsVerifyingPayment(false);
+          toast.error(t('paymentVerificationError') + ' - Intenta recargar la página.', {
+            duration: 8000
+          });
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error("Error:", error);
+        if (attempts >= maxAttempts) {
+          setIsVerifyingPayment(false);
+          toast.error(t('paymentVerificationError'));
+          return true;
+        }
+        return false;
       }
-      
-      if (attempt < maxAttempts) {
-        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
-      } else {
-        console.error('❌ Timeout: no se pudo verificar el pago después de 15 intentos');
+    };
+    
+    // Initial delay
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    const intervalId = setInterval(async () => {
+      const shouldStop = await checkPayment();
+      if (shouldStop) {
+        clearInterval(intervalId);
+      }
+    }, 2000);
+    
+    // Force stop after 25 seconds
+    setTimeout(() => {
+      clearInterval(intervalId);
+      if (isVerifyingPayment) {
         setIsVerifyingPayment(false);
-        toast.error(t('paymentVerificationError'), {
-          duration: 8000
-        });
+        toast.error(t('paymentVerificationError'));
       }
-    } catch (error) {
-      console.error("Error verificando suscripción:", error);
-      if (attempt < maxAttempts) {
-        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
-      } else {
-        setIsVerifyingPayment(false);
-      }
-    }
+    }, 25000);
   };
 
   const loadExistingProfile = async () => {
