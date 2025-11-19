@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
                 }
                 console.log('✅ Suscripción guardada correctamente');
 
-                console.log('5️⃣ Actualizando perfil profesional si existe...');
+                console.log('5️⃣ Creando/actualizando perfil profesional...');
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
@@ -243,7 +243,24 @@ Deno.serve(async (req) => {
                     });
                     console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (trial: ${isTrial}, cancelado: ${isCanceled}, vigente: ${isStillInPeriod})`);
                 } else {
-                    console.log('ℹ️ Perfil aún no existe (se creará en onboarding)');
+                    console.log('➕ Creando perfil profesional inicial (onboarding pendiente)...');
+                    const newProfile = await base44.asServiceRole.entities.ProfessionalProfile.create({
+                        user_id: userId,
+                        business_name: metadata.fullName || email.split('@')[0],
+                        email_contacto: email,
+                        telefono_contacto: metadata.phone || '',
+                        metodos_contacto: ['chat_interno'],
+                        categories: [],
+                        photos: [],
+                        formas_pago: [],
+                        estado_perfil: 'pendiente',
+                        visible_en_busqueda: false,
+                        onboarding_completed: false,
+                        acepta_terminos: false,
+                        acepta_politica_privacidad: false,
+                        consiente_contacto_clientes: false
+                    });
+                    console.log('✅ Perfil profesional creado (pendiente de completar onboarding):', newProfile.id);
                 }
 
                 const isTrialing = subscription.status === 'trialing';
