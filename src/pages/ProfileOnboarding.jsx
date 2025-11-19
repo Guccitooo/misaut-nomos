@@ -57,7 +57,6 @@ export default function ProfileOnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -86,18 +85,10 @@ export default function ProfileOnboardingPage() {
   }, []);
 
   useEffect(() => {
-    const paymentSuccess = searchParams.get('payment');
-    if (paymentSuccess === 'success') {
-      setIsVerifyingPayment(true);
-      verifySubscription();
+    if (user) {
+      checkIfOnboardingAlreadyCompleted();
     }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (user && user.user_type === "professionnel" && !isVerifyingPayment) {
-      loadExistingProfile();
-    }
-  }, [user, isVerifyingPayment]);
+  }, [user]);
 
   const loadUser = async () => {
     setIsLoadingUser(true);
@@ -116,71 +107,22 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const verifySubscription = async (attempt = 1, maxAttempts = 15) => {
+  const checkIfOnboardingAlreadyCompleted = async () => {
     try {
-      console.log(`🔍 Verificando pago - Intento ${attempt}/${maxAttempts}`);
-      
-      // Wait progressively longer
-      await new Promise(resolve => setTimeout(resolve, attempt === 1 ? 3000 : 2000));
-      
-      // Force refresh user data
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      
-      console.log('👤 Usuario cargado:', currentUser.email);
-      console.log('👤 Tipo de usuario:', currentUser.user_type);
-      console.log('👤 has_used_trial:', currentUser.has_used_trial);
-      
-      if (currentUser.user_type === 'professionnel') {
-        const subs = await base44.entities.Subscription.filter({
-          user_id: currentUser.id
-        });
-        
-        console.log('📋 Suscripciones encontradas:', subs.length);
-        
-        if (subs.length > 0) {
-          console.log('✅ Suscripción detectada:', subs[0]);
-          setIsVerifyingPayment(false);
-          toast.success(t('paymentConfirmed'), {
-            duration: 4000
-          });
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-      } else {
-        console.log('⚠️ Usuario aún no es profesional, esperando webhook...');
+      if (user.user_type === 'professionnel' && user.professional_onboarding_completed) {
+        navigate(createPageUrl("MyProfile"));
+        return;
       }
-      
-      if (attempt < maxAttempts) {
-        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
-      } else {
-        console.error('❌ Timeout: no se pudo verificar el pago después de 15 intentos');
-        setIsVerifyingPayment(false);
-        toast.error(t('paymentVerificationError'), {
-          duration: 8000
-        });
-      }
-    } catch (error) {
-      console.error("Error verificando suscripción:", error);
-      if (attempt < maxAttempts) {
-        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
-      } else {
-        setIsVerifyingPayment(false);
-      }
-    }
-  };
 
-  const loadExistingProfile = async () => {
-    try {
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: user.id
       });
 
-      if (profiles[0] && profiles[0].onboarding_completed && profiles[0].visible_en_busqueda) {
+      if (profiles[0]?.onboarding_completed && profiles[0]?.visible_en_busqueda) {
         navigate(createPageUrl("MyProfile"));
       }
     } catch (error) {
-      console.error("Error loading profile:", error);
+      console.error("Error checking profile:", error);
     }
   };
 
@@ -318,6 +260,7 @@ export default function ProfileOnboardingPage() {
 
       await base44.auth.updateMe({
         user_type: "professionnel",
+        professional_onboarding_completed: true,
         phone: formData.telefono_contacto,
         city: formData.ciudad || formData.provincia
       });
@@ -409,7 +352,7 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  if (isLoadingUser || isVerifyingPayment) {
+  if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-sm w-full shadow-lg bg-white border-0">
@@ -419,10 +362,10 @@ export default function ProfileOnboardingPage() {
                 <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isVerifyingPayment ? t('confirmingPayment') : t('loading')}
+                {t('loading')}
               </h2>
               <p className="text-sm text-gray-600">
-                {isVerifyingPayment ? t('fewSecondsWait') : t('preparingProfile')}
+                {t('preparingProfile')}
               </p>
             </div>
           </CardContent>
@@ -431,7 +374,7 @@ export default function ProfileOnboardingPage() {
     );
   }
 
-  if (!user || user.user_type !== "professionnel") {
+  if (!user || (user.user_type !== "professionnel" && user.user_type !== "professional_pending")) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
