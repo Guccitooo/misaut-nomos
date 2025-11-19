@@ -246,10 +246,10 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
             )}
           </div>
 
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 items-center">
             <Button 
               onClick={onClick}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium rounded-lg"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
             >
               {t('viewProfile') || 'Ver perfil'}
             </Button>
@@ -259,9 +259,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 onClick={handleCall}
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 border-gray-200 hover:bg-gray-50 rounded-lg"
+                className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-blue-300 rounded-lg flex-shrink-0"
               >
-                <Phone className="w-3.5 h-3.5 text-gray-600" />
+                <Phone className="w-4 h-4 text-gray-700" />
               </Button>
             )}
 
@@ -270,9 +270,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 onClick={handleWhatsApp}
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 border-gray-200 hover:bg-gray-50 rounded-lg"
+                className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
               >
-                <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+                <MessageCircle className="w-4 h-4 text-green-600" />
               </Button>
             )}
           </div>
@@ -280,34 +280,42 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
       </Card>
 
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{t('phoneNumber') || 'Número de teléfono'}</DialogTitle>
-            <DialogDescription className="text-sm">
-              {t('callFromYourPhone') || 'Llama desde tu teléfono'}
+        <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+              <Phone className="w-7 h-7 text-blue-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {t('phoneNumber') || 'Número de teléfono'}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              {profile.business_name}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
-              <p className="text-2xl font-bold text-blue-700 tracking-wide">
-                {profile.telefono_contacto}
-              </p>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative w-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 rounded-2xl blur-xl opacity-20"></div>
+              <div className="relative p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 w-full text-center">
+                <p className="text-3xl font-bold text-blue-900 tracking-wider">
+                  {profile.telefono_contacto}
+                </p>
+              </div>
             </div>
             <Button
               onClick={() => copyToClipboard(profile.telefono_contacto)}
               variant="outline"
-              className="w-full"
-              size="sm"
+              className="w-full h-12 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl font-semibold transition-all"
+              size="lg"
             >
               {copiedPhone ? (
                 <>
-                  <Check className="w-4 h-4 mr-2 text-green-600" />
-                  {t('copied') || 'Copiado'}
+                  <Check className="w-5 h-5 mr-2 text-green-600" />
+                  <span className="text-green-600">{t('copied') || '¡Copiado!'}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 mr-2" />
-                  {t('copyNumber') || 'Copiar número'}
+                  <Copy className="w-5 h-5 mr-2 text-gray-700" />
+                  <span className="text-gray-700">{t('copyNumber') || 'Copiar número'}</span>
                 </>
               )}
             </Button>
@@ -316,30 +324,36 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
       </Dialog>
 
       <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-green-600" />
+        <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-2">
+              <MessageCircle className="w-7 h-7 text-green-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
               WhatsApp
             </DialogTitle>
-            <DialogDescription className="text-sm">
-              {t('contactViaWhatsApp') || 'Contacta por WhatsApp'}
+            <DialogDescription className="text-sm text-gray-600">
+              {profile.business_name}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <div className="p-3 bg-green-50 rounded-xl border border-green-200 w-full text-center">
-              <p className="text-2xl font-bold text-green-700 tracking-wide">
-                {profile.telefono_contacto}
-              </p>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative w-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-600 rounded-2xl blur-xl opacity-20"></div>
+              <div className="relative p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-200 w-full text-center">
+                <p className="text-3xl font-bold text-green-900 tracking-wider">
+                  {profile.telefono_contacto}
+                </p>
+              </div>
             </div>
             <Button
               onClick={() => {
                 window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
                 setShowWhatsAppModal(false);
               }}
-              className="w-full bg-green-600 hover:bg-green-700 h-11"
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+              size="lg"
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
+              <MessageCircle className="w-5 h-5 mr-2" />
               {t('openWhatsApp') || 'Abrir WhatsApp'}
             </Button>
           </div>
