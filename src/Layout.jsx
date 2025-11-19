@@ -761,6 +761,12 @@ function LayoutContent({ children, currentPageName }) {
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('login')}
                         </Button>
+                        <Link to={createPageUrl("ClientOnboarding")} className="block">
+                          <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Hazte cliente
+                          </Button>
+                        </Link>
                         <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                             <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -815,6 +821,12 @@ function LayoutContent({ children, currentPageName }) {
                         <User className="w-4 h-4 mr-2" aria-hidden="true" />
                         {t('login')}
                       </Button>
+                      <Link to={createPageUrl("ClientOnboarding")}>
+                        <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                          <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Hazte cliente
+                        </Button>
+                      </Link>
                       <Link to={createPageUrl("PricingPlans")}>
                         <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
