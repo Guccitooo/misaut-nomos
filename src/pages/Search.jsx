@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,7 +46,6 @@ import TranslatedText from "../components/ui/TranslatedText";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import SEOHead from "../components/seo/SEOHead";
 import { OrganizationSchema, ServiceSchema } from "../components/seo/StructuredData";
-import ContactButtons from "../components/ui/ContactButtons";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -97,18 +97,17 @@ const CATEGORY_ICONS = {
 };
 
 const BASE_CATEGORIES = [
-  { name: "Albañil / Reformas", icon: "Home" },
-  { name: "Autónomo de limpieza", icon: "Trash2" },
-  { name: "Carpintero", icon: "Hammer" },
-  { name: "Cerrajero", icon: "Key" },
   { name: "Electricista", icon: "Zap" },
+  { name: "Carpintero", icon: "Hammer" },
   { name: "Fontanero", icon: "Wrench" },
-  { name: "Instalador de aire acondicionado", icon: "Wind" },
-  { name: "Jardinero", icon: "Leaf" },
-  { name: "Mantenimiento de piscinas", icon: "Settings" },
-  { name: "Mantenimiento general", icon: "Settings" },
+  { name: "Albañil / Reformas", icon: "Home" },
   { name: "Pintor", icon: "Paintbrush" },
-  { name: "Transportista", icon: "Truck" }
+  { name: "Jardinero", icon: "Leaf" },
+  { name: "Transportista", icon: "Truck" },
+  { name: "Autónomo de limpieza", icon: "Trash2" },
+  { name: "Cerrajero", icon: "Key" },
+  { name: "Instalador de aire acondicionado", icon: "Wind" },
+  { name: "Mantenimiento general", icon: "Settings" }
 ];
 
 function useDebounce(value, delay) {
@@ -141,125 +140,195 @@ const CategoryBadge = React.memo(({ category }) => {
 
 const ProfileCard = React.memo(({ profile, user, onToggleFavorite, onStartChat, isFavorite, favoriteCount, profileUser, onProfileClick }) => {
   const { t } = useLanguage();
+  
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+34' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned.startsWith('34') && cleaned.length === 9) {
+      cleaned = '34' + cleaned;
+    }
+    return cleaned;
+  };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 border border-gray-200 bg-white h-full flex flex-col active:scale-[0.98]">
-      <CardContent className="p-2.5 flex flex-col flex-1">
-        <div className="flex items-start gap-2 mb-1.5">
-          <div className="flex-shrink-0">
-            <div 
-              className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100 cursor-pointer"
-              onClick={() => onProfileClick(profile.user_id)}
-            >
-              {profileUser?.profile_picture ? (
-                <OptimizedImage
-                  src={profileUser.profile_picture} 
-                  alt={`Foto de perfil de ${profile.business_name}`}
-                  className="w-full h-full"
-                  objectFit="cover"
-                  width={40}
-                  height={40}
-                  priority={false}
-                  fallback={
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
-                      {profile.business_name?.charAt(0)}
-                    </div>
-                  }
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
-                  {profile.business_name?.charAt(0)}
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border border-gray-200 bg-white h-full flex flex-col">
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-600 bg-blue-100">
+                {profileUser?.profile_picture ? (
+                  <OptimizedImage
+                    src={profileUser.profile_picture} 
+                    alt={`Foto de perfil de ${profile.business_name}`}
+                    className="w-full h-full"
+                    objectFit="cover"
+                    width={48}
+                    height={48}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-lg">
+                    {profile.business_name?.charAt(0)}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-base text-gray-900 hover:text-blue-700 transition-colors truncate cursor-pointer"
+                  onClick={() => onProfileClick(profile.user_id)}>
+                {profile.business_name}
+              </h3>
+              {profile.average_rating > 0 ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    {profile.average_rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({profile.total_reviews})
+                  </span>
                 </div>
+              ) : (
+                <div className="h-5 mt-1"></div>
               )}
             </div>
           </div>
-
-          <div className="flex-1 min-w-0">
-            <h3 
-              className="font-bold text-sm text-gray-900 hover:text-blue-700 transition-colors line-clamp-1 cursor-pointer"
-              onClick={() => onProfileClick(profile.user_id)}
+          
+          <div className="flex flex-col items-end gap-1 ml-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className={`h-10 w-10 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(profile.user_id);
+              }}
+              aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
             >
-              {profile.business_name}
-            </h3>
-            {profile.average_rating > 0 && (
-              <div className="flex items-center gap-0.5">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400 flex-shrink-0" />
-                <span className="text-xs font-semibold text-gray-700">
-                  {profile.average_rating.toFixed(1)}
-                </span>
-                <span className="text-xs text-gray-500">
-                  ({profile.total_reviews})
-                </span>
-              </div>
+              <Heart 
+                className={`w-5 h-5 transition-all ${
+                  isFavorite ? 'fill-red-500' : ''
+                }`}
+              />
+            </Button>
+            {favoriteCount > 0 && (
+              <span className="text-xs text-gray-500">{favoriteCount}</span>
             )}
           </div>
-
-          <Button
-            size="icon"
-            variant="ghost"
-            className={`h-7 w-7 flex-shrink-0 ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(profile.user_id);
-            }}
-            aria-label={isFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos'}
-          >
-            <Heart 
-              className={`w-3.5 h-3.5 transition-all ${
-                isFavorite ? 'fill-red-500' : ''
-              }`}
-            />
-          </Button>
         </div>
 
         <div 
-          className="flex flex-wrap gap-1 mb-1.5 cursor-pointer"
+          className="flex flex-wrap gap-1 mb-2 cursor-pointer"
           onClick={() => onProfileClick(profile.user_id)}
         >
-          {profile.categories?.slice(0, 1).map((cat, idx) => (
+          {profile.categories?.slice(0, 2).map((cat, idx) => (
             <CategoryBadge key={idx} category={cat} />
           ))}
-          {profile.categories?.length > 1 && (
-            <Badge variant="outline" className="text-xs py-0 px-1.5 h-5">
-              +{profile.categories.length - 1}
+          {profile.categories?.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{profile.categories.length - 2}
             </Badge>
           )}
         </div>
-
-        {profile.service_area && (
-          <div 
-            className="mb-1.5 cursor-pointer"
-            onClick={() => onProfileClick(profile.user_id)}
-          >
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{profile.service_area}</span>
-            </div>
-          </div>
-        )}
 
         <div 
           className="mb-2 cursor-pointer"
           onClick={() => onProfileClick(profile.user_id)}
         >
-          <p className="text-xs text-gray-600 line-clamp-1">
+          {profile.service_area ? (
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{profile.service_area}</span>
+            </div>
+          ) : (
+            <div className="h-5"></div>
+          )}
+        </div>
+
+        <div 
+          className="mb-3 cursor-pointer"
+          onClick={() => onProfileClick(profile.user_id)}
+        >
+          <p className="text-sm text-gray-600 line-clamp-2 leading-5">
             <TranslatedText 
               text={profile.descripcion_corta || profile.description || "Profesional disponible"} 
             />
           </p>
         </div>
 
-        <div className="mt-auto pt-1.5 border-t border-gray-100">
-          <ContactButtons
-            phone={profile.telefono_contacto}
-            businessName={profile.business_name}
-            enablePhone={profile.metodos_contacto?.includes('telefono')}
-            enableWhatsApp={profile.metodos_contacto?.includes('whatsapp')}
-            enableChat={true}
-            onChatClick={() => onStartChat(profile.user_id, profile.business_name)}
-            size="sm"
-            layout="grid"
-          />
+        <div className="flex-1"></div>
+
+        <div className="mt-auto pt-3">
+          {profile.telefono_contacto && (profile.metodos_contacto?.includes('telefono') || profile.metodos_contacto?.includes('whatsapp')) ? (
+            <div className="grid grid-cols-3 gap-1.5">
+              {profile.metodos_contacto?.includes('telefono') && (
+                <a
+                  href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Llamar a ${profile.business_name}`}
+                >
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full text-xs h-10 hover:bg-blue-50 hover:border-blue-600 hover:text-blue-600"
+                  >
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                </a>
+              )}
+              
+              {profile.metodos_contacto?.includes('whatsapp') && (
+                <a
+                  href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`WhatsApp a ${profile.business_name}`}
+                >
+                  <Button 
+                    size="sm"
+                    className="w-full text-xs h-10 bg-green-600 hover:bg-green-700"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                </a>
+              )}
+              
+              <Button
+                size="sm"
+                className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartChat(profile.user_id, profile.business_name);
+                }}
+                aria-label={`Chatear con ${profile.business_name}`}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              className="w-full text-xs h-10 bg-blue-600 hover:bg-blue-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartChat(profile.user_id, profile.business_name);
+              }}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat directo
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -365,14 +434,8 @@ export default function SearchPage() {
       const userSub = subscriptions.find(sub => sub.user_id === profile.user_id);
       if (!userSub) return false;
       
-      const today = new Date();
-      const expirationDate = new Date(userSub.fecha_expiracion);
-      const isStillInPeriod = expirationDate >= today;
-      
-      const validStates = ["activo", "active", "en_prueba", "trialing", "cancelado", "canceled"];
-      const hasValidState = validStates.includes(userSub.estado?.toLowerCase());
-      
-      if (!hasValidState || !isStillInPeriod) return false;
+      const isActive = isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+      if (!isActive) return false;
       
       return true;
     });
@@ -397,15 +460,13 @@ export default function SearchPage() {
     queryKey: ['profileUsers'],
     queryFn: async () => {
       const userIds = [...new Set(profiles.map(p => p.user_id))];
-
-      // Use service role to see all profile pictures (public visibility)
       const users = await Promise.all(
         userIds.map(async (id) => {
-          const u = await base44.asServiceRole.entities.User.filter({ id });
+          const u = await base44.entities.User.filter({ id });
           return u[0];
         })
       );
-
+      
       const usersMap = {};
       users.forEach(u => {
         if (u) usersMap[u.id] = u;
@@ -598,48 +659,48 @@ export default function SearchPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {/* HERO BANNER - Always rendered, visibility controlled by opacity */}
         <div 
-          className="bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-lg transition-all duration-300"
+          className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white shadow-xl transition-all duration-300"
           style={{ 
-            minHeight: showHeroBanner ? 'auto' : '0px',
-            maxHeight: showHeroBanner ? '600px' : '0px',
+            minHeight: showHeroBanner ? '320px' : '0px',
+            maxHeight: showHeroBanner ? '500px' : '0px',
             opacity: showHeroBanner ? 1 : 0,
             overflow: 'hidden',
-            paddingTop: showHeroBanner ? '2.5rem' : '0',
-            paddingBottom: showHeroBanner ? '2.5rem' : '0',
+            paddingTop: showHeroBanner ? '4rem' : '0',
+            paddingBottom: showHeroBanner ? '4rem' : '0',
             paddingLeft: '1rem',
             paddingRight: '1rem'
           }}
           aria-hidden={!showHeroBanner}
         >
-          <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight leading-tight">
+          <div className="max-w-6xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
               {t('heroTitle')}
             </h1>
-            <p className="text-base md:text-lg text-blue-100 max-w-xl mx-auto mb-6">
+            <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
               {t('heroSubtitle')}
             </p>
-
-            <div className="space-y-3">
-              <p className="text-sm md:text-base text-blue-100 font-medium">
+            
+            <div className="space-y-4">
+              <p className="text-base text-blue-100 font-medium">
                 {t('chooseHow')}
               </p>
-              <div className="flex flex-col sm:flex-row gap-2.5 justify-center items-center max-w-md mx-auto">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
                 <Link to={createPageUrl("PricingPlans")} className="w-full sm:w-auto">
                   <Button 
                     size="lg" 
-                    className="w-full sm:min-w-[180px] h-12 bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-lg transition-all active:scale-95 text-sm"
+                    className="w-full sm:min-w-[200px] bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-orange-400"
                   >
-                    <Briefcase className="w-4 h-4 mr-2" />
+                    <Briefcase className="w-5 h-5 mr-2" />
                     {t('imFreelancer')}
                   </Button>
                 </Link>
-
+                
                 <Link to={createPageUrl("ClientOnboarding")} className="w-full sm:w-auto">
                   <Button 
                     size="lg" 
-                    className="w-full sm:min-w-[180px] h-12 bg-white hover:bg-gray-50 text-blue-700 font-semibold shadow-lg transition-all active:scale-95 text-sm"
+                    className="w-full sm:min-w-[200px] bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-xl transition-all hover:scale-105 border-2 border-blue-400"
                   >
-                    <User className="w-4 h-4 mr-2" />
+                    <User className="w-5 h-5 mr-2" />
                     {t('imClient')}
                   </Button>
                 </Link>
@@ -649,28 +710,28 @@ export default function SearchPage() {
         </div>
 
         {/* MAIN CONTENT AREA */}
-        <div className="max-w-7xl mx-auto px-3 lg:px-4 py-4 lg:py-6">
-          <Card className="mb-6 lg:mb-8 shadow-md lg:shadow-lg border-0">
-            <CardContent className="p-4 lg:p-6">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <Card className="mb-8 shadow-lg border-0">
+            <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-5 h-5 text-blue-700" />
                 <h2 className="font-semibold text-lg text-gray-900">{t('filters')}</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder={t('search')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11"
+                    className="pl-10 h-12"
                     aria-label="Buscar profesionales"
                   />
                 </div>
 
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-11" aria-label="Filtrar por categoría">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por categoría">
                     <SelectValue placeholder={t('allCategories')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -701,7 +762,7 @@ export default function SearchPage() {
                     setSelectedCiudad("all");
                   }}
                 >
-                  <SelectTrigger className="h-11" aria-label="Filtrar por provincia">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por provincia">
                     <SelectValue placeholder={t('allProvinces')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -726,7 +787,7 @@ export default function SearchPage() {
                   value={selectedCiudad} 
                   onValueChange={setSelectedCiudad}
                 >
-                  <SelectTrigger className="h-11" aria-label="Filtrar por ciudad">
+                  <SelectTrigger className="h-12" aria-label="Filtrar por ciudad">
                     <SelectValue placeholder={t('allCities')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
@@ -809,7 +870,7 @@ export default function SearchPage() {
               )}
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
               {filteredProfiles.map((profile) => (
                 <ProfileCard
                   key={profile.id}

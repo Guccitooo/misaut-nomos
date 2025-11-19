@@ -76,32 +76,27 @@ Deno.serve(async (req) => {
             stripeCanceled = true;
         }
 
-        const today = new Date();
-        const expirationDate = new Date(subscription.fecha_expiracion);
-        const isStillInPeriod = expirationDate > today;
-        const isTrial = subscription.estado === 'en_prueba';
-
-        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
+        await base44.entities.Subscription.update(subscription.id, {
             estado: "cancelado",
-            renovacion_automatica: false,
-            cancel_at_period_end: true
+            renovacion_automatica: false
         });
-        console.log('✅ Suscripción actualizada: estado=cancelado, cancel_at_period_end=true');
+        console.log('✅ Suscripción actualizada en BD local: estado = cancelado');
 
-        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+        await base44.auth.updateMe({
+            subscription_status: "cancelado"
+        });
+        console.log('✅ Usuario actualizado: subscription_status = cancelado');
+
+        const profiles = await base44.entities.ProfessionalProfile.filter({
             user_id: user.id
         });
 
         if (profiles.length > 0) {
-            if (isStillInPeriod) {
-                console.log(`✅ Perfil MANTIENE visibilidad hasta ${expirationDate.toLocaleDateString('es-ES')} (${isTrial ? 'trial cancelado' : 'periodo pagado cancelado'})`);
-            } else {
-                await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    visible_en_busqueda: false,
-                    estado_perfil: "inactivo"
-                });
-                console.log(`❌ Perfil ocultado (periodo ya expirado)`);
-            }
+            await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+                visible_en_busqueda: false,
+                estado_perfil: "inactivo"
+            });
+            console.log(`✅ Perfil ocultado de búsquedas (ID: ${profiles[0].id})`);
         }
 
         try {
@@ -221,15 +216,12 @@ Deno.serve(async (req) => {
 
         return Response.json({
             ok: true,
-            message: isStillActive 
-                ? `Suscripción cancelada. Tu perfil seguirá visible hasta el ${expirationDate.toLocaleDateString('es-ES')}`
-                : 'Suscripción cancelada correctamente',
+            message: 'Suscripción cancelada correctamente',
             details: {
                 stripe_canceled: stripeCanceled,
                 stripe_error: stripeError,
                 fecha_expiracion: subscription.fecha_expiracion,
-                profile_still_visible: isStillActive,
-                is_trial: isTrial
+                profile_hidden: profiles.length > 0
             }
         });
 

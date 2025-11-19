@@ -12,7 +12,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { planId, planPrice } = await req.json();
+    const body = await req.json();
+    const { planId, planPrice, isReactivation = false } = body;
+
+    if (user.has_used_trial === true) {
+      return Response.json({ 
+        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses. Ahora el pago se aplicará inmediatamente.' 
+      }, { status: 400 });
+    }
+
+    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({ 
+      user_id: user.id 
+    });
+    
+    if (!isReactivation && existingSubscriptions.length > 0) {
+      const activeSub = existingSubscriptions.find(sub => 
+        sub.estado === 'activo' || sub.estado === 'en_prueba'
+      );
+      if (activeSub) {
+        return Response.json({ 
+          error: 'Ya tienes una suscripción activa' 
+        }, { status: 400 });
+      }
+    }
 
     const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
     const plan = plans[0];
@@ -22,26 +44,34 @@ Deno.serve(async (req) => {
     }
 
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
+    const successUrl = isReactivation 
+      ? `${baseUrl}/MyProfile?reactivation=success`
+      : `${baseUrl}/MyProfile?onboarding=pending`;
+    const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
-    const intervalCount = plan.duracion_dias === 90 ? 3 : 1;
+    const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
 
-    const session = await stripe.checkout.sessions.create({
+    let sessionParams = {
       customer_email: user.email,
       mode: 'subscription',
-      success_url: `${baseUrl}/#/ProfileOnboarding?payment=success`,
-      cancel_url: `${baseUrl}/#/PricingPlans?canceled=true`,
+      allow_promotion_codes: false,
+      billing_address_collection: 'required',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         user_id: user.id,
-        email: user.email,
-        planId: planId,
+        user_email: user.email,
+        plan_id: planId,
+        is_reactivation: isReactivation.toString(),
+        trial_offered: 'true'
       },
       line_items: [{
         price_data: {
           currency: 'eur',
           product_data: {
-            name: plan.nombre,
-            description: plan.descripcion || '',
+            name: `${plan.nombre} - 2 meses gratis`,
+            description: plan.descripcion || `Suscripción ${plan.nombre}`,
           },
           unit_amount: planPrice * 100,
           recurring: {
@@ -55,16 +85,25 @@ Deno.serve(async (req) => {
         trial_period_days: 60,
         metadata: {
           user_id: user.id,
-          email: user.email,
-          planId: planId,
+          user_email: user.email,
+          plan_id: planId,
+          discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
+          trial: '2 meses'
         }
-      }
+      },
+      payment_method_collection: 'always'
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    return Response.json({
+      sessionId: session.id,
+      url: session.url
     });
 
-    return Response.json({ url: session.url });
-
   } catch (error) {
-    console.error('❌ Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message || 'Error al crear la sesión de pago' 
+    }, { status: 500 });
   }
 });

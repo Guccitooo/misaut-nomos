@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -170,22 +170,29 @@ function LayoutContent({ children, currentPageName }) {
 
   const getDisplayName = () => {
     if (!user) return "";
-
-    // PRIORITY 1: Professional business name (for professionals)
+    
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
     }
-
-    // PRIORITY 2: User's full name
+    
     if (user.full_name && user.full_name.trim() !== "") {
       return user.full_name;
     }
-
-    // PRIORITY 3: Fallback to email (only if no full_name)
+    
     if (user.email) {
-      return user.email.split('@')[0];
+      const username = user.email.split('@')[0];
+      const cleaned = username.replace(/\d+$/g, '');
+      
+      if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
+        return cleaned
+          .split(/[-._]/)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      }
+      
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
     }
-
+    
     return "Usuario";
   };
 
@@ -193,81 +200,51 @@ function LayoutContent({ children, currentPageName }) {
     return user?.profile_picture || null;
   };
 
-  const shouldShowSubscription = useMemo(() => {
-    if (!user) return false;
-    // Only show subscription link for professionals with completed onboarding
-    if (user.user_type === "professionnel") {
-      // Check if profile exists and onboarding is completed
-      if (professionalProfile && professionalProfile.onboarding_completed) {
-        return true;
-      }
-      return false;
-    }
-    // Show for professional_pending (they're in the process)
-    if (user.user_type === "professional_pending") return true;
-    return false;
-  }, [user, professionalProfile]);
+  const navigationItems = [
+    {
+      title: t('searchFreelancers'),
+      url: createPageUrl("Search"),
+      icon: Search,
+    },
+    {
+      title: t('messages'),
+      url: createPageUrl("Messages"),
+      icon: MessageSquare,
+      badge: unreadCount > 0 ? unreadCount : null
+    },
+    {
+      title: t('favorites'),
+      url: createPageUrl("Favorites"),
+      icon: Heart,
+    },
+    {
+      title: t('myProfile'),
+      url: createPageUrl("MyProfile"),
+      icon: User,
+    },
+  ];
 
-  const shouldShowViewPlans = useMemo(() => {
-    if (!user) return true;
-    if (user.user_type === "client") return true;
-    if (user.user_type === "professionnel") {
-      return false;
-    }
-    return false;
-  }, [user]);
+  if (user?.user_type === "professionnel") {
+    navigationItems.push({
+      title: t('mySubscription'),
+      url: createPageUrl("SubscriptionManagement"),
+      icon: Briefcase,
+    });
+  } else if (!user || user?.user_type === "client") {
+    navigationItems.push({
+      title: t('viewPlans'),
+      url: createPageUrl("PricingPlans"),
+      icon: CreditCard,
+    });
+  }
 
-  const navigationItems = useMemo(() => {
-    const items = [
-      {
-        title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
-        icon: Search,
-      },
-      {
-        title: t('messages'),
-        url: createPageUrl("Messages"),
-        icon: MessageSquare,
-        badge: unreadCount > 0 ? unreadCount : null
-      },
-      {
-        title: t('favorites'),
-        url: createPageUrl("Favorites"),
-        icon: Heart,
-      },
-      {
-        title: t('myProfile'),
-        url: createPageUrl("MyProfile"),
-        icon: User,
-      },
-    ];
-
-    if (shouldShowSubscription) {
-      items.push({
-        title: t('mySubscription'),
-        url: createPageUrl("SubscriptionManagement"),
-        icon: CreditCard,
-      });
-    }
-
-    if (shouldShowViewPlans) {
-      items.push({
-        title: t('viewPlans'),
-        url: createPageUrl("PricingPlans"),
-        icon: Briefcase,
-      });
-    }
-
-    if (user?.role === "admin") {
-      items.push({
-        title: t('administration'),
-        url: createPageUrl("AdminDashboard"),
-        icon: LayoutDashboard,
-      });
-    }
-
-    return items;
-  }, [user, unreadCount, shouldShowSubscription, shouldShowViewPlans]);
+  if (user?.role === "admin") {
+    navigationItems.push({
+      title: t('administration'),
+      url: createPageUrl("AdminDashboard"),
+      icon: LayoutDashboard,
+    });
+  }
 
   return (
     <>
@@ -463,43 +440,36 @@ function LayoutContent({ children, currentPageName }) {
             .mobile-menu-overlay {
               position: fixed;
               inset: 0;
-              background: rgba(0, 0, 0, 0.5) !important;
-              backdrop-filter: blur(3px);
+              background: rgba(0, 0, 0, 0.6) !important;
+              backdrop-filter: blur(4px);
               z-index: 40;
-              animation: fadeIn 150ms ease-out;
+              animation: fadeIn 200ms ease;
             }
-
+            
             .mobile-menu {
               position: fixed;
               left: 0;
               top: 0;
               bottom: 0;
-              width: 85%;
-              max-width: 300px;
+              width: 80%;
+              max-width: 320px;
               background: #FFFFFF !important;
               z-index: 50;
-              animation: slideInLeft 200ms cubic-bezier(0.4, 0, 0.2, 1);
-              display: flex;
-              flex-direction: column;
-              box-shadow: 8px 0 24px rgba(0, 0, 0, 0.2);
+              animation: slideInLeft 200ms ease;
+              overflow-y: auto;
+              box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
             }
-
+            
             @keyframes slideInLeft {
-              from { 
-                transform: translateX(-100%);
-                opacity: 0.9;
-              }
-              to { 
-                transform: translateX(0);
-                opacity: 1;
-              }
+              from { transform: translateX(-100%); }
+              to { transform: translateX(0); }
             }
           }
           
           .mobile-bottom-nav {
             display: none !important;
           }
-
+          
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
@@ -508,16 +478,15 @@ function LayoutContent({ children, currentPageName }) {
               left: 0;
               right: 0;
               background: #FFFFFF !important;
-              border-top: 1px solid #E5E7EB !important;
+              border-top: 2px solid #E5E7EB !important;
               grid-template-columns: repeat(4, 1fr);
-              padding: 6px 0 8px 0;
+              padding: 8px 0;
               z-index: 30;
-              box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08) !important;
-              height: 64px;
+              box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
             }
-
+            
             .main-content-with-bottom-nav {
-              padding-bottom: 68px;
+              padding-bottom: 80px;
             }
           }
           
@@ -536,42 +505,35 @@ function LayoutContent({ children, currentPageName }) {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            padding: 6px 4px;
+            gap: 4px;
+            padding: 8px;
             color: #6B7280;
             text-decoration: none;
-            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            transition: color 150ms ease;
             position: relative;
-            min-height: 52px;
           }
-
+          
           .mobile-bottom-nav-item.active {
             color: #1D4ED8;
           }
-
-          .mobile-bottom-nav-item.active svg {
-            transform: scale(1.1);
-          }
-
+          
           .mobile-bottom-nav-item span {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
-            line-height: 1.2;
           }
-
+          
           .mobile-bottom-nav-badge {
             position: absolute;
-            top: 6px;
-            right: 22%;
+            top: 4px;
+            right: 20%;
             background: #EF4444;
             color: white;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: bold;
-            padding: 1px 5px;
-            border-radius: 9px;
-            min-width: 16px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
             text-align: center;
-            line-height: 1.4;
           }
           
           button:focus-visible,
@@ -678,11 +640,6 @@ function LayoutContent({ children, currentPageName }) {
                             priority={true}
                             width={40}
                             height={40}
-                            fallback={
-                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                                {getDisplayName().charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            }
                           />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -727,39 +684,33 @@ function LayoutContent({ children, currentPageName }) {
                   aria-hidden="true"
                 />
                 <nav className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
-                  <div className="flex items-center justify-between p-3 border-b bg-white sticky top-0 z-10">
-                    <h2 className="font-bold text-base">Menú</h2>
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h2 className="font-bold text-lg">Menú</h2>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="h-8 w-8"
                       aria-label="Cerrar menú"
                     >
-                      <X className="w-4 h-4" aria-hidden="true" />
+                      <X className="w-5 h-5" aria-hidden="true" />
                     </Button>
                   </div>
-
-                  <div className="p-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 60px)' }}>
+                  
+                  <div className="p-3">
                     {user && (
-                      <div className="flex items-center gap-2.5 p-2.5 mb-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
-                        <Avatar className="w-9 h-9 border-2 border-blue-600 flex-shrink-0">
+                      <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
+                        <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
                             <OptimizedImage 
                               src={getProfilePicture()} 
                               alt={`Foto de perfil de ${getDisplayName()}`}
                               className="w-full h-full object-cover"
                               priority={true}
-                              width={36}
-                              height={36}
-                              fallback={
-                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold text-sm">
-                                  {getDisplayName().charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              }
+                              width={40}
+                              height={40}
                             />
                           ) : (
-                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold text-sm">
+                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                               {getDisplayName().charAt(0).toUpperCase()}
                             </AvatarFallback>
                           )}
@@ -768,44 +719,42 @@ function LayoutContent({ children, currentPageName }) {
                           <p className="font-semibold text-gray-900 text-sm truncate">
                             {getDisplayName()}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-gray-500">
                             {user.user_type === "professionnel" ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
                     )}
-
-                    <div className="space-y-1">
-                      {navigationItems.map((item) => (
-                        <Link
-                          key={item.title}
-                          to={item.url}
-                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                            location.pathname === item.url
-                              ? 'bg-blue-600 text-white shadow-md'
-                              : 'hover:bg-gray-100 text-gray-700'
-                          }`}
-                          aria-label={item.title}
-                        >
-                          <item.icon className="w-4.5 h-4.5 flex-shrink-0" aria-hidden="true" />
-                          <span className="font-medium text-sm flex-1">{item.title}</span>
-                          {item.badge && (
-                            <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold min-w-[20px] text-center" aria-label={`${item.badge} ${t('unread')}`}>
-                              {item.badge}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-
-                    <div className="mt-3 mb-3 px-1">
+                    
+                    {navigationItems.map((item) => (
+                      <Link
+                        key={item.title}
+                        to={item.url}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                          location.pathname === item.url
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-gray-100'
+                        }`}
+                        aria-label={item.title}
+                      >
+                        <item.icon className="w-5 h-5" aria-hidden="true" />
+                        <span className="font-medium flex-1">{item.title}</span>
+                        {item.badge && (
+                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                    
+                    <div className="mt-4 mb-4 px-2">
                       <LanguageSwitcher variant="compact" />
                     </div>
-
+                    
                     {!user ? (
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-4 space-y-2">
                         <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 text-sm font-medium"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={handleLogin}
                           aria-label={t('login')}
                         >
@@ -813,7 +762,7 @@ function LayoutContent({ children, currentPageName }) {
                           {t('login')}
                         </Button>
                         <Link to={createPageUrl("PricingPlans")} className="block">
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white h-11 text-sm font-medium">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                             <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeFreelancer')}
                           </Button>
@@ -822,7 +771,7 @@ function LayoutContent({ children, currentPageName }) {
                     ) : (
                       <Button
                         variant="outline"
-                        className="w-full mt-3 h-11 text-sm font-medium"
+                        className="w-full mt-4"
                         onClick={handleLogout}
                         aria-label={t('logout')}
                       >
@@ -878,30 +827,30 @@ function LayoutContent({ children, currentPageName }) {
                 </header>
               )}
 
-              <header className="bg-white border-b border-gray-200 px-3 py-2 lg:hidden sticky top-0 z-20 shadow-sm">
-                <div className="flex items-center justify-between h-12">
+              <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
+                <div className="flex items-center justify-between">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="hover:bg-gray-100 h-10 w-10 flex-shrink-0"
+                    className="hover:bg-gray-100"
                     aria-label="Abrir menú"
                   >
-                    <Menu className="w-5 h-5" aria-hidden="true" />
+                    <Menu className="w-6 h-6" aria-hidden="true" />
                   </Button>
-                  <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0">
+                  <div className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
                       alt="Logo MisAutónomos"
-                      className="w-7 h-7 rounded flex-shrink-0"
+                      className="w-8 h-8 rounded"
                       loading="eager"
                       fetchpriority="high"
-                      width={28}
-                      height={28}
+                      width={32}
+                      height={32}
                     />
-                    <h1 className="font-bold text-base text-gray-900 truncate">MisAutónomos</h1>
+                    <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />
                   </div>

@@ -113,6 +113,7 @@ export default function OptimizedImage({
           onLoad={handleLoad}
           onError={handleError}
           decoding={priority ? "sync" : "async"}
+          crossOrigin="anonymous"
         />
       )}
     </div>

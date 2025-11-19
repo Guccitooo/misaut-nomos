@@ -60,8 +60,7 @@ export default function FavoritesPage() {
     queryKey: ['favoriteUsers', professionalIds],
     queryFn: async () => {
       if (professionalIds.length === 0) return [];
-      // Use service role to see profile pictures
-      const allUsers = await base44.asServiceRole.entities.User.list();
+      const allUsers = await base44.entities.User.list();
       return allUsers.filter(u => professionalIds.includes(u.id));
     },
     enabled: professionalIds.length > 0,
@@ -164,11 +163,6 @@ export default function FavoritesPage() {
                               objectFit="cover"
                               width={48}
                               height={48}
-                              fallback={
-                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold">
-                                  {profile.business_name ? profile.business_name.charAt(0) : 'P'}
-                                </AvatarFallback>
-                              }
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold">

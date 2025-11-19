@@ -3,9 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ProfessionalDashboard from "../components/dashboard/ProfessionalDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -39,19 +37,10 @@ import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 import PremiumDashboard from "../components/premium/PremiumDashboard";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
-  if (!estado) {
-    console.log('⚠️ Sin estado de suscripción');
-    return false;
-  }
+  if (!estado) return false;
   
   const normalizedState = estado.toLowerCase().trim();
   const validStates = ["activo", "active", "en_prueba", "trialing", "trial_active", "actif"];
-  
-  console.log('🔍 Verificando estado suscripción:', {
-    estado: normalizedState,
-    fecha_expiracion: fechaExpiracion,
-    es_estado_valido: validStates.includes(normalizedState)
-  });
   
   if (validStates.includes(normalizedState)) {
     try {
@@ -60,16 +49,9 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       const expiration = new Date(fechaExpiracion);
       expiration.setHours(0, 0, 0, 0);
       
-      if (isNaN(expiration.getTime())) {
-        console.log('⚠️ Fecha de expiración inválida - asumiendo activo');
-        return true;
-      }
-      
-      const isActive = expiration >= today;
-      console.log(`${isActive ? '✅' : '❌'} Suscripción ${isActive ? 'ACTIVA' : 'EXPIRADA'}`);
-      return isActive;
+      if (isNaN(expiration.getTime())) return true;
+      return expiration >= today;
     } catch (error) {
-      console.log('⚠️ Error verificando fecha - asumiendo activo');
       return true;
     }
   }
@@ -82,15 +64,12 @@ const isSubscriptionActive = (estado, fechaExpiracion) => {
       expiration.setHours(0, 0, 0, 0);
       
       if (isNaN(expiration.getTime())) return false;
-      const stillActive = expiration >= today;
-      console.log(`${stillActive ? '⚪' : '🔴'} Suscripción cancelada - ${stillActive ? 'aún vigente' : 'expirada'}`);
-      return stillActive;
+      return expiration >= today;
     } catch (error) {
       return false;
     }
   }
   
-  console.log('❌ Estado no reconocido:', normalizedState);
   return false;
 };
 
@@ -107,24 +86,28 @@ const provincias = [
 ];
 
 const categories = [
-  "Albañil / Reformas", "Autónomo de limpieza", "Carpintero", "Cerrajero",
-  "Electricista", "Fontanero", "Instalador de aire acondicionado",
-  "Jardinero", "Mantenimiento de piscinas", "Mantenimiento general",
-  "Pintor", "Transportista", "Otro tipo de servicio profesional"
-];
+  "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
+  "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
+  "Asesoría o gestoría", "Empresa multiservicios",
+  "Otro tipo de servicio profesional"
+].sort();
 
 export default function MyProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
-  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [searchParams] = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 10;
+
   const reactivationSuccess = searchParams.get("reactivation");
+  const onboardingPending = searchParams.get("onboarding");
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
 
   const [userData, setUserData] = useState({
@@ -173,8 +156,6 @@ export default function MyProfilePage() {
     loadUser();
   }, []);
 
-
-
   useEffect(() => {
     if (profileData.provincia && profileData.ciudad) {
       const area = profileData.municipio 
@@ -185,34 +166,130 @@ export default function MyProfilePage() {
   }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
 
   useEffect(() => {
-    if (onboardingCompleted) {
-      console.log('🎉 Onboarding completado - forzando recarga completa');
+    if (reactivationSuccess === "success" || onboardingPending === "pending") {
+      setIsVerifyingSubscription(true);
+      startSubscriptionPolling();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (onboardingCompleted) {
+      toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
+        duration: 8000
+      });
       
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      // Force complete reload
-      setTimeout(async () => {
-        await loadUser();
-        queryClient.invalidateQueries();
-        
-        toast.success('¡Perfil profesional activado! Ya eres visible para clientes', {
-          duration: 8000
-        });
-      }, 500);
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     } else if (reactivationSuccess === "canceled") {
-      toast.info(t('areYouSureContinue'));
+      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [reactivationSuccess, onboardingCompleted, queryClient, t]);
+  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
+
+  const startSubscriptionPolling = async () => {
+    for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
+      setPollingAttempts(attempt);
+      
+      try {
+        const currentUser = await loadUser();
+        if (!currentUser) throw new Error("User not loaded during polling");
+        
+        await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
+        const result = await queryClient.fetchQuery({
+          queryKey: ['subscription', currentUser.id],
+          queryFn: async () => {
+            const subs = await base44.entities.Subscription.filter({
+              user_id: currentUser.id
+            });
+            return subs[0] || null;
+          },
+          staleTime: 0,
+          gcTime: 0,
+        });
+        
+        if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
+          setIsVerifyingSubscription(false);
+          setPollingAttempts(0);
+          
+          if (reactivationSuccess === "success") {
+            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
+              duration: 6000
+            });
+          } else if (onboardingPending === "pending") {
+            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
+              duration: 8000
+            });
+            
+            setTimeout(() => {
+              navigate(createPageUrl("ProfileOnboarding"));
+            }, 2000);
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+          return;
+        }
+        
+        if (attempt === 5 && currentUser) {
+          try {
+            const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
+              user_id: currentUser.id
+            });
+            
+            if (syncResponse.data.ok) {
+              await loadUser();
+              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+              await queryClient.refetchQueries({ queryKey: ['subscription'] });
+              
+              if (syncResponse.data.needs_onboarding) {
+                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
+                  duration: 8000
+                });
+                setTimeout(() => {
+                  navigate(createPageUrl("ProfileOnboarding"));
+                }, 2000);
+              } else {
+                toast.success("🎉 ¡Tu suscripción está activa!", {
+                  duration: 6000
+                });
+              }
+              
+              setIsVerifyingSubscription(false);
+              return;
+            }
+          } catch (syncError) {
+            console.error('❌ Error en sincronización forzada:', syncError);
+          }
+        }
+        
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`❌ Error en intento ${attempt}:`, error);
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    
+    setIsVerifyingSubscription(false);
+    setPollingAttempts(0);
+    
+    toast.error(
+      <div>
+        <p className="font-semibold">No se pudo verificar tu suscripción</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
+      </div>,
+      {
+        duration: 15000
+      }
+    );
+  };
 
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', {
-        email: currentUser.email,
-        user_type: currentUser.user_type,
-        onboarding_completed: currentUser.professional_onboarding_completed
-      });
+      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -234,25 +311,12 @@ export default function MyProfilePage() {
         user_id: user.id
       });
       
-      console.log('🔍 Suscripciones encontradas:', subs);
-      
-      if (subs.length > 0) {
-        const sub = subs[0];
-        console.log('✅ Suscripción cargada:', {
-          estado: sub.estado,
-          fecha_expiracion: sub.fecha_expiracion,
-          isActive: isSubscriptionActive(sub.estado, sub.fecha_expiracion)
-        });
-        return sub;
-      }
-      
-      console.log('⚠️ No se encontró suscripción para el usuario');
-      return null;
+      return subs.length > 0 ? subs[0] : null;
     },
-    enabled: !!user,
-    retry: 2,
+    enabled: !!user && !isVerifyingSubscription,
+    retry: 1,
     staleTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
@@ -334,10 +398,10 @@ export default function MyProfilePage() {
     
     if (normalizedState === "en_prueba" || normalizedState === "trialing" || normalizedState === "trial_active") {
       return {
-        text: t('trial'),
+        text: "Periodo de prueba",
         badge: "🟡",
         color: "bg-blue-100 text-blue-800 border border-blue-300",
-        details: isActive ? `${daysLeft} ${t('daysRemainingTrial')}` : t('finished'),
+        details: isActive ? `${daysLeft} días de prueba restantes` : "Prueba finalizada",
         isActive: isActive,
         showUpgrade: true,
         showReactivate: false
@@ -346,10 +410,10 @@ export default function MyProfilePage() {
     
     if (normalizedState === "activo" || normalizedState === "active" || normalizedState === "actif") {
       return {
-        text: t('active'),
+        text: "Suscripción activa",
         badge: "🟢",
         color: "bg-green-100 text-green-800 border border-green-300",
-        details: `${t('renewalExpiration')}: ${expirationDate.toLocaleDateString()}`,
+        details: `Renovación: ${expirationDate.toLocaleDateString('es-ES')}`,
         isActive: true,
         showUpgrade: false,
         showReactivate: false
@@ -358,14 +422,14 @@ export default function MyProfilePage() {
     
     if (normalizedState === "cancelado" || normalizedState === "canceled") {
       return {
-        text: isActive ? t('canceled') : t('finished'),
+        text: isActive ? "Suscripción cancelada" : "Suscripción finalizada",
         badge: isActive ? "⚪" : "🔴",
         color: isActive 
           ? "bg-yellow-100 text-yellow-800 border border-yellow-300" 
           : "bg-red-100 text-red-800 border border-red-300",
         details: isActive 
-          ? `${t('subscriptionCanceledActive')} ${expirationDate.toLocaleDateString()}`
-          : t('profileHidden'),
+          ? `Activo hasta ${expirationDate.toLocaleDateString('es-ES')} (no se renovará)`
+          : "Tu perfil está oculto",
         isActive: isActive,
         showUpgrade: false,
         showReactivate: true
@@ -373,12 +437,12 @@ export default function MyProfilePage() {
     }
     
     return {
-      text: isActive ? t('active') : t('finished'),
+      text: isActive ? "Suscripción activa" : "Suscripción inactiva",
       badge: isActive ? "🟢" : "🔴",
       color: isActive 
         ? "bg-green-100 text-green-800 border border-green-300"
         : "bg-red-100 text-red-800 border border-red-300",
-      details: isActive ? `${t('renewalExpiration')}: ${expirationDate.toLocaleDateString()}` : t('considerReactivating'),
+      details: isActive ? `Válido hasta ${expirationDate.toLocaleDateString('es-ES')}` : "Reactiva tu plan para aparecer en búsquedas",
       isActive: isActive,
       showUpgrade: false,
       showReactivate: !isActive
@@ -389,7 +453,7 @@ export default function MyProfilePage() {
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success(t('profileUpdatedSuccess'));
+      toast.success('✅ Datos personales actualizados');
     },
   });
 
@@ -411,7 +475,7 @@ export default function MyProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       setIsEditing(false);
       setSuccess(true);
-      toast.success(t('profileUpdatedSuccess'));
+      toast.success('✅ Perfil profesional actualizado');
       setTimeout(() => setSuccess(false), 3000);
     },
   });
@@ -431,7 +495,7 @@ export default function MyProfilePage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('photoUploadError'));
+      toast.error("La imagen no puede superar los 5MB");
       return;
     }
 
@@ -442,10 +506,10 @@ export default function MyProfilePage() {
         ...profileData,
         photos: [...(profileData.photos || []), file_url]
       });
-      toast.success(t('photoUploadSuccess'));
+      toast.success("✅ Foto añadida");
     } catch (error) {
       console.error("Error uploading photo:", error);
-      toast.error(t('photoUploadError'));
+      toast.error("Error al subir la foto");
     }
     setUploadingPhoto(false);
   };
@@ -512,7 +576,7 @@ export default function MyProfilePage() {
       });
       
       if (response.data.ok) {
-        toast.success(t('accountDeleted'), {
+        toast.success('Tu cuenta ha sido eliminada correctamente', {
           duration: 5000
         });
         
@@ -520,17 +584,17 @@ export default function MyProfilePage() {
           base44.auth.logout();
         }, 2000);
       } else {
-        toast.error(`${t('errorDeletingAccount')}: ${response.data.error}`);
+        toast.error(`Error: ${response.data.error}`);
         setIsDeleting(false);
       }
     } catch (error) {
       console.error('Error eliminando cuenta:', error);
-      toast.error(t('errorDeletingAccount'));
+      toast.error('Error al eliminar tu cuenta');
       setIsDeleting(false);
     }
   };
 
-  if (!user || loadingProfile) {
+  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -538,55 +602,58 @@ export default function MyProfilePage() {
     );
   }
 
+  if (isVerifyingSubscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-xl bg-white">
+          <CardContent className="p-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Verificando tu suscripción
+              </h2>
+              <p className="text-gray-600">
+                Estamos confirmando tu pago y activando tu cuenta...
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-900">
+                  <strong>Intento {pollingAttempts}/{MAX_POLLING_ATTEMPTS}</strong>
+                </p>
+                <p className="text-xs text-blue-700 mt-2">
+                  Esto puede tardar unos segundos mientras procesamos tu pago.
+                  {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const isProfessional = profile || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
-  
-  console.log('🔍 Estado actual MyProfile:', {
-    user_type: user.user_type,
-    has_profile: !!profile,
-    subscription_status: subscriptionStatus,
-    is_professional: isProfessional
-  });
-  
-  // Redirect to onboarding if professional but no completed profile
-  if (user.user_type === 'professionnel' && (!profile || !profile.onboarding_completed)) {
-    console.log('⚠️ Profesional sin onboarding completado - redirigiendo');
-    navigate(createPageUrl("ProfileOnboarding"), { replace: true });
-    return null;
-  }
-  
-  // Redirect to onboarding if professional_pending
-  if (user.user_type === 'professional_pending') {
-    console.log('⚠️ Usuario en estado professional_pending - redirigiendo a onboarding');
-    navigate(createPageUrl("ProfileOnboarding"), { replace: true });
-    return null;
-  }
-  
-  // Show dashboard for professionals who just completed onboarding
-  const onboardingJustCompleted = searchParams.get('onboarding') === 'completed';
-  if (user.user_type === 'professionnel' && onboardingJustCompleted) {
-    console.log('✅ Mostrando dashboard profesional - onboarding recién completado');
-    return <ProfessionalDashboard user={user} onboardingCompleted={true} />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('myProfileTitle')}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
             <p className="text-gray-600">
-              {isProfessional ? t('manageProfessionalProfile') : t('manageYourInfo')}
+              {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
             </p>
             {profile && (
               <div className="mt-2 flex gap-2">
                 {subscriptionStatus?.isActive ? (
                   <Badge className="bg-green-100 text-green-800">
-                    ✓ {t('visibleToClients')}
+                    ✓ Visible para clientes
                   </Badge>
                 ) : (
                   <Badge className="bg-red-100 text-red-800">
-                    ⚠ {t('profileHidden')}
+                    ⚠ Perfil oculto
                   </Badge>
                 )}
               </div>
@@ -595,7 +662,7 @@ export default function MyProfilePage() {
           {!isEditing ? (
             <div className="flex gap-2">
               <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-                {t('editProfile')}
+                Editar Perfil
               </Button>
               {!isProfessional && (
                 <Button 
@@ -603,7 +670,7 @@ export default function MyProfilePage() {
                   className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  {t('becomeProfessional')}
+                  Hazte Autónomo
                 </Button>
               )}
             </div>
@@ -613,7 +680,7 @@ export default function MyProfilePage() {
                 setIsEditing(false);
                 queryClient.invalidateQueries({ queryKey: ['myProfile'] });
               }}>
-                {t('cancelEdit')}
+                Cancelar
               </Button>
               <Button 
                 onClick={handleSave}
@@ -623,12 +690,12 @@ export default function MyProfilePage() {
                 {updateProfileMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('savingChanges')}
+                    Guardando...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    {t('saveChanges')}
+                    Guardar cambios
                   </>
                 )}
               </Button>
@@ -640,7 +707,7 @@ export default function MyProfilePage() {
           <Alert className="mb-6 bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              ✅ {t('profileUpdatedSuccess')}
+              ✅ Tu perfil se ha actualizado correctamente.
             </AlertDescription>
           </Alert>
         )}
@@ -654,9 +721,9 @@ export default function MyProfilePage() {
                     <Briefcase className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">{t('wantToOfferServices')}</h3>
+                    <h3 className="font-bold text-lg text-gray-900">¿Quieres ofrecer tus servicios?</h3>
                     <p className="text-sm text-gray-600">
-                      {t('becomeProfessionalAppear')}
+                      Conviértete en autónomo y aparece en las búsquedas de clientes
                     </p>
                   </div>
                 </div>
@@ -665,7 +732,7 @@ export default function MyProfilePage() {
                   className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  {t('viewPlansButton')}
+                  Ver Planes
                 </Button>
               </div>
             </CardContent>
@@ -694,17 +761,17 @@ export default function MyProfilePage() {
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
             <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
-              {t('personalInfo')}
+              Información Personal
             </TabsTrigger>
             {isProfessional && (
               <>
                 <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Building2 className="w-4 h-4 mr-2" />
-                  {t('professionalProfile')}
+                  Perfil Profesional
                 </TabsTrigger>
                 <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Camera className="w-4 h-4 mr-2" />
-                  {t('portfolio')}
+                  Portfolio
                 </TabsTrigger>
               </>
             )}
@@ -715,7 +782,7 @@ export default function MyProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-700" />
-                  {t('personalInfoSection')}
+                  Información personal
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -733,12 +800,12 @@ export default function MyProfilePage() {
                 </div>
 
                 <div>
-                  <Label>{t('email')}</Label>
+                  <Label>Email</Label>
                   <Input value={user.email} disabled className="bg-gray-50" />
                 </div>
 
                 <div>
-                  <Label>{t('fullNameLabel')}</Label>
+                  <Label>Nombre completo</Label>
                   <Input
                     value={userData.full_name}
                     onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
@@ -748,7 +815,7 @@ export default function MyProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('phoneLabel')}</Label>
+                    <Label>Teléfono</Label>
                     <Input
                       value={userData.phone}
                       onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
@@ -757,7 +824,7 @@ export default function MyProfilePage() {
                     />
                   </div>
                   <div>
-                    <Label>{t('cityLabel')}</Label>
+                    <Label>Ciudad</Label>
                     <Input
                       value={userData.city}
                       onChange={(e) => setUserData({ ...userData, city: e.target.value })}
@@ -768,17 +835,17 @@ export default function MyProfilePage() {
                 </div>
 
                 <div>
-                  <Label>{t('accountType')}</Label>
+                  <Label>Tipo de cuenta</Label>
                   <Badge className="bg-blue-100 text-blue-900">
-                    {isProfessional ? t('professionalAccount') : t('clientAccount')}
+                    {isProfessional ? "Autónomo" : "Cliente"}
                   </Badge>
                 </div>
 
                 {!isEditing && (
                   <div className="mt-8 pt-6 border-t border-red-200">
-                    <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ {t('dangerZone')}</h3>
+                    <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ Zona de peligro</h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      {t('dangerZoneDescription')}
+                      Esta acción eliminará permanentemente tu cuenta, perfil, mensajes, favoritos, reseñas y cancelará tu suscripción activa.
                     </p>
                     <Button
                       variant="destructive"
@@ -786,7 +853,7 @@ export default function MyProfilePage() {
                       className="bg-red-600 hover:bg-red-700"
                     >
                       <AlertCircle className="w-4 h-4 mr-2" />
-                      {t('deleteMyAccount')}
+                      Eliminar mi cuenta
                     </Button>
                   </div>
                 )}
@@ -801,39 +868,39 @@ export default function MyProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-blue-700" />
-                      {t('professionalIdentity')}
+                      Identidad Profesional
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('professionalNameRequired')}</Label>
+                      <Label>Nombre profesional *</Label>
                       <Input
                         value={profileData.business_name}
                         onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
                         disabled={!isEditing}
-                        placeholder={t('professionalNamePlaceholder2')}
+                        placeholder="Tu Empresa S.L."
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>{t('taxIdLabel')}</Label>
+                        <Label>NIF/CIF</Label>
                         <Input
                           value={profileData.cif_nif}
                           onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value.toUpperCase() })}
                           disabled={!isEditing}
-                          placeholder={t('taxIdPlaceholder')}
+                          placeholder="12345678A"
                           maxLength={9}
                         />
                       </div>
                       <div>
-                        <Label>{t('yearsExperience')}</Label>
+                        <Label>Años de experiencia</Label>
                         <Input
                           type="number"
                           value={profileData.years_experience}
                           onChange={(e) => setProfileData({ ...profileData, years_experience: e.target.value })}
                           disabled={!isEditing}
-                          placeholder={t('yearsPlaceholder')}
+                          placeholder="5"
                           min="0"
                           max="50"
                         />
@@ -841,7 +908,7 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>{t('contactEmailLabel2')}</Label>
+                      <Label>Email de contacto</Label>
                       <Input
                         type="email"
                         value={profileData.email_contacto}
@@ -851,7 +918,7 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>{t('contactPhoneLabel')}</Label>
+                      <Label>Teléfono de contacto</Label>
                       <Input
                         value={profileData.telefono_contacto}
                         onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
@@ -861,13 +928,13 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>{t('certificationsLabel')}</Label>
+                      <Label>Certificaciones y títulos</Label>
                       <div className="flex gap-2 mb-2">
                         <Input
                           value={newCertification}
                           onChange={(e) => setNewCertification(e.target.value)}
                           disabled={!isEditing}
-                          placeholder={t('certificationPlaceholder')}
+                          placeholder="Certificación profesional, título..."
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
@@ -902,11 +969,11 @@ export default function MyProfilePage() {
 
                 <Card className="shadow-lg border-0 bg-white">
                   <CardHeader>
-                    <CardTitle>{t('servicesDescription')}</CardTitle>
+                    <CardTitle>Servicios y Descripción</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('serviceCategoriesLabel')}</Label>
+                      <Label>Categorías de servicio</Label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {categories.map((cat) => (
                           <div
@@ -925,7 +992,7 @@ export default function MyProfilePage() {
                               disabled={!isEditing}
                               className="pointer-events-none"
                             />
-                            <span className="text-sm">{t(cat)}</span>
+                            <span className="text-sm">{cat}</span>
                           </div>
                         ))}
                       </div>
@@ -933,36 +1000,36 @@ export default function MyProfilePage() {
 
                     {profileData.categories.includes("Otro tipo de servicio profesional") && (
                       <div>
-                        <Label>{t('specifyService')}</Label>
+                        <Label>Especifica tu servicio</Label>
                         <Input
                           value={profileData.activity_other}
                           onChange={(e) => setProfileData({ ...profileData, activity_other: e.target.value })}
                           disabled={!isEditing}
-                          placeholder={t('specifyServicePlaceholder2')}
+                          placeholder="Instalador de paneles solares..."
                         />
                       </div>
                     )}
 
                     <div>
-                      <Label>{t('shortDescriptionLimit')}</Label>
+                      <Label>Descripción corta (220 caracteres)</Label>
                       <Textarea
                         value={profileData.descripcion_corta}
                         onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
                         disabled={!isEditing}
                         className="h-24"
-                        placeholder={t('shortDescPlaceholder')}
+                        placeholder="Describe brevemente tus servicios..."
                       />
                       <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
                     </div>
 
                     <div>
-                      <Label>{t('detailedDescriptionSEO')}</Label>
+                      <Label>Descripción detallada (para SEO)</Label>
                       <Textarea
                         value={profileData.description}
                         onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
                         disabled={!isEditing}
                         className="h-40"
-                        placeholder={t('detailedDescPlaceholder')}
+                        placeholder="Experiencia, especialidades, proyectos destacados..."
                       />
                     </div>
                   </CardContent>
@@ -972,13 +1039,13 @@ export default function MyProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-blue-700" />
-                      {t('locationAvailability')}
+                      Ubicación y Disponibilidad
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>{t('provinceLabel')}</Label>
+                        <Label>Provincia</Label>
                         <Select
                           value={profileData.provincia}
                           onValueChange={(value) => setProfileData({
@@ -989,7 +1056,7 @@ export default function MyProfilePage() {
                           disabled={!isEditing}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={t('selectProvincePlaceholder')} />
+                            <SelectValue placeholder="Selecciona provincia" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
                             {provincias.map((prov) => (
@@ -1000,28 +1067,28 @@ export default function MyProfilePage() {
                       </div>
 
                       <div>
-                        <Label>{t('cityLabel2')}</Label>
+                        <Label>Ciudad</Label>
                         <Input
                           value={profileData.ciudad}
                           onChange={(e) => setProfileData({ ...profileData, ciudad: e.target.value })}
                           disabled={!isEditing}
-                          placeholder={t('cityPlaceholder')}
+                          placeholder="Madrid"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label>{t('neighborhoodLabel')}</Label>
+                      <Label>Barrio/Municipio (opcional)</Label>
                       <Input
                         value={profileData.municipio}
                         onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
                         disabled={!isEditing}
-                        placeholder={t('neighborhoodPlaceholder2')}
+                        placeholder="Centro, Chamartín..."
                       />
                     </div>
 
                     <div>
-                      <Label>{t('serviceRadiusLabel')}</Label>
+                      <Label>Radio de servicio</Label>
                       <Select
                         value={profileData.radio_servicio_km?.toString()}
                         onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
@@ -1031,11 +1098,11 @@ export default function MyProfilePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="5">{t('serviceRadius5')}</SelectItem>
-                          <SelectItem value="10">{t('serviceRadius10')}</SelectItem>
-                          <SelectItem value="25">{t('serviceRadius25')}</SelectItem>
-                          <SelectItem value="50">{t('serviceRadius50')}</SelectItem>
-                          <SelectItem value="100">{t('serviceRadius100')}</SelectItem>
+                          <SelectItem value="5">5 km - Solo mi zona</SelectItem>
+                          <SelectItem value="10">10 km - Ciudad</SelectItem>
+                          <SelectItem value="25">25 km - Área metropolitana</SelectItem>
+                          <SelectItem value="50">50 km - Provincia</SelectItem>
+                          <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1045,7 +1112,7 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        {t('availabilityLabel')}
+                        Disponibilidad
                       </Label>
                       <Select
                         value={profileData.disponibilidad_tipo}
@@ -1056,16 +1123,16 @@ export default function MyProfilePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="laborables">{t('availabilityWeekdays')}</SelectItem>
-                          <SelectItem value="festivos">{t('availabilityWeekends')}</SelectItem>
-                          <SelectItem value="ambos">{t('availabilityAllWeek')}</SelectItem>
+                          <SelectItem value="laborables">Días laborables (L-V)</SelectItem>
+                          <SelectItem value="festivos">Fines de semana y festivos</SelectItem>
+                          <SelectItem value="ambos">Toda la semana</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>{t('startTimeLabel')}</Label>
+                        <Label>Hora inicio</Label>
                         <Input
                           type="time"
                           value={profileData.horario_apertura}
@@ -1076,7 +1143,7 @@ export default function MyProfilePage() {
                       </div>
 
                       <div>
-                        <Label>{t('endTimeLabel')}</Label>
+                        <Label>Hora fin</Label>
                         <Input
                           type="time"
                           value={profileData.horario_cierre}
@@ -1093,24 +1160,24 @@ export default function MyProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Euro className="w-5 h-5 text-blue-700" />
-                      {t('ratesWorkMethod')}
+                      Tarifas y Forma de Trabajo
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('baseRateHourly')}</Label>
+                      <Label>Tarifa base (€/hora) - opcional</Label>
                       <Input
                         type="number"
                         value={profileData.tarifa_base}
                         onChange={(e) => setProfileData({ ...profileData, tarifa_base: e.target.value })}
                         disabled={!isEditing}
-                        placeholder={t('baseRatePlaceholder2')}
+                        placeholder="35"
                         min="0"
                       />
                     </div>
 
                     <div>
-                      <Label>{t('businessTypeLabel')}</Label>
+                      <Label>Tipo de facturación</Label>
                       <Select
                         value={profileData.facturacion}
                         onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
@@ -1120,39 +1187,34 @@ export default function MyProfilePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="autonomo">{t('selfEmployed')}</SelectItem>
-                          <SelectItem value="sociedad">{t('limitedCompany')}</SelectItem>
-                          <SelectItem value="otros">{t('others')}</SelectItem>
+                          <SelectItem value="autonomo">Autónomo</SelectItem>
+                          <SelectItem value="sociedad">Sociedad</SelectItem>
+                          <SelectItem value="otros">Otros</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div>
-                      <Label>{t('acceptedPaymentMethodsLabel')}</Label>
+                      <Label>Formas de pago aceptadas</Label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        {[
-                          { key: "Tarjeta", label: t('cardPayment') },
-                          { key: "Transferencia", label: t('bankTransfer') },
-                          { key: "Efectivo", label: t('cashPayment') },
-                          { key: "Bizum", label: t('bizumPayment') }
-                        ].map((forma) => (
+                        {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
                           <div
-                            key={forma.key}
-                            onClick={() => isEditing && toggleFormaPago(forma.key)}
+                            key={forma}
+                            onClick={() => isEditing && toggleFormaPago(forma)}
                             className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
                               isEditing ? 'cursor-pointer' : 'cursor-default'
                             } ${
-                              profileData.formas_pago.includes(forma.key)
+                              profileData.formas_pago.includes(forma)
                                 ? "border-purple-600 bg-purple-50"
                                 : "border-gray-200"
                             }`}
                           >
                             <Checkbox
-                              checked={profileData.formas_pago.includes(forma.key)}
+                              checked={profileData.formas_pago.includes(forma)}
                               disabled={!isEditing}
                               className="pointer-events-none"
                             />
-                            <span className="text-sm">{forma.label}</span>
+                            <span className="text-sm">{forma}</span>
                           </div>
                         ))}
                       </div>
@@ -1164,20 +1226,20 @@ export default function MyProfilePage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Globe className="w-5 h-5 text-blue-700" />
-                      {t('onlinePresence')}
+                      Presencia Online
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <Label className="flex items-center gap-2">
                         <Globe className="w-4 h-4" />
-                        {t('websiteLabel')}
+                        Sitio web
                       </Label>
                       <Input
                         value={profileData.website}
                         onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                         disabled={!isEditing}
-                        placeholder={t('websitePlaceholder')}
+                        placeholder="https://tuweb.com"
                       />
                     </div>
 
@@ -1185,7 +1247,7 @@ export default function MyProfilePage() {
                       <div>
                         <Label className="flex items-center gap-2">
                           <Facebook className="w-4 h-4" />
-                          {t('facebookLabel')}
+                          Facebook
                         </Label>
                         <Input
                           value={profileData.social_links.facebook}
@@ -1194,14 +1256,14 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, facebook: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder={t('facebookPlaceholder')}
+                          placeholder="https://facebook.com/tupagina"
                         />
                       </div>
 
                       <div>
                         <Label className="flex items-center gap-2">
                           <Instagram className="w-4 h-4" />
-                          {t('instagramLabel')}
+                          Instagram
                         </Label>
                         <Input
                           value={profileData.social_links.instagram}
@@ -1210,14 +1272,14 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, instagram: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder={t('instagramPlaceholder')}
+                          placeholder="https://instagram.com/tuperfil"
                         />
                       </div>
 
                       <div>
                         <Label className="flex items-center gap-2">
                           <Linkedin className="w-4 h-4" />
-                          {t('linkedinLabel')}
+                          LinkedIn
                         </Label>
                         <Input
                           value={profileData.social_links.linkedin}
@@ -1226,12 +1288,12 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, linkedin: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder={t('linkedinPlaceholder')}
+                          placeholder="https://linkedin.com/in/tuperfil"
                         />
                       </div>
 
                       <div>
-                        <Label>{t('tiktokLabel')}</Label>
+                        <Label>TikTok</Label>
                         <Input
                           value={profileData.social_links.tiktok}
                           onChange={(e) => setProfileData({ 
@@ -1239,7 +1301,7 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, tiktok: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder={t('tiktokPlaceholder')}
+                          placeholder="https://tiktok.com/@tuperfil"
                         />
                       </div>
                     </div>
@@ -1255,12 +1317,12 @@ export default function MyProfilePage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Camera className="w-5 h-5 text-blue-700" />
-                    {t('workGalleryTitle')}
+                    Galería de Trabajos
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-gray-600">
-                    {t('workGalleryDescription')}
+                    Sube fotos de tus trabajos realizados. Máximo 10 imágenes. La primera será tu foto principal.
                   </p>
 
                   {isEditing && profileData.photos.length < 10 && (
@@ -1278,7 +1340,7 @@ export default function MyProfilePage() {
                         ) : (
                           <>
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">{t('clickToAddPhotoGallery', { count: profileData.photos.length })}</p>
+                            <p className="text-sm text-gray-600">Haz clic para añadir foto ({profileData.photos.length}/10)</p>
                           </>
                         )}
                       </div>
@@ -1290,7 +1352,7 @@ export default function MyProfilePage() {
                       <div key={idx} className="relative group">
                         <img
                           src={photo}
-                          alt={t('photoAlt', { number: idx + 1 })}
+                          alt={`Foto ${idx + 1}`}
                           className="w-full h-32 object-cover rounded-lg shadow-md"
                         />
                         {isEditing && (
@@ -1303,7 +1365,7 @@ export default function MyProfilePage() {
                         )}
                         {idx === 0 && (
                           <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
-                            {t('mainPhotoLabel')}
+                            Principal
                           </div>
                         )}
                       </div>
@@ -1320,25 +1382,25 @@ export default function MyProfilePage() {
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-red-600">
                 <AlertCircle className="w-5 h-5" />
-                {t('deleteAccountTitle')}
+                ¿Eliminar tu cuenta definitivamente?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
                   <p className="text-sm font-semibold text-red-800">
-                    ⚠️ {t('deleteAccountWarning')}
+                    ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
                   </p>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700">
-                  <p className="font-semibold">{t('willBeDeleted')}</p>
+                  <p className="font-semibold">Se eliminará permanentemente:</p>
                   <ul className="list-disc ml-5 space-y-1">
-                    <li>{t('yourAccountProfile')}</li>
-                    <li>{t('allMessagesConversations')}</li>
-                    <li>{t('favoritesReviews')}</li>
+                    <li>Tu cuenta y perfil completo</li>
+                    <li>Todos tus mensajes y conversaciones</li>
+                    <li>Tus favoritos y reseñas</li>
                     {isProfessional && (
                       <>
-                        <li>{t('professionalProfilePhotos')}</li>
-                        <li>{t('activeSubscription')}</li>
+                        <li>Tu perfil profesional y fotos</li>
+                        <li>Tu suscripción activa</li>
                       </>
                     )}
                   </ul>
@@ -1347,7 +1409,7 @@ export default function MyProfilePage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isDeleting}>
-                {t('cancelButton')}
+                Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteAccount}
@@ -1357,12 +1419,12 @@ export default function MyProfilePage() {
                 {isDeleting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('deletingAccount')}
+                    Eliminando...
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-4 h-4 mr-2" />
-                    {t('yesDeletePermanently')}
+                    Sí, eliminar definitivamente
                   </>
                 )}
               </AlertDialogAction>
