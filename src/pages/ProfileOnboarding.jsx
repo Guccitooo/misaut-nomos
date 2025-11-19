@@ -87,6 +87,7 @@ export default function ProfileOnboardingPage() {
   useEffect(() => {
     if (user) {
       checkIfOnboardingAlreadyCompleted();
+      waitForWebhookToProcess();
     }
   }, [user]);
 
@@ -107,9 +108,44 @@ export default function ProfileOnboardingPage() {
     }
   };
 
+  const waitForWebhookToProcess = async () => {
+    try {
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const freshUser = await base44.auth.me();
+        
+        console.log('🔍 Esperando webhook:', {
+          user_type: freshUser.user_type,
+          professional_onboarding_completed: freshUser.professional_onboarding_completed,
+          attempt: attempts + 1
+        });
+        
+        if (freshUser.user_type === 'professional_pending' || freshUser.user_type === 'professionnel') {
+          console.log('✅ Webhook procesado - usuario actualizado');
+          setUser(freshUser);
+          setFormData(prev => ({
+            ...prev,
+            email_contacto: freshUser.email,
+            telefono_contacto: freshUser.phone || "",
+          }));
+          return;
+        }
+        
+        attempts++;
+      }
+    } catch (error) {
+      console.error('Error esperando webhook:', error);
+    }
+  };
+
   const checkIfOnboardingAlreadyCompleted = async () => {
     try {
       if (user.user_type === 'professionnel' && user.professional_onboarding_completed) {
+        toast.info('Ya completaste tu perfil profesional');
         navigate(createPageUrl("MyProfile"));
         return;
       }
@@ -119,6 +155,7 @@ export default function ProfileOnboardingPage() {
       });
 
       if (profiles[0]?.onboarding_completed && profiles[0]?.visible_en_busqueda) {
+        toast.info('Tu perfil ya está completo');
         navigate(createPageUrl("MyProfile"));
       }
     } catch (error) {

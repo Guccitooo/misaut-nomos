@@ -19,11 +19,9 @@ export default function PricingPlansPage() {
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [verifyingPayment, setVerifyingPayment] = useState(false);
 
   const canceled = searchParams.get("canceled");
   const paymentSuccess = searchParams.get("payment");
-  const sessionId = searchParams.get("session_id");
 
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
@@ -54,10 +52,14 @@ export default function PricingPlansPage() {
   }, []);
 
   useEffect(() => {
-    if (paymentSuccess === 'success' && user && sessionId) {
-      verifyPaymentAndRedirect();
+    if (paymentSuccess === 'success' && user) {
+      console.log('✅ Pago exitoso detectado - redirigiendo inmediatamente a onboarding');
+      toast.success('¡Pago confirmado! Completa tu perfil profesional', { duration: 3000 });
+      setTimeout(() => {
+        navigate(createPageUrl("ProfileOnboarding"));
+      }, 1000);
     }
-  }, [paymentSuccess, user, sessionId]);
+  }, [paymentSuccess, user]);
 
   useEffect(() => {
     if (canceled) {
@@ -96,49 +98,7 @@ export default function PricingPlansPage() {
     }
   };
 
-  const verifyPaymentAndRedirect = async () => {
-    setVerifyingPayment(true);
-    
-    try {
-      let attempts = 0;
-      const maxAttempts = 15;
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const freshUser = await base44.auth.me();
-        
-        console.log('🔍 Verificando usuario:', {
-          user_type: freshUser.user_type,
-          professional_onboarding_completed: freshUser.professional_onboarding_completed,
-          attempt: attempts + 1
-        });
-        
-        if (freshUser.user_type === 'professional_pending' && !freshUser.professional_onboarding_completed) {
-          console.log('✅ Pago confirmado - redirigiendo a onboarding');
-          toast.success('¡Pago confirmado! Completa tu perfil profesional');
-          navigate(createPageUrl("ProfileOnboarding"));
-          return;
-        }
-        
-        if (freshUser.user_type === 'professionnel' && freshUser.professional_onboarding_completed) {
-          console.log('✅ Onboarding ya completado - redirigiendo a perfil');
-          navigate(createPageUrl("MyProfile"));
-          return;
-        }
-        
-        attempts++;
-      }
-      
-      toast.error('No se pudo verificar el pago. Por favor, contacta con soporte.');
-      setVerifyingPayment(false);
-      
-    } catch (error) {
-      console.error('Error verificando pago:', error);
-      toast.error('Error al verificar el pago');
-      setVerifyingPayment(false);
-    }
-  };
+
 
   const handleSelectPlan = async (plan) => {
     if (!user) {
@@ -220,16 +180,10 @@ export default function PricingPlansPage() {
     t('featureCancelAnytime')
   ];
 
-  if (loadingPlans || verifyingPayment) {
+  if (loadingPlans) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-        {verifyingPayment && (
-          <p className="text-gray-600 text-center max-w-md">
-            ✅ Pago confirmado. Preparando tu perfil profesional...<br/>
-            <span className="text-sm text-gray-500">Esto toma solo unos segundos</span>
-          </p>
-        )}
       </div>
     );
   }
