@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
                     city: metadata.address || '',
                     user_type: 'professionnel',
                     has_used_trial: true,
+                    professional_onboarding_pending: true,
                     first_trial_date: isTrialing ? new Date().toISOString() : undefined
                 };
 

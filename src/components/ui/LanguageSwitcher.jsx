@@ -700,6 +700,8 @@ const translations = {
     paymentVerificationError: 'No se pudo verificar el pago. Contacta con soporte.',
     fewSecondsWait: 'Esto toma solo unos segundos...',
     preparingProfile: 'Preparando tu perfil...',
+    confirmingPayment: 'Confirmando tu pago',
+    paymentError: 'Error al procesar el pago. Inténtalo de nuevo.',
     
     // Professional Dashboard
     welcomeProfessional: '¡Bienvenido, {{name}}!',
@@ -1415,6 +1417,8 @@ const translations = {
     paymentVerificationError: 'Could not verify payment. Contact support.',
     fewSecondsWait: 'This will take just a few seconds...',
     preparingProfile: 'Preparing your profile...',
+    confirmingPayment: 'Confirming your payment',
+    paymentError: 'Error processing payment. Please try again.',
     
     // Professional Dashboard
     welcomeProfessional: 'Welcome, {{name}}!',

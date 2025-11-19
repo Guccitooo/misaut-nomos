@@ -128,6 +128,11 @@ function LayoutContent({ children, currentPageName }) {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
+      if (currentUser.professional_onboarding_pending && location.pathname !== createPageUrl("ProfileOnboarding")) {
+        navigate(createPageUrl("ProfileOnboarding"));
+        return;
+      }
+      
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
