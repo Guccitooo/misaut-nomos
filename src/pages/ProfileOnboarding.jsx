@@ -80,16 +80,26 @@ export default function ProfileOnboardingPage() {
     consiente_contacto_clientes: false,
   });
 
+  const paymentSuccess = searchParams.get("payment") === "success";
+
   useEffect(() => {
     loadUser();
   }, []);
 
   useEffect(() => {
-    if (user) {
-      checkIfOnboardingAlreadyCompleted();
+    if (paymentSuccess) {
+      console.log('🎉 Pago detectado - limpiando URL y esperando webhook...');
+      // Clear URL params immediately
+      window.history.replaceState({}, '', createPageUrl("ProfileOnboarding"));
       waitForWebhookToProcess();
     }
-  }, [user]);
+  }, [paymentSuccess]);
+
+  useEffect(() => {
+    if (user && !paymentSuccess) {
+      checkIfOnboardingAlreadyCompleted();
+    }
+  }, [user, paymentSuccess]);
 
   const loadUser = async () => {
     setIsLoadingUser(true);
