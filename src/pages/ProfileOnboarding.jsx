@@ -323,12 +323,15 @@ export default function ProfileOnboardingPage() {
         await base44.entities.ProfessionalProfile.create(profileData);
       }
 
+      // Update user to professionnel with onboarding completed
       await base44.auth.updateMe({
         user_type: "professionnel",
         professional_onboarding_completed: true,
         phone: formData.telefono_contacto,
         city: formData.ciudad || formData.provincia
       });
+      
+      console.log('✅ Usuario actualizado a professionnel con onboarding completado');
 
       await base44.integrations.Core.SendEmail({
         to: user.email,

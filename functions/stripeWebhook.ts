@@ -246,33 +246,12 @@ Deno.serve(async (req) => {
                 }
                 console.log('✅ Suscripción guardada correctamente');
 
-                console.log('5️⃣ Creando/actualizando perfil profesional...');
+                console.log('5️⃣ Asegurando perfil profesional...');
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
                 });
 
-                if (profiles.length > 0) {
-                    const profile = profiles[0];
-                    console.log('🔄 Actualizando perfil existente ID:', profile.id);
-                    
-                    const today = new Date();
-                    const expirationDate = new Date(subscriptionData.fecha_expiracion);
-                    const isStillInPeriod = expirationDate > today;
-                    const isTrial = subscription.status === 'trialing';
-                    const isCanceled = subscription.cancel_at_period_end === true;
-                    
-                    const shouldBeVisible = (
-                        (subscription.status === 'active' && isStillInPeriod) ||
-                        (isTrial && isStillInPeriod) ||
-                        (isCanceled && isStillInPeriod)
-                    );
-                    
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                        visible_en_busqueda: shouldBeVisible,
-                        estado_perfil: shouldBeVisible ? 'activo' : 'inactivo'
-                    });
-                    console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (trial: ${isTrial}, cancelado: ${isCanceled}, vigente: ${isStillInPeriod})`);
-                } else {
+                if (profiles.length === 0) {
                     console.log('➕ Creando perfil profesional inicial (onboarding pendiente)...');
                     const newProfile = await base44.asServiceRole.entities.ProfessionalProfile.create({
                         user_id: userId,
@@ -290,7 +269,9 @@ Deno.serve(async (req) => {
                         acepta_politica_privacidad: false,
                         consiente_contacto_clientes: false
                     });
-                    console.log('✅ Perfil profesional creado (pendiente de completar onboarding):', newProfile.id);
+                    console.log('✅ Perfil profesional vacío creado - esperando onboarding:', newProfile.id);
+                } else {
+                    console.log('✅ Perfil profesional ya existe - ID:', profiles[0].id);
                 }
 
                 const isTrialing = subscription.status === 'trialing';

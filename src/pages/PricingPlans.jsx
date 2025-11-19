@@ -53,11 +53,16 @@ export default function PricingPlansPage() {
 
   useEffect(() => {
     if (paymentSuccess === 'success' && user) {
-      console.log('✅ Pago exitoso detectado - redirigiendo inmediatamente a onboarding');
-      toast.success('¡Pago confirmado! Completa tu perfil profesional', { duration: 3000 });
+      console.log('✅ Pago exitoso detectado - redirigiendo a onboarding');
+      
+      // Clear the URL params immediately
+      window.history.replaceState({}, '', createPageUrl("PricingPlans"));
+      
+      toast.success('¡Pago confirmado! Redirigiendo a completar perfil...', { duration: 2000 });
+      
       setTimeout(() => {
-        navigate(createPageUrl("ProfileOnboarding"));
-      }, 1000);
+        navigate(createPageUrl("ProfileOnboarding"), { replace: true });
+      }, 1500);
     }
   }, [paymentSuccess, user]);
 
