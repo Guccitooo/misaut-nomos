@@ -114,32 +114,57 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const verifySubscription = async () => {
+  const verifySubscription = async (attempt = 1, maxAttempts = 15) => {
     try {
-      // Wait a bit for webhook to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`🔍 Verificando pago - Intento ${attempt}/${maxAttempts}`);
       
+      // Wait progressively longer
+      await new Promise(resolve => setTimeout(resolve, attempt === 1 ? 3000 : 2000));
+      
+      // Force refresh user data
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      
+      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('👤 Tipo de usuario:', currentUser.user_type);
+      console.log('👤 has_used_trial:', currentUser.has_used_trial);
       
       if (currentUser.user_type === 'professionnel') {
         const subs = await base44.entities.Subscription.filter({
           user_id: currentUser.id
         });
         
+        console.log('📋 Suscripciones encontradas:', subs.length);
+        
         if (subs.length > 0) {
+          console.log('✅ Suscripción detectada:', subs[0]);
           setIsVerifyingPayment(false);
           toast.success("✅ ¡Pago confirmado! Completa tu perfil profesional.", {
             duration: 4000
           });
           window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-          setTimeout(verifySubscription, 1000);
+          return;
         }
+      } else {
+        console.log('⚠️ Usuario aún no es profesional, esperando webhook...');
+      }
+      
+      if (attempt < maxAttempts) {
+        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
+      } else {
+        console.error('❌ Timeout: no se pudo verificar el pago después de 15 intentos');
+        setIsVerifyingPayment(false);
+        toast.error("No se pudo verificar el pago. Contacta con soporte.", {
+          duration: 8000
+        });
       }
     } catch (error) {
       console.error("Error verificando suscripción:", error);
-      setTimeout(verifySubscription, 1000);
+      if (attempt < maxAttempts) {
+        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
+      } else {
+        setIsVerifyingPayment(false);
+      }
     }
   };
 
