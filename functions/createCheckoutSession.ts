@@ -13,31 +13,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { planId, planPrice, isReactivation = false } = body;
-
-    console.log(`👤 Usuario: ${user.email}, has_used_trial: ${user.has_used_trial}, first_trial_date: ${user.first_trial_date}`);
-    
-    if (user.has_used_trial === true && !isReactivation) {
-      console.log('⚠️ Usuario ya usó trial - NO SE PUEDE OFRECER GRATIS DE NUEVO');
-      return Response.json({ 
-        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses anteriormente. Contacta con soporte si crees que es un error.' 
-      }, { status: 400 });
-    }
-
-    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({ 
-      user_id: user.id 
-    });
-    
-    if (!isReactivation && existingSubscriptions.length > 0) {
-      const activeSub = existingSubscriptions.find(sub => 
-        sub.estado === 'activo' || sub.estado === 'en_prueba'
-      );
-      if (activeSub) {
-        return Response.json({ 
-          error: 'Ya tienes una suscripción activa' 
-        }, { status: 400 });
-      }
-    }
+    const { planId, planPrice } = body;
 
     const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
     const plan = plans[0];
@@ -47,37 +23,29 @@ Deno.serve(async (req) => {
     }
 
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
-    const successUrl = `${baseUrl}/PricingPlans?session_id={CHECKOUT_SESSION_ID}&payment=success`;
+    const successUrl = `${baseUrl}/ProfileOnboarding?payment=success`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
     const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
 
-    let sessionParams = {
+    const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       mode: 'subscription',
-      allow_promotion_codes: false,
-      billing_address_collection: 'required',
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         user_id: user.id,
-        user_email: user.email,
         email: user.email,
-        fullName: user.full_name || email.split('@')[0],
-        phone: user.phone || '',
-        address: user.city || '',
+        fullName: user.full_name || user.email.split('@')[0],
         planId: planId,
-        plan_id: planId,
-        is_reactivation: isReactivation.toString(),
-        trial_offered: user.has_used_trial === true ? 'false' : 'true'
       },
       line_items: [{
         price_data: {
           currency: 'eur',
           product_data: {
-            name: `${plan.nombre} - 2 meses gratis`,
-            description: plan.descripcion || `Suscripción ${plan.nombre}`,
+            name: plan.nombre,
+            description: plan.descripcion || '',
           },
           unit_amount: planPrice * 100,
           recurring: {
@@ -88,32 +56,19 @@ Deno.serve(async (req) => {
         quantity: 1
       }],
       subscription_data: {
-        trial_period_days: user.has_used_trial === true ? 0 : 60,
+        trial_period_days: 60,
         metadata: {
           user_id: user.id,
-          user_email: user.email,
-          plan_id: planId,
           email: user.email,
-          fullName: user.full_name || email.split('@')[0],
-          phone: user.phone || '',
-          address: user.city || '',
-          discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
-          trial: user.has_used_trial === true ? 'no_trial' : '2_meses_gratis'
+          planId: planId,
         }
-      },
-      payment_method_collection: 'always'
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
-
-    return Response.json({
-      sessionId: session.id,
-      url: session.url
+      }
     });
 
+    return Response.json({ sessionId: session.id, url: session.url });
+
   } catch (error) {
-    return Response.json({ 
-      error: error.message || 'Error al crear la sesión de pago' 
-    }, { status: 500 });
+    console.error('Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
