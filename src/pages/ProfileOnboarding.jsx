@@ -111,10 +111,10 @@ export default function ProfileOnboardingPage() {
   const waitForWebhookToProcess = async () => {
     try {
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 20;
       
       while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         const freshUser = await base44.auth.me();
         
@@ -125,18 +125,23 @@ export default function ProfileOnboardingPage() {
         });
         
         if (freshUser.user_type === 'professional_pending' || freshUser.user_type === 'professionnel') {
-          console.log('✅ Webhook procesado - usuario actualizado');
+          console.log('✅ Webhook procesado - usuario actualizado como:', freshUser.user_type);
           setUser(freshUser);
           setFormData(prev => ({
             ...prev,
             email_contacto: freshUser.email,
             telefono_contacto: freshUser.phone || "",
           }));
+          toast.success('✅ Pago confirmado. Completa tu perfil profesional');
           return;
         }
         
         attempts++;
       }
+      
+      console.log('⚠️ Webhook tardó demasiado, permitiendo acceso temporal');
+      toast.info('Completando proceso de pago... Puedes continuar con tu perfil');
+      
     } catch (error) {
       console.error('Error esperando webhook:', error);
     }
@@ -411,22 +416,17 @@ export default function ProfileOnboardingPage() {
     );
   }
 
-  if (!user || (user.user_type !== "professionnel" && user.user_type !== "professional_pending")) {
+  // Allow access if user just paid (waiting for webhook to process)
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">{t('restrictedAccess')}</h2>
-            <p className="text-gray-600 mb-6">
-              {t('professionalOnlyPage')}
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Cargando...</h2>
+            <p className="text-gray-600">
+              Preparando tu perfil profesional
             </p>
-            <Button
-              onClick={() => navigate(createPageUrl("PricingPlans"))}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              {t('viewAvailablePlans')}
-            </Button>
           </CardContent>
         </Card>
       </div>
