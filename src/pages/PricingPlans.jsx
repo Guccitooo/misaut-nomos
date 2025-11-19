@@ -43,55 +43,25 @@ export default function PricingPlansPage() {
       return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
-    staleTime: 0,
-    cacheTime: 0,
   });
 
   useEffect(() => {
     loadUser();
   }, []);
 
+  // CRITICAL: Redirect to onboarding immediately after payment
   useEffect(() => {
-    if (paymentSuccess === 'success' && user) {
-      console.log('✅ Pago exitoso detectado - redirigiendo INMEDIATAMENTE a onboarding');
-      
-      // Clear params and redirect immediately
-      window.history.replaceState({}, '', createPageUrl("ProfileOnboarding"));
-      
-      toast.success('¡Pago confirmado! Completa tu perfil profesional', { duration: 3000 });
-      
-      // Immediate redirect - no delay
-      navigate(createPageUrl("ProfileOnboarding"), { replace: true });
+    if (paymentSuccess === 'success') {
+      console.log('✅ Pago confirmado - REDIRIGIENDO A ONBOARDING');
+      navigate(createPageUrl("ProfileOnboarding") + "?payment=success", { replace: true });
     }
-  }, [paymentSuccess, user, navigate]);
+  }, [paymentSuccess, navigate]);
 
   useEffect(() => {
     if (canceled) {
-      toast.info(t('paymentCanceled') + ". " + t('comeBackAnytime'), {
-        duration: 5000
-      });
+      toast.info(t('paymentCanceled') + ". " + t('comeBackAnytime'), { duration: 5000 });
     }
   }, [canceled, t]);
-
-  useEffect(() => {
-    if (!user || plans.length === 0) return;
-
-    const pendingPlan = localStorage.getItem('pending_plan_selection');
-    if (pendingPlan) {
-      try {
-        const planData = JSON.parse(pendingPlan);
-        localStorage.removeItem('pending_plan_selection');
-        
-        const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
-        
-        if (fullPlan) {
-          handleSelectPlan(fullPlan);
-        }
-      } catch (error) {
-        localStorage.removeItem('pending_plan_selection');
-      }
-    }
-  }, [user, plans]);
 
   const loadUser = async () => {
     try {
@@ -101,8 +71,6 @@ export default function PricingPlansPage() {
       setUser(null);
     }
   };
-
-
 
   const handleSelectPlan = async (plan) => {
     if (!user) {
@@ -123,7 +91,6 @@ export default function PricingPlansPage() {
       const response = await base44.functions.invoke('createCheckoutSession', {
         planId: plan.plan_id,
         planPrice: plan.precio,
-        isReactivation: false
       });
 
       if (response.data.error) {
@@ -136,11 +103,11 @@ export default function PricingPlansPage() {
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
-    toast.error(err.message || t('paymentError'));
-    setIsProcessing(false);
-    setSelectedPlan(null);
+      toast.error(err.message || t('paymentError'));
+      setIsProcessing(false);
+      setSelectedPlan(null);
     }
-    };
+  };
 
   const handleGoBack = () => {
     navigate(createPageUrl("Search"));
