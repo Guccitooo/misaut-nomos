@@ -58,6 +58,7 @@ export default function ProfileOnboardingPage() {
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [showManualContinue, setShowManualContinue] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -118,7 +119,11 @@ export default function ProfileOnboardingPage() {
 
   const verifySubscription = async () => {
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 5;
+    
+    setTimeout(() => {
+      setShowManualContinue(true);
+    }, 8000);
     
     const checkPayment = async () => {
       attempts++;
@@ -140,6 +145,7 @@ export default function ProfileOnboardingPage() {
           if (subs.length > 0) {
             console.log('✅ Pago confirmado');
             setIsVerifyingPayment(false);
+            setShowManualContinue(false);
             toast.success(t('paymentConfirmed'), { duration: 3000 });
             window.history.replaceState({}, document.title, window.location.pathname);
             return true;
@@ -147,28 +153,18 @@ export default function ProfileOnboardingPage() {
         }
         
         if (attempts >= maxAttempts) {
-          console.error('❌ Timeout verificando pago');
-          setIsVerifyingPayment(false);
-          toast.error(t('paymentVerificationError') + ' - Intenta recargar la página.', {
-            duration: 8000
-          });
+          console.log('⏰ Timeout - mostrando opción de continuar');
           return true;
         }
         
         return false;
       } catch (error) {
         console.error("Error:", error);
-        if (attempts >= maxAttempts) {
-          setIsVerifyingPayment(false);
-          toast.error(t('paymentVerificationError'));
-          return true;
-        }
-        return false;
+        return attempts >= maxAttempts;
       }
     };
     
-    // Initial delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     const intervalId = setInterval(async () => {
       const shouldStop = await checkPayment();
@@ -177,14 +173,19 @@ export default function ProfileOnboardingPage() {
       }
     }, 2000);
     
-    // Force stop after 25 seconds
     setTimeout(() => {
       clearInterval(intervalId);
-      if (isVerifyingPayment) {
-        setIsVerifyingPayment(false);
-        toast.error(t('paymentVerificationError'));
-      }
-    }, 25000);
+    }, 15000);
+  };
+  
+  const handleManualContinue = () => {
+    console.log('✅ Usuario eligió continuar manualmente');
+    setIsVerifyingPayment(false);
+    setShowManualContinue(false);
+    toast.info('Puedes continuar con el cuestionario. El pago se verificará automáticamente.', {
+      duration: 5000
+    });
+    window.history.replaceState({}, document.title, window.location.pathname);
   };
 
   const loadExistingProfile = async () => {
@@ -442,6 +443,32 @@ export default function ProfileOnboardingPage() {
               <p className="text-sm text-gray-600">
                 {isVerifyingPayment ? t('fewSecondsWait') : t('preparingProfile')}
               </p>
+              
+              {showManualContinue && (
+                <div className="pt-4 space-y-2">
+                  <p className="text-xs text-gray-500">
+                    ¿Tarda demasiado?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowManualContinue(false);
+                        verifySubscription();
+                      }}
+                      className="flex-1 text-xs h-9"
+                    >
+                      Reintentar
+                    </Button>
+                    <Button
+                      onClick={handleManualContinue}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs h-9"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
