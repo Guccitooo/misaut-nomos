@@ -195,9 +195,18 @@ function LayoutContent({ children, currentPageName }) {
 
   const shouldShowSubscription = useMemo(() => {
     if (!user) return false;
-    if (user.user_type !== "professionnel" && user.user_type !== "professional_pending") return false;
-    return true;
-  }, [user]);
+    // Only show subscription link for professionals with completed onboarding
+    if (user.user_type === "professionnel") {
+      // Check if profile exists and onboarding is completed
+      if (professionalProfile && professionalProfile.onboarding_completed) {
+        return true;
+      }
+      return false;
+    }
+    // Show for professional_pending (they're in the process)
+    if (user.user_type === "professional_pending") return true;
+    return false;
+  }, [user, professionalProfile]);
 
   const shouldShowViewPlans = useMemo(() => {
     if (!user) return true;

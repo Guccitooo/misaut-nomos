@@ -548,6 +548,20 @@ export default function MyProfilePage() {
     is_professional: isProfessional
   });
   
+  // Redirect to onboarding if professional but no completed profile
+  if (user.user_type === 'professionnel' && (!profile || !profile.onboarding_completed)) {
+    console.log('⚠️ Profesional sin onboarding completado - redirigiendo');
+    navigate(createPageUrl("ProfileOnboarding"), { replace: true });
+    return null;
+  }
+  
+  // Redirect to onboarding if professional_pending
+  if (user.user_type === 'professional_pending') {
+    console.log('⚠️ Usuario en estado professional_pending - redirigiendo a onboarding');
+    navigate(createPageUrl("ProfileOnboarding"), { replace: true });
+    return null;
+  }
+  
   // Show dashboard for professionals who just completed onboarding
   const onboardingJustCompleted = searchParams.get('onboarding') === 'completed';
   if (user.user_type === 'professionnel' && onboardingJustCompleted) {

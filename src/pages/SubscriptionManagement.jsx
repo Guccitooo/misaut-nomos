@@ -79,6 +79,14 @@ export default function SubscriptionManagementPage() {
     loadUser();
   }, []);
 
+  // Redirect to onboarding if professional_pending
+  useEffect(() => {
+    if (user && user.user_type === 'professional_pending') {
+      console.log('⚠️ Usuario professional_pending en SubscriptionManagement - redirigiendo a onboarding');
+      navigate(createPageUrl("ProfileOnboarding"), { replace: true });
+    }
+  }, [user, navigate]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
