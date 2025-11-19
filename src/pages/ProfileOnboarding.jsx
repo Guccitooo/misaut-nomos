@@ -87,7 +87,6 @@ export default function ProfileOnboardingPage() {
         telefono_contacto: currentUser.phone || "",
       }));
 
-      // Check if already completed
       const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
       if (profiles[0]?.onboarding_completed) {
         navigate(createPageUrl("MyProfile"), { replace: true });
@@ -208,7 +207,6 @@ export default function ProfileOnboardingPage() {
         await base44.entities.ProfessionalProfile.create(profileData);
       }
 
-      // CRITICAL: Update user type
       await base44.auth.updateMe({
         user_type: "professionnel",
         professional_onboarding_completed: true,
@@ -216,7 +214,7 @@ export default function ProfileOnboardingPage() {
         city: formData.ciudad || formData.provincia
       });
 
-      console.log('✅ PERFIL COMPLETADO Y PUBLICADO');
+      console.log('✅ PERFIL PUBLICADO');
       
       toast.success('¡Perfil activado!', { duration: 2000 });
       queryClient.invalidateQueries();
@@ -226,7 +224,7 @@ export default function ProfileOnboardingPage() {
       }, 1000);
 
     } catch (err) {
-      console.error('Error:', err);
+      console.error('❌ Error:', err);
       setError(err.message);
       toast.error(err.message);
     } finally {
