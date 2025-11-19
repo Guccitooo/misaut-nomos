@@ -111,36 +111,59 @@ export default function ProfileOnboardingPage() {
   const waitForWebhookToProcess = async () => {
     try {
       let attempts = 0;
-      const maxAttempts = 20;
+      const maxAttempts = 30;
+      let subscriptionFound = false;
       
-      while (attempts < maxAttempts) {
+      while (attempts < maxAttempts && !subscriptionFound) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         const freshUser = await base44.auth.me();
         
-        console.log('🔍 Esperando webhook:', {
-          user_type: freshUser.user_type,
-          professional_onboarding_completed: freshUser.professional_onboarding_completed,
-          attempt: attempts + 1
-        });
-        
-        if (freshUser.user_type === 'professional_pending' || freshUser.user_type === 'professionnel') {
-          console.log('✅ Webhook procesado - usuario actualizado como:', freshUser.user_type);
-          setUser(freshUser);
-          setFormData(prev => ({
-            ...prev,
-            email_contacto: freshUser.email,
-            telefono_contacto: freshUser.phone || "",
-          }));
-          toast.success('✅ Pago confirmado. Completa tu perfil profesional');
-          return;
+        // Check if subscription exists
+        try {
+          const subs = await base44.entities.Subscription.filter({
+            user_id: freshUser.id
+          });
+          
+          if (subs.length > 0) {
+            subscriptionFound = true;
+            console.log('✅ Suscripción detectada:', subs[0]);
+            
+            if (freshUser.user_type !== 'professional_pending' && freshUser.user_type !== 'professionnel') {
+              await base44.auth.updateMe({
+                user_type: 'professional_pending'
+              });
+              const updatedUser = await base44.auth.me();
+              setUser(updatedUser);
+            } else {
+              setUser(freshUser);
+            }
+            
+            setFormData(prev => ({
+              ...prev,
+              email_contacto: freshUser.email,
+              telefono_contacto: freshUser.phone || "",
+            }));
+            
+            toast.success('✅ Pago confirmado. Completa tu perfil profesional', {
+              duration: 4000
+            });
+            return;
+          }
+        } catch (subError) {
+          console.log('⏳ Suscripción aún no creada, esperando...');
         }
         
+        console.log(`🔍 Intento ${attempts + 1}/${maxAttempts} - esperando webhook...`);
         attempts++;
       }
       
-      console.log('⚠️ Webhook tardó demasiado, permitiendo acceso temporal');
-      toast.info('Completando proceso de pago... Puedes continuar con tu perfil');
+      if (!subscriptionFound) {
+        console.log('⚠️ Timeout esperando suscripción');
+        toast.warning('El proceso está tardando más de lo esperado. Si pagaste, tu suscripción se activará pronto.', {
+          duration: 8000
+        });
+      }
       
     } catch (error) {
       console.error('Error esperando webhook:', error);

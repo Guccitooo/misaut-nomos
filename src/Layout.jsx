@@ -194,7 +194,8 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const shouldShowSubscription = useMemo(() => {
-    if (!user || user.user_type !== "professionnel") return false;
+    if (!user) return false;
+    if (user.user_type !== "professionnel" && user.user_type !== "professional_pending") return false;
     return true;
   }, [user]);
 

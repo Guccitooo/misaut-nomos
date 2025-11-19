@@ -120,9 +120,37 @@ Deno.serve(async (req) => {
 
         // ✅ MANEJAR TODOS LOS EVENTOS DE STRIPE
         switch (event.type) {
-            case 'customer.subscription.created':
             case 'checkout.session.completed': {
-                console.log('\n🎉 ========== NUEVA SUSCRIPCIÓN ==========');
+                console.log('\n🎉 ========== CHECKOUT COMPLETADO ==========');
+                
+                // For checkout.session.completed, get data from session metadata
+                const session = event.data.object;
+                const sessionEmail = session.customer_details?.email || session.metadata?.email;
+                
+                if (!sessionEmail) {
+                    console.error('❌ Sin email en session');
+                    return Response.json({ error: 'Missing email' }, { status: 400 });
+                }
+
+                console.log('1️⃣ Actualizando usuario después de checkout...');
+                let users = await base44.asServiceRole.entities.User.filter({ email: sessionEmail });
+                
+                if (users.length > 0) {
+                    const userId = users[0].id;
+                    await base44.asServiceRole.entities.User.update(userId, {
+                        user_type: 'professional_pending',
+                        professional_onboarding_completed: false,
+                        professional_plan_paid_date: new Date().toISOString(),
+                    });
+                    console.log('✅ Usuario marcado como professional_pending:', userId);
+                }
+                
+                console.log('✅ Checkout procesado - esperando evento de suscripción');
+                break;
+            }
+            
+            case 'customer.subscription.created': {
+                console.log('\n🎉 ========== NUEVA SUSCRIPCIÓN CREADA ==========');
                 
                 if (!email) {
                     console.error('❌ Sin email en metadata');
