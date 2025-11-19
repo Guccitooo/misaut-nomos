@@ -11,7 +11,7 @@ import {
 const translations = {
   es: {
     // Navigation
-    searchFreelancers: 'Buscar Autónomos',
+    searchFreelancers: 'Buscar Profesionales',
     messages: 'Mensajes',
     favorites: 'Favoritos',
     myProfile: 'Mi Perfil',
