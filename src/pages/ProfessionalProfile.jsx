@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin,
-  Clock,
   Euro,
   Globe,
   Heart,
@@ -23,7 +22,12 @@ import {
   Loader2,
   AlertCircle,
   X,
-  Music
+  Music,
+  Copy,
+  Check,
+  Eye,
+  Search,
+  MousePointerClick
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,13 +41,16 @@ import {
 import ReviewSection from "../components/profile/ReviewSection";
 import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema } from "../components/seo/StructuredData";
+import { toast } from "sonner";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [copiedPhone, setCopiedPhone] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get("id");
@@ -128,17 +135,15 @@ export default function ProfessionalProfilePage() {
           await base44.entities.Favorite.delete(favorites[0].id);
         }
         setIsFavorite(false);
+        toast.success("Eliminado de favoritos");
       } else {
-        const prof = await base44.entities.ProfessionalProfile.filter({
-          user_id: professionalId
-        });
-        
         await base44.entities.Favorite.create({
           client_id: user.id,
           professional_id: professionalId,
-          business_name: prof[0]?.business_name || "Profesional"
+          business_name: profile.business_name
         });
         setIsFavorite(true);
+        toast.success("Añadido a favoritos");
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
@@ -158,16 +163,12 @@ export default function ProfessionalProfilePage() {
     });
 
     if (existingMessages.length === 0) {
-      const prof = await base44.entities.ProfessionalProfile.filter({
-        user_id: professionalId
-      });
-      
       await base44.entities.Message.create({
         conversation_id: conversationId,
         sender_id: user.id,
         recipient_id: professionalId,
         content: "Hola, estoy interesado en tus servicios.",
-        professional_name: prof[0]?.business_name || "Profesional",
+        professional_name: profile.business_name,
         client_name: user.full_name || user.email,
         is_read: false
       });
@@ -181,15 +182,6 @@ export default function ProfessionalProfilePage() {
       if (metrics.length > 0) {
         await base44.entities.ProfileMetrics.update(metrics[0].id, {
           messages_received: (metrics[0].messages_received || 0) + 1
-        });
-      } else {
-        await base44.entities.ProfileMetrics.create({
-          professional_id: professionalId,
-          date: today,
-          profile_views: 0,
-          search_appearances: 0,
-          messages_received: 1,
-          contact_clicks: 0
         });
       }
     }
@@ -207,6 +199,7 @@ export default function ProfessionalProfilePage() {
   };
 
   const handlePhoneClick = () => {
+    trackContactClick();
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
     if (isMobile) {
@@ -218,8 +211,24 @@ export default function ProfessionalProfilePage() {
     } else {
       setShowPhoneModal(true);
     }
-    
+  };
+
+  const handleWhatsAppClick = () => {
     trackContactClick();
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+    } else {
+      setShowWhatsAppModal(true);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedPhone(true);
+    toast.success("Número copiado");
+    setTimeout(() => setCopiedPhone(false), 2000);
   };
 
   const trackContactClick = async () => {
@@ -233,15 +242,6 @@ export default function ProfessionalProfilePage() {
       if (metrics.length > 0) {
         await base44.entities.ProfileMetrics.update(metrics[0].id, {
           contact_clicks: (metrics[0].contact_clicks || 0) + 1
-        });
-      } else {
-        await base44.entities.ProfileMetrics.create({
-          professional_id: professionalId,
-          date: today,
-          profile_views: 0,
-          search_appearances: 0,
-          messages_received: 0,
-          contact_clicks: 1
         });
       }
     } catch (error) {
@@ -312,14 +312,50 @@ export default function ProfessionalProfilePage() {
       const allReviews = await base44.entities.Review.filter({
         professional_id: professionalId
       });
-      return allReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      
+      const validReviews = [];
+      for (const review of allReviews) {
+        try {
+          const clientExists = await base44.entities.User.filter({ id: review.client_id });
+          if (clientExists.length > 0) {
+            validReviews.push(review);
+          }
+        } catch (error) {
+          console.log('Cliente no encontrado, omitiendo reseña');
+        }
+      }
+      
+      return validReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!professionalId,
   });
 
+  const { data: metrics } = useQuery({
+    queryKey: ['profileMetrics', professionalId],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const allMetrics = await base44.entities.ProfileMetrics.filter({
+        professional_id: professionalId
+      });
+      
+      const recentMetrics = allMetrics.filter(m => new Date(m.date) >= thirtyDaysAgo);
+      
+      const totals = {
+        views: recentMetrics.reduce((sum, m) => sum + (m.profile_views || 0), 0),
+        searches: recentMetrics.reduce((sum, m) => sum + (m.search_appearances || 0), 0),
+        contacts: recentMetrics.reduce((sum, m) => sum + (m.contact_clicks || 0), 0)
+      };
+      
+      return totals;
+    },
+    enabled: !!professionalId && user?.id === professionalId,
+  });
+
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-8">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           <Skeleton className="h-64 w-full rounded-2xl" />
           <Skeleton className="h-96 w-full rounded-2xl" />
@@ -330,8 +366,8 @@ export default function ProfessionalProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-xl border-0">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-lg border-0 rounded-2xl">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -349,20 +385,22 @@ export default function ProfessionalProfilePage() {
     );
   }
 
-  const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || 'España'}`;
-  const seoDescription = profile.descripcion_corta || profile.description || `${profile.business_name} ofrece servicios profesionales en ${profile.ciudad || 'tu zona'}. Contacta ahora.`;
+  const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || profile.provincia}`;
+  const seoDescription = profile.descripcion_corta || `${profile.business_name} ofrece servicios profesionales en ${profile.ciudad || profile.provincia}. Contacta ahora.`;
 
   const availableContactMethods = profile.metodos_contacto || [];
   const showPhone = availableContactMethods.includes('telefono') && profile.telefono_contacto;
   const showWhatsApp = availableContactMethods.includes('whatsapp') && profile.telefono_contacto;
   const showChat = availableContactMethods.includes('chat_interno');
 
+  const isOwner = user?.id === professionalId;
+
   return (
     <>
       <SEOHead 
         title={seoTitle}
         description={seoDescription}
-        keywords={`${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo, profesional`}
+        keywords={`${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo`}
         type="profile"
       />
       
@@ -372,12 +410,14 @@ export default function ProfessionalProfilePage() {
         professionalUser={professionalUser}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Card className="shadow-xl border-0 bg-white overflow-hidden rounded-2xl">
-            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 md:p-8">
+      <div className="min-h-screen bg-gray-50 py-6 px-4 md:py-10 md:px-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          
+          {/* CABECERA */}
+          <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-6 md:p-8">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-white shadow-2xl ring-4 ring-blue-400/30">
+                <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-white shadow-md ring-2 ring-gray-100">
                   {professionalUser?.profile_picture ? (
                     <AvatarImage 
                       src={professionalUser.profile_picture}
@@ -385,298 +425,376 @@ export default function ProfessionalProfilePage() {
                       className="object-cover"
                     />
                   ) : (
-                    <AvatarFallback className="bg-white text-blue-700 text-3xl font-bold">
+                    <AvatarFallback className="bg-white text-blue-600 text-3xl font-bold">
                       {profile.business_name?.charAt(0)}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 
                 <div className="flex-1 text-center md:text-left">
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                     {profile.business_name}
                   </h1>
                   
-                  <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-3">
-                    {profile.categories?.slice(0, 3).map((cat, idx) => (
-                      <Badge key={idx} className="bg-white/25 hover:bg-white/35 text-white border-0 backdrop-blur-sm">
-                        {cat}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
+                    {profile.categories?.[0] && (
+                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0 text-sm font-medium px-3 py-1">
+                        {profile.categories[0]}
                       </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                    {profile.total_reviews > 0 && (
-                      <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                        <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-                        <span className="text-white font-semibold">{profile.average_rating.toFixed(1)}</span>
-                        <span className="text-white/90 text-sm">({profile.total_reviews})</span>
-                      </div>
                     )}
                     
                     {isAvailableNow(profile) && (
-                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg flex items-center gap-1.5">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                      <Badge className="bg-green-50 text-green-700 border border-green-200 text-sm font-medium px-3 py-1 flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
                         Disponible ahora
                       </Badge>
                     )}
                   </div>
+
+                  {profile.total_reviews > 0 && (
+                    <div className="flex items-center justify-center md:justify-start gap-2">
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        <Star className="w-5 h-5 fill-current" />
+                        <span className="text-gray-900 font-semibold text-lg">{profile.average_rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-gray-600 text-sm">({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})</span>
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   onClick={handleToggleFavorite}
                   variant="ghost"
                   size="icon"
-                  className={`${isFavorite ? 'bg-red-500 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'} h-12 w-12 rounded-full backdrop-blur-sm`}
+                  className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'} h-11 w-11 rounded-full`}
                 >
-                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white text-white' : 'text-white'}`} />
+                  <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
                 </Button>
               </div>
             </div>
+          </Card>
 
-            <CardContent className="p-6 md:p-8">
-              {profile.descripcion_corta && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <p className="text-gray-800 leading-relaxed text-center md:text-left">
-                    {profile.descripcion_corta}
-                  </p>
-                </div>
+          {/* BOTONES DE CONTACTO */}
+          <Card className="border-0 shadow-sm rounded-2xl bg-white p-4 md:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {showPhone && (
+                <Button 
+                  onClick={handlePhoneClick}
+                  className="bg-blue-600 hover:bg-blue-700 h-14 text-base font-semibold rounded-xl"
+                >
+                  <Phone className="w-5 h-5 mr-2" />
+                  Llamar
+                </Button>
               )}
+              
+              {showWhatsApp && (
+                <Button
+                  onClick={handleWhatsAppClick}
+                  className="bg-green-600 hover:bg-green-700 h-14 text-base font-semibold rounded-xl"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+              
+              {showChat && (
+                <Button
+                  onClick={handleStartChat}
+                  className="bg-blue-600 hover:bg-blue-700 h-14 text-base font-semibold rounded-xl"
+                >
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  Chat directo
+                </Button>
+              )}
+            </div>
+          </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-                {showPhone && (
-                  <Button 
-                    onClick={handlePhoneClick}
-                    className="bg-blue-600 hover:bg-blue-700 h-12 font-semibold shadow-md"
-                  >
-                    <Phone className="w-5 h-5 mr-2" />
-                    Llamar
-                  </Button>
+          {/* DESCRIPCIÓN */}
+          {profile.descripcion_corta && (
+            <Card className="border-0 shadow-sm rounded-2xl bg-white p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">📝 Descripción</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {profile.descripcion_corta}
+              </p>
+            </Card>
+          )}
+
+          {/* INFORMACIÓN PROFESIONAL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-0 shadow-sm rounded-2xl bg-white p-5">
+              <div className="space-y-4">
+                {profile.service_area && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Zona de trabajo</p>
+                      <p className="text-gray-900 font-medium mt-1">{profile.service_area}</p>
+                    </div>
+                  </div>
                 )}
-                
-                {showWhatsApp && (
-                  <Button
-                    onClick={() => {
-                      window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
-                      trackContactClick();
-                    }}
-                    className="bg-green-600 hover:bg-green-700 h-12 font-semibold shadow-md"
-                  >
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    WhatsApp
-                  </Button>
+
+                {profile.years_experience > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Award className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Experiencia</p>
+                      <p className="text-gray-900 font-medium mt-1">{profile.years_experience} años</p>
+                    </div>
+                  </div>
                 )}
-                
-                {showChat && (
-                  <Button
-                    onClick={handleStartChat}
-                    className="bg-blue-600 hover:bg-blue-700 h-12 font-semibold shadow-md"
-                  >
-                    <MessageSquare className="w-5 h-5 mr-2" />
-                    Chat directo
-                  </Button>
+
+                {profile.tarifa_base > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Euro className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tarifa media</p>
+                      <p className="text-gray-900 font-bold text-xl mt-1">{profile.tarifa_base}€<span className="text-sm font-normal text-gray-500">/hora</span></p>
+                    </div>
+                  </div>
                 )}
               </div>
+            </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <Card className="border-gray-200 shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-blue-600" />
-                      Ubicación y disponibilidad
-                    </h3>
-                    <div className="space-y-3">
-                      {profile.service_area && (
-                        <div>
-                          <p className="text-sm text-gray-500">Zona de trabajo</p>
-                          <p className="font-medium text-gray-900">{profile.service_area}</p>
-                        </div>
-                      )}
-                      
-                      {(profile.horario_apertura && profile.horario_cierre) && (
-                        <div>
-                          <p className="text-sm text-gray-500">Horario</p>
-                          <p className="font-medium text-gray-900">
-                            {profile.disponibilidad_tipo === "laborables" ? "L-V" :
-                             profile.disponibilidad_tipo === "festivos" ? "S-D" : "L-D"} • {profile.horario_apertura} - {profile.horario_cierre}
-                          </p>
-                        </div>
-                      )}
-
-                      {profile.years_experience > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-500">Experiencia</p>
-                          <p className="font-medium text-gray-900 flex items-center gap-1">
-                            <Award className="w-4 h-4 text-blue-600" />
-                            {profile.years_experience} años
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-gray-200 shadow-sm">
-                  <CardContent className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Euro className="w-5 h-5 text-blue-600" />
-                      Información de servicio
-                    </h3>
-                    <div className="space-y-3">
-                      {profile.tarifa_base > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-500">Tarifa aproximada</p>
-                          <p className="font-bold text-2xl text-blue-600">{profile.tarifa_base}€<span className="text-sm text-gray-500 font-normal">/hora</span></p>
-                        </div>
-                      )}
-
-                      {profile.formas_pago && profile.formas_pago.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-500 mb-2">Formas de pago</p>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.formas_pago.map((forma, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {forma}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {profile.certifications && profile.certifications.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-500 mb-2">Certificaciones</p>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.certifications.slice(0, 2).map((cert, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs flex items-center gap-1">
-                                <Award className="w-3 h-3" />
-                                {cert}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {profile.description && (
-                <Card className="border-gray-200 shadow-sm mb-8">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">Sobre el servicio</h3>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {profile.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {profile.photos && profile.photos.length > 0 && (
-                <Card className="border-gray-200 shadow-sm mb-8">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">Galería de trabajos</h3>
-                    <div className={`grid ${profile.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'} gap-4`}>
-                      {profile.photos.map((photo, idx) => (
-                        <div 
-                          key={idx} 
-                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
-                          onClick={() => setSelectedImage(photo)}
-                        >
-                          <img
-                            src={photo}
-                            alt={`Trabajo ${idx + 1}`}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                          />
-                        </div>
+            <Card className="border-0 shadow-sm rounded-2xl bg-white p-5">
+              <div className="space-y-4">
+                {profile.formas_pago && profile.formas_pago.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Formas de pago</p>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.formas_pago.map((forma, idx) => (
+                        <Badge key={idx} variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs">
+                          {forma}
+                        </Badge>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
 
-              {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
-                <Card className="border-gray-200 shadow-sm mb-8">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-blue-600" />
-                      Redes sociales
-                    </h3>
-                    <div className="flex flex-wrap gap-3">
-                      {profile.website && (
-                        <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                            <Globe className="w-4 h-4 mr-2" />
-                            Sitio web
-                          </Button>
-                        </a>
+                {profile.certifications && profile.certifications.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Certificaciones</p>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.certifications.map((cert, idx) => (
+                        <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs flex items-center gap-1">
+                          <Award className="w-3 h-3" />
+                          {cert}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {availableContactMethods.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Métodos de contacto</p>
+                    <div className="flex flex-wrap gap-2">
+                      {availableContactMethods.includes('telefono') && (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 text-xs">
+                          <Phone className="w-3 h-3 mr-1" />
+                          Teléfono
+                        </Badge>
                       )}
-                      {profile.social_links?.facebook && (
-                        <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                            <Facebook className="w-4 h-4 mr-2 text-blue-600" />
-                            Facebook
-                          </Button>
-                        </a>
+                      {availableContactMethods.includes('whatsapp') && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          WhatsApp
+                        </Badge>
                       )}
-                      {profile.social_links?.instagram && (
-                        <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                            <Instagram className="w-4 h-4 mr-2 text-pink-600" />
-                            Instagram
-                          </Button>
-                        </a>
-                      )}
-                      {profile.social_links?.linkedin && (
-                        <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                            <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
-                            LinkedIn
-                          </Button>
-                        </a>
-                      )}
-                      {profile.social_links?.tiktok && (
-                        <a href={profile.social_links.tiktok} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                            <Music className="w-4 h-4 mr-2" />
-                            TikTok
-                          </Button>
-                        </a>
+                      {availableContactMethods.includes('chat_interno') && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                          <MessageSquare className="w-3 h-3 mr-1" />
+                          Chat
+                        </Badge>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
 
-              <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
-            </CardContent>
+          {/* GALERÍA DE TRABAJOS */}
+          {profile.photos && profile.photos.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-2xl bg-white p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Galería de trabajos</h2>
+              <div className={`grid ${profile.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'} gap-3`}>
+                {profile.photos.map((photo, idx) => (
+                  <div 
+                    key={idx} 
+                    className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group bg-gray-100"
+                    onClick={() => setSelectedImage(photo)}
+                  >
+                    <img
+                      src={photo}
+                      alt={`Trabajo ${idx + 1}`}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    {idx === 0 && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-semibold">
+                        Principal
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* REDES SOCIALES */}
+          {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
+            <Card className="border-0 shadow-sm rounded-2xl bg-white p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-600" />
+                Redes sociales
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {profile.website && (
+                  <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50 rounded-lg">
+                      <Globe className="w-4 h-4 mr-2 text-gray-600" />
+                      Web
+                    </Button>
+                  </a>
+                )}
+                {profile.social_links?.facebook && (
+                  <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50 rounded-lg">
+                      <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                      Facebook
+                    </Button>
+                  </a>
+                )}
+                {profile.social_links?.instagram && (
+                  <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50 rounded-lg">
+                      <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+                      Instagram
+                    </Button>
+                  </a>
+                )}
+                {profile.social_links?.linkedin && (
+                  <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50 rounded-lg">
+                      <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
+                      LinkedIn
+                    </Button>
+                  </a>
+                )}
+                {profile.social_links?.tiktok && (
+                  <a href={profile.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50 rounded-lg">
+                      <Music className="w-4 h-4 mr-2 text-gray-900" />
+                      TikTok
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* ESTADÍSTICAS (solo propietario) */}
+          {isOwner && metrics && (
+            <Card className="border-0 shadow-sm rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">📊 Estadísticas (últimos 30 días)</h2>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <Eye className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{metrics.views}</p>
+                  <p className="text-xs text-gray-600">Visualizaciones</p>
+                </div>
+                <div className="text-center">
+                  <Search className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{metrics.searches}</p>
+                  <p className="text-xs text-gray-600">Búsquedas</p>
+                </div>
+                <div className="text-center">
+                  <MousePointerClick className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{metrics.contacts}</p>
+                  <p className="text-xs text-gray-600">Contactos</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* RESEÑAS */}
+          <Card className="border-0 shadow-sm rounded-2xl bg-white p-6">
+            <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
           </Card>
         </div>
       </div>
 
+      {/* MODAL TELÉFONO */}
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl">Número de teléfono</DialogTitle>
             <DialogDescription>
-              Puedes llamar directamente al profesional
+              Llama desde tu teléfono a este número
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 w-full text-center">
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
               <p className="text-3xl font-bold text-blue-700 tracking-wide">
                 {profile.telefono_contacto}
               </p>
             </div>
-            <p className="text-sm text-gray-600">
-              Llama desde tu teléfono a este número
-            </p>
+            <Button
+              onClick={() => copyToClipboard(profile.telefono_contacto)}
+              variant="outline"
+              className="w-full"
+            >
+              {copiedPhone ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-600" />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar número
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* MODAL WHATSAPP */}
+      <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <MessageCircle className="w-6 h-6 text-green-600" />
+              WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Contacta por WhatsApp con este profesional
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200 w-full text-center">
+              <p className="text-3xl font-bold text-green-700 tracking-wide">
+                {profile.telefono_contacto}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+                setShowWhatsAppModal(false);
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 h-12"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Abrir WhatsApp
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL GALERÍA */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
           <button
@@ -688,7 +806,7 @@ export default function ProfessionalProfilePage() {
           <img
             src={selectedImage}
             alt="Vista ampliada"
-            className="max-w-full max-h-full object-contain rounded-lg"
+            className="max-w-full max-h-full object-contain rounded-xl"
           />
         </div>
       )}
