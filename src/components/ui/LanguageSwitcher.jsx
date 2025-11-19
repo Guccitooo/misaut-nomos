@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,17 @@ const translations = {
     tryDifferentFilters: 'Intenta con otros filtros o busca en otra ubicación',
     viewAll: 'Ver todos',
     discoverFreelancers: 'Descubrir autónomos',
+    viewProfile: 'Ver perfil',
+    findProfessionals: 'Encuentra profesionales',
+    connectWithVerified: 'Conecta con profesionales verificados cerca de ti',
+    phoneNumber: 'Número de teléfono',
+    callFromYourPhone: 'Llama desde tu teléfono',
+    copied: 'Copiado',
+    copyNumber: 'Copiar número',
+    contactViaWhatsApp: 'Contacta por WhatsApp',
+    openWhatsApp: 'Abrir WhatsApp',
+    phoneCopied: 'Número copiado',
+    professionals: 'autónomos',
     
     // Categories
     'Electricista': 'Electricista',
@@ -521,6 +531,17 @@ const translations = {
     tryDifferentFilters: 'Try different filters or search in another location',
     viewAll: 'View all',
     discoverFreelancers: 'Discover professionals',
+    viewProfile: 'View profile',
+    findProfessionals: 'Find professionals',
+    connectWithVerified: 'Connect with verified professionals near you',
+    phoneNumber: 'Phone number',
+    callFromYourPhone: 'Call from your phone',
+    copied: 'Copied',
+    copyNumber: 'Copy number',
+    contactViaWhatsApp: 'Contact via WhatsApp',
+    openWhatsApp: 'Open WhatsApp',
+    phoneCopied: 'Phone copied',
+    professionals: 'professionals',
     
     // Categories
     'Electricista': 'Electrician',
