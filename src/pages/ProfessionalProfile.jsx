@@ -428,145 +428,140 @@ export default function ProfessionalProfilePage() {
             Volver a búsqueda
           </Button>
           
-          {/* CABECERA ULTRA COMPACTA CON BOTONES */}
-          <Card className="border-0 shadow-sm rounded-xl overflow-hidden bg-white">
-            <div className="p-3 md:p-4">
-              <div className="flex items-start gap-3 mb-3">
-                <Avatar 
-                  className="w-12 h-12 border-2 border-gray-100 flex-shrink-0 cursor-pointer"
-                  onClick={() => {
-                    if (professionalUser?.profile_picture) {
-                      setSelectedImage(professionalUser.profile_picture);
-                      setSelectedImageIndex(-1);
-                    }
-                  }}
-                >
-                  {professionalUser?.profile_picture ? (
-                    <AvatarImage 
-                      src={professionalUser.profile_picture}
-                      alt={profile.business_name}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-lg font-bold">
-                      {profile.business_name?.charAt(0)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+          {/* CABECERA PERFIL */}
+          <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+            <div className="flex items-center gap-4 mb-3">
+              <Avatar 
+                className="w-14 h-14 border-2 border-gray-100 flex-shrink-0 cursor-pointer"
+                onClick={() => {
+                  if (professionalUser?.profile_picture) {
+                    setSelectedImage(professionalUser.profile_picture);
+                    setSelectedImageIndex(-1);
+                  }
+                }}
+              >
+                {professionalUser?.profile_picture ? (
+                  <AvatarImage 
+                    src={professionalUser.profile_picture}
+                    alt={profile.business_name}
+                    className="object-cover"
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
+                    {profile.business_name?.charAt(0)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-gray-900 mb-1">
+                  {profile.business_name}
+                </h1>
                 
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1 truncate">
-                    {profile.business_name}
-                  </h1>
+                <div className="flex items-center gap-2 mb-1">
+                  {profile.categories?.[0] && (
+                    <Badge className="bg-blue-50 text-blue-700 text-xs">
+                      {profile.categories[0]}
+                    </Badge>
+                  )}
                   
-                  <div className="flex flex-wrap items-center gap-1 mb-1">
-                    {profile.categories?.[0] && (
-                      <Badge className="bg-blue-50 text-blue-700 border-0 text-xs px-2 py-0.5">
-                        {profile.categories[0]}
-                      </Badge>
-                    )}
-                    
-                    {profile.service_area && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-gray-200">
-                        <MapPin className="w-3 h-3 mr-0.5" />
-                        {profile.service_area}
-                      </Badge>
-                    )}
-                  </div>
-
                   {profile.total_reviews > 0 && (
                     <div className="flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-semibold text-gray-900">{profile.average_rating.toFixed(1)}</span>
+                      <span className="text-sm font-semibold">{profile.average_rating.toFixed(1)}</span>
                       <span className="text-xs text-gray-500">({profile.total_reviews})</span>
                     </div>
                   )}
                 </div>
 
-                <Button
-                  onClick={handleToggleFavorite}
-                  variant="ghost"
-                  size="icon"
-                  className={`${isFavorite ? 'text-red-500' : 'text-gray-300'} h-8 w-8 rounded-full flex-shrink-0`}
-                >
-                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-                </Button>
+                {profile.service_area && (
+                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                    <MapPin className="w-3 h-3" />
+                    {profile.service_area}
+                  </div>
+                )}
               </div>
 
-              {/* BOTONES DE CONTACTO INTEGRADOS */}
-              <div className="grid grid-cols-3 gap-2">
-                {showPhone && (
-                  <Button 
-                    onClick={handlePhoneClick}
-                    className="bg-blue-600 hover:bg-blue-700 h-9 text-xs font-semibold rounded-lg"
-                  >
-                    <Phone className="w-3.5 h-3.5 mr-1" />
-                    Llamar
-                  </Button>
-                )}
-                
-                {showWhatsApp && (
-                  <Button
-                    onClick={handleWhatsAppClick}
-                    className="bg-green-600 hover:bg-green-700 h-9 text-xs font-semibold rounded-lg"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                    WhatsApp
-                  </Button>
-                )}
-                
-                {showChat && (
-                  <Button
-                    onClick={handleStartChat}
-                    className="bg-blue-600 hover:bg-blue-700 h-9 text-xs font-semibold rounded-lg"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 mr-1" />
-                    Chat
-                  </Button>
-                )}
-              </div>
+              <Button
+                onClick={handleToggleFavorite}
+                variant="ghost"
+                size="icon"
+                className={`${isFavorite ? 'text-red-500' : 'text-gray-400'} h-9 w-9`}
+              >
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+              </Button>
+            </div>
+
+            {/* BOTONES DE CONTACTO */}
+            <div className="grid grid-cols-3 gap-2">
+              {showPhone && (
+                <Button 
+                  onClick={handlePhoneClick}
+                  className="bg-blue-600 hover:bg-blue-700 h-10 text-sm font-semibold"
+                >
+                  <Phone className="w-4 h-4 mr-1.5" />
+                  Llamar
+                </Button>
+              )}
+              
+              {showWhatsApp && (
+                <Button
+                  onClick={handleWhatsAppClick}
+                  className="bg-green-600 hover:bg-green-700 h-10 text-sm font-semibold"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1.5" />
+                  WhatsApp
+                </Button>
+              )}
+              
+              {showChat && (
+                <Button
+                  onClick={handleStartChat}
+                  className="bg-blue-600 hover:bg-blue-700 h-10 text-sm font-semibold"
+                >
+                  <MessageSquare className="w-4 h-4 mr-1.5" />
+                  Chat
+                </Button>
+              )}
             </div>
           </Card>
 
-          {/* DESCRIPCIÓN */}
-          {profile.descripcion_corta && (
-            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-              <p className="text-sm text-gray-700 leading-relaxed">
+          {/* DESCRIPCIÓN E INFO */}
+          <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+            {profile.descripcion_corta && (
+              <p className="text-sm text-gray-700 mb-3">
                 {profile.descripcion_corta}
               </p>
-            </Card>
-          )}
+            )}
 
-          {/* INFORMACIÓN BÁSICA */}
-          {(profile.years_experience > 0 || profile.tarifa_base > 0) && (
-            <Card className="border-0 shadow-sm rounded-xl bg-white p-3">
-              <div className="flex gap-4">
+            {(profile.years_experience > 0 || profile.tarifa_base > 0) && (
+              <div className="flex items-center gap-4 pt-3 border-t">
                 {profile.years_experience > 0 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm text-gray-700">{profile.years_experience} años experiencia</span>
+                    <span className="text-sm text-gray-700">{profile.years_experience} años</span>
                   </div>
                 )}
 
                 {profile.tarifa_base > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Euro className="w-4 h-4 text-blue-600" />
+                  <div className="flex items-center gap-1.5">
+                    <Euro className="w-4 h-4 text-green-600" />
                     <span className="text-sm font-semibold text-gray-900">{profile.tarifa_base}€/h</span>
                   </div>
                 )}
               </div>
-            </Card>
-          )}
+            )}
+          </Card>
 
           {/* GALERÍA DE TRABAJOS */}
           {profile.photos && profile.photos.length > 0 && (
-            <Card className="border-0 shadow-sm rounded-xl bg-white p-3">
-              <h3 className="text-sm font-bold text-gray-900 mb-2">Galería de trabajos</h3>
-              <div className={`grid ${profile.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-3 md:grid-cols-4'} gap-2`}>
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Galería de trabajos</h3>
+              <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
                 {profile.photos.map((photo, idx) => (
                   <div 
                     key={idx} 
-                    className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
+                    className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100 shadow-sm hover:shadow-md transition-shadow"
                     onClick={() => {
                       setSelectedImage(photo);
                       setSelectedImageIndex(idx);
@@ -575,11 +570,12 @@ export default function ProfessionalProfilePage() {
                     <img
                       src={photo}
                       alt={`Trabajo ${idx + 1}`}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                     {idx === 0 && (
-                      <div className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">
-                        Principal
+                      <div className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-semibold shadow">
+                        ★
                       </div>
                     )}
                   </div>
@@ -590,41 +586,46 @@ export default function ProfessionalProfilePage() {
 
           {/* REDES SOCIALES */}
           {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
-            <Card className="border-0 shadow-sm rounded-xl bg-white p-3">
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Redes sociales</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.website && (
                   <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs rounded-lg">
-                      <Globe className="w-3.5 h-3.5 mr-1.5" />
-                      Web
+                    <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
+                      <Globe className="w-4 h-4 mr-2" />
+                      Sitio web
                     </Button>
                   </a>
                 )}
                 {profile.social_links?.facebook && (
                   <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs rounded-lg">
-                      <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                    <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
+                      <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                      Facebook
                     </Button>
                   </a>
                 )}
                 {profile.social_links?.instagram && (
                   <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs rounded-lg">
-                      <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                    <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
+                      <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+                      Instagram
                     </Button>
                   </a>
                 )}
                 {profile.social_links?.linkedin && (
                   <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs rounded-lg">
-                      <Linkedin className="w-3.5 h-3.5 text-blue-700" />
+                    <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
+                      <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
+                      LinkedIn
                     </Button>
                   </a>
                 )}
                 {profile.social_links?.tiktok && (
                   <a href={profile.social_links.tiktok} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs rounded-lg">
-                      <Music className="w-3.5 h-3.5" />
+                    <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
+                      <Music className="w-4 h-4 mr-2" />
+                      TikTok
                     </Button>
                   </a>
                 )}
@@ -632,29 +633,30 @@ export default function ProfessionalProfilePage() {
             </Card>
           )}
 
-          {/* ESTADÍSTICAS COMPACTAS (solo propietario) */}
+          {/* ESTADÍSTICAS (solo propietario) */}
           {isOwner && metrics && (
             <Card className="border-0 shadow-sm rounded-xl bg-blue-50 p-4">
-              <p className="text-xs font-semibold text-gray-600 mb-2">📊 Últimos 30 días</p>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">📊 Estadísticas (30 días)</h3>
               <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-2 bg-white rounded-lg">
-                  <p className="text-xl font-bold text-gray-900">{metrics.views}</p>
-                  <p className="text-[10px] text-gray-500">Vistas</p>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-2xl font-bold text-gray-900">{metrics.views}</p>
+                  <p className="text-xs text-gray-500 mt-1">Vistas</p>
                 </div>
-                <div className="text-center p-2 bg-white rounded-lg">
-                  <p className="text-xl font-bold text-gray-900">{metrics.searches}</p>
-                  <p className="text-[10px] text-gray-500">Búsquedas</p>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-2xl font-bold text-gray-900">{metrics.searches}</p>
+                  <p className="text-xs text-gray-500 mt-1">Búsquedas</p>
                 </div>
-                <div className="text-center p-2 bg-white rounded-lg">
-                  <p className="text-xl font-bold text-gray-900">{metrics.contacts}</p>
-                  <p className="text-[10px] text-gray-500">Contactos</p>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <p className="text-2xl font-bold text-gray-900">{metrics.contacts}</p>
+                  <p className="text-xs text-gray-500 mt-1">Contactos</p>
                 </div>
               </div>
             </Card>
           )}
 
-          {/* RESEÑAS COMPACTAS */}
+          {/* RESEÑAS */}
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Opiniones de clientes</h3>
             <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
           </Card>
         </div>
