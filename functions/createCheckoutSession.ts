@@ -47,9 +47,7 @@ Deno.serve(async (req) => {
     }
 
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
-    const successUrl = isReactivation 
-      ? `${baseUrl}/MyProfile?reactivation=success`
-      : `${baseUrl}/ProfileOnboarding?payment=success`;
+    const successUrl = `${baseUrl}/PricingPlans?session_id={CHECKOUT_SESSION_ID}&payment=success`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';

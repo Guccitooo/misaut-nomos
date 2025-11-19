@@ -142,7 +142,9 @@ Deno.serve(async (req) => {
                     full_name: metadata.fullName || email.split('@')[0],
                     phone: metadata.phone || '',
                     city: metadata.address || '',
-                    user_type: 'professionnel',
+                    user_type: 'professional_pending',
+                    professional_onboarding_completed: false,
+                    professional_plan_paid_date: new Date().toISOString(),
                     has_used_trial: true,
                     first_trial_date: isTrialing ? new Date().toISOString() : undefined
                 };
