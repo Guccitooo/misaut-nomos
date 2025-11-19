@@ -58,7 +58,6 @@ export default function ProfileOnboardingPage() {
   const [error, setError] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
-  const [showManualContinue, setShowManualContinue] = useState(false);
 
   const [formData, setFormData] = useState({
     business_name: "",
@@ -117,75 +116,58 @@ export default function ProfileOnboardingPage() {
     }
   };
 
-  const verifySubscription = async () => {
-    let attempts = 0;
-    const maxAttempts = 5;
-    
-    setTimeout(() => {
-      setShowManualContinue(true);
-    }, 8000);
-    
-    const checkPayment = async () => {
-      attempts++;
-      console.log(`🔍 Verificando pago - Intento ${attempts}/${maxAttempts}`);
+  const verifySubscription = async (attempt = 1, maxAttempts = 15) => {
+    try {
+      console.log(`🔍 Verificando pago - Intento ${attempt}/${maxAttempts}`);
       
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+      // Wait progressively longer
+      await new Promise(resolve => setTimeout(resolve, attempt === 1 ? 3000 : 2000));
+      
+      // Force refresh user data
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      
+      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('👤 Tipo de usuario:', currentUser.user_type);
+      console.log('👤 has_used_trial:', currentUser.has_used_trial);
+      
+      if (currentUser.user_type === 'professionnel') {
+        const subs = await base44.entities.Subscription.filter({
+          user_id: currentUser.id
+        });
         
-        console.log('👤 Usuario:', currentUser.email, 'Tipo:', currentUser.user_type);
+        console.log('📋 Suscripciones encontradas:', subs.length);
         
-        if (currentUser.user_type === 'professionnel') {
-          const subs = await base44.entities.Subscription.filter({
-            user_id: currentUser.id
+        if (subs.length > 0) {
+          console.log('✅ Suscripción detectada:', subs[0]);
+          setIsVerifyingPayment(false);
+          toast.success(t('paymentConfirmed'), {
+            duration: 4000
           });
-          
-          console.log('📋 Suscripciones:', subs.length);
-          
-          if (subs.length > 0) {
-            console.log('✅ Pago confirmado');
-            setIsVerifyingPayment(false);
-            setShowManualContinue(false);
-            toast.success(t('paymentConfirmed'), { duration: 3000 });
-            window.history.replaceState({}, document.title, window.location.pathname);
-            return true;
-          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
         }
-        
-        if (attempts >= maxAttempts) {
-          console.log('⏰ Timeout - mostrando opción de continuar');
-          return true;
-        }
-        
-        return false;
-      } catch (error) {
-        console.error("Error:", error);
-        return attempts >= maxAttempts;
+      } else {
+        console.log('⚠️ Usuario aún no es profesional, esperando webhook...');
       }
-    };
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const intervalId = setInterval(async () => {
-      const shouldStop = await checkPayment();
-      if (shouldStop) {
-        clearInterval(intervalId);
+      
+      if (attempt < maxAttempts) {
+        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
+      } else {
+        console.error('❌ Timeout: no se pudo verificar el pago después de 15 intentos');
+        setIsVerifyingPayment(false);
+        toast.error(t('paymentVerificationError'), {
+          duration: 8000
+        });
       }
-    }, 2000);
-    
-    setTimeout(() => {
-      clearInterval(intervalId);
-    }, 15000);
-  };
-  
-  const handleManualContinue = () => {
-    console.log('✅ Usuario eligió continuar manualmente');
-    setIsVerifyingPayment(false);
-    setShowManualContinue(false);
-    toast.info('Puedes continuar con el cuestionario. El pago se verificará automáticamente.', {
-      duration: 5000
-    });
-    window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error) {
+      console.error("Error verificando suscripción:", error);
+      if (attempt < maxAttempts) {
+        setTimeout(() => verifySubscription(attempt + 1, maxAttempts), 2000);
+      } else {
+        setIsVerifyingPayment(false);
+      }
+    }
   };
 
   const loadExistingProfile = async () => {
@@ -337,8 +319,7 @@ export default function ProfileOnboardingPage() {
       await base44.auth.updateMe({
         user_type: "professionnel",
         phone: formData.telefono_contacto,
-        city: formData.ciudad || formData.provincia,
-        professional_onboarding_pending: false
+        city: formData.ciudad || formData.provincia
       });
 
       await base44.integrations.Core.SendEmail({
@@ -443,32 +424,6 @@ export default function ProfileOnboardingPage() {
               <p className="text-sm text-gray-600">
                 {isVerifyingPayment ? t('fewSecondsWait') : t('preparingProfile')}
               </p>
-              
-              {showManualContinue && (
-                <div className="pt-4 space-y-2">
-                  <p className="text-xs text-gray-500">
-                    ¿Tarda demasiado?
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowManualContinue(false);
-                        verifySubscription();
-                      }}
-                      className="flex-1 text-xs h-9"
-                    >
-                      Reintentar
-                    </Button>
-                    <Button
-                      onClick={handleManualContinue}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs h-9"
-                    >
-                      Continuar
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
