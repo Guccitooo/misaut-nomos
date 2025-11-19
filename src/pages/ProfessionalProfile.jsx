@@ -743,7 +743,7 @@ export default function ProfessionalProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL GALERÍA */}
+      {/* MODAL GALERÍA CON NAVEGACIÓN */}
       {selectedImage && (
         <div 
           className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
@@ -751,14 +751,48 @@ export default function ProfessionalProfilePage() {
         >
           <button
             onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
           >
             <X className="w-6 h-6 text-white" />
           </button>
+          
+          {profile.photos.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newIndex = selectedImageIndex === 0 ? profile.photos.length - 1 : selectedImageIndex - 1;
+                  setSelectedImageIndex(newIndex);
+                  setSelectedImage(profile.photos[newIndex]);
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newIndex = selectedImageIndex === profile.photos.length - 1 ? 0 : selectedImageIndex + 1;
+                  setSelectedImageIndex(newIndex);
+                  setSelectedImage(profile.photos[newIndex]);
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+              
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1.5 rounded-full">
+                <span className="text-white text-sm">{selectedImageIndex + 1} / {profile.photos.length}</span>
+              </div>
+            </>
+          )}
+          
           <img
             src={selectedImage}
             alt="Vista ampliada"
             className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
