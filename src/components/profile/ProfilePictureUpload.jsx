@@ -47,6 +47,20 @@ export default function ProfilePictureUpload({ user, currentPicture, onUpdate, s
       await base44.auth.updateMe({ profile_picture: file_url });
       console.log('✅ URL guardada en BD');
       
+      if (user.user_type === "professionnel") {
+        console.log('💼 Sincronizando con perfil profesional...');
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: user.id
+        });
+        
+        if (profiles[0]) {
+          await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+            imagen_principal: file_url
+          });
+          console.log('✅ imagen_principal actualizada en perfil profesional');
+        }
+      }
+      
       setPreviewUrl(file_url);
       
       if (onUpdate) {
