@@ -81,7 +81,7 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser }) => {
   const { t } = useLanguage();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -241,16 +241,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               {t('viewProfile') || 'Ver perfil'}
             </Button>
 
-            {currentUser && profile.metodos_contacto?.includes('chat_interno') && (
-              <Button
-                onClick={onClick}
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
-              >
-                <MessageCircle className="w-4 h-4 text-blue-600" />
-              </Button>
-            )}
+            <Button
+              onClick={onClick}
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
+            >
+              <MessageCircle className="w-4 h-4 text-blue-600" />
+            </Button>
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
               <Button
@@ -407,7 +405,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: professionalUsers = [], isLoading: loadingUsers } = useQuery({
+  const { data: professionalUsers = [] } = useQuery({
     queryKey: ['professionalUsers'],
     queryFn: async () => {
       const userIds = profiles.map(p => p.user_id);
@@ -420,7 +418,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
+  const { data: subscriptions = [] } = useQuery({
     queryKey: ['subscriptions'],
     queryFn: async () => {
       return await base44.entities.Subscription.list();
@@ -428,7 +426,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: favorites = [], isLoading: loadingFavorites } = useQuery({
+  const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -485,11 +483,7 @@ export default function SearchPage() {
   };
 
   const handleViewProfile = (profile) => {
-    if (profile.slug_publico) {
-      navigate(createPageUrl("ProfessionalProfile") + `?slug=${profile.slug_publico}`);
-    } else {
-      navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
-    }
+    navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
   };
 
   const handleToggleFavorite = async (profile) => {
@@ -518,16 +512,16 @@ export default function SearchPage() {
     }
   };
 
-  const isLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions || (user && loadingFavorites);
-  
-  const isDataReady = !loadingProfiles && !loadingUsers && !loadingCategories && !loadingSubscriptions && (!user || !loadingFavorites);
-
-  if (isLoading || !isDataReady) {
+  if (loadingProfiles || loadingCategories) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando...</p>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <Skeleton className="h-32 w-full mb-6 rounded-xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Skeleton key={i} className="h-64 rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -700,7 +694,6 @@ export default function SearchPage() {
                     isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                     userCategories={categories}
                     professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                    currentUser={user}
                   />
                 </motion.div>
               ))}

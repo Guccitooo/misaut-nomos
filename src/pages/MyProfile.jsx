@@ -470,32 +470,11 @@ export default function MyProfilePage() {
     },
   });
 
-  const generateSlug = (businessName, category, ciudad) => {
-    const cleanCategory = category?.replace(/[\/\s]+/g, '-') || '';
-    const text = `${businessName} ${cleanCategory} ${ciudad || ''}`;
-    return text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .trim();
-  };
-
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      const slug = generateSlug(
-        data.business_name || profile?.business_name || "",
-        data.categories?.[0] || profile?.categories?.[0] || "",
-        data.ciudad || profile?.ciudad || ""
-      );
-
       const dataToSave = {
         ...data,
-        imagen_principal: user.profile_picture || data.photos?.[0] || data.imagen_principal || "",
-        slug_publico: slug
+        imagen_principal: user.profile_picture || data.photos?.[0] || data.imagen_principal || ""
       };
       
       if (profile) {
