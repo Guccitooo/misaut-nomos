@@ -251,13 +251,14 @@ export default function PricingPlansPage() {
                       
                       <div className="mb-3">
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-5xl font-extrabold text-gray-900">{roundedPrice}</span>
-                          <span className="text-xl font-bold text-gray-600">€</span>
+                          <span className="text-5xl font-extrabold text-green-600">0</span>
+                          <span className="text-xl font-bold text-green-600">€</span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1 font-medium">
-                          {plan.plan_id === "plan_monthly_trial" ? "por mes" : 
-                           plan.plan_id === "plan_quarterly" ? "cada 3 meses" : 
-                           "por año"}
+                        <p className="text-xs text-gray-500 mt-1 font-semibold">
+                          Después de 2 meses: {roundedPrice}€
+                          {plan.plan_id === "plan_monthly_trial" ? "/mes" : 
+                           plan.plan_id === "plan_quarterly" ? "/trimestre" : 
+                           "/año"}
                         </p>
                       </div>
 
