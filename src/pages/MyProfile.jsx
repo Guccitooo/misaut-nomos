@@ -170,6 +170,15 @@ export default function MyProfilePage() {
     loadUser();
   }, []);
 
+  // Esperar a que los datos estén completamente cargados antes de renderizar
+  if (!user || loadingProfile || (user.user_type === "professionnel" && profile === undefined)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (profileData.provincia && profileData.ciudad) {
       const area = profileData.municipio 
@@ -659,13 +668,7 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-      </div>
-    );
-  }
+
 
   if (isVerifyingSubscription) {
     return (

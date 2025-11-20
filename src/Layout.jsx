@@ -42,6 +42,7 @@ function LayoutContent({ children, currentPageName }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -143,6 +144,8 @@ function LayoutContent({ children, currentPageName }) {
     } catch (error) {
       setUser(null);
       setProfessionalProfile(undefined);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
@@ -630,32 +633,42 @@ function LayoutContent({ children, currentPageName }) {
 
                 <SidebarFooter className="border-t border-gray-100 p-4">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 px-2">
-                      <Avatar className="w-10 h-10 border-2 border-blue-600">
-                        {getProfilePicture() ? (
-                          <OptimizedImage 
-                            src={getProfilePicture()} 
-                            alt={`Foto de perfil de ${getDisplayName()}`}
-                            className="w-full h-full object-cover"
-                            priority={true}
-                            width={40}
-                            height={40}
-                          />
-                        ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                            {getDisplayName().charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
-                          {getDisplayName()}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.user_type === "professionnel" ? t('professional') : t('client')}
-                        </p>
+                    {loadingUser ? (
+                      <div className="flex items-center gap-3 px-2">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-24 mb-2" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-3 px-2">
+                        <Avatar className="w-10 h-10 border-2 border-blue-600">
+                          {getProfilePicture() ? (
+                            <OptimizedImage 
+                              src={getProfilePicture()} 
+                              alt={`Foto de perfil de ${getDisplayName()}`}
+                              className="w-full h-full object-cover"
+                              priority={true}
+                              width={40}
+                              height={40}
+                            />
+                          ) : (
+                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                              {getDisplayName().charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">
+                            {getDisplayName()}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.user_type === "professionnel" ? t('professional') : t('client')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="px-2">
                       <LanguageSwitcher variant="compact" />
@@ -697,7 +710,15 @@ function LayoutContent({ children, currentPageName }) {
                   </div>
                   
                   <div className="p-3">
-                    {user && (
+                    {loadingUser ? (
+                      <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-24 mb-2" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </div>
+                    ) : user && (
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
