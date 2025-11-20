@@ -4,14 +4,6 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Verificar autenticación de admin
-        const user = await base44.auth.me();
-        if (!user || user.role !== 'admin') {
-            return Response.json({ 
-                error: 'No autorizado. Solo administradores pueden ejecutar esta función.' 
-            }, { status: 403 });
-        }
-        
         // Get all professional profiles
         const profiles = await base44.asServiceRole.entities.ProfessionalProfile.list();
         const users = await base44.asServiceRole.entities.User.list();

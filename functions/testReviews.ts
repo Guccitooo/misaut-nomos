@@ -13,14 +13,6 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Verificar autenticación de admin
-        const user = await base44.auth.me();
-        if (!user || user.role !== 'admin') {
-            return Response.json({ 
-                error: 'No autorizado. Solo administradores pueden ejecutar esta función.' 
-            }, { status: 403 });
-        }
-        
         const { professional_id, client_id, test_type } = await req.json();
         
         console.log('🧪 Test de reseñas:', test_type);

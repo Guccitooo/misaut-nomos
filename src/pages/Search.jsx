@@ -518,9 +518,11 @@ export default function SearchPage() {
     }
   };
 
-  const isLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions;
+  const isLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions || (user && loadingFavorites);
+  
+  const isDataReady = !loadingProfiles && !loadingUsers && !loadingCategories && !loadingSubscriptions && (!user || !loadingFavorites);
 
-  if (isLoading) {
+  if (isLoading || !isDataReady) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

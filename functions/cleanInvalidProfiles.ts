@@ -11,14 +11,6 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        // Verificar autenticación de admin
-        const user = await base44.auth.me();
-        if (!user || user.role !== 'admin') {
-            return Response.json({ 
-                error: 'No autorizado. Solo administradores pueden ejecutar esta función.' 
-            }, { status: 403 });
-        }
-        
         console.log('🧹 Iniciando limpieza de perfiles inválidos...');
         
         // 1. Obtener todos los perfiles profesionales
@@ -137,11 +129,9 @@ Deno.serve(async (req) => {
         console.log('📊 Resumen de limpieza:', summary);
         
         // 7. Enviar email de reporte a admin
-        const adminEmail = Deno.env.get("ADMIN_EMAIL") || "soporte@misautonomos.es";
-        
         if (results.hidden.length > 0 || results.errors.length > 0) {
             await base44.asServiceRole.integrations.Core.SendEmail({
-                to: adminEmail,
+                to: 'admin@milautonomos.com',
                 subject: `🧹 Reporte de limpieza de perfiles - ${summary.hidden} ocultados`,
                 body: `Limpieza de perfiles completada
 

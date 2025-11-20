@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,10 +75,8 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
     mutationFn: async (reviewIdToReport) => {
       await base44.entities.Review.update(reviewIdToReport, { is_reported: true });
       
-      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || "soporte@misautonomos.es";
-      
       await base44.integrations.Core.SendEmail({
-        to: adminEmail,
+        to: "administrador@misautonomos.es",
         subject: "⚠️ Opinión reportada - MisAutónomos",
         body: `
 <!DOCTYPE html>
