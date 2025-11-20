@@ -336,48 +336,49 @@ export default function MyProfilePage() {
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: user.id
       });
-      
-      if (profiles[0]) {
-        const profileData = {
-          business_name: profiles[0].business_name || "",
-          cif_nif: profiles[0].cif_nif || "",
-          email_contacto: profiles[0].email_contacto || user.email,
-          telefono_contacto: profiles[0].telefono_contacto || user.phone || "",
-          description: profiles[0].description || "",
-          descripcion_corta: profiles[0].descripcion_corta || "",
-          categories: profiles[0].categories || [],
-          provincia: profiles[0].provincia || "",
-          ciudad: profiles[0].ciudad || "",
-          municipio: profiles[0].municipio || "",
-          service_area: profiles[0].service_area || "",
-          radio_servicio_km: profiles[0].radio_servicio_km || 10,
-          disponibilidad_tipo: profiles[0].disponibilidad_tipo || "laborables",
-          horario_apertura: profiles[0].horario_apertura || "09:00",
-          horario_cierre: profiles[0].horario_cierre || "18:00",
-          website: profiles[0].website || "",
-          price_range: profiles[0].price_range || "€€",
-          tarifa_base: profiles[0].tarifa_base || "",
-          facturacion: profiles[0].facturacion || "autonomo",
-          formas_pago: profiles[0].formas_pago || [],
-          photos: profiles[0].photos || [],
-          social_links: profiles[0].social_links || {
-            facebook: "",
-            instagram: "",
-            linkedin: "",
-            tiktok: ""
-          },
-          activity_other: profiles[0].activity_other || "",
-          metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'],
-          years_experience: profiles[0].years_experience || "",
-          certifications: profiles[0].certifications || [],
-        };
-        setProfileData(profileData);
-      }
       return profiles[0];
     },
     enabled: !!user,
     staleTime: 30000,
   });
+
+  useEffect(() => {
+    if (profile && user) {
+      setProfileData({
+        business_name: profile.business_name || "",
+        cif_nif: profile.cif_nif || "",
+        email_contacto: profile.email_contacto || user.email,
+        telefono_contacto: profile.telefono_contacto || user.phone || "",
+        description: profile.description || "",
+        descripcion_corta: profile.descripcion_corta || "",
+        categories: profile.categories || [],
+        provincia: profile.provincia || "",
+        ciudad: profile.ciudad || "",
+        municipio: profile.municipio || "",
+        service_area: profile.service_area || "",
+        radio_servicio_km: profile.radio_servicio_km || 10,
+        disponibilidad_tipo: profile.disponibilidad_tipo || "laborables",
+        horario_apertura: profile.horario_apertura || "09:00",
+        horario_cierre: profile.horario_cierre || "18:00",
+        website: profile.website || "",
+        price_range: profile.price_range || "€€",
+        tarifa_base: profile.tarifa_base || "",
+        facturacion: profile.facturacion || "autonomo",
+        formas_pago: profile.formas_pago || [],
+        photos: profile.photos || [],
+        social_links: profile.social_links || {
+          facebook: "",
+          instagram: "",
+          linkedin: "",
+          tiktok: ""
+        },
+        activity_other: profile.activity_other || "",
+        metodos_contacto: profile.metodos_contacto || ['chat_interno'],
+        years_experience: profile.years_experience || "",
+        certifications: profile.certifications || [],
+      });
+    }
+  }, [profile, user]);
 
   const { data: metrics = [] } = useQuery({
     queryKey: ['profileMetrics', user?.id],
@@ -1239,152 +1240,22 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-0 bg-white">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-blue-700" />
-                      Redes Sociales
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label className="flex items-center gap-2 text-xs text-gray-600">
-                          {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                          Sitio web
-                        </Label>
-                        {!isEditing && profileData.website ? (
-                          <a 
-                            href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
-                          >
-                            <p className="text-sm text-blue-700 truncate flex items-center gap-2">
-                              <Globe className="w-4 h-4" />
-                              {profileData.website}
-                            </p>
-                          </a>
-                        ) : (
-                          <Input
-                            value={profileData.website}
-                            onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                            disabled={!isEditing}
-                            placeholder="https://tuweb.com"
-                            className="h-10"
-                          />
-                        )}
-                      </div>
 
-                      <div>
-                        <Label className="flex items-center gap-2 text-xs text-gray-600">
-                          {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                          Instagram
-                        </Label>
-                        {!isEditing && profileData.social_links?.instagram ? (
-                          <a 
-                            href={profileData.social_links.instagram.startsWith('http') ? profileData.social_links.instagram : `https://instagram.com/${profileData.social_links.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block p-2 rounded-lg border border-pink-200 bg-pink-50 hover:bg-pink-100 transition-colors"
-                          >
-                            <p className="text-sm text-pink-700 truncate flex items-center gap-2">
-                              <Instagram className="w-4 h-4" />
-                              {profileData.social_links.instagram}
-                            </p>
-                          </a>
-                        ) : (
-                          <Input
-                            value={profileData.social_links.instagram}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, instagram: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://instagram.com/tuperfil"
-                            className="h-10"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <Label className="flex items-center gap-2 text-xs text-gray-600">
-                          {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                          Facebook
-                        </Label>
-                        {!isEditing && profileData.social_links?.facebook ? (
-                          <a 
-                            href={profileData.social_links.facebook.startsWith('http') ? profileData.social_links.facebook : `https://facebook.com/${profileData.social_links.facebook}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
-                          >
-                            <p className="text-sm text-blue-700 truncate flex items-center gap-2">
-                              <Facebook className="w-4 h-4" />
-                              {profileData.social_links.facebook}
-                            </p>
-                          </a>
-                        ) : (
-                          <Input
-                            value={profileData.social_links.facebook}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, facebook: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://facebook.com/tupagina"
-                            className="h-10"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <Label className="flex items-center gap-2 text-xs text-gray-600">
-                          {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                          TikTok
-                        </Label>
-                        {!isEditing && profileData.social_links?.tiktok ? (
-                          <a 
-                            href={profileData.social_links.tiktok.startsWith('http') ? profileData.social_links.tiktok : `https://tiktok.com/@${profileData.social_links.tiktok.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block p-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                          >
-                            <p className="text-sm text-gray-700 truncate flex items-center gap-2">
-                              <Music className="w-4 h-4" />
-                              {profileData.social_links.tiktok}
-                            </p>
-                          </a>
-                        ) : (
-                          <Input
-                            value={profileData.social_links.tiktok}
-                            onChange={(e) => setProfileData({ 
-                              ...profileData, 
-                              social_links: { ...profileData.social_links, tiktok: e.target.value }
-                            })}
-                            disabled={!isEditing}
-                            placeholder="https://tiktok.com/@tuperfil"
-                            className="h-10"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
           )}
 
           {isProfessional && (
             <TabsContent value="portfolio">
-              <Card className="shadow-sm border-0 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Camera className="w-5 h-5 text-blue-700" />
-                    Portfolio ({profileData.photos.length}/10)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div className="space-y-6">
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Camera className="w-5 h-5 text-blue-700" />
+                      Portfolio ({profileData.photos.length}/10)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
 
                   {isEditing && profileData.photos.length < 10 && (
                     <label className="cursor-pointer block">
@@ -1434,10 +1305,144 @@ export default function MyProfilePage() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
+                  </CardContent>
+                  </Card>
+
+                  <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-blue-700" />
+                    Redes Sociales
+                  </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs text-gray-600">
+                        {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                        Sitio web
+                      </Label>
+                      {!isEditing && profileData.website ? (
+                        <a 
+                          href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        >
+                          <p className="text-sm text-blue-700 truncate flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            {profileData.website}
+                          </p>
+                        </a>
+                      ) : (
+                        <Input
+                          value={profileData.website}
+                          onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="https://tuweb.com"
+                          className="h-10"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs text-gray-600">
+                        {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                        Instagram
+                      </Label>
+                      {!isEditing && profileData.social_links?.instagram ? (
+                        <a 
+                          href={profileData.social_links.instagram.startsWith('http') ? profileData.social_links.instagram : `https://instagram.com/${profileData.social_links.instagram.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-2 rounded-lg border border-pink-200 bg-pink-50 hover:bg-pink-100 transition-colors"
+                        >
+                          <p className="text-sm text-pink-700 truncate flex items-center gap-2">
+                            <Instagram className="w-4 h-4" />
+                            {profileData.social_links.instagram}
+                          </p>
+                        </a>
+                      ) : (
+                        <Input
+                          value={profileData.social_links.instagram}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, instagram: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://instagram.com/tuperfil"
+                          className="h-10"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs text-gray-600">
+                        {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                        Facebook
+                      </Label>
+                      {!isEditing && profileData.social_links?.facebook ? (
+                        <a 
+                          href={profileData.social_links.facebook.startsWith('http') ? profileData.social_links.facebook : `https://facebook.com/${profileData.social_links.facebook}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        >
+                          <p className="text-sm text-blue-700 truncate flex items-center gap-2">
+                            <Facebook className="w-4 h-4" />
+                            {profileData.social_links.facebook}
+                          </p>
+                        </a>
+                      ) : (
+                        <Input
+                          value={profileData.social_links.facebook}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, facebook: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://facebook.com/tupagina"
+                          className="h-10"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs text-gray-600">
+                        {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                        TikTok
+                      </Label>
+                      {!isEditing && profileData.social_links?.tiktok ? (
+                        <a 
+                          href={profileData.social_links.tiktok.startsWith('http') ? profileData.social_links.tiktok : `https://tiktok.com/@${profileData.social_links.tiktok.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          <p className="text-sm text-gray-700 truncate flex items-center gap-2">
+                            <Music className="w-4 h-4" />
+                            {profileData.social_links.tiktok}
+                          </p>
+                        </a>
+                      ) : (
+                        <Input
+                          value={profileData.social_links.tiktok}
+                          onChange={(e) => setProfileData({ 
+                            ...profileData, 
+                            social_links: { ...profileData.social_links, tiktok: e.target.value }
+                          })}
+                          disabled={!isEditing}
+                          placeholder="https://tiktok.com/@tuperfil"
+                          className="h-10"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  </CardContent>
+                  </Card>
+                  </div>
+                  </TabsContent>
+                  )}
         </Tabs>
 
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
