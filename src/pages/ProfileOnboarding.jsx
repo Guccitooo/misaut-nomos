@@ -24,16 +24,58 @@ const PROVINCIAS = [
   "Vizcaya", "Zamora", "Zaragoza"
 ];
 
-const CIUDADES_COMUNES = [
-  "Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Málaga",
-  "Murcia", "Palma", "Las Palmas", "Bilbao", "Alicante", "Córdoba",
-  "Valladolid", "Vigo", "Gijón", "Hospitalet de Llobregat", "Vitoria",
-  "A Coruña", "Granada", "Elche", "Oviedo", "Badalona", "Cartagena",
-  "Terrassa", "Jerez de la Frontera", "Sabadell", "Santa Cruz de Tenerife",
-  "Móstoles", "Alcalá de Henares", "Pamplona", "Fuenlabrada", "Almería",
-  "Leganés", "Donostia-San Sebastián", "Getafe", "Burgos", "Santander",
-  "Castellón de la Plana", "Alcorcón", "Albacete", "Otra"
-];
+const CIUDADES_POR_PROVINCIA = {
+  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz"],
+  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet"],
+  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira"],
+  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe"],
+  "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos"],
+  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy"],
+  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla"],
+  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi"],
+  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros"],
+  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía", "Arucas"],
+  "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Marratxí"],
+  "Guipúzcoa": ["Donostia-San Sebastián", "Irún", "Rentería", "Eibar"],
+  "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres"],
+  "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón"],
+  "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela"],
+  "Cantabria": ["Santander", "Torrelavega", "Castro Urdiales", "Camargo"],
+  "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla"],
+  "Granada": ["Granada", "Motril", "Almuñécar", "Baza"],
+  "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero"],
+  "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada"],
+  "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje"],
+  "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar"],
+  "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero"],
+  "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana"],
+  "Albacete": ["Albacete", "Hellín", "Villarrobledo"],
+  "Álava": ["Vitoria", "Llodio"],
+  "León": ["León", "Ponferrada", "San Andrés del Rabanedo"],
+  "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando"],
+  "Huelva": ["Huelva", "Lepe", "Almonte"],
+  "Jaén": ["Jaén", "Linares", "Andújar"],
+  "Toledo": ["Toledo", "Talavera de la Reina", "Illescas"],
+  "Tarragona": ["Tarragona", "Reus", "Tortosa"],
+  "Gerona": ["Girona", "Figueres", "Blanes"],
+  "Lérida": ["Lleida", "Tàrrega", "Mollerussa"],
+  "Badajoz": ["Badajoz", "Mérida", "Don Benito"],
+  "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata"],
+  "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro"],
+  "Orense": ["Ourense", "Verín", "O Barco de Valdeorras"],
+  "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo"],
+  "Ávila": ["Ávila", "Arévalo"],
+  "Segovia": ["Segovia", "Cuéllar"],
+  "Soria": ["Soria", "Almazán"],
+  "Zamora": ["Zamora", "Benavente"],
+  "Palencia": ["Palencia", "Guardo"],
+  "Guadalajara": ["Guadalajara", "Azuqueca de Henares"],
+  "Cuenca": ["Cuenca", "Tarancón"],
+  "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso"],
+  "Teruel": ["Teruel", "Alcañiz"],
+  "Huesca": ["Huesca", "Monzón", "Barbastro"],
+  "La Rioja": ["Logroño", "Calahorra", "Arnedo"]
+};
 
 const CATEGORIAS = [
   "Albañil / Reformas",
@@ -70,6 +112,7 @@ export default function ProfileOnboardingPage() {
     categories: [],
     activity_other: "",
     descripcion_corta: "",
+    years_experience: "",
 
     // Paso 3: Ubicación + Precios + Portfolio + Redes
     provincia: "",
@@ -122,6 +165,7 @@ export default function ProfileOnboardingPage() {
           categories: profiles[0].categories || [],
           activity_other: profiles[0].activity_other || "",
           descripcion_corta: profiles[0].descripcion_corta || "",
+          years_experience: profiles[0].years_experience || "",
           provincia: profiles[0].provincia || "",
           ciudad: profiles[0].ciudad || "",
           tarifa_base: profiles[0].tarifa_base || "",
@@ -199,6 +243,11 @@ export default function ProfileOnboardingPage() {
       return false;
     }
 
+    if (!formData.years_experience || parseInt(formData.years_experience) < 0) {
+      toast.error("Indica tus años de experiencia");
+      return false;
+    }
+
     return true;
   };
 
@@ -265,6 +314,7 @@ export default function ProfileOnboardingPage() {
         activity_other: formData.activity_other,
         descripcion_corta: formData.descripcion_corta,
         description: formData.descripcion_corta,
+        years_experience: parseInt(formData.years_experience) || 0,
         provincia: formData.provincia,
         ciudad: formData.ciudad || "",
         municipio: "",
@@ -290,7 +340,6 @@ export default function ProfileOnboardingPage() {
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
         consiente_contacto_clientes: formData.consiente_contacto_clientes,
         slug_publico: formData.business_name.toLowerCase().replace(/\s+/g, '-'),
-        years_experience: 0,
         certifications: []
       };
 
@@ -353,7 +402,7 @@ export default function ProfileOnboardingPage() {
   };
 
   const toggleCategory = (category) => {
-    setFormData({ ...formData, categories: [category] });
+    setFormData({ ...formData, categories: [category], ciudad: "" });
   };
 
   const toggleFormaPago = (forma) => {
@@ -470,11 +519,14 @@ export default function ProfileOnboardingPage() {
                   <Label className="mb-3 block">Métodos de contacto visibles</Label>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <Checkbox
-                        checked={true}
-                        disabled
-                        className="pointer-events-none"
-                      />
+                      <div className="relative">
+                        <Checkbox
+                          checked={true}
+                          disabled
+                          className="pointer-events-none"
+                        />
+                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                       <span className="text-sm font-medium text-gray-700">Chat directo (siempre activo)</span>
                     </div>
 
@@ -569,6 +621,19 @@ export default function ProfileOnboardingPage() {
                 )}
 
                 <div>
+                  <Label>Años de experiencia *</Label>
+                  <Input
+                    type="number"
+                    value={formData.years_experience}
+                    onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
+                    placeholder="5"
+                    min="0"
+                    max="50"
+                    className="h-12"
+                  />
+                </div>
+
+                <div>
                   <Label>Descripción corta *</Label>
                   <p className="text-xs text-gray-500 mb-2">Describe brevemente tus servicios (mínimo 20 caracteres)</p>
                   <Textarea
@@ -617,25 +682,18 @@ export default function ProfileOnboardingPage() {
                     <Label>Ciudad (opcional)</Label>
                     <Select
                       value={formData.ciudad}
-                      onValueChange={(value) => setFormData({ ...formData, ciudad: value === "Otra" ? "" : value })}
+                      onValueChange={(value) => setFormData({ ...formData, ciudad: value })}
+                      disabled={!formData.provincia}
                     >
                       <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Selecciona ciudad" />
+                        <SelectValue placeholder={formData.provincia ? "Selecciona ciudad" : "Primero selecciona provincia"} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        {CIUDADES_COMUNES.map((ciudad) => (
+                        {formData.provincia && CIUDADES_POR_PROVINCIA[formData.provincia]?.map((ciudad) => (
                           <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {formData.ciudad === "" && (
-                      <Input
-                        value={formData.ciudad}
-                        onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                        placeholder="Escribe tu ciudad..."
-                        className="h-12 mt-2"
-                      />
-                    )}
                   </div>
                 </div>
 
