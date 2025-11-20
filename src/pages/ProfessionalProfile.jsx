@@ -427,7 +427,7 @@ export default function ProfessionalProfilePage() {
               <Avatar 
                 className="w-14 h-14 border-2 border-gray-100 flex-shrink-0 cursor-pointer"
                 onClick={() => {
-                  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
+                  const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                   if (photoUrl) {
                     setSelectedImage(photoUrl);
                     setSelectedImageIndex(-1);
@@ -435,7 +435,7 @@ export default function ProfessionalProfilePage() {
                 }}
               >
                 {(() => {
-                  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
+                  const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                   return photoUrl ? (
                     <AvatarImage 
                       src={photoUrl}
