@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -299,13 +298,13 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', currentUser?.email || 'sin email');
-      console.log('📸 Foto de perfil URL:', currentUser?.profile_picture || 'sin foto');
+      console.log('👤 Usuario cargado:', currentUser.email);
+      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
       setUser(currentUser);
       setUserData({
-        full_name: currentUser?.full_name || "",
-        phone: currentUser?.phone || "",
-        city: currentUser?.city || "",
+        full_name: currentUser.full_name || "",
+        phone: currentUser.phone || "",
+        city: currentUser.city || "",
       });
       return currentUser;
     } catch (error) {
@@ -660,7 +659,13 @@ export default function MyProfilePage() {
     }
   };
 
-
+  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      </div>
+    );
+  }
 
   if (isVerifyingSubscription) {
     return (

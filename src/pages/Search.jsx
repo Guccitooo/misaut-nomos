@@ -371,7 +371,6 @@ export default function SearchPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
     } catch (error) {
-      console.error("Error loading user in Search:", error);
       setUser(null);
     } finally {
       setLoadingUser(false);

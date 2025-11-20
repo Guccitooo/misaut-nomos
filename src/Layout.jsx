@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -42,7 +42,6 @@ function LayoutContent({ children, currentPageName }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -96,13 +95,13 @@ function LayoutContent({ children, currentPageName }) {
   ];
 
   const shouldShowBottomBar = () => {
-    if (!user || loadingUser) return false;
+    if (!user) return false;
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
     if (!user.user_type) return false;
     
     if (user.user_type === "professionnel") {
       if (professionalProfile === null) return false;
-      if (!professionalProfile?.onboarding_completed || !professionalProfile?.visible_en_busqueda) {
+      if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
         return false;
       }
     }
@@ -111,23 +110,14 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   useEffect(() => {
-    const initUser = async () => {
-      try {
-        await loadUser();
-      } catch (error) {
-        console.error('Error initializing user:', error);
-        setUser(null);
-        setLoadingUser(false);
-      }
-    };
-    initUser();
+    loadUser();
   }, []);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user) {
       loadUnreadCount();
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -153,16 +143,10 @@ function LayoutContent({ children, currentPageName }) {
     } catch (error) {
       setUser(null);
       setProfessionalProfile(undefined);
-    } finally {
-      setLoadingUser(false);
     }
   };
 
   const loadUnreadCount = async () => {
-    if (!user?.id) {
-      setUnreadCount(0);
-      return;
-    }
     try {
       const messages = await base44.entities.Message.filter({
         recipient_id: user.id,
@@ -185,7 +169,7 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const getDisplayName = () => {
-    if (!user || loadingUser) return "";
+    if (!user) return "";
     
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
@@ -213,61 +197,54 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const getProfilePicture = () => {
-    if (!user || loadingUser) return null;
-    return user.profile_picture || null;
+    return user?.profile_picture || null;
   };
 
-  const navigationItems = React.useMemo(() => {
-    if (!user || loadingUser) return [];
-    
-    const items = [
-      {
-        title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
-        icon: Search,
-      },
-      {
-        title: t('messages'),
-        url: createPageUrl("Messages"),
-        icon: MessageSquare,
-        badge: unreadCount > 0 ? unreadCount : null
-      },
-      {
-        title: t('favorites'),
-        url: createPageUrl("Favorites"),
-        icon: Heart,
-      },
-      {
-        title: t('myProfile'),
-        url: createPageUrl("MyProfile"),
-        icon: User,
-      },
-    ];
+  const navigationItems = [
+    {
+      title: t('searchFreelancers'),
+      url: createPageUrl("Search"),
+      icon: Search,
+    },
+    {
+      title: t('messages'),
+      url: createPageUrl("Messages"),
+      icon: MessageSquare,
+      badge: unreadCount > 0 ? unreadCount : null
+    },
+    {
+      title: t('favorites'),
+      url: createPageUrl("Favorites"),
+      icon: Heart,
+    },
+    {
+      title: t('myProfile'),
+      url: createPageUrl("MyProfile"),
+      icon: User,
+    },
+  ];
 
-    if (user.user_type === "professionnel") {
-      items.push({
-        title: t('mySubscription'),
-        url: createPageUrl("SubscriptionManagement"),
-        icon: Briefcase,
-      });
-    } else if (user.user_type === "client") {
-      items.push({
-        title: t('viewPlans'),
-        url: createPageUrl("PricingPlans"),
-        icon: CreditCard,
-      });
-    }
+  if (user?.user_type === "professionnel") {
+    navigationItems.push({
+      title: t('mySubscription'),
+      url: createPageUrl("SubscriptionManagement"),
+      icon: Briefcase,
+    });
+  } else if (!user || user?.user_type === "client") {
+    navigationItems.push({
+      title: t('viewPlans'),
+      url: createPageUrl("PricingPlans"),
+      icon: CreditCard,
+    });
+  }
 
-    if (user.role === "admin") {
-      items.push({
-        title: t('administration'),
-        url: createPageUrl("AdminDashboard"),
-        icon: LayoutDashboard,
-      });
-    }
-    
-    return items;
-  }, [user, loadingUser, unreadCount, t]);
+  if (user?.role === "admin") {
+    navigationItems.push({
+      title: t('administration'),
+      url: createPageUrl("AdminDashboard"),
+      icon: LayoutDashboard,
+    });
+  }
 
   return (
     <>
@@ -601,7 +578,7 @@ function LayoutContent({ children, currentPageName }) {
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
-            {!loadingUser && user && (
+            {user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
@@ -653,42 +630,32 @@ function LayoutContent({ children, currentPageName }) {
 
                 <SidebarFooter className="border-t border-gray-100 p-4">
                   <div className="space-y-3">
-                    {loadingUser ? (
-                      <div className="flex items-center gap-3 px-2">
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                        <div className="flex-1">
-                          <Skeleton className="h-4 w-24 mb-2" />
-                          <Skeleton className="h-3 w-16" />
-                        </div>
+                    <div className="flex items-center gap-3 px-2">
+                      <Avatar className="w-10 h-10 border-2 border-blue-600">
+                        {getProfilePicture() ? (
+                          <OptimizedImage 
+                            src={getProfilePicture()} 
+                            alt={`Foto de perfil de ${getDisplayName()}`}
+                            className="w-full h-full object-cover"
+                            priority={true}
+                            width={40}
+                            height={40}
+                          />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                            {getDisplayName().charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">
+                          {getDisplayName()}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user.user_type === "professionnel" ? t('professional') : t('client')}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-3 px-2">
-                        <Avatar className="w-10 h-10 border-2 border-blue-600">
-                          {getProfilePicture() ? (
-                            <OptimizedImage 
-                              src={getProfilePicture()} 
-                              alt={`Foto de perfil de ${getDisplayName()}`}
-                              className="w-full h-full object-cover"
-                              priority={true}
-                              width={40}
-                              height={40}
-                            />
-                          ) : (
-                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                              {getDisplayName().charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm truncate">
-                            {getDisplayName()}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {user.user_type === "professionnel" ? t('professional') : t('client')}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                     
                     <div className="px-2">
                       <LanguageSwitcher variant="compact" />
@@ -730,15 +697,7 @@ function LayoutContent({ children, currentPageName }) {
                   </div>
                   
                   <div className="p-3">
-                    {loadingUser ? (
-                      <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                        <div className="flex-1">
-                          <Skeleton className="h-4 w-24 mb-2" />
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                      </div>
-                    ) : user && (
+                    {user && (
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
@@ -752,16 +711,16 @@ function LayoutContent({ children, currentPageName }) {
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                              {getDisplayName() ? getDisplayName().charAt(0).toUpperCase() : 'U'}
+                              {getDisplayName().charAt(0).toUpperCase()}
                             </AvatarFallback>
                           )}
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 text-sm truncate">
-                            {getDisplayName() || 'Usuario'}
+                            {getDisplayName()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user?.user_type === "professionnel" ? t('professional') : t('client')}
+                            {user.user_type === "professionnel" ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
@@ -832,7 +791,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!loadingUser && !user && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -904,7 +863,7 @@ function LayoutContent({ children, currentPageName }) {
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!loadingUser && user && <NotificationCenter user={user} />}
+                    {user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />
                   </div>
                 </div>
