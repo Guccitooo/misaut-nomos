@@ -826,12 +826,20 @@ export default function MyProfilePage() {
                   </div>
                   <div>
                     <Label>Ciudad</Label>
-                    <Input
+                    <Select
                       value={userData.city}
-                      onChange={(e) => setUserData({ ...userData, city: e.target.value })}
+                      onValueChange={(value) => setUserData({ ...userData, city: value })}
                       disabled={!isEditing}
-                      placeholder="Madrid"
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona ciudad" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {Object.values(ciudadesPorProvincia).flat().sort().map((ciudad) => (
+                          <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
