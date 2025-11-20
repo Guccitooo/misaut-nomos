@@ -233,13 +233,25 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
             )}
           </div>
 
-          <div className="flex gap-1.5 mt-auto">
+          <div className="grid grid-cols-2 gap-1.5 mt-auto">
             <Button 
               onClick={onClick}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
             >
-              {t('viewProfile') || 'Ver perfil'}
+              <Eye className="w-3.5 h-3.5 mr-1" />
+              {t('view') || 'Ver'}
             </Button>
+
+            {profile.metodos_contacto?.includes('chat_interno') && (
+              <Button
+                onClick={onClick}
+                variant="outline"
+                className="h-9 border-blue-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg text-xs font-medium"
+              >
+                <MessageCircle className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                {t('message') || 'Mensaje'}
+              </Button>
+            )}
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
               <Button
