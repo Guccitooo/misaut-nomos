@@ -119,6 +119,8 @@ function LayoutContent({ children, currentPageName }) {
     }
   }, [user]);
 
+  const isProfessional = user && (user.user_type === "professionnel" || professionalProfile);
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -224,13 +226,13 @@ function LayoutContent({ children, currentPageName }) {
     },
   ];
 
-  if (user?.user_type === "professionnel") {
+  if (isProfessional) {
     navigationItems.push({
       title: t('mySubscription'),
       url: createPageUrl("SubscriptionManagement"),
       icon: Briefcase,
     });
-  } else if (!user || user?.user_type === "client") {
+  } else {
     navigationItems.push({
       title: t('viewPlans'),
       url: createPageUrl("PricingPlans"),
@@ -652,7 +654,7 @@ function LayoutContent({ children, currentPageName }) {
                           {getDisplayName()}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.user_type === "professionnel" ? t('professional') : t('client')}
+                          {isProfessional ? t('professional') : t('client')}
                         </p>
                       </div>
                     </div>
@@ -720,7 +722,7 @@ function LayoutContent({ children, currentPageName }) {
                             {getDisplayName()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user.user_type === "professionnel" ? t('professional') : t('client')}
+                            {isProfessional ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
