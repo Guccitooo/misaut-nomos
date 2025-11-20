@@ -75,7 +75,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link to={createPageUrl("TermsConditions")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('termsConditions')}
+                  {t('termsAndConditions')}
                 </Link>
               </li>
               <li>
@@ -194,7 +194,7 @@ export default function Footer() {
           {openSection === 'legal' && (
             <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
               <Link to={createPageUrl("TermsConditions")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('termsConditions')}
+                {t('termsAndConditions')}
               </Link>
               <Link to={createPageUrl("PrivacyPolicy")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('privacyPolicy')}
