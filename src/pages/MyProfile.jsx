@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3 } from "lucide-react";
+import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -84,6 +84,20 @@ const provincias = [
   "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
   "Vizcaya", "Zamora", "Zaragoza"
 ];
+
+const ciudadesPorProvincia = {
+  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
+  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet"],
+  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira"],
+  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe"],
+  "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona"],
+  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy"],
+  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla"],
+  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi"],
+  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros"],
+  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía", "Arucas"],
+  "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Ibiza"],
+};
 
 const categories = [
   "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
@@ -1044,12 +1058,20 @@ export default function MyProfilePage() {
                           {profileData.ciudad ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           Ciudad
                         </Label>
-                        <Input
+                        <Select
                           value={profileData.ciudad}
-                          onChange={(e) => setProfileData({ ...profileData, ciudad: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="Madrid"
-                        />
+                          onValueChange={(value) => setProfileData({ ...profileData, ciudad: value })}
+                          disabled={!isEditing || !profileData.provincia}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={profileData.provincia ? "Selecciona ciudad" : "Primero elige provincia"} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {profileData.provincia && ciudadesPorProvincia[profileData.provincia]?.map((ciudad) => (
+                              <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
@@ -1084,31 +1106,40 @@ export default function MyProfilePage() {
 
                     <div>
                       <Label className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        {profileData.formas_pago.length > 0 ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         Formas de pago aceptadas
                       </Label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
-                          <div
-                            key={forma}
-                            onClick={() => isEditing && toggleFormaPago(forma)}
-                            className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
-                              isEditing ? 'cursor-pointer' : 'cursor-default'
-                            } ${
-                              profileData.formas_pago.includes(forma)
-                                ? "border-purple-600 bg-purple-50"
-                                : "border-gray-200"
-                            }`}
-                          >
-                            <Checkbox
-                              checked={profileData.formas_pago.includes(forma)}
-                              disabled={!isEditing}
-                              className="pointer-events-none"
-                            />
-                            <span className="text-sm">{forma}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {!isEditing ? (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {profileData.formas_pago.map((forma) => (
+                            <Badge key={forma} className="bg-purple-100 text-purple-900 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              {forma}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
+                            <div
+                              key={forma}
+                              onClick={() => toggleFormaPago(forma)}
+                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                                profileData.formas_pago.includes(forma)
+                                  ? "border-purple-600 bg-purple-50"
+                                  : "border-gray-200 hover:bg-gray-50"
+                              }`}
+                            >
+                              {profileData.formas_pago.includes(forma) ? (
+                                <CheckCircle className="w-5 h-5 text-purple-600" />
+                              ) : (
+                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                              )}
+                              <span className="text-sm">{forma}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1127,13 +1158,27 @@ export default function MyProfilePage() {
                           {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
                           Sitio web
                         </Label>
-                        <Input
-                          value={profileData.website}
-                          onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                          disabled={!isEditing}
-                          placeholder="https://tuweb.com"
-                          className="h-10"
-                        />
+                        {!isEditing && profileData.website ? (
+                          <a 
+                            href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
+                          >
+                            <p className="text-sm text-blue-700 truncate flex items-center gap-2">
+                              <Globe className="w-4 h-4" />
+                              {profileData.website}
+                            </p>
+                          </a>
+                        ) : (
+                          <Input
+                            value={profileData.website}
+                            onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                            disabled={!isEditing}
+                            placeholder="https://tuweb.com"
+                            className="h-10"
+                          />
+                        )}
                       </div>
 
                       <div>
@@ -1141,16 +1186,30 @@ export default function MyProfilePage() {
                           {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
                           Instagram
                         </Label>
-                        <Input
-                          value={profileData.social_links.instagram}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            social_links: { ...profileData.social_links, instagram: e.target.value }
-                          })}
-                          disabled={!isEditing}
-                          placeholder="@tuperfil"
-                          className="h-10"
-                        />
+                        {!isEditing && profileData.social_links?.instagram ? (
+                          <a 
+                            href={profileData.social_links.instagram.startsWith('http') ? profileData.social_links.instagram : `https://instagram.com/${profileData.social_links.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-2 rounded-lg border border-pink-200 bg-pink-50 hover:bg-pink-100 transition-colors"
+                          >
+                            <p className="text-sm text-pink-700 truncate flex items-center gap-2">
+                              <Instagram className="w-4 h-4" />
+                              {profileData.social_links.instagram}
+                            </p>
+                          </a>
+                        ) : (
+                          <Input
+                            value={profileData.social_links.instagram}
+                            onChange={(e) => setProfileData({ 
+                              ...profileData, 
+                              social_links: { ...profileData.social_links, instagram: e.target.value }
+                            })}
+                            disabled={!isEditing}
+                            placeholder="https://instagram.com/tuperfil"
+                            className="h-10"
+                          />
+                        )}
                       </div>
 
                       <div>
@@ -1158,16 +1217,30 @@ export default function MyProfilePage() {
                           {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
                           Facebook
                         </Label>
-                        <Input
-                          value={profileData.social_links.facebook}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            social_links: { ...profileData.social_links, facebook: e.target.value }
-                          })}
-                          disabled={!isEditing}
-                          placeholder="tu página"
-                          className="h-10"
-                        />
+                        {!isEditing && profileData.social_links?.facebook ? (
+                          <a 
+                            href={profileData.social_links.facebook.startsWith('http') ? profileData.social_links.facebook : `https://facebook.com/${profileData.social_links.facebook}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
+                          >
+                            <p className="text-sm text-blue-700 truncate flex items-center gap-2">
+                              <Facebook className="w-4 h-4" />
+                              {profileData.social_links.facebook}
+                            </p>
+                          </a>
+                        ) : (
+                          <Input
+                            value={profileData.social_links.facebook}
+                            onChange={(e) => setProfileData({ 
+                              ...profileData, 
+                              social_links: { ...profileData.social_links, facebook: e.target.value }
+                            })}
+                            disabled={!isEditing}
+                            placeholder="https://facebook.com/tupagina"
+                            className="h-10"
+                          />
+                        )}
                       </div>
 
                       <div>
@@ -1175,16 +1248,30 @@ export default function MyProfilePage() {
                           {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
                           TikTok
                         </Label>
-                        <Input
-                          value={profileData.social_links.tiktok}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            social_links: { ...profileData.social_links, tiktok: e.target.value }
-                          })}
-                          disabled={!isEditing}
-                          placeholder="@tuperfil"
-                          className="h-10"
-                        />
+                        {!isEditing && profileData.social_links?.tiktok ? (
+                          <a 
+                            href={profileData.social_links.tiktok.startsWith('http') ? profileData.social_links.tiktok : `https://tiktok.com/@${profileData.social_links.tiktok.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block p-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                          >
+                            <p className="text-sm text-gray-700 truncate flex items-center gap-2">
+                              <Music className="w-4 h-4" />
+                              {profileData.social_links.tiktok}
+                            </p>
+                          </a>
+                        ) : (
+                          <Input
+                            value={profileData.social_links.tiktok}
+                            onChange={(e) => setProfileData({ 
+                              ...profileData, 
+                              social_links: { ...profileData.social_links, tiktok: e.target.value }
+                            })}
+                            disabled={!isEditing}
+                            placeholder="https://tiktok.com/@tuperfil"
+                            className="h-10"
+                          />
+                        )}
                       </div>
                     </div>
                   </CardContent>
