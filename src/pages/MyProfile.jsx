@@ -338,7 +338,7 @@ export default function MyProfilePage() {
       });
       
       if (profiles[0]) {
-        setProfileData({
+        const profileData = {
           business_name: profiles[0].business_name || "",
           cif_nif: profiles[0].cif_nif || "",
           email_contacto: profiles[0].email_contacto || user.email,
@@ -370,11 +370,13 @@ export default function MyProfilePage() {
           metodos_contacto: profiles[0].metodos_contacto || ['chat_interno'],
           years_experience: profiles[0].years_experience || "",
           certifications: profiles[0].certifications || [],
-        });
+        };
+        setProfileData(profileData);
       }
       return profiles[0];
     },
     enabled: !!user,
+    staleTime: 30000,
   });
 
   const { data: metrics = [] } = useQuery({
@@ -659,7 +661,9 @@ export default function MyProfilePage() {
     }
   };
 
-  if (!user || loadingProfile || (loadingSubscription && !isVerifyingSubscription && !user?.id)) {
+  const isInitialLoading = !user || loadingProfile || (loadingSubscription && !isVerifyingSubscription);
+
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
@@ -860,7 +864,7 @@ export default function MyProfilePage() {
                 <div>
                   <Label>Nombre completo</Label>
                   <Input
-                    value={userData.full_name}
+                    value={userData.full_name || ""}
                     onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
                     disabled={!isEditing}
                   />
@@ -870,7 +874,7 @@ export default function MyProfilePage() {
                   <div>
                     <Label>Teléfono</Label>
                     <Input
-                      value={userData.phone}
+                      value={userData.phone || ""}
                       onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
                       disabled={!isEditing}
                       placeholder="+34 612 345 678"
@@ -879,7 +883,7 @@ export default function MyProfilePage() {
                   <div>
                     <Label>Ciudad</Label>
                     <Select
-                      value={userData.city}
+                      value={userData.city || ""}
                       onValueChange={(value) => setUserData({ ...userData, city: value })}
                       disabled={!isEditing}
                     >
