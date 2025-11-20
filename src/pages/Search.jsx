@@ -365,7 +365,6 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -383,8 +382,6 @@ export default function SearchPage() {
       setUser(currentUser);
     } catch (error) {
       setUser(null);
-    } finally {
-      setLoadingUser(false);
     }
   };
 
@@ -518,11 +515,9 @@ export default function SearchPage() {
     }
   };
 
-  const isLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions || (user && loadingFavorites);
-  
-  const isDataReady = !loadingProfiles && !loadingUsers && !loadingCategories && !loadingSubscriptions && (!user || !loadingFavorites);
+  const isLoading = loadingProfiles || loadingCategories || loadingSubscriptions || loadingUsers;
 
-  if (isLoading || !isDataReady) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -583,7 +578,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        <div className={`max-w-7xl mx-auto px-4 ${!loadingUser && user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
+        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
 
           <Card className="mb-6 shadow-sm border-0 rounded-xl bg-white">
             <CardContent className="p-4">
