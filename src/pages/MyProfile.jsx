@@ -902,7 +902,7 @@ export default function MyProfilePage() {
                   </Badge>
                 </div>
 
-                {isProfessional && profile && subscriptionStatus?.isActive && (
+                {isProfessional && profile && !loadingProfile && subscriptionStatus?.isActive && (
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
