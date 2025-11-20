@@ -81,7 +81,7 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser, onStartChat }) => {
   const { t } = useLanguage();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -243,7 +243,10 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
 
             {currentUser && profile.metodos_contacto?.includes('chat_interno') && (
               <Button
-                onClick={onClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartChat();
+                }}
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
@@ -492,6 +495,36 @@ export default function SearchPage() {
     }
   };
 
+  const handleStartChat = async (profile) => {
+    if (!user) {
+      base44.auth.redirectToLogin();
+      return;
+    }
+
+    try {
+      const conversationId = [user.id, profile.user_id].sort().join('_');
+      const existingMessages = await base44.entities.Message.filter({
+        conversation_id: conversationId
+      });
+
+      if (existingMessages.length === 0) {
+        await base44.entities.Message.create({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          recipient_id: profile.user_id,
+          content: `Hola, estoy interesado en tus servicios.`,
+          professional_name: profile.business_name,
+          client_name: user.full_name || user.email
+        });
+      }
+
+      navigate(createPageUrl("Messages") + `?conversation=${conversationId}`);
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      toast.error("Error al iniciar chat");
+    }
+  };
+
   const handleToggleFavorite = async (profile) => {
     if (!user) {
       base44.auth.redirectToLogin();
@@ -701,6 +734,7 @@ export default function SearchPage() {
                     userCategories={categories}
                     professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                     currentUser={user}
+                    onStartChat={() => handleStartChat(profile)}
                   />
                 </motion.div>
               ))}
