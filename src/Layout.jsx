@@ -172,7 +172,7 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const getDisplayName = () => {
-    if (!user) return "";
+    if (!user || loadingUser) return "";
     
     if (user.user_type === "professionnel" && professionalProfile?.business_name) {
       return professionalProfile.business_name;
@@ -581,7 +581,7 @@ function LayoutContent({ children, currentPageName }) {
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
-            {user && (
+            {!loadingUser && user && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
@@ -812,7 +812,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {!loadingUser && !user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -884,7 +884,7 @@ function LayoutContent({ children, currentPageName }) {
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>
                   <div className="flex items-center gap-2">
-                    {user && <NotificationCenter user={user} />}
+                    {!loadingUser && user && <NotificationCenter user={user} />}
                     <LanguageSwitcher />
                   </div>
                 </div>
