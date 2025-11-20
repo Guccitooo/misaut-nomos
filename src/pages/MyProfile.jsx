@@ -512,33 +512,72 @@ export default function MyProfilePage() {
   };
 
   const handlePhotoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no puede superar los 5MB");
-      return;
-    }
+    const validFiles = files.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} supera los 5MB`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
 
     setUploadingPhoto(true);
+    const uploadedUrls = [];
+
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setProfileData({
-        ...profileData,
-        photos: [...(profileData.photos || []), file_url]
-      });
-      toast.success("✅ Foto añadida");
+      for (const file of validFiles) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        uploadedUrls.push(file_url);
+      }
+
+      const updatedPhotos = [...(profileData.photos || []), ...uploadedUrls];
+      setProfileData(prev => ({
+        ...prev,
+        photos: updatedPhotos
+      }));
+
+      // Guardar automáticamente después de subir las fotos
+      if (profile) {
+        await base44.entities.ProfessionalProfile.update(profile.id, {
+          photos: updatedPhotos,
+          imagen_principal: user?.profile_picture || updatedPhotos[0] || ""
+        });
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      }
+
+      toast.success(`✅ ${validFiles.length} foto(s) añadida(s)`);
     } catch (error) {
-      console.error("Error uploading photo:", error);
-      toast.error("Error al subir la foto");
+      console.error("Error uploading photos:", error);
+      toast.error("Error al subir las fotos");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
     }
-    setUploadingPhoto(false);
   };
 
-  const removePhoto = (index) => {
+  const removePhoto = async (index) => {
     const newPhotos = [...profileData.photos];
     newPhotos.splice(index, 1);
     setProfileData({ ...profileData, photos: newPhotos });
+
+    // Guardar automáticamente después de eliminar la foto
+    if (profile) {
+      try {
+        await base44.entities.ProfessionalProfile.update(profile.id, {
+          photos: newPhotos,
+          imagen_principal: user?.profile_picture || newPhotos[0] || ""
+        });
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+        toast.success("Foto eliminada");
+      } catch (error) {
+        console.error("Error removing photo:", error);
+        toast.error("Error al eliminar la foto");
+      }
+    }
   };
 
   const selectCategory = (category) => {
@@ -1305,6 +1344,7 @@ export default function MyProfilePage() {
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
                           className="hidden"
                           onChange={handlePhotoUpload}
                           disabled={uploadingPhoto}
@@ -1314,7 +1354,8 @@ export default function MyProfilePage() {
                         ) : (
                           <>
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Haz clic para añadir foto ({profileData.photos.length}/10)</p>
+                            <p className="text-sm text-gray-600">Haz clic para añadir fotos ({profileData.photos.length}/10)</p>
+                            <p className="text-xs text-gray-500 mt-1">Puedes seleccionar varias a la vez</p>
                           </>
                         )}
                       </div>
