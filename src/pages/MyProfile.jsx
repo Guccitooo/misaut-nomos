@@ -103,7 +103,6 @@ export default function MyProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
-  const [pollingAttempts, setPollingAttempts] = useState(0);
   const MAX_POLLING_ATTEMPTS = 10;
 
   const reactivationSuccess = searchParams.get("reactivation");
@@ -187,8 +186,6 @@ export default function MyProfilePage() {
 
   const startSubscriptionPolling = async () => {
     for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
-      setPollingAttempts(attempt);
-      
       try {
         const currentUser = await loadUser();
         if (!currentUser) throw new Error("User not loaded during polling");
@@ -208,7 +205,6 @@ export default function MyProfilePage() {
         
         if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
           setIsVerifyingSubscription(false);
-          setPollingAttempts(0);
           
           if (reactivationSuccess === "success") {
             toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
@@ -266,13 +262,12 @@ export default function MyProfilePage() {
       } catch (error) {
         console.error(`❌ Error en intento ${attempt}:`, error);
         if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
     }
-    
+
     setIsVerifyingSubscription(false);
-    setPollingAttempts(0);
     
     toast.error(
       <div>
@@ -618,12 +613,11 @@ export default function MyProfilePage() {
                 Estamos confirmando tu pago y activando tu cuenta...
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  <strong>Intento {pollingAttempts}/{MAX_POLLING_ATTEMPTS}</strong>
+                <p className="text-sm text-blue-900 font-medium">
+                  Esto tardará solo unos segundos
                 </p>
                 <p className="text-xs text-blue-700 mt-2">
-                  Esto puede tardar unos segundos mientras procesamos tu pago.
-                  {pollingAttempts >= 5 && <><br />Si tarda mucho, estamos intentando una sincronización manual.</>}
+                  Por favor, no cierres esta ventana mientras procesamos tu pago.
                 </p>
               </div>
             </div>
