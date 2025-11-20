@@ -251,14 +251,24 @@ export default function PricingPlansPage() {
                       
                       <div className="mb-3">
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-5xl font-extrabold text-gray-900">{roundedPrice}</span>
-                          <span className="text-xl font-bold text-gray-600">€</span>
+                          <span className="text-6xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">0</span>
+                          <span className="text-2xl font-bold text-emerald-600">€</span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1 font-medium">
-                          {plan.plan_id === "plan_monthly_trial" ? "por mes" : 
-                           plan.plan_id === "plan_quarterly" ? "cada 3 meses" : 
-                           "por año"}
+                        <p className="text-sm text-gray-500 mt-1 font-bold">
+                          durante 2 meses
                         </p>
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-gray-400 mb-1">Después solo:</p>
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-3xl font-bold text-gray-900">{roundedPrice}</span>
+                            <span className="text-lg font-semibold text-gray-600">€</span>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium">
+                            {plan.plan_id === "plan_monthly_trial" ? "al mes" : 
+                             plan.plan_id === "plan_quarterly" ? "cada 3 meses" : 
+                             "al año"}
+                          </p>
+                        </div>
                       </div>
 
                       {monthlyEquivalent && (
