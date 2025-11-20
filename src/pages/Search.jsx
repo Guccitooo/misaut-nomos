@@ -685,9 +685,8 @@ export default function SearchPage() {
               ))}
             </AnimatePresence>
           </div>
-          </div>
-          </div>
-          </div>
-          </>
-          );
-          }
+        </div>
+      </div>
+    </>
+  );
+}
