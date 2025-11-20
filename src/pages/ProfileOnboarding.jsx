@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Instagram, Facebook, Globe, Music } from "lucide-react";
+import { Loader2, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Instagram, Facebook, Globe, Music, Check } from "lucide-react";
 
 const PROVINCIAS = [
   "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila",
@@ -22,6 +22,17 @@ const PROVINCIAS = [
   "Pontevedra", "Salamanca", "Santa Cruz de Tenerife", "Segovia", "Sevilla",
   "Soria", "Tarragona", "Teruel", "Toledo", "Valencia", "Valladolid",
   "Vizcaya", "Zamora", "Zaragoza"
+];
+
+const CIUDADES_COMUNES = [
+  "Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Málaga",
+  "Murcia", "Palma", "Las Palmas", "Bilbao", "Alicante", "Córdoba",
+  "Valladolid", "Vigo", "Gijón", "Hospitalet de Llobregat", "Vitoria",
+  "A Coruña", "Granada", "Elche", "Oviedo", "Badalona", "Cartagena",
+  "Terrassa", "Jerez de la Frontera", "Sabadell", "Santa Cruz de Tenerife",
+  "Móstoles", "Alcalá de Henares", "Pamplona", "Fuenlabrada", "Almería",
+  "Leganés", "Donostia-San Sebastián", "Getafe", "Burgos", "Santander",
+  "Castellón de la Plana", "Alcorcón", "Albacete", "Otra"
 ];
 
 const CATEGORIAS = [
@@ -475,10 +486,15 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('telefono') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <Checkbox
-                        checked={formData.metodos_contacto.includes('telefono')}
-                        className="pointer-events-none"
-                      />
+                      <div className="relative">
+                        <Checkbox
+                          checked={formData.metodos_contacto.includes('telefono')}
+                          className="pointer-events-none"
+                        />
+                        {formData.metodos_contacto.includes('telefono') && (
+                          <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        )}
+                      </div>
                       <span className="text-sm font-medium text-gray-700">Teléfono</span>
                     </div>
 
@@ -490,10 +506,15 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('whatsapp') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <Checkbox
-                        checked={formData.metodos_contacto.includes('whatsapp')}
-                        className="pointer-events-none"
-                      />
+                      <div className="relative">
+                        <Checkbox
+                          checked={formData.metodos_contacto.includes('whatsapp')}
+                          className="pointer-events-none"
+                        />
+                        {formData.metodos_contacto.includes('whatsapp') && (
+                          <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        )}
+                      </div>
                       <span className="text-sm font-medium text-gray-700">WhatsApp</span>
                     </div>
                   </div>
@@ -520,10 +541,15 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.categories.includes(cat) ? '#EFF6FF' : 'white'
                         }}
                       >
-                        <Checkbox
-                          checked={formData.categories.includes(cat)}
-                          className="pointer-events-none"
-                        />
+                        <div className="relative">
+                          <Checkbox
+                            checked={formData.categories.includes(cat)}
+                            className="pointer-events-none"
+                          />
+                          {formData.categories.includes(cat) && (
+                            <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          )}
+                        </div>
                         <span className="text-sm font-medium text-gray-700">{cat}</span>
                       </div>
                     ))}
@@ -551,6 +577,14 @@ export default function ProfileOnboardingPage() {
                     placeholder="Describe brevemente tus servicios..."
                     className="h-32 resize-none"
                   />
+                  <div className="flex justify-between items-center mt-1">
+                    <p className={`text-xs ${formData.descripcion_corta.length < 20 ? 'text-red-500' : 'text-green-600'}`}>
+                      {formData.descripcion_corta.length}/20 caracteres mínimos
+                    </p>
+                    {formData.descripcion_corta.length >= 20 && (
+                      <Check className="w-4 h-4 text-green-600" />
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -581,12 +615,27 @@ export default function ProfileOnboardingPage() {
 
                   <div>
                     <Label>Ciudad (opcional)</Label>
-                    <Input
+                    <Select
                       value={formData.ciudad}
-                      onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                      placeholder="Madrid, Barcelona..."
-                      className="h-12"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, ciudad: value === "Otra" ? "" : value })}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecciona ciudad" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {CIUDADES_COMUNES.map((ciudad) => (
+                          <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.ciudad === "" && (
+                      <Input
+                        value={formData.ciudad}
+                        onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                        placeholder="Escribe tu ciudad..."
+                        className="h-12 mt-2"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -615,10 +664,15 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.formas_pago.includes(forma) ? '#FAF5FF' : 'white'
                         }}
                       >
-                        <Checkbox
-                          checked={formData.formas_pago.includes(forma)}
-                          className="pointer-events-none"
-                        />
+                        <div className="relative">
+                          <Checkbox
+                            checked={formData.formas_pago.includes(forma)}
+                            className="pointer-events-none"
+                          />
+                          {formData.formas_pago.includes(forma) && (
+                            <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          )}
+                        </div>
                         <span className="text-sm font-medium">{forma}</span>
                       </div>
                     ))}
@@ -730,16 +784,37 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-                  <h3 className="font-semibold text-gray-900 mb-3">Consentimientos legales</h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-semibold text-gray-900">Consentimientos legales</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData({
+                        ...formData,
+                        acepta_terminos: true,
+                        acepta_politica_privacidad: true,
+                        consiente_contacto_clientes: true
+                      })}
+                      className="h-8 text-xs"
+                    >
+                      <Check className="w-3 h-3 mr-1" />
+                      Aceptar todo
+                    </Button>
+                  </div>
                   
                   <div 
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
                   >
-                    <Checkbox
-                      checked={formData.acepta_terminos}
-                      className="mt-1 pointer-events-none"
-                    />
+                    <div className="relative mt-1">
+                      <Checkbox
+                        checked={formData.acepta_terminos}
+                        className="pointer-events-none"
+                      />
+                      {formData.acepta_terminos && (
+                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
                     <span className="text-sm text-gray-700">
                       Acepto los <a href="/terms" target="_blank" className="text-blue-600 underline">Términos y Condiciones</a> de uso de la plataforma
                     </span>
@@ -749,10 +824,15 @@ export default function ProfileOnboardingPage() {
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
                   >
-                    <Checkbox
-                      checked={formData.acepta_politica_privacidad}
-                      className="mt-1 pointer-events-none"
-                    />
+                    <div className="relative mt-1">
+                      <Checkbox
+                        checked={formData.acepta_politica_privacidad}
+                        className="pointer-events-none"
+                      />
+                      {formData.acepta_politica_privacidad && (
+                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
                     <span className="text-sm text-gray-700">
                       Acepto la <a href="/privacy" target="_blank" className="text-blue-600 underline">Política de Privacidad</a> y tratamiento de datos
                     </span>
@@ -762,10 +842,15 @@ export default function ProfileOnboardingPage() {
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
                   >
-                    <Checkbox
-                      checked={formData.consiente_contacto_clientes}
-                      className="mt-1 pointer-events-none"
-                    />
+                    <div className="relative mt-1">
+                      <Checkbox
+                        checked={formData.consiente_contacto_clientes}
+                        className="pointer-events-none"
+                      />
+                      {formData.consiente_contacto_clientes && (
+                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
                     <span className="text-sm text-gray-700">
                       Consiento en que los clientes puedan contactarme a través de la plataforma
                     </span>
