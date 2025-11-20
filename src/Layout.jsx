@@ -111,14 +111,23 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   useEffect(() => {
-    loadUser();
+    const initUser = async () => {
+      try {
+        await loadUser();
+      } catch (error) {
+        console.error('Error initializing user:', error);
+        setUser(null);
+        setLoadingUser(false);
+      }
+    };
+    initUser();
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadUnreadCount();
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -743,16 +752,16 @@ function LayoutContent({ children, currentPageName }) {
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                              {getDisplayName().charAt(0).toUpperCase()}
+                              {getDisplayName() ? getDisplayName().charAt(0).toUpperCase() : 'U'}
                             </AvatarFallback>
                           )}
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 text-sm truncate">
-                            {getDisplayName()}
+                            {getDisplayName() || 'Usuario'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {user.user_type === "professionnel" ? t('professional') : t('client')}
+                            {user?.user_type === "professionnel" ? t('professional') : t('client')}
                           </p>
                         </div>
                       </div>
