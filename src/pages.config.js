@@ -22,7 +22,6 @@ import AdminFAQ from './pages/AdminFAQ';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import AdminTickets from './pages/AdminTickets';
-import PaymentSuccess from './pages/PaymentSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -51,7 +50,6 @@ export const PAGES = {
     "Tickets": Tickets,
     "TicketDetail": TicketDetail,
     "AdminTickets": AdminTickets,
-    "PaymentSuccess": PaymentSuccess,
 }
 
 export const pagesConfig = {

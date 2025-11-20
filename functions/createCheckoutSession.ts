@@ -44,7 +44,9 @@ Deno.serve(async (req) => {
     }
 
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
-    const successUrl = `${baseUrl}/PaymentSuccess`;
+    const successUrl = isReactivation 
+      ? `${baseUrl}/MyProfile?reactivation=success`
+      : `${baseUrl}/MyProfile?onboarding=pending`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
@@ -59,12 +61,8 @@ Deno.serve(async (req) => {
       cancel_url: cancelUrl,
       metadata: {
         user_id: user.id,
-        email: user.email,
-        fullName: user.full_name || user.email.split('@')[0],
-        phone: user.phone || '',
-        address: user.city || '',
-        userType: 'professionnel',
-        planId: planId,
+        user_email: user.email,
+        plan_id: planId,
         is_reactivation: isReactivation.toString(),
         trial_offered: 'true'
       },
@@ -87,12 +85,8 @@ Deno.serve(async (req) => {
         trial_period_days: 60,
         metadata: {
           user_id: user.id,
-          email: user.email,
-          fullName: user.full_name || user.email.split('@')[0],
-          phone: user.phone || '',
-          address: user.city || '',
-          userType: 'professionnel',
-          planId: planId,
+          user_email: user.email,
+          plan_id: planId,
           discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
           trial: '2 meses'
         }
