@@ -81,7 +81,7 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser, onStartChat }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser }) => {
   const { t } = useLanguage();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -243,10 +243,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
 
             {currentUser && profile.metodos_contacto?.includes('chat_interno') && (
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartChat();
-                }}
+                onClick={onClick}
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
@@ -495,16 +492,6 @@ export default function SearchPage() {
     }
   };
 
-  const handleStartChat = async (profile) => {
-    if (!user) {
-      base44.auth.redirectToLogin();
-      return;
-    }
-
-    const conversationId = [user.id, profile.user_id].sort().join('_');
-    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-  };
-
   const handleToggleFavorite = async (profile) => {
     if (!user) {
       base44.auth.redirectToLogin();
@@ -714,7 +701,6 @@ export default function SearchPage() {
                     userCategories={categories}
                     professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                     currentUser={user}
-                    onStartChat={() => handleStartChat(profile)}
                   />
                 </motion.div>
               ))}
