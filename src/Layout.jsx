@@ -740,7 +740,7 @@ function LayoutContent({ children, currentPageName }) {
                       </div>
                     )}
                     
-                    {navigationItems.map((item) => (
+                    {user && navigationItems.map((item) => (
                       <Link
                         key={item.title}
                         to={item.url}
@@ -759,11 +759,13 @@ function LayoutContent({ children, currentPageName }) {
                           </span>
                         )}
                       </Link>
-                    ))}
+                    )))}
                     
-                    <div className="mt-4 mb-4 px-2">
-                      <LanguageSwitcher variant="compact" />
-                    </div>
+                    {user && (
+                      <div className="mt-4 mb-4 px-2">
+                        <LanguageSwitcher variant="compact" />
+                      </div>
+                    )}
                     
                     {!user ? (
                       <div className="mt-4 space-y-2">
@@ -826,34 +828,28 @@ function LayoutContent({ children, currentPageName }) {
                     </Link>
 
                     <div className="flex items-center gap-3">
-                      {loadingUser ? (
-                        <div className="w-96 h-10 bg-gray-100 rounded-lg animate-pulse" />
-                      ) : (
-                        <>
-                          <Button
-                            variant="ghost"
-                            className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={handleLogin}
-                            aria-label={t('login')}
-                          >
-                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('login')}
-                          </Button>
-                          <Link to={createPageUrl("ClientOnboarding")}>
-                            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                              <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                              Hazte cliente
-                            </Button>
-                          </Link>
-                          <Link to={createPageUrl("PricingPlans")}>
-                            <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                              <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                              {t('becomeFreelancer')}
-                            </Button>
-                          </Link>
-                          <LanguageSwitcher variant="compact" />
-                        </>
-                      )}
+                      <Button
+                        variant="ghost"
+                        className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={handleLogin}
+                        aria-label={t('login')}
+                      >
+                        <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                        {t('login')}
+                      </Button>
+                      <Link to={createPageUrl("ClientOnboarding")}>
+                        <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                          <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Hazte cliente
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("PricingPlans")}>
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
+                          {t('becomeFreelancer')}
+                        </Button>
+                      </Link>
+                      <LanguageSwitcher variant="compact" />
                     </div>
                   </div>
                 </header>
