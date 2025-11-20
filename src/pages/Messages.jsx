@@ -1204,11 +1204,12 @@ export default function MessagesPage() {
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </>
-                  )}
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
                 </div>
 
                 <div 
