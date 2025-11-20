@@ -96,13 +96,13 @@ function LayoutContent({ children, currentPageName }) {
   ];
 
   const shouldShowBottomBar = () => {
-    if (!user) return false;
+    if (!user || loadingUser) return false;
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
     if (!user.user_type) return false;
     
     if (user.user_type === "professionnel") {
       if (professionalProfile === null) return false;
-      if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
+      if (!professionalProfile?.onboarding_completed || !professionalProfile?.visible_en_busqueda) {
         return false;
       }
     }
@@ -150,6 +150,10 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const loadUnreadCount = async () => {
+    if (!user?.id) {
+      setUnreadCount(0);
+      return;
+    }
     try {
       const messages = await base44.entities.Message.filter({
         recipient_id: user.id,
@@ -200,7 +204,8 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const getProfilePicture = () => {
-    return user?.profile_picture || null;
+    if (!user || loadingUser) return null;
+    return user.profile_picture || null;
   };
 
   const navigationItems = [

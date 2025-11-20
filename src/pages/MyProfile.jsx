@@ -299,13 +299,13 @@ export default function MyProfilePage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', currentUser.email);
-      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
+      console.log('👤 Usuario cargado:', currentUser?.email || 'sin email');
+      console.log('📸 Foto de perfil URL:', currentUser?.profile_picture || 'sin foto');
       setUser(currentUser);
       setUserData({
-        full_name: currentUser.full_name || "",
-        phone: currentUser.phone || "",
-        city: currentUser.city || "",
+        full_name: currentUser?.full_name || "",
+        phone: currentUser?.phone || "",
+        city: currentUser?.city || "",
       });
       return currentUser;
     } catch (error) {
