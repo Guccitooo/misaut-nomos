@@ -340,7 +340,7 @@ export default function MessagesPage() {
   };
 
   const getDisplayName = (userId) => {
-    if (!userId) return t("user");
+    if (!userId) return "Usuario";
     
     if (userId === user?.id) {
       if (user.user_type === "professionnel") {
@@ -352,14 +352,14 @@ export default function MessagesPage() {
           }
         }
       }
-      return user.full_name || user.email?.split('@')[0] || t("you");
+      return user.full_name || user.email?.split('@')[0] || "Tú";
     }
     
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
         return otherUserData.profile.business_name;
       }
-      return otherUserData.full_name || otherUserData.email?.split('@')[0] || t("user");
+      return otherUserData.full_name || otherUserData.email?.split('@')[0] || "Usuario";
     }
     
     if (usersCache[userId]) {
@@ -367,15 +367,17 @@ export default function MessagesPage() {
       if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
         return cachedUser.profile.business_name;
       }
-      return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
+      return cachedUser.full_name || cachedUser.email?.split('@')[0] || "Usuario";
     }
     
     const conversation = conversations[selectedConversation];
     if (conversation && userId === conversation.otherUserId) {
-      return conversation.otherUserName || t("user");
+      if (conversation.otherUserName && conversation.otherUserName.trim() !== '') {
+        return conversation.otherUserName;
+      }
     }
     
-    return t("user");
+    return "Usuario";
   };
 
   const getUserType = (userId) => {
@@ -763,17 +765,21 @@ export default function MessagesPage() {
         }
       }
 
+      const recipientName = recipientUser?.user_type === "professionnel" 
+        ? (recipientUser.profile?.business_name || recipientUser.full_name || recipientUser.email?.split('@')[0] || 'Profesional')
+        : (recipientUser?.full_name || recipientUser?.email?.split('@')[0] || 'Usuario');
+
+      const senderName = user.user_type === "professionnel"
+        ? (currentProfile?.business_name || user.full_name || user.email?.split('@')[0] || 'Profesional')
+        : (user.full_name || user.email?.split('@')[0] || 'Usuario');
+
       const messageData = {
         conversation_id: selectedConversation,
         sender_id: user.id,
         recipient_id: otherUserId,
         content: newMessage.trim(),
-        professional_name: user.user_type === "professionnel" ? 
-          (currentProfile?.business_name || user.full_name || user.email) : 
-          conversations[selectedConversation]?.otherUserName,
-        client_name: user.user_type === "client" ? 
-          (user.full_name || user.email) : 
-          (recipientUser?.full_name || recipientUser?.email || 'Usuario'),
+        professional_name: user.user_type === "professionnel" ? senderName : recipientName,
+        client_name: user.user_type === "client" ? senderName : recipientName,
         is_read: false
       };
 

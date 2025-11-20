@@ -501,28 +501,8 @@ export default function SearchPage() {
       return;
     }
 
-    try {
-      const conversationId = [user.id, profile.user_id].sort().join('_');
-      const existingMessages = await base44.entities.Message.filter({
-        conversation_id: conversationId
-      });
-
-      if (existingMessages.length === 0) {
-        await base44.entities.Message.create({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          recipient_id: profile.user_id,
-          content: `Hola, estoy interesado en tus servicios.`,
-          professional_name: profile.business_name,
-          client_name: user.full_name || user.email
-        });
-      }
-
-      navigate(createPageUrl("Messages") + `?conversation=${conversationId}`);
-    } catch (error) {
-      console.error("Error starting chat:", error);
-      toast.error("Error al iniciar chat");
-    }
+    const conversationId = [user.id, profile.user_id].sort().join('_');
+    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
   };
 
   const handleToggleFavorite = async (profile) => {
