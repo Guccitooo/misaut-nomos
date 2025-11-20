@@ -759,7 +759,7 @@ function LayoutContent({ children, currentPageName }) {
                           </span>
                         )}
                       </Link>
-                    )))}
+                    ))}
                     
                     {user && (
                       <div className="mt-4 mb-4 px-2">
