@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -169,15 +170,6 @@ export default function MyProfilePage() {
   useEffect(() => {
     loadUser();
   }, []);
-
-  // Esperar a que los datos estén completamente cargados antes de renderizar
-  if (!user || loadingProfile || (user.user_type === "professionnel" && profile === undefined)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (profileData.provincia && profileData.ciudad) {
