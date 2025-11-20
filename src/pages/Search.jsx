@@ -365,6 +365,7 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -382,6 +383,8 @@ export default function SearchPage() {
       setUser(currentUser);
     } catch (error) {
       setUser(null);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
@@ -515,9 +518,11 @@ export default function SearchPage() {
     }
   };
 
-  const isLoading = loadingProfiles || loadingCategories || loadingSubscriptions || loadingUsers;
+  const isLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions || (user && loadingFavorites);
+  
+  const isDataReady = !loadingProfiles && !loadingUsers && !loadingCategories && !loadingSubscriptions && (!user || !loadingFavorites);
 
-  if (isLoading) {
+  if (isLoading || !isDataReady) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -537,7 +542,7 @@ export default function SearchPage() {
       />
       
       <div className="min-h-screen bg-gray-50">
-        {!user && (
+        {!loadingUser && !user && (
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12 md:py-16 mb-8">
             <div className="max-w-4xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4">
@@ -578,7 +583,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
+        <div className={`max-w-7xl mx-auto px-4 ${!loadingUser && user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
 
           <Card className="mb-6 shadow-sm border-0 rounded-xl bg-white">
             <CardContent className="p-4">

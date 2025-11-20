@@ -120,6 +120,8 @@ function LayoutContent({ children, currentPageName }) {
     }
   }, [user]);
 
+  const isProfessional = user && (user.user_type === "professionnel" || professionalProfile);
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -148,8 +150,6 @@ function LayoutContent({ children, currentPageName }) {
       setLoadingUser(false);
     }
   };
-
-  const isProfessional = user && (user.user_type === "professionnel" || professionalProfile);
 
   const loadUnreadCount = async () => {
     try {
@@ -247,17 +247,6 @@ function LayoutContent({ children, currentPageName }) {
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
-  }
-
-  if (loadingUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando...</p>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -740,7 +729,7 @@ function LayoutContent({ children, currentPageName }) {
                       </div>
                     )}
                     
-                    {user && navigationItems.map((item) => (
+                    {navigationItems.map((item) => (
                       <Link
                         key={item.title}
                         to={item.url}
@@ -761,11 +750,9 @@ function LayoutContent({ children, currentPageName }) {
                       </Link>
                     ))}
                     
-                    {user && (
-                      <div className="mt-4 mb-4 px-2">
-                        <LanguageSwitcher variant="compact" />
-                      </div>
-                    )}
+                    <div className="mt-4 mb-4 px-2">
+                      <LanguageSwitcher variant="compact" />
+                    </div>
                     
                     {!user ? (
                       <div className="mt-4 space-y-2">
@@ -807,7 +794,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {!loadingUser && !user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -826,7 +813,7 @@ function LayoutContent({ children, currentPageName }) {
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
-
+                    
                     <div className="flex items-center gap-3">
                       <Button
                         variant="ghost"
@@ -908,8 +895,8 @@ function LayoutContent({ children, currentPageName }) {
                       {item.badge && (
                         <span className="mobile-bottom-nav-badge" aria-label={`${item.badge} ${t('unread')}`}>{item.badge}</span>
                       )}
-                      </Link>
-                      ))}
+                    </Link>
+                  ))}
                 </nav>
               )}
             </main>
