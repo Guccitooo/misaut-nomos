@@ -164,7 +164,8 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   const handleLogout = () => {
-    base44.auth.logout(createPageUrl("Search"));
+    base44.auth.logout();
+    window.location.href = createPageUrl("Search");
   };
 
   const handleLogin = () => {
