@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../ui/LanguageSwitcher";
 
-export default function PremiumDashboard({ metrics, subscription, profile }) {
+export default function PremiumDashboard({ metrics = [], subscription, profile }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -28,6 +28,7 @@ export default function PremiumDashboard({ metrics, subscription, profile }) {
     );
 
   const last30DaysMetrics = useMemo(() => {
+    if (!Array.isArray(metrics)) return { views: 0, messages: 0, searches: 0, contacts: 0 };
     if (!metrics || metrics.length === 0) {
       return {
         totalViews: 0,
