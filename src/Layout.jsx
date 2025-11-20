@@ -42,6 +42,7 @@ function LayoutContent({ children, currentPageName }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -129,7 +130,7 @@ function LayoutContent({ children, currentPageName }) {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      
+
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
@@ -145,6 +146,8 @@ function LayoutContent({ children, currentPageName }) {
     } catch (error) {
       setUser(null);
       setProfessionalProfile(undefined);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
@@ -793,7 +796,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {!loadingUser && !user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
