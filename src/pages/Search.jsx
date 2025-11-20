@@ -81,7 +81,7 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUser }) => {
   const { t } = useLanguage();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -241,14 +241,16 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               {t('viewProfile') || 'Ver perfil'}
             </Button>
 
-            <Button
-              onClick={onClick}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
-            >
-              <MessageCircle className="w-4 h-4 text-blue-600" />
-            </Button>
+            {currentUser && profile.metodos_contacto?.includes('chat_interno') && (
+              <Button
+                onClick={onClick}
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
+              >
+                <MessageCircle className="w-4 h-4 text-blue-600" />
+              </Button>
+            )}
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
               <Button
@@ -692,6 +694,7 @@ export default function SearchPage() {
                     isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                     userCategories={categories}
                     professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                    currentUser={user}
                   />
                 </motion.div>
               ))}
