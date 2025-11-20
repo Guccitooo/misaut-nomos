@@ -58,27 +58,30 @@ export default function ProfessionalProfilePage() {
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
-  const professionalId = urlParams.get("id");
+  const slugOrId = urlParams.get("slug") || urlParams.get("id");
 
   useEffect(() => {
     loadUser();
   }, []);
 
   useEffect(() => {
-    checkIfFavorite();
-  }, [user, professionalId]);
+    if (profile) {
+      checkIfFavorite();
+    }
+  }, [user, profile]);
 
   useEffect(() => {
-    if (professionalId && user) {
+    if (profile && user) {
       trackProfileView();
     }
-  }, [professionalId, user]);
+  }, [profile, user]);
 
   const trackProfileView = async () => {
+    if (!profile?.user_id) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       const existingMetrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: professionalId,
+        professional_id: profile.user_id,
         date: today
       });
 
@@ -88,7 +91,7 @@ export default function ProfessionalProfilePage() {
         });
       } else {
         await base44.entities.ProfileMetrics.create({
-          professional_id: professionalId,
+          professional_id: profile.user_id,
           date: today,
           profile_views: 1,
           search_appearances: 0,
@@ -111,12 +114,12 @@ export default function ProfessionalProfilePage() {
   };
 
   const checkIfFavorite = async () => {
-    if (!user || !professionalId) return;
+    if (!user || !profile?.user_id) return;
 
     try {
       const favorites = await base44.entities.Favorite.filter({
         client_id: user.id,
-        professional_id: professionalId
+        professional_id: profile.user_id
       });
       setIsFavorite(favorites.length > 0);
     } catch (error) {
@@ -130,11 +133,13 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
+    if (!profile?.user_id) return;
+
     try {
       if (isFavorite) {
         const favorites = await base44.entities.Favorite.filter({
           client_id: user.id,
-          professional_id: professionalId
+          professional_id: profile.user_id
         });
         if (favorites[0]) {
           await base44.entities.Favorite.delete(favorites[0].id);
@@ -144,7 +149,7 @@ export default function ProfessionalProfilePage() {
       } else {
         await base44.entities.Favorite.create({
           client_id: user.id,
-          professional_id: professionalId,
+          professional_id: profile.user_id,
           business_name: profile.business_name
         });
         setIsFavorite(true);
@@ -161,7 +166,9 @@ export default function ProfessionalProfilePage() {
       return;
     }
 
-    const conversationId = [user.id, professionalId].sort().join('_');
+    if (!profile?.user_id) return;
+
+    const conversationId = [user.id, profile.user_id].sort().join('_');
     
     const existingMessages = await base44.entities.Message.filter({
       conversation_id: conversationId
@@ -171,7 +178,7 @@ export default function ProfessionalProfilePage() {
       await base44.entities.Message.create({
         conversation_id: conversationId,
         sender_id: user.id,
-        recipient_id: professionalId,
+        recipient_id: profile.user_id,
         content: "Hola, estoy interesado en tus servicios.",
         professional_name: profile.business_name,
         client_name: user.full_name || user.email,
@@ -180,7 +187,7 @@ export default function ProfessionalProfilePage() {
 
       const today = new Date().toISOString().split('T')[0];
       const metrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: professionalId,
+        professional_id: profile.user_id,
         date: today
       });
 
@@ -191,7 +198,7 @@ export default function ProfessionalProfilePage() {
       }
     }
 
-    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
+    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
   };
 
   const formatPhoneForWhatsApp = (phone) => {
@@ -237,10 +244,11 @@ export default function ProfessionalProfilePage() {
   };
 
   const trackContactClick = async () => {
+    if (!profile?.user_id) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       const metrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: professionalId,
+        professional_id: profile.user_id,
         date: today
       });
 
@@ -290,52 +298,61 @@ export default function ProfessionalProfilePage() {
   };
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
-    queryKey: ['professionalProfile', professionalId],
+    queryKey: ['professionalProfile', slugOrId],
     queryFn: async () => {
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: professionalId
+      // Primero intentar buscar por slug
+      if (slugOrId && !slugOrId.match(/^[a-f0-9-]{36}$/i)) {
+        const bySlug = await base44.entities.ProfessionalProfile.filter({
+          slug_publico: slugOrId
+        });
+        if (bySlug[0]) return bySlug[0];
+      }
+      
+      // Si no hay resultado o es un ID, buscar por user_id
+      const byUserId = await base44.entities.ProfessionalProfile.filter({
+        user_id: slugOrId
       });
-      return profiles[0];
+      return byUserId[0];
     },
-    enabled: !!professionalId,
+    enabled: !!slugOrId,
   });
 
   const { data: professionalUser } = useQuery({
-    queryKey: ['professionalUser', professionalId],
+    queryKey: ['professionalUser', profile?.user_id],
     queryFn: async () => {
       const users = await base44.entities.User.filter({
-        id: professionalId
+        id: profile.user_id
       });
       return users[0];
     },
-    enabled: !!professionalId,
+    enabled: !!profile?.user_id,
   });
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ['reviews', professionalId],
+    queryKey: ['reviews', profile?.user_id],
     queryFn: async () => {
-      console.log('🔍 Fetching reviews for professional:', professionalId);
+      console.log('🔍 Fetching reviews for professional:', profile.user_id);
       const allReviews = await base44.entities.Review.filter({
-        professional_id: professionalId
+        professional_id: profile.user_id
       });
       
       console.log('📝 Reviews encontradas:', allReviews.length, allReviews);
       
       return allReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
-    enabled: !!professionalId,
+    enabled: !!profile?.user_id,
     staleTime: 0,
     refetchOnMount: true,
   });
 
   const { data: metrics } = useQuery({
-    queryKey: ['profileMetrics', professionalId],
+    queryKey: ['profileMetrics', profile?.user_id],
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
       const allMetrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: professionalId
+        professional_id: profile.user_id
       });
       
       const recentMetrics = allMetrics.filter(m => new Date(m.date) >= thirtyDaysAgo);
@@ -348,7 +365,7 @@ export default function ProfessionalProfilePage() {
       
       return totals;
     },
-    enabled: !!professionalId && user?.id === professionalId,
+    enabled: !!profile?.user_id && user?.id === profile.user_id,
   });
 
   if (loadingProfile) {
@@ -391,7 +408,7 @@ export default function ProfessionalProfilePage() {
   const showWhatsApp = availableContactMethods.includes('whatsapp') && profile.telefono_contacto;
   const showChat = availableContactMethods.includes('chat_interno');
 
-  const isOwner = user?.id === professionalId;
+  const isOwner = user?.id === profile?.user_id;
 
   return (
     <>
@@ -654,7 +671,7 @@ export default function ProfessionalProfilePage() {
           {/* RESEÑAS */}
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Opiniones de clientes</h3>
-            <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
+            <ReviewSection professionalId={profile?.user_id} reviews={reviews} currentUser={user} />
           </Card>
         </div>
       </div>

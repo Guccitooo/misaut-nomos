@@ -485,7 +485,11 @@ export default function SearchPage() {
   };
 
   const handleViewProfile = (profile) => {
-    navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
+    if (profile.slug_publico) {
+      navigate(createPageUrl("ProfessionalProfile") + `?slug=${profile.slug_publico}`);
+    } else {
+      navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
+    }
   };
 
   const handleToggleFavorite = async (profile) => {
