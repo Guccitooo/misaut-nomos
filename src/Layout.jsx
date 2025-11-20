@@ -794,7 +794,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!loadingUser && !user && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -813,30 +813,36 @@ function LayoutContent({ children, currentPageName }) {
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
                     </Link>
-                    
+
                     <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={handleLogin}
-                        aria-label={t('login')}
-                      >
-                        <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                        {t('login')}
-                      </Button>
-                      <Link to={createPageUrl("ClientOnboarding")}>
-                        <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                          <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                          Hazte cliente
-                        </Button>
-                      </Link>
-                      <Link to={createPageUrl("PricingPlans")}>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('becomeFreelancer')}
-                        </Button>
-                      </Link>
-                      <LanguageSwitcher variant="compact" />
+                      {loadingUser ? (
+                        <div className="w-96 h-10 bg-gray-100 rounded-lg animate-pulse" />
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={handleLogin}
+                            aria-label={t('login')}
+                          >
+                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                            {t('login')}
+                          </Button>
+                          <Link to={createPageUrl("ClientOnboarding")}>
+                            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                              <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                              Hazte cliente
+                            </Button>
+                          </Link>
+                          <Link to={createPageUrl("PricingPlans")}>
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+                              <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
+                              {t('becomeFreelancer')}
+                            </Button>
+                          </Link>
+                          <LanguageSwitcher variant="compact" />
+                        </>
+                      )}
                     </div>
                   </div>
                 </header>
