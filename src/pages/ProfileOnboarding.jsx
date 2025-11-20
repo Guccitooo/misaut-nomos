@@ -25,56 +25,56 @@ const PROVINCIAS = [
 ];
 
 const CIUDADES_POR_PROVINCIA = {
-  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz"],
-  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet"],
-  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira"],
-  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe"],
-  "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos"],
-  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy"],
-  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla"],
-  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi"],
-  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros"],
-  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía", "Arucas"],
-  "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Marratxí"],
-  "Guipúzcoa": ["Donostia-San Sebastián", "Irún", "Rentería", "Eibar"],
-  "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres"],
-  "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón"],
-  "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela"],
-  "Cantabria": ["Santander", "Torrelavega", "Castro Urdiales", "Camargo"],
-  "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla"],
-  "Granada": ["Granada", "Motril", "Almuñécar", "Baza"],
-  "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero"],
-  "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada"],
-  "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje"],
-  "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar"],
-  "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero"],
-  "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana"],
-  "Albacete": ["Albacete", "Hellín", "Villarrobledo"],
-  "Álava": ["Vitoria", "Llodio"],
-  "León": ["León", "Ponferrada", "San Andrés del Rabanedo"],
-  "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando"],
-  "Huelva": ["Huelva", "Lepe", "Almonte"],
-  "Jaén": ["Jaén", "Linares", "Andújar"],
-  "Toledo": ["Toledo", "Talavera de la Reina", "Illescas"],
-  "Tarragona": ["Tarragona", "Reus", "Tortosa"],
-  "Gerona": ["Girona", "Figueres", "Blanes"],
-  "Lérida": ["Lleida", "Tàrrega", "Mollerussa"],
-  "Badajoz": ["Badajoz", "Mérida", "Don Benito"],
-  "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata"],
-  "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro"],
-  "Orense": ["Ourense", "Verín", "O Barco de Valdeorras"],
-  "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo"],
-  "Ávila": ["Ávila", "Arévalo"],
-  "Segovia": ["Segovia", "Cuéllar"],
-  "Soria": ["Soria", "Almazán"],
-  "Zamora": ["Zamora", "Benavente"],
-  "Palencia": ["Palencia", "Guardo"],
-  "Guadalajara": ["Guadalajara", "Azuqueca de Henares"],
-  "Cuenca": ["Cuenca", "Tarancón"],
-  "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso"],
-  "Teruel": ["Teruel", "Alcañiz"],
-  "Huesca": ["Huesca", "Monzón", "Barbastro"],
-  "La Rioja": ["Logroño", "Calahorra", "Arnedo"]
+  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "Las Rozas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Rivas-Vaciamadrid", "Valdemoro", "Coslada", "Majadahonda", "Collado Villalba", "Aranjuez", "Arganda del Rey"],
+  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Viladecans", "Castelldefels", "Granollers", "Gavà", "Mollet del Vallès", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "El Prat de Llobregat", "Esplugues de Llobregat"],
+  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira", "Mislata", "Burjassot", "Xirivella", "Manises", "Ontinyent", "Xàtiva", "Sueca", "Algemesí", "Cullera"],
+  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Los Palacios y Villafranca", "Écija", "La Rinconada", "Camas", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Tomares", "Morón de la Frontera", "Coria del Río"],
+  "Málaga": ["Málaga", "Marbella", "Mijas", "Vélez-Málaga", "Fuengirola", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Alhaurín de la Torre", "Ronda", "Nerja", "Coín"],
+  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "Elda", "San Vicente del Raspeig", "Villena", "Santa Pola", "Calpe", "Dénia", "Jávea", "Altea", "Villajoyosa", "Petrer"],
+  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Mazarrón", "Yecla", "Águilas", "Caravaca de la Cruz", "Cieza", "Totana", "San Javier", "Torre-Pacheco"],
+  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Durango", "Sestao", "Leioa", "Galdakao", "Erandio"],
+  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe"],
+  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía", "Arucas", "Agüimes", "Ingenio", "Mogán", "San Bartolomé de Tirajana"],
+  "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Pollença", "Ibiza", "Mahón"],
+  "Guipúzcoa": ["Donostia-San Sebastián", "Irún", "Rentería", "Eibar", "Hernani", "Zarautz", "Hondarribia"],
+  "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres", "Langreo", "Castrillón", "Llanera"],
+  "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón", "Oleiros", "Arteixo", "Culleredo", "Carballo"],
+  "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "Sanxenxo", "O Porriño"],
+  "Cantabria": ["Santander", "Torrelavega", "Castro Urdiales", "Camargo", "Piélagos", "El Astillero", "Laredo"],
+  "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Cabra", "Baena"],
+  "Granada": ["Granada", "Motril", "Almuñécar", "Baza", "Loja", "Guadix", "Armilla", "Maracena"],
+  "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero", "Arroyo de la Encomienda", "Tudela de Duero"],
+  "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada", "Estella", "Tafalla", "Villava"],
+  "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Los Realejos", "Granadilla de Abona", "Puerto de la Cruz"],
+  "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar", "Níjar", "Huércal-Overa", "Adra"],
+  "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero", "Villarcayo", "Lerma"],
+  "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Almassora", "Benicàssim"],
+  "Albacete": ["Albacete", "Hellín", "Villarrobledo", "Almansa", "La Roda", "Caudete"],
+  "Álava": ["Vitoria", "Llodio", "Amurrio"],
+  "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "La Bañeza", "Astorga"],
+  "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana de la Frontera", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Arcos de la Frontera"],
+  "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Ayamonte", "Isla Cristina"],
+  "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Baeza"],
+  "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Quintanar de la Orden"],
+  "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls", "Salou"],
+  "Gerona": ["Girona", "Figueres", "Blanes", "Lloret de Mar", "Olot", "Salt"],
+  "Lérida": ["Lleida", "Tàrrega", "Mollerussa", "Balaguer", "La Seu d'Urgell"],
+  "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Zafra"],
+  "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata", "Coria", "Trujillo"],
+  "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro", "Villalba", "Ribadeo"],
+  "Orense": ["Ourense", "Verín", "O Barco de Valdeorras", "Xinzo de Limia", "Ribadavia"],
+  "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo", "Santa Marta de Tormes", "Alba de Tormes"],
+  "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro"],
+  "Segovia": ["Segovia", "Cuéllar", "San Ildefonso", "El Espinar"],
+  "Soria": ["Soria", "Almazán", "Burgo de Osma"],
+  "Zamora": ["Zamora", "Benavente", "Toro", "Villalpando"],
+  "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo", "Venta de Baños"],
+  "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera", "Sigüenza"],
+  "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey", "San Clemente"],
+  "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Valdepeñas", "Alcázar de San Juan", "Daimiel"],
+  "Teruel": ["Teruel", "Alcañiz", "Andorra", "Calamocha"],
+  "Huesca": ["Huesca", "Monzón", "Barbastro", "Jaca", "Sabiñánigo"],
+  "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Alfaro"]
 };
 
 const CATEGORIAS = [
@@ -478,8 +478,16 @@ export default function ProfileOnboardingPage() {
                     value={formData.business_name}
                     onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                     placeholder="Ej: Juan Pérez - Electricista"
-                    className="h-12"
+                    className={`h-12 ${formData.business_name.length >= 2 ? 'border-green-500' : ''}`}
                   />
+                  {formData.business_name.length > 0 && formData.business_name.length < 2 && (
+                    <p className="text-xs text-red-500 mt-1">Mínimo 2 caracteres</p>
+                  )}
+                  {formData.business_name.length >= 2 && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Correcto
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -490,8 +498,16 @@ export default function ProfileOnboardingPage() {
                     onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
                     placeholder="12345678A"
                     maxLength={9}
-                    className="h-12"
+                    className={`h-12 ${formData.cif_nif.length === 9 ? 'border-green-500' : ''}`}
                   />
+                  {formData.cif_nif.length > 0 && formData.cif_nif.length !== 9 && (
+                    <p className="text-xs text-red-500 mt-1">Debe tener exactamente 9 caracteres</p>
+                  )}
+                  {formData.cif_nif.length === 9 && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Correcto
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -501,8 +517,16 @@ export default function ProfileOnboardingPage() {
                     value={formData.email_contacto}
                     onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
                     placeholder="tu@email.com"
-                    className="h-12"
+                    className={`h-12 ${formData.email_contacto.includes('@') && formData.email_contacto.includes('.') ? 'border-green-500' : ''}`}
                   />
+                  {formData.email_contacto.length > 0 && !formData.email_contacto.includes('@') && (
+                    <p className="text-xs text-red-500 mt-1">Email no válido</p>
+                  )}
+                  {formData.email_contacto.includes('@') && formData.email_contacto.includes('.') && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Correcto
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -511,21 +535,29 @@ export default function ProfileOnboardingPage() {
                     value={formData.telefono_contacto}
                     onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value })}
                     placeholder="+34 612 345 678"
-                    className="h-12"
+                    className={`h-12 ${formData.telefono_contacto.replace(/\D/g, '').length >= 9 ? 'border-green-500' : ''}`}
                   />
+                  {formData.telefono_contacto.length > 0 && formData.telefono_contacto.replace(/\D/g, '').length < 9 && (
+                    <p className="text-xs text-red-500 mt-1">Mínimo 9 dígitos</p>
+                  )}
+                  {formData.telefono_contacto.replace(/\D/g, '').length >= 9 && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Correcto
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label className="mb-3 block">Métodos de contacto visibles</Label>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="relative">
+                      <div className="relative w-5 h-5 flex items-center justify-center">
                         <Checkbox
                           checked={true}
                           disabled
-                          className="pointer-events-none"
+                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
-                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                       </div>
                       <span className="text-sm font-medium text-gray-700">Chat directo (siempre activo)</span>
                     </div>
@@ -538,13 +570,13 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('telefono') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <div className="relative">
+                      <div className="relative w-5 h-5 flex items-center justify-center">
                         <Checkbox
                           checked={formData.metodos_contacto.includes('telefono')}
-                          className="pointer-events-none"
+                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
                         {formData.metodos_contacto.includes('telefono') && (
-                          <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                         )}
                       </div>
                       <span className="text-sm font-medium text-gray-700">Teléfono</span>
@@ -558,13 +590,13 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('whatsapp') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <div className="relative">
+                      <div className="relative w-5 h-5 flex items-center justify-center">
                         <Checkbox
                           checked={formData.metodos_contacto.includes('whatsapp')}
-                          className="pointer-events-none"
+                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
                         {formData.metodos_contacto.includes('whatsapp') && (
-                          <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                         )}
                       </div>
                       <span className="text-sm font-medium text-gray-700">WhatsApp</span>
@@ -593,13 +625,13 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.categories.includes(cat) ? '#EFF6FF' : 'white'
                         }}
                       >
-                        <div className="relative">
+                        <div className="relative w-5 h-5 flex items-center justify-center">
                           <Checkbox
                             checked={formData.categories.includes(cat)}
-                            className="pointer-events-none"
+                            className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                           />
                           {formData.categories.includes(cat) && (
-                            <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                            <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                           )}
                         </div>
                         <span className="text-sm font-medium text-gray-700">{cat}</span>
@@ -629,8 +661,16 @@ export default function ProfileOnboardingPage() {
                     placeholder="5"
                     min="0"
                     max="50"
-                    className="h-12"
+                    className={`h-12 ${formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 ? 'border-green-500' : ''}`}
                   />
+                  {formData.years_experience === '' && (
+                    <p className="text-xs text-red-500 mt-1">Campo obligatorio</p>
+                  )}
+                  {formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Correcto
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -722,13 +762,13 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.formas_pago.includes(forma) ? '#FAF5FF' : 'white'
                         }}
                       >
-                        <div className="relative">
+                        <div className="relative w-5 h-5 flex items-center justify-center">
                           <Checkbox
                             checked={formData.formas_pago.includes(forma)}
-                            className="pointer-events-none"
+                            className="pointer-events-none data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                           />
                           {formData.formas_pago.includes(forma) && (
-                            <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                            <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                           )}
                         </div>
                         <span className="text-sm font-medium">{forma}</span>
@@ -864,13 +904,13 @@ export default function ProfileOnboardingPage() {
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
                   >
-                    <div className="relative mt-1">
+                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
                       <Checkbox
                         checked={formData.acepta_terminos}
-                        className="pointer-events-none"
+                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                       />
                       {formData.acepta_terminos && (
-                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                       )}
                     </div>
                     <span className="text-sm text-gray-700">
@@ -882,13 +922,13 @@ export default function ProfileOnboardingPage() {
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
                   >
-                    <div className="relative mt-1">
+                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
                       <Checkbox
                         checked={formData.acepta_politica_privacidad}
-                        className="pointer-events-none"
+                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                       />
                       {formData.acepta_politica_privacidad && (
-                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                       )}
                     </div>
                     <span className="text-sm text-gray-700">
@@ -900,13 +940,13 @@ export default function ProfileOnboardingPage() {
                     className="flex items-start gap-3 cursor-pointer"
                     onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
                   >
-                    <div className="relative mt-1">
+                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
                       <Checkbox
                         checked={formData.consiente_contacto_clientes}
-                        className="pointer-events-none"
+                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                       />
                       {formData.consiente_contacto_clientes && (
-                        <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
                       )}
                     </div>
                     <span className="text-sm text-gray-700">
