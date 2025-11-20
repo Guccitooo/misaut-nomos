@@ -908,8 +908,8 @@ function LayoutContent({ children, currentPageName }) {
                       {item.badge && (
                         <span className="mobile-bottom-nav-badge" aria-label={`${item.badge} ${t('unread')}`}>{item.badge}</span>
                       )}
-                    </Link>
-                  ))}
+                      </Link>
+                      ))}
                 </nav>
               )}
             </main>
