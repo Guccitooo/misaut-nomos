@@ -79,7 +79,7 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser }) => {
   const { t } = useLanguage();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -160,17 +160,20 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0"
               onClick={onClick}
             >
-              {profile.imagen_principal ? (
-                <AvatarImage 
-                  src={profile.imagen_principal} 
-                  alt={profile.business_name}
-                  className="object-cover"
-                />
-              ) : (
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
-                  {profile.business_name?.charAt(0) || "P"}
-                </AvatarFallback>
-              )}
+              {(() => {
+                const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
+                return photoUrl ? (
+                  <AvatarImage 
+                    src={photoUrl} 
+                    alt={profile.business_name}
+                    className="object-cover"
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
+                    {profile.business_name?.charAt(0) || "P"}
+                  </AvatarFallback>
+                );
+              })()}
             </Avatar>
             
             <div className="flex-1 min-w-0">
@@ -385,6 +388,19 @@ export default function SearchPage() {
         onboarding_completed: true
       });
     },
+    initialData: [],
+  });
+
+  const { data: professionalUsers = [] } = useQuery({
+    queryKey: ['professionalUsers'],
+    queryFn: async () => {
+      const userIds = profiles.map(p => p.user_id);
+      if (userIds.length === 0) return [];
+      
+      const allUsers = await base44.entities.User.list();
+      return allUsers.filter(u => userIds.includes(u.id));
+    },
+    enabled: profiles.length > 0,
     initialData: [],
   });
 
@@ -630,6 +646,7 @@ export default function SearchPage() {
                     onToggleFavorite={() => handleToggleFavorite(profile)}
                     isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                     userCategories={categories}
+                    professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                   />
                 </motion.div>
               ))}
