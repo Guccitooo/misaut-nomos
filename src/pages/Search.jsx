@@ -405,7 +405,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: professionalUsers = [] } = useQuery({
+  const { data: professionalUsers = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['professionalUsers'],
     queryFn: async () => {
       const userIds = profiles.map(p => p.user_id);
@@ -418,7 +418,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: subscriptions = [] } = useQuery({
+  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['subscriptions'],
     queryFn: async () => {
       return await base44.entities.Subscription.list();
@@ -426,7 +426,7 @@ export default function SearchPage() {
     initialData: [],
   });
 
-  const { data: favorites = [] } = useQuery({
+  const { data: favorites = [], isLoading: loadingFavorites } = useQuery({
     queryKey: ['favorites', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -512,16 +512,14 @@ export default function SearchPage() {
     }
   };
 
-  if (loadingProfiles || loadingCategories) {
+  const isLoading = loadingProfiles || loadingCategories || loadingSubscriptions || loadingUsers || (user && loadingFavorites);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-32 w-full mb-6 rounded-xl" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Skeleton key={i} className="h-64 rounded-xl" />
-            ))}
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando profesionales...</p>
         </div>
       </div>
     );
