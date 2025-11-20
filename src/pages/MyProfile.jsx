@@ -475,9 +475,16 @@ export default function MyProfilePage() {
     },
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log('💾 Guardando datos de usuario:', userData);
-    updateUserMutation.mutate(userData);
+    
+    const userDataToUpdate = { ...userData };
+    
+    if (profile && profileData.business_name) {
+      userDataToUpdate.full_name = profileData.business_name;
+    }
+    
+    updateUserMutation.mutate(userDataToUpdate);
     
     if (profile || profileData.business_name) {
       console.log('💾 Guardando datos de perfil profesional:', profileData);

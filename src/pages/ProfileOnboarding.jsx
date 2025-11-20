@@ -329,7 +329,7 @@ export default function ProfileOnboardingPage() {
         photos: formData.photos,
         social_links: formData.social_links,
         website: formData.website,
-        imagen_principal: formData.photos[0] || "",
+        imagen_principal: user.profile_picture || formData.photos[0] || "",
         price_range: "€€",
         average_rating: 0,
         total_reviews: 0,

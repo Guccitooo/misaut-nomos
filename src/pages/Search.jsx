@@ -81,27 +81,9 @@ const CategoryBadge = ({ category, categories }) => {
 
 const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories }) => {
   const { t } = useLanguage();
-  const [professionalUser, setProfessionalUser] = useState(null);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
-
-  useEffect(() => {
-    loadProfessionalUser();
-  }, [profile.user_id]);
-
-  const loadProfessionalUser = async () => {
-    try {
-      const users = await base44.entities.User.filter({
-        id: profile.user_id
-      });
-      if (users[0]) {
-        setProfessionalUser(users[0]);
-      }
-    } catch (error) {
-      console.error('Error loading professional user:', error);
-    }
-  };
 
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -178,9 +160,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0"
               onClick={onClick}
             >
-              {professionalUser?.profile_picture ? (
+              {profile.imagen_principal ? (
                 <AvatarImage 
-                  src={professionalUser.profile_picture} 
+                  src={profile.imagen_principal} 
                   alt={profile.business_name}
                   className="object-cover"
                 />
