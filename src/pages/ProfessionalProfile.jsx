@@ -64,18 +64,6 @@ export default function ProfessionalProfilePage() {
     loadUser();
   }, []);
 
-  useEffect(() => {
-    if (profile) {
-      checkIfFavorite();
-    }
-  }, [user, profile]);
-
-  useEffect(() => {
-    if (profile && user) {
-      trackProfileView();
-    }
-  }, [profile, user]);
-
   const trackProfileView = async () => {
     if (!profile?.user_id) return;
     try {
@@ -367,6 +355,18 @@ export default function ProfessionalProfilePage() {
     },
     enabled: !!profile?.user_id && user?.id === profile.user_id,
   });
+
+  useEffect(() => {
+    if (profile) {
+      checkIfFavorite();
+    }
+  }, [user, profile]);
+
+  useEffect(() => {
+    if (profile && user) {
+      trackProfileView();
+    }
+  }, [profile, user]);
 
   if (loadingProfile) {
     return (
