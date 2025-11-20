@@ -43,6 +43,7 @@ export default function SubscriptionManagementPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -131,6 +132,24 @@ export default function SubscriptionManagementPage() {
     setIsCancelling(true);
     await cancelSubscriptionMutation.mutateAsync();
     setIsCancelling(false);
+  };
+
+  const handleReactivateSubscription = async () => {
+    setIsReactivating(true);
+    try {
+      const response = await base44.functions.invoke('reactivateSubscription', {});
+      if (response.data.ok) {
+        toast.success(response.data.message);
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        await loadUser();
+      } else {
+        toast.error(response.data.error || "Error al reactivar");
+      }
+    } catch (error) {
+      toast.error(error.message || "Error al reactivar la suscripción");
+    } finally {
+      setIsReactivating(false);
+    }
   };
 
   const getStatusBadge = (estado) => {
@@ -299,12 +318,34 @@ export default function SubscriptionManagementPage() {
 
                   {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
                     <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-amber-900">
-                        ⚠️ {t('subscriptionCanceledActive')} {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
-                      </p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        {t('profileVisibleFor')} {getDaysLeft(subscription.fecha_expiracion)} {t('moreDays')}
-                      </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-amber-900">
+                            ⚠️ {t('subscriptionCanceledActive')} {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
+                          </p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            {t('profileVisibleFor')} {getDaysLeft(subscription.fecha_expiracion)} {t('moreDays')}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleReactivateSubscription}
+                          disabled={isReactivating}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                        >
+                          {isReactivating ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              Reactivando...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-1" />
+                              Reactivar
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -375,7 +416,41 @@ export default function SubscriptionManagementPage() {
                   </Card>
                 )}
 
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0)) && (
+                {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
+                  <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-green-100">
+                    <CardContent className="p-6 text-center">
+                      <RefreshCw className="w-12 h-12 text-green-700 mx-auto mb-3" />
+                      <h3 className="font-bold text-lg text-gray-900 mb-2">
+                        Reactivar suscripción
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Tienes <strong>{getDaysLeft(subscription.fecha_expiracion)} días restantes</strong>
+                      </p>
+                      <p className="text-xs text-gray-500 mb-4">
+                        Reactiva ahora sin coste adicional y aprovecha el tiempo restante
+                      </p>
+                      <Button
+                        onClick={handleReactivateSubscription}
+                        disabled={isReactivating}
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
+                        {isReactivating ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Reactivando...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-5 h-5 mr-2" />
+                            Reactivar suscripción gratis
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && (
                   <Card className="shadow-lg border-0">
                     <CardContent className="p-6">
                       <h3 className="font-bold text-lg text-gray-900 mb-2">
