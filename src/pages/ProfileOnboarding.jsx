@@ -243,8 +243,8 @@ export default function ProfileOnboardingPage() {
       return false;
     }
 
-    if (!formData.years_experience || parseInt(formData.years_experience) < 0) {
-      toast.error("Indica tus años de experiencia");
+    if (!formData.years_experience || formData.years_experience === "" || parseInt(formData.years_experience) < 0) {
+      toast.error("Indica tus años de experiencia (mínimo 0)");
       return false;
     }
 
@@ -402,7 +402,7 @@ export default function ProfileOnboardingPage() {
   };
 
   const toggleCategory = (category) => {
-    setFormData({ ...formData, categories: [category], ciudad: "" });
+    setFormData({ ...formData, categories: [category] });
   };
 
   const toggleFormaPago = (forma) => {
@@ -665,7 +665,7 @@ export default function ProfileOnboardingPage() {
                     <Label>Provincia *</Label>
                     <Select
                       value={formData.provincia}
-                      onValueChange={(value) => setFormData({ ...formData, provincia: value })}
+                      onValueChange={(value) => setFormData({ ...formData, provincia: value, ciudad: "" })}
                     >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecciona provincia" />
