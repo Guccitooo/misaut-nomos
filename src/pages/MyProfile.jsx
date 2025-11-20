@@ -527,19 +527,11 @@ export default function MyProfilePage() {
     setProfileData({ ...profileData, photos: newPhotos });
   };
 
-  const toggleCategory = (category) => {
-    const categories = profileData.categories;
-    if (categories.includes(category)) {
-      setProfileData({
-        ...profileData,
-        categories: categories.filter(c => c !== category)
-      });
-    } else {
-      setProfileData({
-        ...profileData,
-        categories: [...categories, category]
-      });
-    }
+  const selectCategory = (category) => {
+    setProfileData({
+      ...profileData,
+      categories: [category]
+    });
   };
 
   const toggleFormaPago = (forma) => {
@@ -746,16 +738,6 @@ export default function MyProfilePage() {
         )}
 
         {isProfessional && profile && !isEditing && (
-          <div className="mb-6">
-            <PremiumDashboard 
-              metrics={metrics}
-              subscription={subscription}
-              profile={profile}
-            />
-          </div>
-        )}
-
-        {isProfessional && profile && !isEditing && (
           <ProfileCompleteness 
             profile={profile} 
             user={user}
@@ -783,9 +765,9 @@ export default function MyProfilePage() {
           </TabsList>
 
           <TabsContent value="personal">
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="shadow-sm border-0 bg-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-700" />
                   Información personal
                 </CardTitle>
@@ -869,9 +851,9 @@ export default function MyProfilePage() {
           {isProfessional && (
             <TabsContent value="business">
               <div className="space-y-6">
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-blue-700" />
                       Identidad Profesional
                     </CardTitle>
@@ -889,7 +871,10 @@ export default function MyProfilePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>NIF/CIF</Label>
+                        <Label className="flex items-center gap-2">
+                          {profileData.cif_nif ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                          NIF/CIF
+                        </Label>
                         <Input
                           value={profileData.cif_nif}
                           onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value.toUpperCase() })}
@@ -899,7 +884,10 @@ export default function MyProfilePage() {
                         />
                       </div>
                       <div>
-                        <Label>Años de experiencia</Label>
+                        <Label className="flex items-center gap-2">
+                          {profileData.years_experience ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                          Años de experiencia
+                        </Label>
                         <Input
                           type="number"
                           value={profileData.years_experience}
@@ -913,7 +901,10 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>Email de contacto</Label>
+                      <Label className="flex items-center gap-2">
+                        {profileData.email_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                        Email de contacto
+                      </Label>
                       <Input
                         type="email"
                         value={profileData.email_contacto}
@@ -923,7 +914,10 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>Teléfono de contacto</Label>
+                      <Label className="flex items-center gap-2">
+                        {profileData.telefono_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                        Teléfono de contacto
+                      </Label>
                       <Input
                         value={profileData.telefono_contacto}
                         onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
@@ -932,75 +926,46 @@ export default function MyProfilePage() {
                       />
                     </div>
 
-                    <div>
-                      <Label>Certificaciones y títulos</Label>
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          value={newCertification}
-                          onChange={(e) => setNewCertification(e.target.value)}
-                          disabled={!isEditing}
-                          placeholder="Certificación profesional, título..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addCertification();
-                            }
-                          }}
-                        />
-                        <Button
-                          onClick={addCertification}
-                          disabled={!isEditing || !newCertification}
-                          size="icon"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {(profileData.certifications || []).map((cert, idx) => (
-                          <Badge key={idx} className="bg-purple-100 text-purple-900 flex items-center gap-1">
-                            <Award className="w-3 h-3" />
-                            {cert}
-                            {isEditing && (
-                              <button onClick={() => removeCertification(cert)}>
-                                <X className="w-3 h-3 ml-1" />
-                              </button>
-                            )}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle>Servicios y Descripción</CardTitle>
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Servicios y Descripción</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Categorías de servicio</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {categories.map((cat) => (
-                          <div
-                            key={cat}
-                            onClick={() => isEditing && toggleCategory(cat)}
-                            className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all ${
-                              isEditing ? 'cursor-pointer' : 'cursor-default'
-                            } ${
-                              profileData.categories.includes(cat)
-                                ? "border-blue-600 bg-blue-50"
-                                : "border-gray-200"
-                            }`}
-                          >
-                            <Checkbox
-                              checked={profileData.categories.includes(cat)}
-                              disabled={!isEditing}
-                              className="pointer-events-none"
-                            />
-                            <span className="text-sm">{cat}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <Label>Categoría de servicio (elige solo una)</Label>
+                      {!isEditing ? (
+                        <div className="mt-2 flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <Badge className="bg-blue-100 text-blue-900 text-sm">
+                            {profileData.categories[0] || "Sin categoría"}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-2 mt-2">
+                          {categories.map((cat) => (
+                            <div
+                              key={cat}
+                              onClick={() => selectCategory(cat)}
+                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                                profileData.categories.includes(cat)
+                                  ? "border-blue-600 bg-blue-50"
+                                  : "border-gray-200 hover:bg-gray-50"
+                              }`}
+                            >
+                              {profileData.categories.includes(cat) ? (
+                                <CheckCircle className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                              )}
+                              <span className="text-sm">{cat}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {profileData.categories.includes("Otro tipo de servicio profesional") && (
@@ -1016,41 +981,44 @@ export default function MyProfilePage() {
                     )}
 
                     <div>
-                      <Label>Descripción corta (220 caracteres)</Label>
-                      <Textarea
-                        value={profileData.descripcion_corta}
-                        onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
-                        disabled={!isEditing}
-                        className="h-24"
-                        placeholder="Describe brevemente tus servicios..."
-                      />
-                      <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
-                    </div>
-
-                    <div>
-                      <Label>Descripción detallada (para SEO)</Label>
-                      <Textarea
-                        value={profileData.description}
-                        onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
-                        disabled={!isEditing}
-                        className="h-40"
-                        placeholder="Experiencia, especialidades, proyectos destacados..."
-                      />
+                      <Label>Descripción de tus servicios</Label>
+                      {!isEditing && profileData.descripcion_corta ? (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-start gap-2">
+                            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-700">{profileData.descripcion_corta}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Textarea
+                            value={profileData.descripcion_corta}
+                            onChange={(e) => setProfileData({ ...profileData, descripcion_corta: e.target.value.slice(0, 220) })}
+                            disabled={!isEditing}
+                            className="h-24 mt-2"
+                            placeholder="Describe brevemente tus servicios..."
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-blue-700" />
-                      Ubicación y Disponibilidad
+                      Ubicación
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Provincia</Label>
+                        <Label className="flex items-center gap-2">
+                          {profileData.provincia ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                          Provincia
+                        </Label>
                         <Select
                           value={profileData.provincia}
                           onValueChange={(value) => setProfileData({
@@ -1072,7 +1040,10 @@ export default function MyProfilePage() {
                       </div>
 
                       <div>
-                        <Label>Ciudad</Label>
+                        <Label className="flex items-center gap-2">
+                          {profileData.ciudad ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                          Ciudad
+                        </Label>
                         <Input
                           value={profileData.ciudad}
                           onChange={(e) => setProfileData({ ...profileData, ciudad: e.target.value })}
@@ -1082,95 +1053,25 @@ export default function MyProfilePage() {
                       </div>
                     </div>
 
-                    <div>
-                      <Label>Barrio/Municipio (opcional)</Label>
-                      <Input
-                        value={profileData.municipio}
-                        onChange={(e) => setProfileData({ ...profileData, municipio: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="Centro, Chamartín..."
-                      />
-                    </div>
 
-                    <div>
-                      <Label>Radio de servicio</Label>
-                      <Select
-                        value={profileData.radio_servicio_km?.toString()}
-                        onValueChange={(value) => setProfileData({ ...profileData, radio_servicio_km: parseInt(value) })}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">5 km - Solo mi zona</SelectItem>
-                          <SelectItem value="10">10 km - Ciudad</SelectItem>
-                          <SelectItem value="25">25 km - Área metropolitana</SelectItem>
-                          <SelectItem value="50">50 km - Provincia</SelectItem>
-                          <SelectItem value="100">100+ km - Múltiples provincias</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
 
-                    <Separator />
 
-                    <div>
-                      <Label className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Disponibilidad
-                      </Label>
-                      <Select
-                        value={profileData.disponibilidad_tipo}
-                        onValueChange={(value) => setProfileData({ ...profileData, disponibilidad_tipo: value })}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="laborables">Días laborables (L-V)</SelectItem>
-                          <SelectItem value="festivos">Fines de semana y festivos</SelectItem>
-                          <SelectItem value="ambos">Toda la semana</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Hora inicio</Label>
-                        <Input
-                          type="time"
-                          value={profileData.horario_apertura}
-                          onChange={(e) => setProfileData({ ...profileData, horario_apertura: e.target.value })}
-                          disabled={!isEditing}
-                          className="mt-2"
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Hora fin</Label>
-                        <Input
-                          type="time"
-                          value={profileData.horario_cierre}
-                          onChange={(e) => setProfileData({ ...profileData, horario_cierre: e.target.value })}
-                          disabled={!isEditing}
-                          className="mt-2"
-                        />
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <Euro className="w-5 h-5 text-blue-700" />
-                      Tarifas y Forma de Trabajo
+                      Tarifas y Pagos
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Tarifa base (€/hora) - opcional</Label>
+                      <Label className="flex items-center gap-2">
+                        {profileData.tarifa_base ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                        Tarifa base (€/hora) - opcional
+                      </Label>
                       <Input
                         type="number"
                         value={profileData.tarifa_base}
@@ -1182,25 +1083,10 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label>Tipo de facturación</Label>
-                      <Select
-                        value={profileData.facturacion}
-                        onValueChange={(value) => setProfileData({ ...profileData, facturacion: value })}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="autonomo">Autónomo</SelectItem>
-                          <SelectItem value="sociedad">Sociedad</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Formas de pago aceptadas</Label>
+                      <Label className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        Formas de pago aceptadas
+                      </Label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
                           <div
@@ -1227,47 +1113,32 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-lg border-0 bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                <Card className="shadow-sm border-0 bg-white">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <Globe className="w-5 h-5 text-blue-700" />
-                      Presencia Online
+                      Redes Sociales
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label className="flex items-center gap-2">
-                        <Globe className="w-4 h-4" />
-                        Sitio web
-                      </Label>
-                      <Input
-                        value={profileData.website}
-                        onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="https://tuweb.com"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <Label className="flex items-center gap-2">
-                          <Facebook className="w-4 h-4" />
-                          Facebook
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          Sitio web
                         </Label>
                         <Input
-                          value={profileData.social_links.facebook}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            social_links: { ...profileData.social_links, facebook: e.target.value }
-                          })}
+                          value={profileData.website}
+                          onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                           disabled={!isEditing}
-                          placeholder="https://facebook.com/tupagina"
+                          placeholder="https://tuweb.com"
+                          className="h-10"
                         />
                       </div>
 
                       <div>
-                        <Label className="flex items-center gap-2">
-                          <Instagram className="w-4 h-4" />
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
                           Instagram
                         </Label>
                         <Input
@@ -1277,28 +1148,33 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, instagram: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://instagram.com/tuperfil"
+                          placeholder="@tuperfil"
+                          className="h-10"
                         />
                       </div>
 
                       <div>
-                        <Label className="flex items-center gap-2">
-                          <Linkedin className="w-4 h-4" />
-                          LinkedIn
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          Facebook
                         </Label>
                         <Input
-                          value={profileData.social_links.linkedin}
+                          value={profileData.social_links.facebook}
                           onChange={(e) => setProfileData({ 
                             ...profileData, 
-                            social_links: { ...profileData.social_links, linkedin: e.target.value }
+                            social_links: { ...profileData.social_links, facebook: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://linkedin.com/in/tuperfil"
+                          placeholder="tu página"
+                          className="h-10"
                         />
                       </div>
 
                       <div>
-                        <Label>TikTok</Label>
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          TikTok
+                        </Label>
                         <Input
                           value={profileData.social_links.tiktok}
                           onChange={(e) => setProfileData({ 
@@ -1306,7 +1182,8 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, tiktok: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://tiktok.com/@tuperfil"
+                          placeholder="@tuperfil"
+                          className="h-10"
                         />
                       </div>
                     </div>
@@ -1318,17 +1195,14 @@ export default function MyProfilePage() {
 
           {isProfessional && (
             <TabsContent value="portfolio">
-              <Card className="shadow-lg border-0 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <Card className="shadow-sm border-0 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
                     <Camera className="w-5 h-5 text-blue-700" />
-                    Galería de Trabajos
+                    Portfolio ({profileData.photos.length}/10)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    Sube fotos de tus trabajos realizados. Máximo 10 imágenes. La primera será tu foto principal.
-                  </p>
 
                   {isEditing && profileData.photos.length < 10 && (
                     <label className="cursor-pointer block">
