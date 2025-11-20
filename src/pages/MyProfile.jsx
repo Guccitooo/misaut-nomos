@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
@@ -494,6 +495,18 @@ export default function MyProfilePage() {
     },
   });
 
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async (visible) => {
+      return await base44.entities.ProfessionalProfile.update(profile.id, {
+        visible_en_busqueda: visible
+      });
+    },
+    onSuccess: (_, visible) => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      toast.success(visible ? '✅ Tu perfil ahora es visible en búsquedas' : '🔒 Tu perfil está oculto en búsquedas');
+    },
+  });
+
   const handleSave = async () => {
     console.log('💾 Guardando datos de usuario:', userData);
     
@@ -888,6 +901,37 @@ export default function MyProfilePage() {
                     {isProfessional ? "Autónomo" : "Cliente"}
                   </Badge>
                 </div>
+
+                {isProfessional && profile && subscriptionStatus?.isActive && (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <Label className="text-base font-semibold text-gray-900 mb-1 block">
+                          Visibilidad del perfil
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          {profile.visible_en_busqueda 
+                            ? "Tu perfil aparece en las búsquedas públicas" 
+                            : "Tu perfil está oculto y no aparece en búsquedas"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={profile.visible_en_busqueda}
+                        onCheckedChange={(checked) => toggleVisibilityMutation.mutate(checked)}
+                        disabled={toggleVisibilityMutation.isPending}
+                        className="data-[state=checked]:bg-green-600"
+                      />
+                    </div>
+                    {!profile.visible_en_busqueda && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-xs text-yellow-800 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Los clientes no podrán encontrarte hasta que actives la visibilidad
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {!isEditing && (
                   <div className="mt-8 pt-6 border-t border-red-200">
