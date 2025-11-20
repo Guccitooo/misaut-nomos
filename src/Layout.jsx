@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -208,51 +208,57 @@ function LayoutContent({ children, currentPageName }) {
     return user.profile_picture || null;
   };
 
-  const navigationItems = [
-    {
-      title: t('searchFreelancers'),
-      url: createPageUrl("Search"),
-      icon: Search,
-    },
-    {
-      title: t('messages'),
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      badge: unreadCount > 0 ? unreadCount : null
-    },
-    {
-      title: t('favorites'),
-      url: createPageUrl("Favorites"),
-      icon: Heart,
-    },
-    {
-      title: t('myProfile'),
-      url: createPageUrl("MyProfile"),
-      icon: User,
-    },
-  ];
+  const navigationItems = React.useMemo(() => {
+    if (!user || loadingUser) return [];
+    
+    const items = [
+      {
+        title: t('searchFreelancers'),
+        url: createPageUrl("Search"),
+        icon: Search,
+      },
+      {
+        title: t('messages'),
+        url: createPageUrl("Messages"),
+        icon: MessageSquare,
+        badge: unreadCount > 0 ? unreadCount : null
+      },
+      {
+        title: t('favorites'),
+        url: createPageUrl("Favorites"),
+        icon: Heart,
+      },
+      {
+        title: t('myProfile'),
+        url: createPageUrl("MyProfile"),
+        icon: User,
+      },
+    ];
 
-  if (user?.user_type === "professionnel") {
-    navigationItems.push({
-      title: t('mySubscription'),
-      url: createPageUrl("SubscriptionManagement"),
-      icon: Briefcase,
-    });
-  } else if (!user || user?.user_type === "client") {
-    navigationItems.push({
-      title: t('viewPlans'),
-      url: createPageUrl("PricingPlans"),
-      icon: CreditCard,
-    });
-  }
+    if (user.user_type === "professionnel") {
+      items.push({
+        title: t('mySubscription'),
+        url: createPageUrl("SubscriptionManagement"),
+        icon: Briefcase,
+      });
+    } else if (user.user_type === "client") {
+      items.push({
+        title: t('viewPlans'),
+        url: createPageUrl("PricingPlans"),
+        icon: CreditCard,
+      });
+    }
 
-  if (user?.role === "admin") {
-    navigationItems.push({
-      title: t('administration'),
-      url: createPageUrl("AdminDashboard"),
-      icon: LayoutDashboard,
-    });
-  }
+    if (user.role === "admin") {
+      items.push({
+        title: t('administration'),
+        url: createPageUrl("AdminDashboard"),
+        icon: LayoutDashboard,
+      });
+    }
+    
+    return items;
+  }, [user, loadingUser, unreadCount, t]);
 
   return (
     <>
