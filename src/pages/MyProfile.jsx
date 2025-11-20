@@ -759,7 +759,6 @@ export default function MyProfilePage() {
           <ProfileCompleteness 
             profile={profile} 
             user={user}
-            onEdit={() => setIsEditing(true)}
           />
         )}
 

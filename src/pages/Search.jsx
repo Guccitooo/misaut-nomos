@@ -429,8 +429,23 @@ export default function SearchPage() {
     return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
   });
 
-  const provincias = Object.keys(PROVINCIAS);
-  const ciudadesDisponibles = selectedProvincia !== "all" ? PROVINCIAS[selectedProvincia] || [] : [];
+  const availableProvincias = React.useMemo(() => {
+    const provincias = new Set();
+    profiles.forEach(profile => {
+      if (profile.provincia) provincias.add(profile.provincia);
+    });
+    return Array.from(provincias).sort();
+  }, [profiles]);
+
+  const availableCities = React.useMemo(() => {
+    const cities = new Set();
+    profiles.forEach(profile => {
+      if (profile.ciudad && (!selectedProvincia || selectedProvincia === "all" || profile.provincia === selectedProvincia)) {
+        cities.add(profile.ciudad);
+      }
+    });
+    return Array.from(cities).sort();
+  }, [profiles, selectedProvincia]);
 
   const handleProvinciaChange = (value) => {
     setSelectedProvincia(value);
@@ -552,7 +567,7 @@ export default function SearchPage() {
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
                       <SelectItem value="all">{t('allProvinces') || 'Todas las provincias'}</SelectItem>
-                      {provincias.map((prov) => (
+                      {availableProvincias.map((prov) => (
                         <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                       ))}
                     </SelectContent>
@@ -564,7 +579,7 @@ export default function SearchPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('allCities') || 'Todas las ciudades'}</SelectItem>
-                      {ciudadesDisponibles.map((ciudad) => (
+                      {availableCities.map((ciudad) => (
                         <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                       ))}
                     </SelectContent>
