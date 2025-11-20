@@ -314,25 +314,18 @@ export default function ProfessionalProfilePage() {
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews', professionalId],
     queryFn: async () => {
+      console.log('🔍 Fetching reviews for professional:', professionalId);
       const allReviews = await base44.entities.Review.filter({
         professional_id: professionalId
       });
       
-      const validReviews = [];
-      for (const review of allReviews) {
-        try {
-          const clientExists = await base44.entities.User.filter({ id: review.client_id });
-          if (clientExists.length > 0) {
-            validReviews.push(review);
-          }
-        } catch (error) {
-          console.log('Cliente no encontrado, omitiendo reseña');
-        }
-      }
+      console.log('📝 Reviews encontradas:', allReviews.length, allReviews);
       
-      return validReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      return allReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!professionalId,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const { data: metrics } = useQuery({
@@ -434,23 +427,27 @@ export default function ProfessionalProfilePage() {
               <Avatar 
                 className="w-14 h-14 border-2 border-gray-100 flex-shrink-0 cursor-pointer"
                 onClick={() => {
-                  if (professionalUser?.profile_picture) {
-                    setSelectedImage(professionalUser.profile_picture);
+                  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
+                  if (photoUrl) {
+                    setSelectedImage(photoUrl);
                     setSelectedImageIndex(-1);
                   }
                 }}
               >
-                {professionalUser?.profile_picture ? (
-                  <AvatarImage 
-                    src={professionalUser.profile_picture}
-                    alt={profile.business_name}
-                    className="object-cover"
-                  />
-                ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
-                    {profile.business_name?.charAt(0)}
-                  </AvatarFallback>
-                )}
+                {(() => {
+                  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
+                  return photoUrl ? (
+                    <AvatarImage 
+                      src={photoUrl}
+                      alt={profile.business_name}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
+                      {profile.business_name?.charAt(0)}
+                    </AvatarFallback>
+                  );
+                })()}
               </Avatar>
               
               <div className="flex-1">

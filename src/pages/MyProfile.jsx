@@ -454,11 +454,16 @@ export default function MyProfilePage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
+      const dataToSave = {
+        ...data,
+        imagen_principal: user.profile_picture || data.photos?.[0] || data.imagen_principal || ""
+      };
+      
       if (profile) {
-        return await base44.entities.ProfessionalProfile.update(profile.id, data);
+        return await base44.entities.ProfessionalProfile.update(profile.id, dataToSave);
       } else {
         return await base44.entities.ProfessionalProfile.create({
-          ...data,
+          ...dataToSave,
           user_id: user.id,
           estado_perfil: "activo",
           visible_en_busqueda: true,
