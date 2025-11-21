@@ -187,34 +187,19 @@ export default function PricingPlansPage() {
             Volver
           </Button>
 
-          <div className="text-center mb-8">
-            <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 text-base font-bold mb-4">
-              <Gift className="w-4 h-4 mr-2 inline" />
-              2 MESES GRATIS EN TODOS LOS PLANES
-            </Badge>
-            
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-              Elige tu plan
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
-              Empieza gratis 2 meses. Sin permanencia. Cancela cuando quieras.
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Cancela cuando quieras</span>
+          <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg">
+                <Gift className="w-6 h-6" />
+                2 MESES GRATIS
               </div>
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Sin cargos ocultos</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Pago 100% seguro</span>
-              </div>
+
+              <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4">
+                Empieza gratis hoy
+              </h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Sin permanencia • Cancela cuando quieras • Pago 100% seguro
+              </p>
             </div>
-          </div>
 
           {canceled && (
             <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
@@ -225,7 +210,7 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isPopular = plan.plan_id === "plan_quarterly";
@@ -247,48 +232,48 @@ export default function PricingPlansPage() {
 
                   <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
                     <div className="text-center mb-6">
-                      <div className={`w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center ${
-                        plan.plan_id === "plan_monthly_trial" ? "bg-blue-100 text-blue-600" :
-                        plan.plan_id === "plan_quarterly" ? "bg-green-100 text-green-600" :
-                        "bg-orange-100 text-orange-600"
+                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
+                        plan.plan_id === "plan_monthly_trial" ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white" :
+                        plan.plan_id === "plan_quarterly" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
+                        "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
                       }`}>
                         {getPlanIcon(plan.plan_id)}
                       </div>
-                      
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
                         {plan.nombre}
                       </h3>
-                      
-                      <div className="mb-2">
-                        <p className="text-4xl font-bold text-gray-900">
-                          {plan.precio}€
+
+                      <div className="mb-3">
+                        <p className="text-6xl font-black text-gray-900">
+                          0€
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-lg text-gray-600 font-semibold mt-2">
+                          primeros 2 meses
+                        </p>
+                        <p className="text-sm text-gray-500 mt-3">
+                          Luego {Math.round(plan.precio)}€
                           {plan.plan_id === "plan_monthly_trial" ? "/mes" : 
-                           plan.plan_id === "plan_quarterly" ? "/3 meses" : 
+                           plan.plan_id === "plan_quarterly" ? " cada 3 meses" : 
                            "/año"}
                         </p>
                       </div>
 
                       {plan.plan_id !== "plan_monthly_trial" && (
-                        <p className="text-sm text-green-600 font-semibold">
-                          {plan.plan_id === "plan_quarterly" && "≈ 29.7€/mes (10% OFF)"}
-                          {plan.plan_id === "plan_annual" && "≈ 26.4€/mes (20% OFF)"}
-                        </p>
+                        <div className="mt-3 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                          <p className="text-sm font-bold text-green-700">
+                            {plan.plan_id === "plan_quarterly" && "💰 Ahorra 10% - Solo 30€/mes"}
+                            {plan.plan_id === "plan_annual" && "🎉 Ahorra 20% - Solo 26€/mes"}
+                          </p>
+                        </div>
                       )}
-
-                      <div className="mt-3 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
-                        <p className="text-sm font-bold text-green-700">
-                          ✨ Empieza GRATIS 2 meses
-                        </p>
-                      </div>
                     </div>
 
-                    <ul className="space-y-2.5 mb-6">
-                      {getPlanFeatures().map((feature, idx) => (
+                    <ul className="space-y-3 mb-6">
+                      {getPlanFeatures().slice(0, 5).map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
                           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">{feature}</span>
+                          <span className="text-gray-700 font-medium">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -322,60 +307,37 @@ export default function PricingPlansPage() {
             })}
           </div>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 mb-8">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                💳 ¿Por qué necesito añadir una tarjeta?
-              </h2>
-              <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed">
-                La tarjeta es necesaria para poder cobrar automáticamente después del periodo de prueba de <strong>2 meses</strong> si decides continuar. 
-                <span className="block mt-2 text-green-700 font-bold">
-                  ✅ NO se te cobrará NADA durante los 60 días.
-                </span>
-                <span className="block mt-1 text-gray-600">
-                  Puedes cancelar en cualquier momento antes de que finalice la prueba.
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-6">Preguntas frecuentes</h2>
-            <div className="space-y-3">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Qué pasa después de los 2 meses gratis?</h3>
-                  <p className="text-sm text-gray-600">
-                    Si no cancelas antes de que terminen los 60 días, se cobrará automáticamente según el plan elegido. NO se realiza ningún cobro durante los 2 meses de prueba.
-                  </p>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-md bg-white">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-2">¿Qué pasa después de los 2 meses?</h3>
+                      <p className="text-sm text-gray-600">
+                        Se cobrará automáticamente según el plan elegido. Puedes cancelar antes sin coste.
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Cuánto ahorro con el plan trimestral o anual?</h3>
-                  <p className="text-sm text-gray-600">
-                    <strong>Trimestral:</strong> Pagas 89.1€ cada 3 meses (29.7€/mes) = 10% menos que el mensual.<br/>
-                    <strong>Anual:</strong> Pagas 316.8€ al año (26.4€/mes) = 20% menos que el mensual.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Puedo cancelar en cualquier momento?</h3>
-                  <p className="text-sm text-gray-600">
-                    Sí. Si cancelas durante los 2 meses gratis, no se te cobrará nada. Si cancelas después, seguirás teniendo acceso hasta el final del periodo pagado.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-5">
-                  <h3 className="font-semibold mb-2">¿Puedo usar la prueba más de una vez?</h3>
-                  <p className="text-sm text-gray-600">
-                    No. La prueba gratuita de 2 meses solo se puede usar una vez por usuario. Si ya la usaste, tendrás que pagar desde el primer día.
-                  </p>
+              <Card className="border-0 shadow-md bg-white">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-2">¿Puedo cancelar cuando quiera?</h3>
+                      <p className="text-sm text-gray-600">
+                        Sí, sin permanencia. Cancela antes de los 60 días y no pagas nada.
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
