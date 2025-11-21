@@ -32,7 +32,8 @@ import {
   Copy,
   Check,
   Briefcase,
-  User
+  User,
+  MessageSquare
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,8 +82,9 @@ const CategoryBadge = ({ category, categories }) => {
   );
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser }) => {
+const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCategories, professionalUser, currentUserId }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
@@ -236,9 +238,29 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
           <div className="flex gap-1.5 mt-auto">
             <Button 
               onClick={onClick}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-600 rounded-lg flex-shrink-0 group relative"
+              title="Ver perfil completo"
             >
-              {t('viewProfile') || 'Ver perfil'}
+              <Eye className="w-4 h-4 text-gray-700 group-hover:text-blue-600" />
+            </Button>
+
+            <Button
+              onClick={() => {
+                if (!currentUserId) {
+                  window.location.href = '/api/auth/login?next=' + encodeURIComponent('/Messages?professional=' + profile.user_id);
+                  return;
+                }
+                const conversationId = [currentUserId, profile.user_id].sort().join('_');
+                navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
+              }}
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0 group relative"
+              title="Enviar mensaje"
+            >
+              <MessageSquare className="w-4 h-4 text-gray-700 group-hover:text-blue-600" />
             </Button>
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
@@ -246,7 +268,8 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 onClick={handleCall}
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-blue-300 rounded-lg flex-shrink-0"
+                className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-gray-400 rounded-lg flex-shrink-0"
+                title="Llamar por teléfono"
               >
                 <Phone className="w-4 h-4 text-gray-700" />
               </Button>
@@ -258,6 +281,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
+                title="Contactar por WhatsApp"
               >
                 <MessageCircle className="w-4 h-4 text-green-600" />
               </Button>
@@ -692,6 +716,7 @@ export default function SearchPage() {
                     isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                     userCategories={categories}
                     professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                    currentUserId={user?.id}
                   />
                 </motion.div>
               ))}
