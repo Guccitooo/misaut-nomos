@@ -67,6 +67,25 @@ Deno.serve(async (req) => {
 
           <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
         `;
+      } else if (type === 'status_changed') {
+        const { newStatus } = await req.json();
+        const statusLabels = {
+          abierto: 'Abierto',
+          en_progreso: 'En progreso',
+          resuelto: 'Resuelto',
+          cerrado: 'Cerrado'
+        };
+        
+        subject = `🔔 Ticket ${ticket.ticket_number} - Estado actualizado a ${statusLabels[newStatus] || newStatus}`;
+        body = `
+          <h2>Estado del ticket actualizado</h2>
+
+          <p><strong>Número:</strong> ${ticket.ticket_number}</p>
+          <p><strong>Título:</strong> ${ticket.title}</p>
+          <p><strong>Nuevo estado:</strong> ${statusLabels[newStatus] || newStatus}</p>
+          
+          <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
+        `;
       } else {
         subject = `🎫 Tienes un nuevo ticket asignado: ${ticket.ticket_number}`;
         body = `

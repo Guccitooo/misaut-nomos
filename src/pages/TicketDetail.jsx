@@ -166,6 +166,35 @@ export default function TicketDetailPage() {
         old_value: ticket.status,
         new_value: newStatus
       });
+
+      // Notificar al admin cuando un usuario cierra el ticket
+      if (newStatus === 'cerrado' && user.role !== 'admin') {
+        try {
+          await base44.functions.invoke('sendTicketNotification', {
+            ticketId: ticketId,
+            recipientId: 'admin',
+            type: 'status_changed',
+            newStatus: 'cerrado'
+          });
+          console.log('✅ Notificación de cierre enviada al admin');
+        } catch (error) {
+          console.error('⚠️ Error enviando notificación al admin:', error);
+        }
+      }
+
+      // Notificar al creador si no es quien cambió el estado
+      if (ticket.creator_id !== user.id) {
+        try {
+          await base44.functions.invoke('sendTicketNotification', {
+            ticketId: ticketId,
+            recipientId: ticket.creator_id,
+            type: 'status_changed',
+            newStatus: newStatus
+          });
+        } catch (error) {
+          console.error('⚠️ Error enviando notificación al usuario:', error);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
