@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2, Bell, CreditCard, Link as LinkIcon, Copy } from "lucide-react";
+import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2, Bell, CreditCard, Link as LinkIcon, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
 
@@ -42,6 +42,7 @@ export default function InvoicesPage() {
     items: [{ description: "", quantity: 1, unit_price: 0, total: 0 }],
     status: "draft",
     notes: "",
+    iva_incluido: false,
   });
 
   useEffect(() => {
@@ -78,9 +79,18 @@ export default function InvoicesPage() {
   const createMutation = useMutation({
     mutationFn: (data) => {
       const invoiceNumber = `INV-${Date.now()}`;
-      const subtotal = data.items.reduce((sum, item) => sum + item.total, 0);
-      const ivaAmount = subtotal * 0.21;
-      const total = subtotal + ivaAmount;
+      const itemsTotal = data.items.reduce((sum, item) => sum + item.total, 0);
+      
+      let subtotal, ivaAmount, total;
+      if (data.iva_incluido) {
+        total = itemsTotal;
+        subtotal = total / 1.21;
+        ivaAmount = total - subtotal;
+      } else {
+        subtotal = itemsTotal;
+        ivaAmount = subtotal * 0.21;
+        total = subtotal + ivaAmount;
+      }
 
       return base44.entities.Invoice.create({
         ...data,
@@ -101,9 +111,18 @@ export default function InvoicesPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => {
-      const subtotal = data.items.reduce((sum, item) => sum + item.total, 0);
-      const ivaAmount = subtotal * 0.21;
-      const total = subtotal + ivaAmount;
+      const itemsTotal = data.items.reduce((sum, item) => sum + item.total, 0);
+      
+      let subtotal, ivaAmount, total;
+      if (data.iva_incluido) {
+        total = itemsTotal;
+        subtotal = total / 1.21;
+        ivaAmount = total - subtotal;
+      } else {
+        subtotal = itemsTotal;
+        ivaAmount = subtotal * 0.21;
+        total = subtotal + ivaAmount;
+      }
 
       return base44.entities.Invoice.update(id, {
         ...data,
@@ -120,12 +139,18 @@ export default function InvoicesPage() {
     },
   });
 
-  const sendMutation = useMutation({
-    mutationFn: (id) => base44.entities.Invoice.update(id, { status: 'sent' }),
+  const sendEmailMutation = useMutation({
+    mutationFn: async (invoiceId) => {
+      const response = await base44.functions.invoke('sendInvoiceEmail', { invoiceId });
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['invoices']);
-      toast.success("Factura enviada");
+      toast.success("Factura enviada por email");
     },
+    onError: () => {
+      toast.error("Error al enviar la factura");
+    }
   });
 
   const reminderMutation = useMutation({
@@ -174,6 +199,7 @@ export default function InvoicesPage() {
       items: [{ description: "", quantity: 1, unit_price: 0, total: 0 }],
       status: "draft",
       notes: "",
+      iva_incluido: false,
     });
     setEditingInvoice(null);
   };
@@ -218,15 +244,24 @@ export default function InvoicesPage() {
       items: invoice.items || [{ description: "", quantity: 1, unit_price: 0, total: 0 }],
       status: invoice.status || "draft",
       notes: invoice.notes || "",
+      iva_incluido: invoice.iva_incluido || false,
     });
     setShowDialog(true);
   };
 
   if (loading) return <Loader />;
 
-  const subtotal = formData.items.reduce((sum, item) => sum + item.total, 0);
-  const iva = subtotal * 0.21;
-  const total = subtotal + iva;
+  const itemsTotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+  let subtotal, iva, total;
+  if (formData.iva_incluido) {
+    total = itemsTotal;
+    subtotal = total / 1.21;
+    iva = total - subtotal;
+  } else {
+    subtotal = itemsTotal;
+    iva = subtotal * 0.21;
+    total = subtotal + iva;
+  }
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -308,10 +343,14 @@ export default function InvoicesPage() {
                         <Button size="sm" variant="outline" onClick={() => handleEdit(invoice)}>
                           Editar
                         </Button>
-                        {invoice.status === 'draft' && (
-                          <Button size="sm" onClick={() => sendMutation.mutate(invoice.id)}>
-                            <Send className="w-3 h-3 mr-1" />
-                            Enviar
+                        {(invoice.status === 'draft' || invoice.status === 'sent') && invoice.client_email && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => sendEmailMutation.mutate(invoice.id)}
+                            disabled={sendEmailMutation.isPending}
+                          >
+                            <Mail className="w-3 h-3 mr-1" />
+                            Enviar email
                           </Button>
                         )}
                         {(invoice.status === 'sent' || invoice.status === 'overdue') && (
@@ -436,10 +475,24 @@ export default function InvoicesPage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <Label className="text-base font-semibold">Conceptos</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addItem}>
-                  <Plus className="w-3 h-3 mr-1" />
-                  Añadir línea
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="iva-incluido"
+                      checked={formData.iva_incluido}
+                      onChange={(e) => setFormData({...formData, iva_incluido: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <label htmlFor="iva-incluido" className="text-sm text-gray-700">
+                      IVA incluido en importes
+                    </label>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={addItem}>
+                    <Plus className="w-3 h-3 mr-1" />
+                    Añadir línea
+                  </Button>
+                </div>
               </div>
               
               {formData.items.map((item, index) => (
