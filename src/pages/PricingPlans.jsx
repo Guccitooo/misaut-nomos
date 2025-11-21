@@ -197,6 +197,21 @@ export default function PricingPlansPage() {
     );
   }
 
+  if (!loadingPlans && plans.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <div className="text-center">
+          <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No hay planes disponibles</h2>
+          <p className="text-gray-600 mb-4">Los planes se están configurando. Intenta de nuevo en unos minutos.</p>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            Recargar página
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <SEOHead 
