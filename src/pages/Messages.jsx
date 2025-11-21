@@ -281,13 +281,21 @@ export default function MessagesPage() {
     return allMessages.reduce((acc, msg) => {
       const convId = msg.conversation_id;
       if (!acc[convId]) {
+        const isUserSender = msg.sender_id === user?.id;
+        const otherUserId = isUserSender ? msg.recipient_id : msg.sender_id;
+        
+        let otherUserName;
+        if (isUserSender) {
+          otherUserName = msg.professional_name || msg.client_name;
+        } else {
+          otherUserName = msg.professional_name || msg.client_name;
+        }
+        
         acc[convId] = {
           conversationId: convId,
           messages: [],
-          otherUserId: msg.sender_id === user?.id ? msg.recipient_id : msg.sender_id,
-          otherUserName: msg.sender_id === user?.id ? 
-            (msg.client_name || msg.professional_name) : 
-            (msg.professional_name || msg.client_name),
+          otherUserId: otherUserId,
+          otherUserName: otherUserName,
           lastMessage: msg,
           unreadCount: 0
         };
