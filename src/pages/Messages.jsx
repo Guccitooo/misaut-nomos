@@ -476,9 +476,87 @@ export default function MessagesPage() {
         quote_request: updatedQuote
       });
 
+      const otherUserId = message.sender_id === user.id ? message.recipient_id : message.sender_id;
+      const recipient = await base44.entities.User.filter({ id: otherUserId });
+      
+      if (recipient[0]) {
+        let notificationMessage = "";
+        if (response.professional_responded) {
+          notificationMessage = "Has recibido un presupuesto detallado";
+        } else if (response.status === "accepted") {
+          notificationMessage = "Tu presupuesto ha sido aceptado";
+        } else if (response.status === "rejected") {
+          notificationMessage = "Tu presupuesto ha sido rechazado";
+        } else if (response.status === "completed") {
+          notificationMessage = "El trabajo ha sido marcado como completado";
+        }
+
+        if (notificationMessage) {
+          await base44.entities.Notification.create({
+            user_id: otherUserId,
+            type: "quote_update",
+            title: "Actualización de presupuesto",
+            message: notificationMessage,
+            link: createPageUrl("Messages") + `?conversation=${selectedConversation}`,
+            metadata: { conversation_id: selectedConversation, message_id: messageId }
+          });
+
+          base44.integrations.Core.SendEmail({
+            to: recipient[0].email,
+            subject: "📋 Actualización de presupuesto - MisAutónomos",
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .content { padding: 40px 30px; }
+    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
+    .quote-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 8px; }
+    .cta { text-align: center; margin: 35px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">📋</div>
+      <h1>Actualización de presupuesto</h1>
+    </div>
+    <div class="content">
+      <p class="message">Hola,</p>
+      <div class="quote-box">
+        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #1e40af;">${notificationMessage}</p>
+      </div>
+      <div class="cta">
+        <a href="https://misautonomos.es/Messages?conversation=${selectedConversation}" class="button">
+          Ver detalles →
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      <strong style="color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px;">Equipo MisAutónomos</strong>
+      <p style="color: #60a5fa; margin-bottom: 15px; font-style: italic;">Tu autónomo de confianza</p>
+    </div>
+  </div>
+</body>
+</html>
+            `,
+            from_name: "MisAutónomos"
+          }).catch(err => console.log('Email error:', err));
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success("Presupuesto actualizado");
     } catch (error) {
+      console.error("Error updating quote:", error);
       toast.error("Error al actualizar presupuesto");
     }
   };
