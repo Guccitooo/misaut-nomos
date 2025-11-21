@@ -339,16 +339,17 @@ export default function MyProfilePage() {
       return profiles[0];
     },
     enabled: !!user,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   useEffect(() => {
-    if (profile && user) {
+    if (profile) {
       setProfileData({
         business_name: profile.business_name || "",
         cif_nif: profile.cif_nif || "",
-        email_contacto: profile.email_contacto || user.email,
-        telefono_contacto: profile.telefono_contacto || user.phone || "",
+        email_contacto: profile.email_contacto || user?.email || "",
+        telefono_contacto: profile.telefono_contacto || user?.phone || "",
         description: profile.description || "",
         descripcion_corta: profile.descripcion_corta || "",
         categories: profile.categories || [],
@@ -378,7 +379,7 @@ export default function MyProfilePage() {
         certifications: profile.certifications || [],
       });
     }
-  }, [profile, user]);
+  }, [profile]);
 
   const { data: metrics = [] } = useQuery({
     queryKey: ['profileMetrics', user?.id],
