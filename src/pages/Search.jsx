@@ -383,8 +383,6 @@ export default function SearchPage() {
       return await base44.entities.ServiceCategory.list();
     },
     initialData: [],
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -396,8 +394,6 @@ export default function SearchPage() {
       });
     },
     initialData: [],
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
   });
 
   const { data: professionalUsers = [] } = useQuery({
@@ -411,18 +407,14 @@ export default function SearchPage() {
     },
     enabled: profiles.length > 0,
     initialData: [],
-    staleTime: 3 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
   });
 
-  const { data: subscriptions = [] } = useQuery({
+  const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['subscriptions'],
     queryFn: async () => {
       return await base44.entities.Subscription.list();
     },
     initialData: [],
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
   });
 
   const { data: favorites = [] } = useQuery({
@@ -438,6 +430,8 @@ export default function SearchPage() {
   });
 
   const filteredProfiles = profiles.filter(profile => {
+    if (loadingSubscriptions) return true;
+    
     const hasActiveSubscription = subscriptions.some(sub => 
       sub.user_id === profile.user_id && 
       (sub.estado === "activo" || sub.estado === "en_prueba") &&
