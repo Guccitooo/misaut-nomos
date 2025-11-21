@@ -1396,7 +1396,9 @@ export default function MessagesPage() {
                               <QuoteRequest 
                                 quote={message.quote_request}
                                 isProfessional={message.sender_id !== user.id && user.user_type === "professionnel"}
+                                isClient={message.sender_id === user.id || user.user_type === "client"}
                                 onRespond={(response) => handleRespondQuote(message.id, response)}
+                                onStatusChange={(response) => handleRespondQuote(message.id, response)}
                               />
                             )}
                             
