@@ -93,25 +93,28 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
       console.log('✅ Evento de ticket creado');
 
       try {
-        await base44.functions.invoke('sendTicketNotification', {
+        console.log('📧 Enviando notificaciones...');
+        
+        const adminNotif = await base44.functions.invoke('sendTicketNotification', {
           ticketId: ticket.id,
           recipientId: 'admin',
           type: 'new_ticket',
           message: ticketData.description
         });
-        console.log('✅ Notificación enviada al admin');
+        console.log('✅ Respuesta notificación admin:', adminNotif.data);
 
         if (ticketData.assigned_to_id) {
-          await base44.functions.invoke('sendTicketNotification', {
+          const profNotif = await base44.functions.invoke('sendTicketNotification', {
             ticketId: ticket.id,
             recipientId: ticketData.assigned_to_id,
             type: 'new_ticket',
             message: ticketData.description
           });
-          console.log('✅ Notificación enviada al profesional');
+          console.log('✅ Respuesta notificación profesional:', profNotif.data);
         }
       } catch (notifError) {
-        console.error('⚠️ Error enviando notificaciones (no crítico):', notifError);
+        console.error('⚠️ Error enviando notificaciones:', notifError);
+        console.error('Detalles del error:', notifError.response?.data || notifError.message);
       }
 
       return ticket;

@@ -6,85 +6,106 @@ Deno.serve(async (req) => {
     
     const { ticketId, recipientId, type, message } = await req.json();
 
+    console.log('📧 Intentando enviar notificación:', { ticketId, recipientId, type });
+
     const tickets = await base44.asServiceRole.entities.Ticket.filter({ id: ticketId });
     const ticket = tickets[0];
 
     if (!ticket) {
+      console.error('❌ Ticket no encontrado:', ticketId);
       return Response.json({ error: 'Ticket not found' }, { status: 404 });
     }
+
+    console.log('✅ Ticket encontrado:', ticket.ticket_number);
 
     let recipientEmail;
     let subject;
     let body;
 
     if (recipientId === 'admin') {
-      recipientEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@misautonomos.com';
-      subject = `Nuevo ticket: ${ticket.ticket_number}`;
+      const adminEmail = Deno.env.get('ADMIN_EMAIL');
+      console.log('📧 Email admin configurado:', adminEmail);
+      
+      recipientEmail = adminEmail;
+      subject = `🎫 Nuevo ticket: ${ticket.ticket_number}`;
       body = `
-        Nuevo ticket creado en MisAutónomos:
-
-        Número: ${ticket.ticket_number}
-        Título: ${ticket.title}
-        Tipo: ${ticket.type}
-        Creado por: ${ticket.creator_name}
+        <h2>Nuevo ticket creado en MisAutónomos</h2>
         
-        Descripción:
-        ${ticket.description}
+        <p><strong>Número:</strong> ${ticket.ticket_number}</p>
+        <p><strong>Título:</strong> ${ticket.title}</p>
+        <p><strong>Tipo:</strong> ${ticket.type}</p>
+        <p><strong>Prioridad:</strong> ${ticket.priority}</p>
+        <p><strong>Creado por:</strong> ${ticket.creator_name}</p>
+        
+        <h3>Descripción:</h3>
+        <p>${ticket.description}</p>
 
-        Ver ticket: ${req.headers.get('origin')}/TicketDetail?id=${ticket.id}
+        <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
       `;
     } else {
       const users = await base44.asServiceRole.entities.User.filter({ id: recipientId });
       const recipient = users[0];
       
       if (!recipient?.email) {
+        console.error('❌ Destinatario no encontrado:', recipientId);
         return Response.json({ error: 'Recipient not found' }, { status: 404 });
       }
 
       recipientEmail = recipient.email;
+      console.log('📧 Enviando a profesional:', recipientEmail);
 
       if (type === 'new_message') {
-        subject = `Nuevo mensaje en ticket ${ticket.ticket_number}`;
+        subject = `💬 Nuevo mensaje en ticket ${ticket.ticket_number}`;
         body = `
-          Has recibido un nuevo mensaje en tu ticket:
+          <h2>Nuevo mensaje en tu ticket</h2>
 
-          Número: ${ticket.ticket_number}
-          Título: ${ticket.title}
+          <p><strong>Número:</strong> ${ticket.ticket_number}</p>
+          <p><strong>Título:</strong> ${ticket.title}</p>
           
-          Mensaje:
-          ${message}
+          <h3>Mensaje:</h3>
+          <p>${message}</p>
 
-          Ver ticket: ${req.headers.get('origin')}/TicketDetail?id=${ticket.id}
+          <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
         `;
       } else {
-        subject = `Actualización de ticket ${ticket.ticket_number}`;
+        subject = `🎫 Tienes un nuevo ticket asignado: ${ticket.ticket_number}`;
         body = `
-          Tu ticket ha sido actualizado:
+          <h2>Te han asignado un nuevo ticket</h2>
 
-          Número: ${ticket.ticket_number}
-          Título: ${ticket.title}
-          Estado: ${ticket.status}
+          <p><strong>Número:</strong> ${ticket.ticket_number}</p>
+          <p><strong>Título:</strong> ${ticket.title}</p>
+          <p><strong>Tipo:</strong> ${ticket.type}</p>
+          <p><strong>Creado por:</strong> ${ticket.creator_name}</p>
+          
+          <h3>Descripción:</h3>
+          <p>${ticket.description}</p>
 
-          Ver ticket: ${req.headers.get('origin')}/TicketDetail?id=${ticket.id}
+          <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
         `;
       }
     }
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
+    console.log('📤 Enviando email a:', recipientEmail);
+    
+    const emailResult = await base44.asServiceRole.integrations.Core.SendEmail({
       to: recipientEmail,
       subject,
       body
     });
 
+    console.log('✅ Email enviado exitosamente:', emailResult);
+
     return Response.json({ 
       success: true,
-      message: 'Notification sent'
+      message: 'Notification sent',
+      recipient: recipientEmail
     });
 
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('❌ Error enviando notificación:', error);
     return Response.json({ 
-      error: error.message || 'Error sending notification' 
+      error: error.message || 'Error sending notification',
+      details: error.toString()
     }, { status: 500 });
   }
 });
