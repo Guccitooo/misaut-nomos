@@ -220,16 +220,6 @@ function LayoutContent({ children, currentPageName }) {
       icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : null
     },
-    {
-      title: t('favorites'),
-      url: createPageUrl("Favorites"),
-      icon: Heart,
-    },
-    {
-      title: t('myProfile'),
-      url: createPageUrl("MyProfile"),
-      icon: User,
-    },
   ];
 
   if (isProfessional) {
@@ -238,6 +228,20 @@ function LayoutContent({ children, currentPageName }) {
       url: createPageUrl("ProfessionalDashboard"),
       icon: LayoutDashboard,
     });
+  }
+
+  navigationItems.push({
+    title: t('favorites'),
+    url: createPageUrl("Favorites"),
+    icon: Heart,
+  });
+  navigationItems.push({
+    title: t('myProfile'),
+    url: createPageUrl("MyProfile"),
+    icon: User,
+  });
+
+  if (isProfessional) {
     navigationItems.push({
       title: t('mySubscription'),
       url: createPageUrl("SubscriptionManagement"),
