@@ -372,18 +372,29 @@ export default function InvoicesPage() {
                             Recordar
                           </Button>
                           {invoice.payment_link ? (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                navigator.clipboard.writeText(invoice.payment_link);
-                                toast.success("Enlace copiado");
-                              }}
-                              className="bg-white hover:bg-gray-50 text-gray-900 border-gray-300 font-medium"
-                            >
-                              <Copy className="w-4 h-4 mr-1.5" />
-                              Copiar link
-                            </Button>
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(invoice.payment_link);
+                                  toast.success("Enlace copiado");
+                                }}
+                                className="bg-white hover:bg-gray-50 text-gray-900 border-gray-300 font-medium"
+                              >
+                                <Copy className="w-4 h-4 mr-1.5" />
+                                Copiar link
+                              </Button>
+                              <Button 
+                                size="sm"
+                                onClick={() => markAsPaidMutation.mutate(invoice.id)}
+                                disabled={markAsPaidMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700 text-white font-medium"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1.5" />
+                                Marcar pagado
+                              </Button>
+                            </>
                           ) : (
                             <Button 
                               size="sm"
@@ -392,7 +403,7 @@ export default function InvoicesPage() {
                               className="bg-green-600 hover:bg-green-700 text-white font-medium"
                             >
                               <CreditCard className="w-4 h-4 mr-1.5" />
-                              Crear pago
+                              Crear link pago
                             </Button>
                           )}
                         </>
