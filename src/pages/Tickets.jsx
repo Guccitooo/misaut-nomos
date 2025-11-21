@@ -74,18 +74,22 @@ export default function TicketsPage() {
     queryFn: async () => {
       if (!user) return [];
       
-      const userTickets = await base44.entities.Ticket.filter({
-        $or: [
-          { creator_id: user.id },
-          { assigned_to_id: user.id }
-        ]
-      });
+      console.log('🔍 Buscando tickets para usuario:', user.id);
+      const allTickets = await base44.entities.Ticket.list();
+      console.log('📋 Total tickets en sistema:', allTickets.length);
+      
+      const userTickets = allTickets.filter(t => 
+        t.creator_id === user.id || t.assigned_to_id === user.id
+      );
+      console.log('📋 Tickets del usuario:', userTickets.length);
       
       return userTickets.sort((a, b) => 
         new Date(b.last_activity || b.created_date) - new Date(a.last_activity || a.created_date)
       );
     },
     enabled: !!user,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: messageCounts = {} } = useQuery({

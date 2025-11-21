@@ -53,16 +53,35 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
 
   const createTicketMutation = useMutation({
     mutationFn: async (ticketData) => {
+      console.log('🎫 Creando ticket con datos:', ticketData);
+      
       const ticketNumber = `TKT-${Date.now().toString().slice(-6)}`;
       
-      const ticket = await base44.entities.Ticket.create({
-        ...ticketData,
+      const ticketToCreate = {
         ticket_number: ticketNumber,
+        title: ticketData.title,
+        description: ticketData.description,
+        type: ticketData.type,
+        priority: ticketData.priority,
         creator_id: user.id,
         creator_name: user.full_name || user.email,
         creator_type: user.user_type || 'client',
-        last_activity: new Date().toISOString()
-      });
+        status: 'abierto',
+        last_activity: new Date().toISOString(),
+        tags: ticketData.tags || [],
+        attachments: ticketData.attachments || [],
+      };
+
+      if (ticketData.assigned_to_id) {
+        ticketToCreate.assigned_to_id = ticketData.assigned_to_id;
+        ticketToCreate.assigned_to_name = ticketData.assigned_to_name;
+        ticketToCreate.related_professional_id = ticketData.assigned_to_id;
+      }
+
+      console.log('✅ Ticket a crear:', ticketToCreate);
+      
+      const ticket = await base44.entities.Ticket.create(ticketToCreate);
+      console.log('✅ Ticket creado:', ticket);
 
       await base44.entities.TicketEvent.create({
         ticket_id: ticket.id,
@@ -71,6 +90,7 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
         user_name: user.full_name || user.email,
         description: `Ticket creado: ${ticketData.title}`
       });
+      console.log('✅ Evento de ticket creado');
 
       try {
         await base44.functions.invoke('sendTicketNotification', {
@@ -79,6 +99,7 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
           type: 'new_ticket',
           message: ticketData.description
         });
+        console.log('✅ Notificación enviada al admin');
 
         if (ticketData.assigned_to_id) {
           await base44.functions.invoke('sendTicketNotification', {
@@ -87,21 +108,23 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
             type: 'new_ticket',
             message: ticketData.description
           });
+          console.log('✅ Notificación enviada al profesional');
         }
       } catch (notifError) {
-        console.error('Error sending notifications:', notifError);
+        console.error('⚠️ Error enviando notificaciones (no crítico):', notifError);
       }
 
       return ticket;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 Ticket creado exitosamente:', data);
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
-      toast.success(language === 'es' ? 'Ticket creado correctamente' : 'Ticket created successfully');
-      onClose();
+      toast.success(language === 'es' ? '✅ Ticket creado correctamente' : '✅ Ticket created successfully');
       resetForm();
+      onClose();
     },
     onError: (error) => {
-      console.error('Error creating ticket:', error);
+      console.error('❌ Error creando ticket:', error);
       toast.error(language === 'es' ? 'Error al crear el ticket: ' + error.message : 'Error creating ticket: ' + error.message);
     }
   });
@@ -132,25 +155,41 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    
+    console.log('📝 Iniciando creación de ticket...');
+    console.log('Título:', title);
+    console.log('Descripción:', description);
+    console.log('Usuario:', user);
+
     if (!title.trim() || !description.trim()) {
       toast.error(language === 'es' ? 'Completa título y descripción' : 'Complete title and description');
       return;
     }
 
+    if (!user || !user.id) {
+      toast.error(language === 'es' ? 'Error: Usuario no autenticado' : 'Error: User not authenticated');
+      console.error('❌ Usuario no disponible:', user);
+      return;
+    }
+
     const selectedProfessional = professionals.find(p => p.user_id === assignedToId);
 
-    createTicketMutation.mutate({
-      title,
-      description,
+    const ticketData = {
+      title: title.trim(),
+      description: description.trim(),
       type,
       priority,
       assigned_to_id: assignedToId || null,
       assigned_to_name: selectedProfessional?.business_name || null,
       related_professional_id: assignedToId || null,
-      tags: tags ? tags.split(',').map(t => t.trim()) : [],
-      attachments
-    });
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
+      attachments: attachments || []
+    };
+
+    console.log('📤 Enviando ticket con datos:', ticketData);
+    createTicketMutation.mutate(ticketData);
   };
 
   return (
