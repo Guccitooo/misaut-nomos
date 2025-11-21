@@ -29,18 +29,84 @@ Deno.serve(async (req) => {
       recipientEmail = adminEmail;
       subject = `🎫 Nuevo ticket: ${ticket.ticket_number}`;
       body = `
-        <h2>Nuevo ticket creado en MisAutónomos</h2>
-        
-        <p><strong>Número:</strong> ${ticket.ticket_number}</p>
-        <p><strong>Título:</strong> ${ticket.title}</p>
-        <p><strong>Tipo:</strong> ${ticket.type}</p>
-        <p><strong>Prioridad:</strong> ${ticket.priority}</p>
-        <p><strong>Creado por:</strong> ${ticket.creator_name}</p>
-        
-        <h3>Descripción:</h3>
-        <p>${ticket.description}</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f3f4f6; }
+            .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center; }
+            .header h1 { margin: 0; color: white; font-size: 28px; font-weight: 700; }
+            .header p { margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px; }
+            .content { padding: 40px 30px; }
+            .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 5px 5px 5px 0; }
+            .badge-blue { background: #dbeafe; color: #1e40af; }
+            .badge-yellow { background: #fef3c7; color: #92400e; }
+            .badge-red { background: #fee2e2; color: #991b1b; }
+            .info-box { background: #f9fafb; border-left: 4px solid #2563eb; padding: 20px; margin: 20px 0; border-radius: 8px; }
+            .info-box h3 { margin: 0 0 15px; color: #1f2937; font-size: 16px; font-weight: 600; }
+            .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+            .info-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+            .info-label { color: #6b7280; font-size: 14px; font-weight: 500; }
+            .info-value { color: #1f2937; font-size: 14px; font-weight: 600; }
+            .description { background: #fefce8; border: 1px solid #fde047; padding: 20px; border-radius: 8px; margin: 25px 0; }
+            .description h3 { margin: 0 0 12px; color: #92400e; font-size: 15px; font-weight: 600; }
+            .description p { margin: 0; color: #3f3f46; line-height: 1.6; font-size: 14px; }
+            .btn { display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; margin-top: 25px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: transform 0.2s; }
+            .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4); }
+            .footer { background: #f9fafb; padding: 25px 30px; text-align: center; color: #6b7280; font-size: 13px; border-top: 1px solid #e5e7eb; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎫 Nuevo Ticket de Soporte</h1>
+              <p>Se ha creado un nuevo ticket que requiere tu atención</p>
+            </div>
+            <div class="content">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <span class="badge badge-blue">${ticket.ticket_number}</span>
+                <span class="badge ${ticket.priority === 'alta' || ticket.priority === 'urgente' ? 'badge-red' : ticket.priority === 'media' ? 'badge-yellow' : 'badge-blue'}">${ticket.priority || 'media'}</span>
+              </div>
+              
+              <div class="info-box">
+                <h3>📋 Información del Ticket</h3>
+                <div class="info-row">
+                  <span class="info-label">Título</span>
+                  <span class="info-value">${ticket.title}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Tipo</span>
+                  <span class="info-value">${ticket.type}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Creado por</span>
+                  <span class="info-value">${ticket.creator_name}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Tipo de usuario</span>
+                  <span class="info-value">${ticket.creator_type === 'professionnel' ? 'Profesional' : 'Cliente'}</span>
+                </div>
+              </div>
 
-        <p><a href="${req.headers.get('origin')}/TicketDetail?id=${ticket.id}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Ver ticket</a></p>
+              <div class="description">
+                <h3>💬 Descripción del problema</h3>
+                <p>${ticket.description}</p>
+              </div>
+
+              <div style="text-align: center;">
+                <a href="${req.headers.get('origin')}/AdminTickets" class="btn">Ver en Panel de Administración →</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>MisAutónomos · Sistema de tickets de soporte</p>
+              <p style="margin-top: 10px; color: #9ca3af;">Este es un email automático, por favor no respondas directamente.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `;
     } else {
       const users = await base44.asServiceRole.entities.User.filter({ id: recipientId });
