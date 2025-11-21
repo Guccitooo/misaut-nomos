@@ -338,57 +338,66 @@ export default function InvoicesPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">{invoice.total?.toFixed(2)}€</p>
-                      <div className="flex flex-wrap gap-2 mt-2 justify-end">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(invoice)}>
-                          Editar
+                    <p className="text-2xl font-bold text-gray-900">{invoice.total?.toFixed(2)}€</p>
+                    <div className="flex flex-wrap gap-2 mt-3 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleEdit(invoice)}
+                        className="bg-white hover:bg-gray-50 text-gray-900 border-gray-300 font-medium"
+                      >
+                        Editar
+                      </Button>
+                      {(invoice.status === 'draft' || invoice.status === 'sent') && invoice.client_email && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => sendEmailMutation.mutate(invoice.id)}
+                          disabled={sendEmailMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                        >
+                          <Mail className="w-4 h-4 mr-1.5" />
+                          Enviar email
                         </Button>
-                        {(invoice.status === 'draft' || invoice.status === 'sent') && invoice.client_email && (
+                      )}
+                      {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                        <>
                           <Button 
                             size="sm" 
-                            onClick={() => sendEmailMutation.mutate(invoice.id)}
-                            disabled={sendEmailMutation.isPending}
+                            variant="outline"
+                            onClick={() => reminderMutation.mutate(invoice.id)}
+                            disabled={reminderMutation.isPending}
+                            className="bg-white hover:bg-orange-50 text-orange-700 border-orange-300 font-medium"
                           >
-                            <Mail className="w-3 h-3 mr-1" />
-                            Enviar email
+                            <Bell className="w-4 h-4 mr-1.5" />
+                            Recordar
                           </Button>
-                        )}
-                        {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-                          <>
+                          {invoice.payment_link ? (
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => reminderMutation.mutate(invoice.id)}
-                              disabled={reminderMutation.isPending}
+                              onClick={() => {
+                                navigator.clipboard.writeText(invoice.payment_link);
+                                toast.success("Enlace copiado");
+                              }}
+                              className="bg-white hover:bg-gray-50 text-gray-900 border-gray-300 font-medium"
                             >
-                              <Bell className="w-3 h-3 mr-1" />
-                              Recordar
+                              <Copy className="w-4 h-4 mr-1.5" />
+                              Copiar link
                             </Button>
-                            {invoice.payment_link ? (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(invoice.payment_link);
-                                  toast.success("Enlace copiado");
-                                }}
-                              >
-                                <Copy className="w-3 h-3 mr-1" />
-                                Copiar link
-                              </Button>
-                            ) : (
-                              <Button 
-                                size="sm"
-                                onClick={() => createPaymentLinkMutation.mutate(invoice.id)}
-                                disabled={createPaymentLinkMutation.isPending}
-                              >
-                                <CreditCard className="w-3 h-3 mr-1" />
-                                Crear pago
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                          ) : (
+                            <Button 
+                              size="sm"
+                              onClick={() => createPaymentLinkMutation.mutate(invoice.id)}
+                              disabled={createPaymentLinkMutation.isPending}
+                              className="bg-green-600 hover:bg-green-700 text-white font-medium"
+                            >
+                              <CreditCard className="w-4 h-4 mr-1.5" />
+                              Crear pago
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                     </div>
                   </div>
                 </CardContent>
