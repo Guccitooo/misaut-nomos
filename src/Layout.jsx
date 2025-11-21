@@ -1037,7 +1037,9 @@ function LayoutContent({ children, currentPageName }) {
 export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
-      <LayoutContent children={children} currentPageName={currentPageName} />
+      <div style={{ overflow: 'hidden auto', height: '100vh' }}>
+        <LayoutContent children={children} currentPageName={currentPageName} />
+      </div>
     </LanguageProvider>
   );
 }
