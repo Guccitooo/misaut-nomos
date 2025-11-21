@@ -72,20 +72,24 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
         description: `Ticket creado: ${ticketData.title}`
       });
 
-      base44.functions.invoke('sendTicketNotification', {
-        ticketId: ticket.id,
-        recipientId: 'admin',
-        type: 'new_ticket',
-        message: ticketData.description
-      }).catch(err => console.error('Error sending notification:', err));
-
-      if (ticketData.assigned_to_id) {
-        base44.functions.invoke('sendTicketNotification', {
+      try {
+        await base44.functions.invoke('sendTicketNotification', {
           ticketId: ticket.id,
-          recipientId: ticketData.assigned_to_id,
+          recipientId: 'admin',
           type: 'new_ticket',
           message: ticketData.description
-        }).catch(err => console.error('Error sending notification:', err));
+        });
+
+        if (ticketData.assigned_to_id) {
+          await base44.functions.invoke('sendTicketNotification', {
+            ticketId: ticket.id,
+            recipientId: ticketData.assigned_to_id,
+            type: 'new_ticket',
+            message: ticketData.description
+          });
+        }
+      } catch (notifError) {
+        console.error('Error sending notifications:', notifError);
       }
 
       return ticket;
@@ -98,7 +102,7 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
     },
     onError: (error) => {
       console.error('Error creating ticket:', error);
-      toast.error(language === 'es' ? 'Error al crear el ticket' : 'Error creating ticket');
+      toast.error(language === 'es' ? 'Error al crear el ticket: ' + error.message : 'Error creating ticket: ' + error.message);
     }
   });
 
