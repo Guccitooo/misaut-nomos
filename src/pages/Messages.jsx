@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle, Paperclip, FileText, X } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -23,6 +23,9 @@ import { toast } from "sonner";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
+import FileAttachment from "../components/messages/FileAttachment";
+import QuoteRequest from "../components/messages/QuoteRequest";
+import { Input } from "@/components/ui/input";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
@@ -120,6 +123,11 @@ export default function MessagesPage() {
   const previousMessagesCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
   const [usersCache, setUsersCache] = useState({});
+  const [attachments, setAttachments] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [quoteData, setQuoteData] = useState({ description: "", budget: "", deadline: "" });
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadUser();
@@ -427,9 +435,70 @@ export default function MessagesPage() {
     return cleaned;
   };
 
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingFile(true);
+    try {
+      const uploadedFiles = await Promise.all(
+        files.map(async (file) => {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          return {
+            url: file_url,
+            name: file.name,
+            type: file.type,
+            size: file.size
+          };
+        })
+      );
+      setAttachments([...attachments, ...uploadedFiles]);
+      toast.success("Archivo(s) subido(s)");
+    } catch (error) {
+      toast.error("Error al subir archivo");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const handleRespondQuote = async (messageId, response) => {
+    try {
+      const message = currentMessages.find(m => m.id === messageId);
+      if (!message) return;
+
+      const updatedQuote = { ...message.quote_request, ...response };
+      
+      await base44.entities.Message.update(messageId, {
+        quote_request: updatedQuote
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      toast.success("Presupuesto actualizado");
+    } catch (error) {
+      toast.error("Error al actualizar presupuesto");
+    }
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData) => {
-      return base44.entities.Message.create(messageData);
+      const message = await base44.entities.Message.create(messageData);
+
+      await base44.entities.Notification.create({
+        user_id: messageData.recipient_id,
+        type: messageData.quote_request ? "quote_request" : "new_message",
+        title: messageData.quote_request ? "Nueva solicitud de presupuesto" : "Nuevo mensaje",
+        message: messageData.quote_request 
+          ? `Tienes una nueva solicitud de presupuesto` 
+          : `Nuevo mensaje de ${messageData.professional_name || messageData.client_name}`,
+        link: createPageUrl("Messages") + `?conversation=${messageData.conversation_id}`,
+        metadata: { conversation_id: messageData.conversation_id, message_id: message.id }
+      });
+
+      return message;
     },
     onMutate: async (newMessage) => {
       await queryClient.cancelQueries({ queryKey: ['messages'] });
@@ -767,17 +836,19 @@ export default function MessagesPage() {
         conversation_id: selectedConversation,
         sender_id: user.id,
         recipient_id: otherUserId,
-        content: newMessage.trim(),
+        content: newMessage.trim() || (attachments.length > 0 ? "📎 Archivo adjunto" : ""),
         professional_name: user.user_type === "professionnel" ? 
           (currentProfile?.business_name || user.full_name || user.email) : 
           conversations[selectedConversation]?.otherUserName,
         client_name: user.user_type === "client" ? 
           (user.full_name || user.email) : 
           (recipientUser?.full_name || recipientUser?.email || 'Usuario'),
-        is_read: false
+        is_read: false,
+        attachments: attachments.length > 0 ? attachments : undefined
       };
 
       setNewMessage("");
+      setAttachments([]);
       sendMessageMutation.mutate(messageData);
       
       setTimeout(() => {
@@ -798,6 +869,65 @@ export default function MessagesPage() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage(e);
+    }
+  };
+
+  const handleSendQuote = async () => {
+    if (!quoteData.description.trim() || !selectedConversation) return;
+
+    try {
+      const otherUserId = selectedProfessionalId || 
+        conversations[selectedConversation]?.otherUserId;
+      
+      if (!otherUserId) {
+        throw new Error('No se pudo identificar al destinatario');
+      }
+
+      let recipientUser = null;
+      let currentProfile = null;
+
+      try {
+        const recipientUsers = await base44.entities.User.filter({ id: otherUserId });
+        recipientUser = recipientUsers[0] || null;
+      } catch (error) {
+        console.log('⚠️ No se pudo cargar usuario destinatario:', error);
+      }
+
+      if (user.user_type === "professionnel") {
+        try {
+          const currentProfiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+          currentProfile = currentProfiles[0] || null;
+        } catch (error) {
+          console.log('⚠️ No se pudo cargar perfil profesional:', error);
+        }
+      }
+
+      const messageData = {
+        conversation_id: selectedConversation,
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: `📋 Solicitud de presupuesto: ${quoteData.description.substring(0, 50)}...`,
+        professional_name: user.user_type === "professionnel" ? 
+          (currentProfile?.business_name || user.full_name || user.email) : 
+          conversations[selectedConversation]?.otherUserName,
+        client_name: user.user_type === "client" ? 
+          (user.full_name || user.email) : 
+          (recipientUser?.full_name || recipientUser?.email || 'Usuario'),
+        is_read: false,
+        quote_request: {
+          description: quoteData.description,
+          budget: quoteData.budget ? parseFloat(quoteData.budget) : undefined,
+          deadline: quoteData.deadline || undefined,
+          status: "pending"
+        }
+      };
+
+      sendMessageMutation.mutate(messageData);
+      setShowQuoteDialog(false);
+      setQuoteData({ description: "", budget: "", deadline: "" });
+    } catch (error) {
+      console.error('Error sending quote:', error);
+      toast.error('Error al enviar solicitud de presupuesto');
     }
   };
 
@@ -1159,7 +1289,7 @@ export default function MessagesPage() {
                             isOptimistic ? 'opacity-70' : 'opacity-100'
                           } transition-opacity`}
                         >
-                          <div className="max-w-[85%] md:max-w-md">
+                          <div className={`max-w-[85%] md:max-w-md space-y-2 ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                             {!isMe && (
                               <div className="flex items-center gap-2 mb-1 ml-1">
                                 <button
@@ -1181,6 +1311,22 @@ export default function MessagesPage() {
                                     {senderType === "professionnel" ? t('professional') : t('client')}
                                   </Badge>
                                 )}
+                              </div>
+                            )}
+                            
+                            {message.quote_request && (
+                              <QuoteRequest 
+                                quote={message.quote_request}
+                                isProfessional={message.sender_id !== user.id && user.user_type === "professionnel"}
+                                onRespond={(response) => handleRespondQuote(message.id, response)}
+                              />
+                            )}
+                            
+                            {message.attachments && message.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {message.attachments.map((file, idx) => (
+                                  <FileAttachment key={idx} file={file} />
+                                ))}
                               </div>
                             )}
                             
@@ -1220,7 +1366,55 @@ export default function MessagesPage() {
                   className="bg-white border-t border-gray-200 p-3 md:p-4"
                   style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
                 >
+                  {attachments.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {attachments.map((file, idx) => (
+                        <FileAttachment 
+                          key={idx} 
+                          file={file} 
+                          onRemove={() => handleRemoveAttachment(idx)}
+                          showRemove={true}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
                   <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept="image/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-[44px] w-[44px]"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Paperclip className="w-5 h-5" />
+                      )}
+                    </Button>
+                    
+                    {user.user_type !== "professionnel" && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-[44px] w-[44px]"
+                        onClick={() => setShowQuoteDialog(true)}
+                      >
+                        <FileText className="w-5 h-5" />
+                      </Button>
+                    )}
+                    
                     <Textarea
                       ref={textareaRef}
                       value={newMessage}
@@ -1232,7 +1426,7 @@ export default function MessagesPage() {
                     />
                     <Button
                       type="submit"
-                      disabled={!newMessage.trim() || sendingMessage}
+                      disabled={(!newMessage.trim() && attachments.length === 0) || sendingMessage}
                       className="h-[44px] md:h-[50px] w-[44px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
                     >
                       {sendingMessage ? (
@@ -1240,7 +1434,7 @@ export default function MessagesPage() {
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          {t('send')}
+                          <span className="hidden md:inline ml-2">{t('send')}</span>
                         </>
                       )}
                     </Button>
@@ -1260,6 +1454,61 @@ export default function MessagesPage() {
               </div>
             )}
           </div>
+
+          <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Solicitar presupuesto</DialogTitle>
+                <DialogDescription>
+                  Envía una solicitud de presupuesto al profesional
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Descripción del trabajo *</label>
+                  <Textarea
+                    value={quoteData.description}
+                    onChange={(e) => setQuoteData({...quoteData, description: e.target.value})}
+                    placeholder="Describe qué necesitas..."
+                    rows={4}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Presupuesto estimado (€)</label>
+                  <Input
+                    type="number"
+                    value={quoteData.budget}
+                    onChange={(e) => setQuoteData({...quoteData, budget: e.target.value})}
+                    placeholder="Ej: 500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Fecha límite</label>
+                  <Input
+                    type="date"
+                    value={quoteData.deadline}
+                    onChange={(e) => setQuoteData({...quoteData, deadline: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSendQuote}
+                    disabled={!quoteData.description.trim()}
+                    className="flex-1"
+                  >
+                    Enviar solicitud
+                  </Button>
+                  <Button 
+                    onClick={() => setShowQuoteDialog(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
             <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
