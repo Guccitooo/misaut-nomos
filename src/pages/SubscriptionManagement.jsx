@@ -390,7 +390,7 @@ export default function SubscriptionManagementPage() {
                         onClick={() => navigate(createPageUrl("PricingPlans"))}
                       >
                         <Zap className="w-4 h-4 mr-2" />
-                        {t('viewSuperiorPlans')}
+                        {t('viewAllPlans')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -410,7 +410,8 @@ export default function SubscriptionManagementPage() {
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={() => navigate(createPageUrl("PricingPlans"))}
                       >
-                        {t('viewAvailablePlans')}
+                        <Zap className="w-4 h-4 mr-2" />
+                        {t('viewAllPlans')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -452,7 +453,8 @@ export default function SubscriptionManagementPage() {
 
                 {(subscription.estado === "activo" || subscription.estado === "en_prueba") && (
                   <Card className="shadow-lg border-0">
-                    <CardContent className="p-6">
+                    <CardContent className="p-6 text-center">
+                      <XCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
                       <h3 className="font-bold text-lg text-gray-900 mb-2">
                         {t('cancelSubscription')}
                       </h3>
@@ -466,30 +468,11 @@ export default function SubscriptionManagementPage() {
                         className="w-full"
                         onClick={() => setShowCancelDialog(true)}
                       >
-                        <XCircle className="w-4 h-4 mr-2" />
                         {t('cancelSubscription')}
                       </Button>
                     </CardContent>
                   </Card>
                 )}
-
-                <Card className="shadow-lg border-0">
-                  <CardContent className="p-6">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      {t('changePlan')}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {t('exploreOtherPlans')}
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    >
-                      {t('viewAllPlans')}
-                    </Button>
-                  </CardContent>
-                </Card>
               </div>
             </>
           )}
