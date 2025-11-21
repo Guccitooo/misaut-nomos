@@ -134,44 +134,98 @@ export default function QuoteRequest({ quote, isProfessional, isClient, onRespon
           </div>
         )}
 
-        {isProfessional && quote.status === "pending" && !responding && (
+        {isProfessional && !quote.professional_responded && !responding && (
           <Button 
             onClick={() => setResponding(true)}
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700"
           >
-            Responder presupuesto
+            Enviar presupuesto detallado
           </Button>
         )}
 
         {isProfessional && responding && (
-          <div className="space-y-3 pt-3 border-t">
+          <div className="space-y-4 pt-3 border-t">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Desglose de costes
+              </label>
+              <div className="space-y-2">
+                {breakdown.map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Concepto (ej: Mano de obra)"
+                      value={item.concept}
+                      onChange={(e) => updateBreakdownItem(index, "concept", e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="€"
+                      value={item.amount}
+                      onChange={(e) => updateBreakdownItem(index, "amount", e.target.value)}
+                      className="w-24"
+                    />
+                    {breakdown.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeBreakdownItem(index)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addBreakdownItem}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Añadir concepto
+                </Button>
+                {breakdown.some(item => item.amount) && (
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span className="font-semibold text-blue-900">Total:</span>
+                    <span className="text-xl font-bold text-blue-900">{calculateTotal()}€</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Precio (€)
+                Plazo estimado (días)
               </label>
               <Input
                 type="number"
-                placeholder="Ej: 150"
-                value={quoteAmount}
-                onChange={(e) => setQuoteAmount(e.target.value)}
+                placeholder="Ej: 3"
+                value={estimatedDays}
+                onChange={(e) => setEstimatedDays(e.target.value)}
               />
             </div>
+
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Notas adicionales
+                Términos y condiciones
               </label>
               <Textarea
-                placeholder="Incluye materiales, tiempo estimado..."
+                placeholder="Incluye materiales, garantías, formas de pago, etc..."
                 value={quoteNotes}
                 onChange={(e) => setQuoteNotes(e.target.value)}
-                rows={3}
+                rows={4}
               />
             </div>
+
             <div className="flex gap-2">
               <Button 
-                onClick={() => handleRespond("accept")}
-                className="flex-1"
-                disabled={!quoteAmount}
+                onClick={handleSendQuote}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={breakdown.every(item => !item.concept || !item.amount)}
               >
                 Enviar presupuesto
               </Button>
@@ -184,6 +238,36 @@ export default function QuoteRequest({ quote, isProfessional, isClient, onRespon
               </Button>
             </div>
           </div>
+        )}
+
+        {isClient && quote.professional_responded && quote.status === "pending" && (
+          <div className="flex gap-2 pt-3 border-t">
+            <Button 
+              onClick={() => handleClientAction("accepted")}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-1" />
+              Aceptar presupuesto
+            </Button>
+            <Button 
+              onClick={() => handleClientAction("rejected")}
+              variant="outline"
+              className="flex-1 text-red-600 hover:bg-red-50"
+            >
+              <XCircle className="w-4 h-4 mr-1" />
+              Rechazar
+            </Button>
+          </div>
+        )}
+
+        {isClient && quote.status === "accepted" && (
+          <Button 
+            onClick={() => handleClientAction("completed")}
+            className="w-full bg-blue-600 hover:bg-blue-700 mt-3"
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Marcar como completado
+          </Button>
         )}
       </CardContent>
     </Card>
