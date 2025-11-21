@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2 } from "lucide-react";
+import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2, Bell, CreditCard, Link as LinkIcon, Copy } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
 
@@ -126,6 +126,41 @@ export default function InvoicesPage() {
       queryClient.invalidateQueries(['invoices']);
       toast.success("Factura enviada");
     },
+  });
+
+  const reminderMutation = useMutation({
+    mutationFn: async (invoiceId) => {
+      const response = await base44.functions.invoke('sendInvoiceReminder', { invoiceId });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['invoices']);
+      toast.success("Recordatorio enviado al cliente");
+    },
+    onError: () => {
+      toast.error("Error al enviar recordatorio");
+    }
+  });
+
+  const createPaymentLinkMutation = useMutation({
+    mutationFn: async (invoiceId) => {
+      const response = await base44.functions.invoke('createInvoicePayment', { 
+        invoiceId,
+        publicAccess: false 
+      });
+      return response.data;
+    },
+    onSuccess: (data, invoiceId) => {
+      queryClient.invalidateQueries(['invoices']);
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      if (invoice?.payment_link) {
+        navigator.clipboard.writeText(invoice.payment_link);
+        toast.success("Enlace de pago generado y copiado");
+      }
+    },
+    onError: () => {
+      toast.error("Error al generar enlace de pago");
+    }
   });
 
   const resetForm = () => {
@@ -269,7 +304,7 @@ export default function InvoicesPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-900">{invoice.total?.toFixed(2)}€</p>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2 justify-end">
                         <Button size="sm" variant="outline" onClick={() => handleEdit(invoice)}>
                           Editar
                         </Button>
@@ -278,6 +313,41 @@ export default function InvoicesPage() {
                             <Send className="w-3 h-3 mr-1" />
                             Enviar
                           </Button>
+                        )}
+                        {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => reminderMutation.mutate(invoice.id)}
+                              disabled={reminderMutation.isPending}
+                            >
+                              <Bell className="w-3 h-3 mr-1" />
+                              Recordar
+                            </Button>
+                            {invoice.payment_link ? (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(invoice.payment_link);
+                                  toast.success("Enlace copiado");
+                                }}
+                              >
+                                <Copy className="w-3 h-3 mr-1" />
+                                Copiar link
+                              </Button>
+                            ) : (
+                              <Button 
+                                size="sm"
+                                onClick={() => createPaymentLinkMutation.mutate(invoice.id)}
+                                disabled={createPaymentLinkMutation.isPending}
+                              >
+                                <CreditCard className="w-3 h-3 mr-1" />
+                                Crear pago
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
