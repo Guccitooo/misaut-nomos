@@ -969,7 +969,30 @@ function LayoutContent({ children, currentPageName }) {
                   </div>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
-                    <LanguageSwitcher />
+                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => changeLanguage('es')}
+                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                          language === 'es'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-gray-200'
+                        }`}
+                        aria-label="Español"
+                      >
+                        ES
+                      </button>
+                      <button
+                        onClick={() => changeLanguage('en')}
+                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                          language === 'en'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-gray-200'
+                        }`}
+                        aria-label="English"
+                      >
+                        EN
+                      </button>
+                    </div>
                   </div>
                 </div>
               </header>
