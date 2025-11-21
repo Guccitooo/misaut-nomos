@@ -824,7 +824,7 @@ export default function ClientOnboardingPage() {
                 <div className="sticky bottom-0 left-0 right-0 bg-white pt-4 pb-2 -mx-6 md:-mx-8 px-6 md:px-8 border-t border-gray-100 mt-6">
                   <Button
                     type="submit"
-                    className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
+                    className="w-full h-14 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
                     disabled={completeOnboardingMutation.isPending || isRedirecting}
                   >
                     {completeOnboardingMutation.isPending || isRedirecting ? (

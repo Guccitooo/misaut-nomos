@@ -625,16 +625,13 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.categories.includes(cat) ? '#EFF6FF' : 'white'
                         }}
                       >
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                          <Checkbox
-                            checked={formData.categories.includes(cat)}
-                            className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                          />
-                          {formData.categories.includes(cat) && (
-                            <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">{cat}</span>
+                        <input
+                          type="checkbox"
+                          checked={formData.categories.includes(cat)}
+                          onChange={() => {}}
+                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 pointer-events-none flex-shrink-0"
+                        />
+                        <span className="text-sm font-medium text-gray-700 flex-1">{cat}</span>
                       </div>
                     ))}
                   </div>
@@ -762,16 +759,13 @@ export default function ProfileOnboardingPage() {
                           backgroundColor: formData.formas_pago.includes(forma) ? '#FAF5FF' : 'white'
                         }}
                       >
-                        <div className="relative w-5 h-5 flex items-center justify-center">
-                          <Checkbox
-                            checked={formData.formas_pago.includes(forma)}
-                            className="pointer-events-none data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                          />
-                          {formData.formas_pago.includes(forma) && (
-                            <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">{forma}</span>
+                        <input
+                          type="checkbox"
+                          checked={formData.formas_pago.includes(forma)}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-2 focus:ring-purple-500 pointer-events-none"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{forma}</span>
                       </div>
                     ))}
                   </div>
@@ -901,55 +895,58 @@ export default function ProfileOnboardingPage() {
                   </div>
                   
                   <div 
-                    className="flex items-start gap-3 cursor-pointer"
+                    className="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-blue-50 transition-colors"
                     onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
+                    style={{
+                      borderColor: formData.acepta_terminos ? '#10B981' : '#E5E7EB',
+                      backgroundColor: formData.acepta_terminos ? '#F0FDF4' : 'white'
+                    }}
                   >
-                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
-                      <Checkbox
-                        checked={formData.acepta_terminos}
-                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                      />
-                      {formData.acepta_terminos && (
-                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700">
-                      Acepto los <a href="/terms" target="_blank" className="text-blue-600 underline">Términos y Condiciones</a> de uso de la plataforma
+                    <input
+                      type="checkbox"
+                      checked={formData.acepta_terminos}
+                      onChange={() => {}}
+                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                    />
+                    <span className="text-sm text-gray-700 flex-1">
+                      Acepto los <a href="/terms" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> de uso de la plataforma
                     </span>
                   </div>
 
                   <div 
-                    className="flex items-start gap-3 cursor-pointer"
+                    className="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-blue-50 transition-colors"
                     onClick={() => setFormData({ ...formData, acepta_politica_privacidad: !formData.acepta_politica_privacidad })}
+                    style={{
+                      borderColor: formData.acepta_politica_privacidad ? '#10B981' : '#E5E7EB',
+                      backgroundColor: formData.acepta_politica_privacidad ? '#F0FDF4' : 'white'
+                    }}
                   >
-                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
-                      <Checkbox
-                        checked={formData.acepta_politica_privacidad}
-                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                      />
-                      {formData.acepta_politica_privacidad && (
-                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700">
-                      Acepto la <a href="/privacy" target="_blank" className="text-blue-600 underline">Política de Privacidad</a> y tratamiento de datos
+                    <input
+                      type="checkbox"
+                      checked={formData.acepta_politica_privacidad}
+                      onChange={() => {}}
+                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                    />
+                    <span className="text-sm text-gray-700 flex-1">
+                      Acepto la <a href="/privacy" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Política de Privacidad</a> y tratamiento de datos
                     </span>
                   </div>
 
                   <div 
-                    className="flex items-start gap-3 cursor-pointer"
+                    className="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-blue-50 transition-colors"
                     onClick={() => setFormData({ ...formData, consiente_contacto_clientes: !formData.consiente_contacto_clientes })}
+                    style={{
+                      borderColor: formData.consiente_contacto_clientes ? '#10B981' : '#E5E7EB',
+                      backgroundColor: formData.consiente_contacto_clientes ? '#F0FDF4' : 'white'
+                    }}
                   >
-                    <div className="relative mt-1 w-5 h-5 flex items-center justify-center">
-                      <Checkbox
-                        checked={formData.consiente_contacto_clientes}
-                        className="pointer-events-none data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                      />
-                      {formData.consiente_contacto_clientes && (
-                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.consiente_contacto_clientes}
+                      onChange={() => {}}
+                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                    />
+                    <span className="text-sm text-gray-700 flex-1">
                       Consiento en que los clientes puedan contactarme a través de la plataforma
                     </span>
                   </div>
@@ -962,7 +959,7 @@ export default function ProfileOnboardingPage() {
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 h-12 font-semibold"
+                  className="flex-1 h-14 font-bold text-base border-2"
                   disabled={saving}
                 >
                   <ChevronLeft className="w-5 h-5 mr-2" />
@@ -973,7 +970,7 @@ export default function ProfileOnboardingPage() {
               {currentStep < 3 ? (
                 <Button
                   onClick={handleNext}
-                  className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 font-semibold"
+                  className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 font-bold text-base shadow-lg"
                 >
                   Siguiente
                   <ChevronRight className="w-5 h-5 ml-2" />
@@ -982,7 +979,7 @@ export default function ProfileOnboardingPage() {
                 <Button
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="flex-1 h-12 bg-green-600 hover:bg-green-700 font-semibold"
+                  className="flex-1 h-14 bg-green-600 hover:bg-green-700 font-bold text-base shadow-lg"
                 >
                   {saving ? (
                     <>
