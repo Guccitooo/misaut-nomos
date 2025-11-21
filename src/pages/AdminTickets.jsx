@@ -65,12 +65,12 @@ export default function AdminTicketsPage() {
   const [internalNote, setInternalNote] = useState("");
   const [assignToEmail, setAssignToEmail] = useState("");
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: loadingUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading: loadingTickets } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
       console.log('🔍 Cargando tickets para admin...');
@@ -81,6 +81,7 @@ export default function AdminTicketsPage() {
         new Date(b.last_activity || b.created_date) - new Date(a.last_activity || a.created_date)
       );
     },
+    enabled: !!user && user.role === 'admin',
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -210,7 +211,7 @@ export default function AdminTicketsPage() {
     cerrados: tickets.filter(t => t.status === 'cerrado').length,
   };
 
-  if (!user) {
+  if (loadingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -218,7 +219,7 @@ export default function AdminTicketsPage() {
     );
   }
 
-  if (user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md p-8 text-center">
@@ -326,7 +327,7 @@ export default function AdminTicketsPage() {
           </CardContent>
         </Card>
 
-        {isLoading ? (
+        {loadingTickets ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
