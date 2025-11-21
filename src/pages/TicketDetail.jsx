@@ -426,21 +426,48 @@ export default function TicketDetailPage() {
                       <label className="text-sm text-gray-600 block mb-1">
                         {language === 'es' ? 'Estado' : 'Status'}
                       </label>
-                      <Select
-                        value={ticket.status}
-                        onValueChange={(value) => updateStatusMutation.mutate(value)}
-                        disabled={user.role !== 'admin' && ticket.status === 'cerrado'}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="abierto">{getStatusLabel('abierto')}</SelectItem>
-                          <SelectItem value="en_progreso">{getStatusLabel('en_progreso')}</SelectItem>
-                          <SelectItem value="resuelto">{getStatusLabel('resuelto')}</SelectItem>
-                          <SelectItem value="cerrado">{getStatusLabel('cerrado')}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {user.role === 'admin' ? (
+                        <Select
+                          value={ticket.status}
+                          onValueChange={(value) => updateStatusMutation.mutate(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="abierto">{getStatusLabel('abierto')}</SelectItem>
+                            <SelectItem value="en_progreso">{getStatusLabel('en_progreso')}</SelectItem>
+                            <SelectItem value="resuelto">{getStatusLabel('resuelto')}</SelectItem>
+                            <SelectItem value="cerrado">{getStatusLabel('cerrado')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : ticket.creator_id === user.id && ticket.status !== 'cerrado' ? (
+                        <div className="space-y-2">
+                          <Badge className={`${statusConfig[ticket.status]?.color} text-white w-full justify-center py-2`}>
+                            {StatusIcon && <StatusIcon className="w-4 h-4 mr-1" />}
+                            {getStatusLabel(ticket.status)}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateStatusMutation.mutate('cerrado')}
+                            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            {updateStatusMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-2" />
+                            )}
+                            {language === 'es' ? 'Cerrar ticket' : 'Close ticket'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge className={`${statusConfig[ticket.status]?.color} text-white w-full justify-center py-2`}>
+                          {StatusIcon && <StatusIcon className="w-4 h-4 mr-1" />}
+                          {getStatusLabel(ticket.status)}
+                        </Badge>
+                      )}
                     </div>
 
                     <div>
