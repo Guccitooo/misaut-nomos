@@ -21,9 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2, Bell, CreditCard, Link as LinkIcon, Copy, Mail } from "lucide-react";
+import { FileText, Plus, Euro, Calendar, Send, Check, AlertCircle, ArrowLeft, Trash2, Bell, CreditCard, Link as LinkIcon, Copy, Mail, CheckCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
@@ -188,6 +189,21 @@ export default function InvoicesPage() {
     }
   });
 
+  const markAsPaidMutation = useMutation({
+    mutationFn: (invoiceId) => base44.entities.Invoice.update(invoiceId, { 
+      status: 'paid',
+      payment_date: new Date().toISOString().split('T')[0],
+      payment_method: 'manual'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['invoices']);
+      toast.success("Factura marcada como pagada");
+    },
+    onError: () => {
+      toast.error("Error al actualizar la factura");
+    }
+  });
+
   const resetForm = () => {
     setFormData({
       client_name: "",
@@ -285,7 +301,7 @@ export default function InvoicesPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate(createPageUrl("ProfessionalDashboard"))}>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -301,6 +317,19 @@ export default function InvoicesPage() {
             Nueva factura
           </Button>
         </div>
+
+        <Alert className="bg-blue-50 border-blue-200 mb-6">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm text-gray-700">
+            <strong>Sistema de pagos MisAutónomos:</strong> Cuando creas un link de pago, tu cliente puede pagar con tarjeta. 
+            Cobramos una comisión del <strong>3%</strong> y te transferimos el dinero restante a tu cuenta bancaria en un plazo de <strong>7 días</strong>.
+            {!user?.iban && (
+              <span className="block mt-2 text-orange-700 font-medium">
+                ⚠️ No tienes configurado tu IBAN. <a href={createPageUrl("MyProfile")} className="underline">Añádelo en tu perfil</a> para recibir pagos.
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
 
         {loadingInvoices ? (
           <Loader />
