@@ -371,6 +371,11 @@ export default function MessagesPage() {
       return user.full_name || user.email?.split('@')[0] || t("you");
     }
     
+    const conversation = conversations[selectedConversation];
+    if (conversation && userId === conversation.otherUserId && conversation.otherUserName) {
+      return conversation.otherUserName;
+    }
+    
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
         return otherUserData.profile.business_name;
@@ -386,19 +391,12 @@ export default function MessagesPage() {
       return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
     }
     
-    const conversation = conversations[selectedConversation];
-    if (conversation && userId === conversation.otherUserId) {
-      if (conversation.otherUserName) {
-        return conversation.otherUserName;
-      }
-      
-      if (conversation.messages?.length > 0) {
-        const recentMsg = conversation.messages[conversation.messages.length - 1];
-        if (recentMsg.sender_id === userId) {
-          return recentMsg.professional_name || recentMsg.client_name || t("user");
-        } else {
-          return recentMsg.client_name || recentMsg.professional_name || t("user");
-        }
+    if (conversation && userId === conversation.otherUserId && conversation.messages?.length > 0) {
+      const recentMsg = conversation.messages[conversation.messages.length - 1];
+      if (recentMsg.sender_id === userId) {
+        return recentMsg.professional_name || recentMsg.client_name || t("user");
+      } else {
+        return recentMsg.client_name || recentMsg.professional_name || t("user");
       }
     }
     
