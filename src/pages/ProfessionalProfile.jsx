@@ -306,6 +306,8 @@ export default function ProfessionalProfilePage() {
       return profiles[0];
     },
     enabled: !!professionalId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
   const { data: professionalUser } = useQuery({
@@ -317,23 +319,22 @@ export default function ProfessionalProfilePage() {
       return users[0];
     },
     enabled: !!professionalId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews', professionalId],
     queryFn: async () => {
-      console.log('🔍 Fetching reviews for professional:', professionalId);
       const allReviews = await base44.entities.Review.filter({
         professional_id: professionalId
       });
       
-      console.log('📝 Reviews encontradas:', allReviews.length, allReviews);
-      
       return allReviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!professionalId,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
   });
 
   const { data: metrics } = useQuery({
@@ -357,6 +358,8 @@ export default function ProfessionalProfilePage() {
       return totals;
     },
     enabled: !!professionalId && user?.id === professionalId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
   });
 
   if (loadingProfile) {

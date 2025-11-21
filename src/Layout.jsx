@@ -37,7 +37,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
-function LayoutContent({ children, currentPageName }) {
+const LayoutContent = React.memo(function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language, changeLanguage } = useLanguage();
@@ -140,39 +140,93 @@ function LayoutContent({ children, currentPageName }) {
     return false;
   }, [user, professionalProfile]);
 
-  const loadUser = async () => {
+  const loadUser = React.useCallback(async () => {
     try {
+      const cached = sessionStorage.getItem('current_user');
+      if (cached) {
+        const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 60000) {
+          setUser(cachedUser);
+          setProfessionalProfile(cachedProfile);
+          setLoadingUser(false);
+          
+          base44.auth.me().then(async (freshUser) => {
+            if (freshUser.user_type === "professionnel") {
+              const profiles = await base44.entities.ProfessionalProfile.filter({
+                user_id: freshUser.id
+              });
+              const profile = profiles[0] || null;
+              sessionStorage.setItem('current_user', JSON.stringify({
+                user: freshUser,
+                profile,
+                timestamp: Date.now()
+              }));
+              setUser(freshUser);
+              setProfessionalProfile(profile);
+            }
+          }).catch(() => {});
+          
+          return;
+        }
+      }
+      
       const currentUser = await base44.auth.me();
       
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
         });
-        setProfessionalProfile(profiles[0] || null);
+        const profile = profiles[0] || null;
+        setProfessionalProfile(profile);
+        sessionStorage.setItem('current_user', JSON.stringify({
+          user: currentUser,
+          profile,
+          timestamp: Date.now()
+        }));
       } else {
         setProfessionalProfile(null);
+        sessionStorage.setItem('current_user', JSON.stringify({
+          user: currentUser,
+          profile: null,
+          timestamp: Date.now()
+        }));
       }
       
       setUser(currentUser);
     } catch (error) {
       setUser(null);
       setProfessionalProfile(null);
+      sessionStorage.removeItem('current_user');
     } finally {
       setLoadingUser(false);
     }
-  };
+  }, []);
 
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = React.useCallback(async () => {
     try {
+      const cached = sessionStorage.getItem('unread_count');
+      if (cached) {
+        const { count, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 30000) {
+          setUnreadCount(count);
+          return;
+        }
+      }
+      
       const messages = await base44.entities.Message.filter({
         recipient_id: user.id,
         is_read: false
       });
-      setUnreadCount(messages.length);
+      const count = messages.length;
+      setUnreadCount(count);
+      sessionStorage.setItem('unread_count', JSON.stringify({
+        count,
+        timestamp: Date.now()
+      }));
     } catch (error) {
       setUnreadCount(0);
     }
-  };
+  }, [user?.id]);
 
   const handleLogout = () => {
     base44.auth.logout();

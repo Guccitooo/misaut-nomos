@@ -40,8 +40,8 @@ export default function PricingPlansPage() {
       return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
-    staleTime: 0,
-    cacheTime: 0,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
   });
 
   useEffect(() => {
@@ -101,11 +101,17 @@ export default function PricingPlansPage() {
     setIsProcessing(true);
 
     try {
-      const response = await base44.functions.invoke('createCheckoutSession', {
+      const invokePromise = base44.functions.invoke('createCheckoutSession', {
         planId: plan.plan_id,
         planPrice: plan.precio,
         isReactivation: false
       });
+      
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 10000)
+      );
+      
+      const response = await Promise.race([invokePromise, timeout]);
 
       if (response.data.error) {
         throw new Error(response.data.error);

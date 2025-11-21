@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ImageIcon } from 'lucide-react';
 
-export default function OptimizedImage({ 
+const OptimizedImage = React.memo(function OptimizedImage({ 
   src, 
   alt, 
   className = "", 
@@ -18,24 +18,19 @@ export default function OptimizedImage({
   const imgRef = useRef(null);
 
   useEffect(() => {
-    console.log('🖼️ OptimizedImage montado:', { src, priority, width, height });
-    
     if (!src || src.trim() === '') {
-      console.log('❌ URL vacía, mostrando fallback');
       setError(true);
       setIsLoading(false);
       return;
     }
 
     if (src.startsWith('blob:') || src.startsWith('data:')) {
-      console.log('✅ Preview local detectado');
       setActualSrc(src);
       setIsInView(true);
       return;
     }
 
     if (!src.startsWith('http://') && !src.startsWith('https://')) {
-      console.log('⚠️ URL no válida:', src);
       setError(true);
       setIsLoading(false);
       return;
@@ -71,17 +66,15 @@ export default function OptimizedImage({
     return () => observer.disconnect();
   }, [priority]);
 
-  const handleLoad = () => {
-    console.log('✅ Imagen cargada:', actualSrc);
+  const handleLoad = React.useCallback(() => {
     setIsLoading(false);
     setError(false);
-  };
+  }, []);
 
-  const handleError = (e) => {
-    console.error('❌ Error cargando imagen:', actualSrc, e);
+  const handleError = React.useCallback(() => {
     setIsLoading(false);
     setError(true);
-  };
+  }, []);
 
   const defaultFallback = (
     <div className={`${className} bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
@@ -118,4 +111,6 @@ export default function OptimizedImage({
       )}
     </div>
   );
-}
+});
+
+export default OptimizedImage;
