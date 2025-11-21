@@ -1085,7 +1085,7 @@ export default function MessagesPage() {
                     
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">
-                        {conv.otherUserName || "Usuario"}
+                        {getDisplayName(conv.otherUserId) || conv.otherUserName || "Usuario"}
                       </p>
                       <p className="text-sm text-gray-500 truncate">
                         {conv.lastMessage.content}
