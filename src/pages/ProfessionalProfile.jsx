@@ -46,9 +46,17 @@ import ReviewSection from "../components/profile/ReviewSection";
 import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ProfessionalProfilePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -490,39 +498,62 @@ export default function ProfessionalProfilePage() {
             </div>
 
             {/* BOTONES DE CONTACTO */}
-            <div className="flex gap-2">
-              {showPhone && (
-                <Button 
-                  onClick={handlePhoneClick}
-                  variant="outline"
-                  className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
-                >
-                  <Phone className="w-4 h-4 mr-1" />
-                  Llamar
-                </Button>
-              )}
-              
-              {showWhatsApp && (
-                <Button
-                  onClick={handleWhatsAppClick}
-                  variant="outline"
-                  className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1 text-green-600" />
-                  WhatsApp
-                </Button>
-              )}
-              
-              {showChat && (
-                <Button
-                  onClick={handleStartChat}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
-                >
-                  <MessageSquare className="w-4 h-4 mr-1" />
-                  Chat
-                </Button>
-              )}
-            </div>
+            <TooltipProvider>
+              <div className="flex gap-2">
+                {showPhone && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        onClick={handlePhoneClick}
+                        variant="outline"
+                        className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        {t('call')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('callPhone')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                {showWhatsApp && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleWhatsAppClick}
+                        variant="outline"
+                        className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1 text-green-600" />
+                        WhatsApp
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('contactViaWhatsApp')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                {showChat && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleStartChat}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        {t('chat')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('sendDirectMessage')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
           </Card>
 
           {/* DESCRIPCIÓN E INFO */}
