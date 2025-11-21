@@ -404,6 +404,8 @@ export default function SearchPage() {
       return await base44.entities.ServiceCategory.list();
     },
     initialData: [],
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -415,6 +417,8 @@ export default function SearchPage() {
       });
     },
     initialData: [],
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 10,
   });
 
   const { data: professionalUsers = [] } = useQuery({
@@ -428,6 +432,8 @@ export default function SearchPage() {
     },
     enabled: profiles.length > 0,
     initialData: [],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
   });
 
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
@@ -436,6 +442,8 @@ export default function SearchPage() {
       return await base44.entities.Subscription.list();
     },
     initialData: [],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
   });
 
   const { data: favorites = [] } = useQuery({
@@ -448,6 +456,8 @@ export default function SearchPage() {
     },
     enabled: !!user,
     initialData: [],
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 5,
   });
 
   const filteredProfiles = profiles.filter(profile => {
