@@ -490,13 +490,14 @@ export default function ProfessionalProfilePage() {
             </div>
 
             {/* BOTONES DE CONTACTO */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex gap-2">
               {showPhone && (
                 <Button 
                   onClick={handlePhoneClick}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 text-sm font-semibold"
+                  variant="outline"
+                  className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
                 >
-                  <Phone className="w-4 h-4 mr-1.5" />
+                  <Phone className="w-4 h-4 mr-1" />
                   Llamar
                 </Button>
               )}
@@ -504,9 +505,10 @@ export default function ProfessionalProfilePage() {
               {showWhatsApp && (
                 <Button
                   onClick={handleWhatsAppClick}
-                  className="bg-green-600 hover:bg-green-700 h-10 text-sm font-semibold"
+                  variant="outline"
+                  className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
                 >
-                  <MessageCircle className="w-4 h-4 mr-1.5" />
+                  <MessageCircle className="w-4 h-4 mr-1 text-green-600" />
                   WhatsApp
                 </Button>
               )}
@@ -514,9 +516,9 @@ export default function ProfessionalProfilePage() {
               {showChat && (
                 <Button
                   onClick={handleStartChat}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 text-sm font-semibold"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
                 >
-                  <MessageSquare className="w-4 h-4 mr-1.5" />
+                  <MessageSquare className="w-4 h-4 mr-1" />
                   Chat
                 </Button>
               )}
@@ -532,19 +534,19 @@ export default function ProfessionalProfilePage() {
             )}
 
             {(profile.years_experience > 0 || profile.tarifa_base > 0) && (
-              <div className="flex items-center gap-4 pt-3 border-t">
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
                 {profile.years_experience > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm text-gray-700">{profile.years_experience} años</span>
-                  </div>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
+                    <Award className="w-3.5 h-3.5 mr-1.5" />
+                    {profile.years_experience} {profile.years_experience === 1 ? 'año' : 'años'} de experiencia
+                  </Badge>
                 )}
 
                 {profile.tarifa_base > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Euro className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-semibold text-gray-900">{profile.tarifa_base}€/h</span>
-                  </div>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                    <Euro className="w-3.5 h-3.5 mr-1.5" />
+                    {profile.tarifa_base}€/hora
+                  </Badge>
                 )}
               </div>
             )}
