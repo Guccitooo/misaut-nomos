@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // ✅ VERIFICAR SUSCRIPCIONES EXISTENTES EN BASE DE DATOS
     const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({ 
       user_id: user.id 
     });
@@ -34,6 +35,36 @@ Deno.serve(async (req) => {
           error: 'Ya tienes una suscripción activa' 
         }, { status: 400 });
       }
+    }
+
+    // ✅ VERIFICAR SUSCRIPCIONES ACTIVAS EN STRIPE
+    let stripeCustomerId = null;
+    try {
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1
+      });
+      
+      if (customers.data.length > 0) {
+        stripeCustomerId = customers.data[0].id;
+        console.log(`✅ Cliente de Stripe encontrado: ${stripeCustomerId}`);
+        
+        // Buscar suscripciones activas en Stripe
+        const activeStripeSubscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: 'active',
+          limit: 10
+        });
+
+        if (activeStripeSubscriptions.data.length > 0) {
+          console.log(`⚠️ Se encontraron ${activeStripeSubscriptions.data.length} suscripciones activas en Stripe`);
+          return Response.json({ 
+            error: 'Ya tienes una suscripción activa en Stripe. Por favor contacta con soporte.' 
+          }, { status: 400 });
+        }
+      }
+    } catch (stripeError) {
+      console.error('⚠️ Error verificando Stripe (continuando):', stripeError);
     }
 
     const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
@@ -53,7 +84,6 @@ Deno.serve(async (req) => {
     const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
 
     let sessionParams = {
-      customer_email: user.email,
       mode: 'subscription',
       allow_promotion_codes: false,
       billing_address_collection: 'required',
@@ -92,6 +122,15 @@ Deno.serve(async (req) => {
         }
       },
       payment_method_collection: 'always'
+    };
+
+    // ✅ Si existe el cliente en Stripe, usarlo en lugar de customer_email
+    if (stripeCustomerId) {
+      sessionParams.customer = stripeCustomerId;
+      console.log(`✅ Usando cliente existente: ${stripeCustomerId}`);
+    } else {
+      sessionParams.customer_email = user.email;
+      console.log(`✅ Creando nuevo cliente con email: ${user.email}`);
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

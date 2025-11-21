@@ -45,9 +45,49 @@ Deno.serve(async (req) => {
         const daysLeft = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
 
         if (daysLeft <= 0) {
+            console.log('❌ Suscripción expirada, debe crear una nueva');
             return Response.json({
-                error: 'La suscripción ha expirado. Debes contratar un nuevo plan.'
+                error: 'La suscripción ha expirado. Debes contratar un nuevo plan.',
+                requiresNewCheckout: true
             }, { status: 400 });
+        }
+
+        // ✅ VERIFICAR SI HAY MÚLTIPLES SUSCRIPCIONES EN STRIPE
+        if (subscription.stripe_subscription_id) {
+            try {
+                const stripeSubscription = await stripe.subscriptions.retrieve(
+                    subscription.stripe_subscription_id
+                );
+                
+                if (stripeSubscription.customer) {
+                    const allSubscriptions = await stripe.subscriptions.list({
+                        customer: stripeSubscription.customer,
+                        limit: 100
+                    });
+
+                    const activeSubscriptions = allSubscriptions.data.filter(sub => 
+                        sub.status === 'active' || sub.status === 'trialing'
+                    );
+
+                    if (activeSubscriptions.length > 1) {
+                        console.log(`⚠️ ALERTA: Usuario con ${activeSubscriptions.length} suscripciones activas en Stripe`);
+                        console.log('IDs:', activeSubscriptions.map(s => s.id));
+                        
+                        // Cancelar las suscripciones duplicadas (mantener solo la más reciente)
+                        const sortedSubs = activeSubscriptions.sort((a, b) => b.created - a.created);
+                        for (let i = 1; i < sortedSubs.length; i++) {
+                            try {
+                                await stripe.subscriptions.cancel(sortedSubs[i].id);
+                                console.log(`✅ Suscripción duplicada cancelada: ${sortedSubs[i].id}`);
+                            } catch (cancelError) {
+                                console.error(`❌ Error cancelando duplicado ${sortedSubs[i].id}:`, cancelError);
+                            }
+                        }
+                    }
+                }
+            } catch (verifyError) {
+                console.error('⚠️ Error verificando duplicados:', verifyError);
+            }
         }
 
         let stripeReactivated = false;
