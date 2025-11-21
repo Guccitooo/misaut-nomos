@@ -46,6 +46,7 @@ function LayoutContent({ children, currentPageName }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (window.gtag) {
@@ -150,6 +151,7 @@ function LayoutContent({ children, currentPageName }) {
       setProfessionalProfile(null);
     } finally {
       setLoadingUser(false);
+      setTimeout(() => setIsInitialLoad(false), 100);
     }
   };
 
@@ -798,7 +800,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {!loadingUser && !user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
