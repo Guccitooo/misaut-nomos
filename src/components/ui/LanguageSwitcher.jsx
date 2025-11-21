@@ -21,6 +21,7 @@ const translations = {
     logout: 'Cerrar sesión',
     login: 'Iniciar sesión',
     becomeFreelancer: 'Hazte autónomo',
+    becomeClient: 'Hazte cliente',
     back: 'Volver',
     contact: 'Contacto',
     
@@ -511,6 +512,7 @@ const translations = {
     logout: 'Log out',
     login: 'Log in',
     becomeFreelancer: 'Become a professional',
+    becomeClient: 'Become a client',
     back: 'Back',
     contact: 'Contact',
     

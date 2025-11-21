@@ -774,7 +774,7 @@ function LayoutContent({ children, currentPageName }) {
                         <Link to={createPageUrl("ClientOnboarding")} className="block">
                           <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Hazte cliente
+                            {t('becomeClient')}
                           </Button>
                         </Link>
                         <Link to={createPageUrl("PricingPlans")} className="block">
@@ -834,7 +834,7 @@ function LayoutContent({ children, currentPageName }) {
                       <Link to={createPageUrl("ClientOnboarding")}>
                         <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                          Hazte cliente
+                          {t('becomeClient')}
                         </Button>
                       </Link>
                       <Link to={createPageUrl("PricingPlans")}>
