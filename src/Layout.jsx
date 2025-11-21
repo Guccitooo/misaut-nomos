@@ -132,24 +132,18 @@ function LayoutContent({ children, currentPageName }) {
       setUser(currentUser);
 
       if (currentUser && currentUser.user_type === "professionnel") {
-        try {
-          const profiles = await base44.entities.ProfessionalProfile.filter({
-            user_id: currentUser.id
-          });
-          if (profiles[0]) {
-            setProfessionalProfile(profiles[0]);
-          } else {
-            setProfessionalProfile(undefined);
-          }
-        } catch (profileError) {
-          console.error("Error loading professional profile:", profileError);
+        const profiles = await base44.entities.ProfessionalProfile.filter({
+          user_id: currentUser.id
+        });
+        if (profiles[0]) {
+          setProfessionalProfile(profiles[0]);
+        } else {
           setProfessionalProfile(undefined);
         }
       } else {
         setProfessionalProfile(undefined);
       }
     } catch (error) {
-      console.error("Error loading user:", error);
       setUser(null);
       setProfessionalProfile(undefined);
     } finally {
@@ -171,7 +165,8 @@ function LayoutContent({ children, currentPageName }) {
 
   const handleLogout = () => {
     base44.auth.logout();
-    window.location.href = createPageUrl("Search");
+    setUser(null);
+    setUnreadCount(0);
   };
 
   const handleLogin = () => {

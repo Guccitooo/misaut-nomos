@@ -236,18 +236,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
           <div className="flex gap-1.5 mt-auto">
             <Button 
               onClick={onClick}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg min-w-0"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg"
             >
               {t('viewProfile') || 'Ver perfil'}
-            </Button>
-
-            <Button
-              onClick={onClick}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 border-blue-200 hover:bg-blue-50 hover:border-blue-400 rounded-lg flex-shrink-0"
-            >
-              <MessageCircle className="w-4 h-4 text-blue-600" />
             </Button>
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
