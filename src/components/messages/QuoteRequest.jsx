@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { FileText, CheckCircle, XCircle, Clock, Euro, Calendar } from "lucide-react";
+import { FileText, CheckCircle, XCircle, Clock, Euro, Calendar, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function QuoteRequest({ quote, isProfessional, onRespond }) {
+export default function QuoteRequest({ quote, isProfessional, isClient, onRespond, onStatusChange }) {
   const [responding, setResponding] = useState(false);
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteNotes, setQuoteNotes] = useState("");
+  const [estimatedDays, setEstimatedDays] = useState("");
+  const [breakdown, setBreakdown] = useState([{ concept: "", amount: "" }]);
 
   const statusConfig = {
     pending: { icon: Clock, color: "bg-yellow-100 text-yellow-800", label: "Pendiente" },
