@@ -380,7 +380,18 @@ export default function MessagesPage() {
     
     const conversation = conversations[selectedConversation];
     if (conversation && userId === conversation.otherUserId) {
-      return conversation.otherUserName || t("user");
+      if (conversation.otherUserName) {
+        return conversation.otherUserName;
+      }
+      
+      if (conversation.messages?.length > 0) {
+        const recentMsg = conversation.messages[conversation.messages.length - 1];
+        if (recentMsg.sender_id === userId) {
+          return recentMsg.professional_name || recentMsg.client_name || t("user");
+        } else {
+          return recentMsg.client_name || recentMsg.professional_name || t("user");
+        }
+      }
     }
     
     return t("user");
