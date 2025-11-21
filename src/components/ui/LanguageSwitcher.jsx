@@ -491,6 +491,11 @@ const translations = {
     savePreferences: 'Guardar preferencias',
     learnMoreCookies: 'Más información:',
     
+    // Tickets
+    supportTickets: 'Tickets de soporte',
+    myTickets: 'Mis tickets',
+    openTicket: 'Abrir ticket',
+
     // Common
     loading: 'Cargando...',
     save: 'Guardar',
@@ -981,6 +986,11 @@ const translations = {
     savePreferences: 'Save preferences',
     learnMoreCookies: 'More information:',
     
+    // Tickets
+    supportTickets: 'Tickets de soporte',
+    myTickets: 'Mis tickets',
+    openTicket: 'Abrir ticket',
+
     // Common
     loading: 'Loading...',
     save: 'Save',

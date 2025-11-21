@@ -251,6 +251,12 @@ function LayoutContent({ children, currentPageName }) {
     });
   }
 
+  navigationItems.push({
+    title: t('supportTickets'),
+    url: createPageUrl("Tickets"),
+    icon: MessageSquare,
+  });
+
   if (user?.role === "admin") {
     navigationItems.push({
       title: t('administration'),
