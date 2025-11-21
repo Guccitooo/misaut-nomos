@@ -262,7 +262,7 @@ function LayoutContent({ children, currentPageName }) {
   }
 
   if (isInitialLoad) {
-    return <Loader message={language === 'es' ? 'Cargando...' : 'Loading...'} />;
+    return <Loader message={t('loading') || 'Cargando...'} />;
   }
 
   return (
