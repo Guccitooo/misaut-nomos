@@ -67,7 +67,7 @@ export default function FavoritesPage() {
     initialData: [],
   });
 
-  const isLoading = isLoadingFavorites || isLoadingProfiles || isLoadingUsers;
+  const isInitialLoading = !user || isLoadingFavorites || isLoadingProfiles || isLoadingUsers;
 
   const displayFavorites = rawFavorites.filter(fav =>
     profiles.some(p => p.user_id === fav.professional_id)
@@ -87,11 +87,20 @@ export default function FavoritesPage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
-  if (!user) {
+  if (isInitialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-      </div>
+      <>
+        <SEOHead
+          title={`${t('myFavorites')} - MisAutónomos`}
+          description="Gestiona tus profesionales favoritos guardados"
+        />
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Cargando favoritos...</p>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -109,19 +118,7 @@ export default function FavoritesPage() {
             <p className="text-gray-600">{t('addFavorites')}</p>
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden shadow-none border-0">
-                  <CardContent className="p-6">
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-4" />
-                    <Skeleton className="h-10 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : displayFavorites.length === 0 ? (
+          {displayFavorites.length === 0 ? (
             <Card className="p-12 text-center border-0 shadow-lg">
               <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">

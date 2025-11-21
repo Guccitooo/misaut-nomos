@@ -866,14 +866,22 @@ export default function MessagesPage() {
     </div>
   );
 
-  if (!user) {
+  const isInitialLoading = !user || isLoading;
+
+  if (isInitialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-700 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">{t('loadingMessaging')}</p>
+      <>
+        <SEOHead 
+          title={`${t('messages')} - MisAutónomos`}
+          description={t('messagesPageDescription')}
+        />
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Cargando mensajes...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -899,9 +907,7 @@ export default function MessagesPage() {
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {isLoading ? (
-              <ConversationSkeleton />
-            ) : conversationList.length === 0 ? (
+            {conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="font-medium">{t('noConversations')}</p>
@@ -1134,9 +1140,7 @@ export default function MessagesPage() {
                 className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}
               >
-                {isLoading && currentMessages.length === 0 ? (
-                  <MessagesSkeleton />
-                ) : currentMessages.length === 0 ? (
+                {currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
                     <p>{t('noMessagesInConversation')}</p>
                   </div>
