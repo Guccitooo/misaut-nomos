@@ -20,16 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -115,8 +106,6 @@ export default function MyProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
   const [searchParams] = useSearchParams();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const MAX_POLLING_ATTEMPTS = 10;
 
@@ -636,32 +625,7 @@ export default function MyProfilePage() {
     });
   };
 
-  const handleDeleteAccount = async () => {
-    setIsDeleting(true);
-    try {
-      const response = await base44.functions.invoke('deleteUser', {
-        userId: user.id,
-        isSelfDelete: true
-      });
-      
-      if (response.data.ok) {
-        toast.success('Tu cuenta ha sido eliminada correctamente', {
-          duration: 5000
-        });
-        
-        setTimeout(() => {
-          base44.auth.logout();
-        }, 2000);
-      } else {
-        toast.error(`Error: ${response.data.error}`);
-        setIsDeleting(false);
-      }
-    } catch (error) {
-      console.error('Error eliminando cuenta:', error);
-      toast.error('Error al eliminar tu cuenta');
-      setIsDeleting(false);
-    }
-  };
+
 
   const isInitialLoading = !user || loadingProfile || (loadingSubscription && !isVerifyingSubscription);
 
@@ -909,51 +873,58 @@ export default function MyProfilePage() {
                 </div>
 
                 {isProfessional && profile && !loadingProfile && subscriptionStatus?.isActive && (
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <Label className="text-base font-semibold text-gray-900 mb-1 block">
-                          Visibilidad del perfil
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          {profile.visible_en_busqueda 
-                            ? "Tu perfil aparece en las búsquedas públicas" 
-                            : "Tu perfil está oculto y no aparece en búsquedas"}
-                        </p>
+                  <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <Label className="text-lg font-bold text-gray-900 mb-2 block">
+                            Gestionar disponibilidad
+                          </Label>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {profile.visible_en_busqueda 
+                              ? "Tu perfil está activo y visible en las búsquedas. Los clientes pueden encontrarte y contactarte." 
+                              : "Tu perfil está pausado. No apareces en búsquedas mientras te tomes un descanso."}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={profile.visible_en_busqueda}
+                          onCheckedChange={(checked) => toggleVisibilityMutation.mutate(checked)}
+                          disabled={toggleVisibilityMutation.isPending}
+                          className="data-[state=checked]:bg-green-600 mt-1"
+                        />
                       </div>
-                      <Switch
-                        checked={profile.visible_en_busqueda}
-                        onCheckedChange={(checked) => toggleVisibilityMutation.mutate(checked)}
-                        disabled={toggleVisibilityMutation.isPending}
-                        className="data-[state=checked]:bg-green-600"
-                      />
-                    </div>
-                    {!profile.visible_en_busqueda && (
-                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-xs text-yellow-800 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" />
-                          Los clientes no podrán encontrarte hasta que actives la visibilidad
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
 
-                {!isEditing && (
-                  <div className="mt-8 pt-6 border-t border-red-200">
-                    <h3 className="text-lg font-semibold text-red-800 mb-3">⚠️ Zona de peligro</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Esta acción eliminará permanentemente tu cuenta, perfil, mensajes, favoritos, reseñas y cancelará tu suscripción activa.
-                    </p>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Eliminar mi cuenta
-                    </Button>
-                  </div>
+                      {profile.visible_en_busqueda ? (
+                        <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-semibold text-green-900 mb-1">
+                                Perfil activo y visible
+                              </p>
+                              <p className="text-xs text-green-800">
+                                Los clientes pueden verte en búsquedas y contactarte
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-semibold text-amber-900 mb-1">
+                                Perfil pausado
+                              </p>
+                              <p className="text-xs text-amber-800">
+                                Útil si tienes mucho trabajo y no puedes atender nuevos clientes
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 )}
               </CardContent>
             </Card>
@@ -1446,60 +1417,7 @@ export default function MyProfilePage() {
                   )}
         </Tabs>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-                <AlertCircle className="w-5 h-5" />
-                ¿Eliminar tu cuenta definitivamente?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
-                  <p className="text-sm font-semibold text-red-800">
-                    ⚠️ ATENCIÓN: Esta acción es IRREVERSIBLE
-                  </p>
-                </div>
 
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p className="font-semibold">Se eliminará permanentemente:</p>
-                  <ul className="list-disc ml-5 space-y-1">
-                    <li>Tu cuenta y perfil completo</li>
-                    <li>Todos tus mensajes y conversaciones</li>
-                    <li>Tus favoritos y reseñas</li>
-                    {isProfessional && (
-                      <>
-                        <li>Tu perfil profesional y fotos</li>
-                        <li>Tu suscripción activa</li>
-                      </>
-                    )}
-                  </ul>
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4 mr-2" />
-                    Sí, eliminar definitivamente
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );
