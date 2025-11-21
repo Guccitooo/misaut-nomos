@@ -72,12 +72,24 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
         description: `Ticket creado: ${ticketData.title}`
       });
 
-      if (ticketData.assigned_to_id) {
+      try {
         await base44.functions.invoke('sendTicketNotification', {
           ticketId: ticket.id,
-          recipientId: ticketData.assigned_to_id,
-          type: 'new_ticket'
+          recipientId: 'admin',
+          type: 'new_ticket',
+          message: ticketData.description
         });
+
+        if (ticketData.assigned_to_id) {
+          await base44.functions.invoke('sendTicketNotification', {
+            ticketId: ticket.id,
+            recipientId: ticketData.assigned_to_id,
+            type: 'new_ticket',
+            message: ticketData.description
+          });
+        }
+      } catch (error) {
+        console.error('Error sending notification:', error);
       }
 
       return ticket;
