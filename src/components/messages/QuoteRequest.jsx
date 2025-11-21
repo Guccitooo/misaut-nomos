@@ -24,13 +24,43 @@ export default function QuoteRequest({ quote, isProfessional, isClient, onRespon
   const status = statusConfig[quote.status || "pending"];
   const StatusIcon = status.icon;
 
-  const handleRespond = (action) => {
-    if (action === "accept") {
-      onRespond({ status: "accepted", quote_amount: parseFloat(quoteAmount), quote_notes: quoteNotes });
-    } else {
-      onRespond({ status: "rejected" });
-    }
+  const addBreakdownItem = () => {
+    setBreakdown([...breakdown, { concept: "", amount: "" }]);
+  };
+
+  const removeBreakdownItem = (index) => {
+    setBreakdown(breakdown.filter((_, i) => i !== index));
+  };
+
+  const updateBreakdownItem = (index, field, value) => {
+    const updated = [...breakdown];
+    updated[index][field] = value;
+    setBreakdown(updated);
+  };
+
+  const calculateTotal = () => {
+    return breakdown.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  };
+
+  const handleSendQuote = () => {
+    const validBreakdown = breakdown.filter(item => item.concept && item.amount);
+    const total = calculateTotal();
+    
+    onRespond({ 
+      status: "pending", 
+      quote_amount: total,
+      quote_notes: quoteNotes,
+      estimated_days: estimatedDays ? parseInt(estimatedDays) : undefined,
+      breakdown: validBreakdown.length > 0 ? validBreakdown : undefined,
+      professional_responded: true
+    });
     setResponding(false);
+  };
+
+  const handleClientAction = (status) => {
+    if (onStatusChange) {
+      onStatusChange({ status });
+    }
   };
 
   return (
