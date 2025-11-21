@@ -529,21 +529,7 @@ export default function SearchPage() {
   const isInitialLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions;
 
   if (isInitialLoading) {
-    return (
-      <>
-        <SEOHead 
-          title="Buscar Autónomos Profesionales - MisAutónomos"
-          description="Encuentra y contacta con profesionales autónomos verificados en toda España. Electricistas, fontaneros, carpinteros y más."
-          keywords="buscar autónomos, profesionales, servicios, España"
-        />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600 font-medium">{t('loading') || 'Cargando...'}</p>
-          </div>
-        </div>
-      </>
-    );
+    return null;
   }
 
   return (
