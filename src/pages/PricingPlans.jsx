@@ -26,10 +26,10 @@ export default function PricingPlansPage() {
       const allPlans = await base44.entities.SubscriptionPlan.list();
       const planMap = new Map();
       
+      const validPlanIds = ['plan_monthly_trial', 'plan_quarterly', 'plan_annual'];
+      
       allPlans.forEach(plan => {
-        if (plan.plan_id === 'plan_monthly_trial' || 
-            plan.plan_id === 'plan_quarterly' || 
-            plan.plan_id === 'plan_annual') {
+        if (validPlanIds.includes(plan.plan_id)) {
           const existingPlan = planMap.get(plan.plan_id);
           if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
             planMap.set(plan.plan_id, plan);
@@ -37,7 +37,28 @@ export default function PricingPlansPage() {
         }
       });
       
-      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
+      const finalPlans = Array.from(planMap.values());
+      
+      if (finalPlans.length === 0) {
+        const fallbackPlans = allPlans.filter(p => 
+          p.plan_id && 
+          !p.plan_id.includes('trial') && 
+          p.plan_id !== 'plan_monthly' &&
+          p.precio > 0
+        );
+        
+        fallbackPlans.forEach(plan => {
+          const key = plan.plan_id;
+          const existingPlan = planMap.get(key);
+          if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
+            planMap.set(key, plan);
+          }
+        });
+        
+        return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
+      }
+      
+      return finalPlans.sort((a, b) => a.precio - b.precio);
     },
     initialData: [],
     staleTime: 1000 * 60 * 10,
