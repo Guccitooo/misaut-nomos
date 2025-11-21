@@ -798,16 +798,7 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {loadingUser && (
-                <div className="flex-1 flex items-center justify-center bg-white">
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 text-sm">Cargando...</p>
-                  </div>
-                </div>
-              )}
-              
-              {!loadingUser && !user && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -885,11 +876,9 @@ function LayoutContent({ children, currentPageName }) {
                 </div>
               </header>
 
-              {!loadingUser && (
-                <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
-                  {children}
-                </div>
-              )}
+              <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
+                {children}
+              </div>
 
               <Footer />
 
