@@ -77,6 +77,15 @@ export default function InvoicesPage() {
     enabled: !!user,
   });
 
+  const { data: professionalProfile } = useQuery({
+    queryKey: ['professionalProfile', user?.id],
+    queryFn: async () => {
+      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+      return profiles[0] || null;
+    },
+    enabled: !!user,
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => {
       const invoiceNumber = `INV-${Date.now()}`;
@@ -323,9 +332,9 @@ export default function InvoicesPage() {
           <AlertDescription className="text-sm text-gray-700">
             <strong>Sistema de pagos MisAutónomos:</strong> Cuando creas un link de pago, tu cliente puede pagar con tarjeta. 
             Cobramos una comisión del <strong>3%</strong> y te transferimos el dinero restante a tu cuenta bancaria en un plazo de <strong>7 días</strong>.
-            {!user?.iban && (
+            {!professionalProfile?.iban && (
               <span className="block mt-2 text-orange-700 font-medium">
-                ⚠️ No tienes configurado tu IBAN. <a href={createPageUrl("MyProfile")} className="underline">Añádelo en tu perfil</a> para recibir pagos.
+                ⚠️ No tienes configurado tu IBAN. <a href={createPageUrl("MyProfile")} className="underline hover:text-orange-800">Añádelo en tu perfil</a> para recibir pagos.
               </span>
             )}
           </AlertDescription>

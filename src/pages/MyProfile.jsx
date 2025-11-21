@@ -124,6 +124,7 @@ export default function MyProfilePage() {
     cif_nif: "",
     email_contacto: "",
     telefono_contacto: "",
+    iban: "",
     description: "",
     descripcion_corta: "",
     categories: [],
@@ -339,6 +340,7 @@ export default function MyProfilePage() {
         cif_nif: profile.cif_nif || "",
         email_contacto: profile.email_contacto || user?.email || "",
         telefono_contacto: profile.telefono_contacto || user?.phone || "",
+        iban: profile.iban || "",
         description: profile.description || "",
         descripcion_corta: profile.descripcion_corta || "",
         categories: profile.categories || [],
@@ -1008,6 +1010,22 @@ export default function MyProfilePage() {
                       />
                     </div>
 
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        {profileData.iban ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
+                        IBAN (para recibir pagos de facturas)
+                      </Label>
+                      <Input
+                        value={profileData.iban || ""}
+                        onChange={(e) => setProfileData({ ...profileData, iban: e.target.value.toUpperCase() })}
+                        disabled={!isEditing}
+                        placeholder="ES91 2100 0418 4502 0005 1332"
+                        maxLength={34}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Necesario para recibir los pagos de facturas procesadas por MisAutónomos (transferencia en 7 días)
+                      </p>
+                    </div>
 
                   </CardContent>
                 </Card>
