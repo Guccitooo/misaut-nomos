@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
-import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
+import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import OptimizedImage from "@/components/ui/OptimizedImage";
@@ -40,7 +40,7 @@ const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/pub
 function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -692,20 +692,42 @@ function LayoutContent({ children, currentPageName }) {
                         </p>
                       </div>
                     </div>
-                    
-                    <div className="px-2">
-                      <LanguageSwitcher variant="compact" />
+
+                    <div className="flex items-center gap-2 px-2">
+                      <div className="flex gap-1 bg-gray-100 rounded-md p-1 flex-1">
+                        <button
+                          onClick={() => changeLanguage('es')}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                            language === 'es'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="Español"
+                        >
+                          ES
+                        </button>
+                        <button
+                          onClick={() => changeLanguage('en')}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                            language === 'en'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="English"
+                        >
+                          EN
+                        </button>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors flex-shrink-0"
+                        onClick={handleLogout}
+                        aria-label={t('logout')}
+                      >
+                        <LogOut className="w-4 h-4 text-gray-600" aria-hidden="true" />
+                      </Button>
                     </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-full hover:bg-red-50 hover:text-red-600 transition-colors"
-                      onClick={handleLogout}
-                      aria-label={t('logout')}
-                    >
-                      <LogOut className="w-5 h-5 text-gray-600" aria-hidden="true" />
-                    </Button>
                   </div>
                 </SidebarFooter>
               </Sidebar>
