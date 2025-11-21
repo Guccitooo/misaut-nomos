@@ -267,6 +267,11 @@ function LayoutContent({ children, currentPageName }) {
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
+    navigationItems.push({
+      title: "Admin Tickets",
+      url: createPageUrl("AdminTickets"),
+      icon: MessageSquare,
+    });
   }
 
   return (

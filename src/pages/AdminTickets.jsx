@@ -65,14 +65,24 @@ export default function AdminTicketsPage() {
   const [internalNote, setInternalNote] = useState("");
   const [assignToEmail, setAssignToEmail] = useState("");
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
+      console.log('🔍 Cargando tickets para admin...');
       const allTickets = await base44.entities.Ticket.list();
+      console.log('📋 Total tickets encontrados:', allTickets.length);
+      console.log('Tickets:', allTickets);
       return allTickets.sort((a, b) => 
         new Date(b.last_activity || b.created_date) - new Date(a.last_activity || a.created_date)
       );
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: messageCounts = {} } = useQuery({
@@ -200,14 +210,46 @@ export default function AdminTicketsPage() {
     cerrados: tickets.filter(t => t.status === 'cerrado').length,
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (user.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md p-8 text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Acceso denegado</h2>
+          <p className="text-gray-600 mb-4">Solo los administradores pueden acceder a esta página</p>
+          <Button onClick={() => navigate(createPageUrl("Tickets"))}>
+            Volver a mis tickets
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Panel de Administración de Tickets
-          </h1>
-          <p className="text-gray-600">Gestiona todos los tickets de soporte</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Panel de Administración de Tickets
+            </h1>
+            <p className="text-gray-600">Gestiona todos los tickets de soporte · Total: {tickets.length}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['adminTickets'] })}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualizar
+          </Button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
