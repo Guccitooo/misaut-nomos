@@ -122,6 +122,14 @@ function LayoutContent({ children, currentPageName }) {
   }, [user]);
 
   useEffect(() => {
+    if (location.pathname === createPageUrl("Search") || 
+        location.pathname === createPageUrl("MyProfile") ||
+        location.pathname === createPageUrl("ProfessionalDashboard")) {
+      loadUser();
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
