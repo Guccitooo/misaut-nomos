@@ -461,16 +461,6 @@ export default function SearchPage() {
   });
 
   const filteredProfiles = profiles.filter(profile => {
-    if (loadingSubscriptions) return true;
-    
-    const hasActiveSubscription = subscriptions.some(sub => 
-      sub.user_id === profile.user_id && 
-      (sub.estado === "activo" || sub.estado === "en_prueba") &&
-      new Date(sub.fecha_expiracion) > new Date()
-    );
-
-    if (!hasActiveSubscription && subscriptions.length > 0) return false;
-
     const matchesSearch = !debouncedSearchTerm || 
       profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
