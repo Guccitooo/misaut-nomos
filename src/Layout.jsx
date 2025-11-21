@@ -763,7 +763,8 @@ function LayoutContent({ children, currentPageName }) {
                     {!user ? (
                       <div className="mt-4 space-y-2">
                         <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          variant="outline"
+                          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
                           onClick={handleLogin}
                           aria-label={t('login')}
                         >
@@ -771,7 +772,7 @@ function LayoutContent({ children, currentPageName }) {
                           {t('login')}
                         </Button>
                         <Link to={createPageUrl("ClientOnboarding")} className="block">
-                          <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
                             Hazte cliente
                           </Button>
@@ -831,7 +832,7 @@ function LayoutContent({ children, currentPageName }) {
                         {t('login')}
                       </Button>
                       <Link to={createPageUrl("ClientOnboarding")}>
-                        <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                        <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
                           Hazte cliente
                         </Button>
