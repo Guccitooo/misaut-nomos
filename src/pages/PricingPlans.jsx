@@ -37,30 +37,8 @@ export default function PricingPlansPage() {
         }
       });
       
-      const finalPlans = Array.from(planMap.values());
-      
-      if (finalPlans.length === 0) {
-        const fallbackPlans = allPlans.filter(p => 
-          p.plan_id && 
-          !p.plan_id.includes('trial') && 
-          p.plan_id !== 'plan_monthly' &&
-          p.precio > 0
-        );
-        
-        fallbackPlans.forEach(plan => {
-          const key = plan.plan_id;
-          const existingPlan = planMap.get(key);
-          if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
-            planMap.set(key, plan);
-          }
-        });
-        
-        return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
-      }
-      
-      return finalPlans.sort((a, b) => a.precio - b.precio);
+      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
     },
-    initialData: [],
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
   });
