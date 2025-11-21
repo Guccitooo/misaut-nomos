@@ -698,13 +698,13 @@ function LayoutContent({ children, currentPageName }) {
                     </div>
                     
                     <Button
-                      variant="outline"
-                      className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                      variant="ghost"
+                      size="icon"
+                      className="w-full hover:bg-red-50 hover:text-red-600 transition-colors"
                       onClick={handleLogout}
                       aria-label={t('logout')}
                     >
-                      <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-                      {t('logout')}
+                      <LogOut className="w-5 h-5 text-gray-600" aria-hidden="true" />
                     </Button>
                   </div>
                 </SidebarFooter>
@@ -813,13 +813,13 @@ function LayoutContent({ children, currentPageName }) {
                       </div>
                     ) : (
                       <Button
-                        variant="outline"
-                        className="w-full mt-4"
+                        variant="ghost"
+                        size="icon"
+                        className="w-full mt-4 hover:bg-red-50 hover:text-red-600"
                         onClick={handleLogout}
                         aria-label={t('logout')}
                       >
-                        <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-                        {t('logout')}
+                        <LogOut className="w-5 h-5" aria-hidden="true" />
                       </Button>
                     )}
                   </div>
