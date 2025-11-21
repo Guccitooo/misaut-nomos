@@ -236,6 +236,11 @@ function LayoutContent({ children, currentPageName }) {
 
   if (isProfessional) {
     navigationItems.push({
+      title: "Dashboard Pro",
+      url: createPageUrl("ProfessionalDashboard"),
+      icon: LayoutDashboard,
+    });
+    navigationItems.push({
       title: t('mySubscription'),
       url: createPageUrl("SubscriptionManagement"),
       icon: Briefcase,

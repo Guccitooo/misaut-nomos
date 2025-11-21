@@ -22,6 +22,10 @@ import AdminFAQ from './pages/AdminFAQ';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import AdminTickets from './pages/AdminTickets';
+import ProfessionalDashboard from './pages/ProfessionalDashboard';
+import CRM from './pages/CRM';
+import Invoices from './pages/Invoices';
+import Jobs from './pages/Jobs';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +54,10 @@ export const PAGES = {
     "Tickets": Tickets,
     "TicketDetail": TicketDetail,
     "AdminTickets": AdminTickets,
+    "ProfessionalDashboard": ProfessionalDashboard,
+    "CRM": CRM,
+    "Invoices": Invoices,
+    "Jobs": Jobs,
 }
 
 export const pagesConfig = {
