@@ -72,24 +72,20 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
         description: `Ticket creado: ${ticketData.title}`
       });
 
-      try {
-        await base44.functions.invoke('sendTicketNotification', {
+      base44.functions.invoke('sendTicketNotification', {
+        ticketId: ticket.id,
+        recipientId: 'admin',
+        type: 'new_ticket',
+        message: ticketData.description
+      }).catch(err => console.error('Error sending notification:', err));
+
+      if (ticketData.assigned_to_id) {
+        base44.functions.invoke('sendTicketNotification', {
           ticketId: ticket.id,
-          recipientId: 'admin',
+          recipientId: ticketData.assigned_to_id,
           type: 'new_ticket',
           message: ticketData.description
-        });
-
-        if (ticketData.assigned_to_id) {
-          await base44.functions.invoke('sendTicketNotification', {
-            ticketId: ticket.id,
-            recipientId: ticketData.assigned_to_id,
-            type: 'new_ticket',
-            message: ticketData.description
-          });
-        }
-      } catch (error) {
-        console.error('Error sending notification:', error);
+        }).catch(err => console.error('Error sending notification:', err));
       }
 
       return ticket;
@@ -100,6 +96,10 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
       onClose();
       resetForm();
     },
+    onError: (error) => {
+      console.error('Error creating ticket:', error);
+      toast.error(language === 'es' ? 'Error al crear el ticket' : 'Error creating ticket');
+    }
   });
 
   const resetForm = () => {
@@ -299,9 +299,9 @@ export default function CreateTicketDialog({ open, onClose, user, relatedProfess
             disabled={createTicketMutation.isPending}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {createTicketMutation.isPending ? (
+            {createTicketMutation.isPending && (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : null}
+            )}
             {language === 'es' ? 'Crear Ticket' : 'Create Ticket'}
           </Button>
         </DialogFooter>
