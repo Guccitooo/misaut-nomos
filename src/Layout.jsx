@@ -44,7 +44,7 @@ function LayoutContent({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [professionalProfile, setProfessionalProfile] = useState(null);
+  const [professionalProfile, setProfessionalProfile] = useState(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -96,13 +96,13 @@ function LayoutContent({ children, currentPageName }) {
   ];
 
   const shouldShowBottomBar = () => {
-    if (!user) return false;
+    if (!user || loadingUser) return false;
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
     if (!user.user_type) return false;
     
     if (user.user_type === "professionnel") {
-      if (professionalProfile === null) return false;
-      if (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda) {
+      if (professionalProfile === undefined) return false;
+      if (professionalProfile && (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda)) {
         return false;
       }
     }
@@ -120,32 +120,34 @@ function LayoutContent({ children, currentPageName }) {
     }
   }, [user]);
 
-  const isProfessional = user && (user.user_type === "professionnel" || professionalProfile);
-
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const isProfessional = React.useMemo(() => {
+    if (!user) return false;
+    if (user.user_type === "professionnel") return true;
+    if (professionalProfile && professionalProfile.user_id === user.id) return true;
+    return false;
+  }, [user, professionalProfile]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
-
+      
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
         });
-        if (profiles[0]) {
-          setProfessionalProfile(profiles[0]);
-        } else {
-          setProfessionalProfile(undefined);
-        }
+        setProfessionalProfile(profiles[0] || null);
       } else {
-        setProfessionalProfile(undefined);
+        setProfessionalProfile(null);
       }
+      
+      setUser(currentUser);
     } catch (error) {
       setUser(null);
-      setProfessionalProfile(undefined);
+      setProfessionalProfile(null);
     } finally {
       setLoadingUser(false);
     }
@@ -796,6 +798,15 @@ function LayoutContent({ children, currentPageName }) {
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
+              {loadingUser && (
+                <div className="flex-1 flex items-center justify-center bg-white">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600 text-sm">Cargando...</p>
+                  </div>
+                </div>
+              )}
+              
               {!loadingUser && !user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -874,9 +885,11 @@ function LayoutContent({ children, currentPageName }) {
                 </div>
               </header>
 
-              <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
-                {children}
-              </div>
+              {!loadingUser && (
+                <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
+                  {children}
+                </div>
+              )}
 
               <Footer />
 
