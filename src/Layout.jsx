@@ -34,6 +34,7 @@ import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import Loader from "@/components/ui/Loader";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -253,6 +254,10 @@ function LayoutContent({ children, currentPageName }) {
       url: createPageUrl("AdminDashboard"),
       icon: LayoutDashboard,
     });
+  }
+
+  if (isInitialLoad) {
+    return <Loader message={language === 'es' ? 'Cargando...' : 'Loading...'} />;
   }
 
   return (
