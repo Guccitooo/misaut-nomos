@@ -150,13 +150,16 @@ export default function PricingPlansPage() {
   };
 
   const getPlanFeatures = () => [
-    "Aparece en búsquedas",
-    "Perfil profesional completo",
-    "Chat directo con clientes",
-    "Recibe valoraciones",
-    "Galería de fotos ilimitada",
-    "Soporte preferente",
-    "Cancela cuando quieras"
+    "✅ Aparece en búsquedas",
+    "💬 Chat directo con clientes",
+    "📋 CRM completo para clientes",
+    "📄 Sistema de facturación",
+    "💳 Pasarela de pago integrada",
+    "🎫 Soporte 24/7 vía tickets",
+    "⭐ Sistema de valoraciones",
+    "📸 Galería de fotos ilimitada",
+    "🔧 Gestión de trabajos",
+    "❌ Cancela cuando quieras"
   ];
 
   if (loadingPlans) {
@@ -269,11 +272,10 @@ export default function PricingPlansPage() {
                       )}
                     </div>
 
-                    <ul className="space-y-3 mb-6">
-                      {getPlanFeatures().slice(0, 5).map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700 font-medium">{feature}</span>
+                    <ul className="space-y-2 mb-6">
+                      {getPlanFeatures().map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs">
+                          <span className="text-gray-700">{feature}</span>
                         </li>
                       ))}
                     </ul>

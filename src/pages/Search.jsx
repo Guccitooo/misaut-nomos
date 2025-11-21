@@ -556,28 +556,21 @@ export default function SearchPage() {
 
       <div className="min-h-screen bg-gray-50">
         {!loadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12 md:py-16 mb-8">
-            <div className="max-w-4xl mx-auto px-4 text-center">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 mb-6">
+            <div className="max-w-5xl mx-auto px-4 text-center">
+              <h1 className="text-2xl md:text-4xl font-bold mb-3">
                 {t('heroTitle') || 'Encuentra tu autónomo de confianza'}
               </h1>
-              <p className="text-lg md:text-xl text-blue-100 mb-8">
-                {t('heroSubtitle') || 'Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.'}
+              <p className="text-sm md:text-base text-blue-100 mb-4">
+                {t('heroSubtitle') || 'Chat directo · CRM · Facturación · Pagos online · Soporte 24/7'}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <p className="text-sm text-blue-100 font-medium">
-                  {t('chooseHow') || '¿Cómo quieres usar MisAutónomos?'}
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-base font-semibold shadow-lg"
-                  size="lg"
+                  className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
                 >
-                  <Briefcase className="w-5 h-5 mr-2" />
+                  <Briefcase className="w-4 h-4 mr-2" />
                   {t('imFreelancer') || 'Soy autónomo'}
                 </Button>
                 <Button
@@ -585,10 +578,9 @@ export default function SearchPage() {
                     document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   variant="outline"
-                  className="bg-white hover:bg-gray-50 text-blue-700 border-2 border-white h-12 px-8 text-base font-semibold shadow-lg"
-                  size="lg"
+                  className="bg-white hover:bg-gray-50 text-blue-700 border-2 border-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
                 >
-                  <User className="w-5 h-5 mr-2" />
+                  <User className="w-4 h-4 mr-2" />
                   {t('imClient') || 'Busco servicios'}
                 </Button>
               </div>
