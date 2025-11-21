@@ -806,7 +806,30 @@ function LayoutContent({ children, currentPageName }) {
                     ))}
                     
                     <div className="mt-4 mb-4 px-2">
-                      <LanguageSwitcher variant="compact" />
+                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => changeLanguage('es')}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex-1 ${
+                            language === 'es'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="Español"
+                        >
+                          ES
+                        </button>
+                        <button
+                          onClick={() => changeLanguage('en')}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex-1 ${
+                            language === 'en'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="English"
+                        >
+                          EN
+                        </button>
+                      </div>
                     </div>
                     
                     {!user ? (
@@ -892,7 +915,30 @@ function LayoutContent({ children, currentPageName }) {
                           {t('becomeFreelancer')}
                         </Button>
                       </Link>
-                      <LanguageSwitcher variant="compact" />
+                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => changeLanguage('es')}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                            language === 'es'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="Español"
+                        >
+                          ES
+                        </button>
+                        <button
+                          onClick={() => changeLanguage('en')}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                            language === 'en'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="English"
+                        >
+                          EN
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </header>
