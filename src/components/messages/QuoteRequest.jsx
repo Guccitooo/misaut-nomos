@@ -99,11 +99,37 @@ export default function QuoteRequest({ quote, isProfessional, isClient, onRespon
           </div>
         )}
 
-        {quote.quote_amount && quote.status !== "pending" && (
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm font-medium text-blue-900 mb-1">Presupuesto profesional: {quote.quote_amount}€</p>
+        {quote.professional_responded && quote.quote_amount && (
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-base font-bold text-blue-900">Presupuesto Profesional</p>
+              <p className="text-2xl font-bold text-blue-900">{quote.quote_amount}€</p>
+            </div>
+
+            {quote.breakdown && quote.breakdown.length > 0 && (
+              <div className="space-y-2 mb-3">
+                <p className="text-xs font-semibold text-blue-700 uppercase">Desglose de costes</p>
+                {quote.breakdown.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm bg-white/60 p-2 rounded">
+                    <span className="text-gray-700">{item.concept}</span>
+                    <span className="font-semibold text-gray-900">{item.amount}€</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {quote.estimated_days && (
+              <div className="flex items-center gap-2 text-sm text-blue-800 mb-2">
+                <Clock className="w-4 h-4" />
+                <span>Plazo estimado: <strong>{quote.estimated_days} días</strong></span>
+              </div>
+            )}
+
             {quote.quote_notes && (
-              <p className="text-sm text-blue-700">{quote.quote_notes}</p>
+              <div className="mt-2 pt-2 border-t border-blue-200">
+                <p className="text-xs font-semibold text-blue-700 mb-1">Términos y condiciones</p>
+                <p className="text-sm text-blue-800 whitespace-pre-wrap">{quote.quote_notes}</p>
+              </div>
             )}
           </div>
         )}
