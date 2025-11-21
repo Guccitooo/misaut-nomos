@@ -1086,7 +1086,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       </SidebarProvider>
     </>
   );
-}
+});
 
 export default function Layout({ children, currentPageName }) {
   return (
