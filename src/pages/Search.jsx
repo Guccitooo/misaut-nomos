@@ -238,12 +238,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
           <div className="flex gap-1.5 mt-auto">
             <Button 
               onClick={onClick}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-600 rounded-lg flex-shrink-0 group relative"
-              title="Ver perfil completo"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2"
             >
-              <Eye className="w-4 h-4 text-gray-700 group-hover:text-blue-600" />
+              Ver perfil
             </Button>
 
             <Button
@@ -257,10 +254,10 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               }}
               variant="outline"
               size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0 group relative"
+              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
               title="Enviar mensaje"
             >
-              <MessageSquare className="w-4 h-4 text-gray-700 group-hover:text-blue-600" />
+              <MessageSquare className="w-4 h-4 text-gray-700" />
             </Button>
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
