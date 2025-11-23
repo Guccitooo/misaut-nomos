@@ -769,37 +769,37 @@ export default function SearchPage() {
           </div>
 
           {filteredProfiles.length === 0 && !loadingProfiles && (
-            <Card className="p-8 md:p-12 text-center border-0 shadow-sm rounded-xl bg-white">
-              <div className="max-w-2xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Columna Izquierda - No se encontraron resultados */}
+              <Card className="p-8 text-center border-0 shadow-sm rounded-xl bg-white flex flex-col justify-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <SearchIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
                   No se encontraron resultados
                 </h3>
-                <p className="text-sm text-gray-600 mb-8">
+                <p className="text-sm text-gray-600">
                   Intenta con otros filtros o busca en otra ubicación
                 </p>
-                
-                <div className="border-t border-gray-200 pt-8">
-                  <div className="bg-blue-50 rounded-xl p-6">
-                    <h4 className="text-lg font-bold text-gray-900 mb-2">
-                      ¿Eres autónomo en esta zona?
-                    </h4>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Únete gratis y aparece aquí. Empieza a recibir clientes hoy mismo.
-                    </p>
-                    <Button
-                      onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-md rounded-lg"
-                    >
-                      <Briefcase className="w-4 h-4 mr-2" />
-                      Registrarme como autónomo
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+              </Card>
+
+              {/* Columna Derecha - CTA para autónomos */}
+              <Card className="p-8 text-center border-0 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex flex-col justify-center">
+                <h3 className="text-xl font-bold mb-2">
+                  ¿Eres autónomo en esta zona?
+                </h3>
+                <p className="text-blue-50 mb-6 text-sm">
+                  Únete gratis y aparece aquí. Empieza a recibir clientes hoy mismo.
+                </p>
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-xl rounded-lg mx-auto"
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Registrarme como autónomo
+                </Button>
+              </Card>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -826,22 +826,24 @@ export default function SearchPage() {
             </AnimatePresence>
           </div>
 
-          {/* CTA para autónomos - SIEMPRE VISIBLE */}
-          <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
-            <h3 className="text-2xl font-bold mb-2">
-              ¿Eres autónomo en esta zona?
-            </h3>
-            <p className="text-blue-100 mb-5 text-lg">
-              Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
-            </p>
-            <Button
-              onClick={() => navigate(createPageUrl("PricingPlans"))}
-              className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
-            >
-              <Briefcase className="w-5 h-5 mr-2" />
-              Registrarme como autónomo
-            </Button>
-          </div>
+          {/* CTA para autónomos - SOLO CUANDO HAY RESULTADOS */}
+          {filteredProfiles.length > 0 && (
+            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
+              <h3 className="text-2xl font-bold mb-2">
+                ¿Eres autónomo en esta zona?
+              </h3>
+              <p className="text-blue-100 mb-5 text-lg">
+                Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
+              </p>
+              <Button
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+                className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
+              >
+                <Briefcase className="w-5 h-5 mr-2" />
+                Registrarme como autónomo
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>
