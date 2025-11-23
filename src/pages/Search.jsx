@@ -398,7 +398,7 @@ export default function SearchPage() {
     }
   };
 
-  const { data: categories = [], isLoading: loadingCategories } = useQuery({
+  const { data: rawCategories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       return await base44.entities.ServiceCategory.list();
@@ -407,6 +407,15 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
   });
+
+  const categories = React.useMemo(() => {
+    return rawCategories.map(cat => ({
+      id: cat.id,
+      name: cat.data?.name || cat.name,
+      description: cat.data?.description || cat.description,
+      icon: cat.data?.icon || cat.icon
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rawCategories]);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
@@ -638,8 +647,8 @@ export default function SearchPage() {
                     <SelectContent className="max-h-[400px] overflow-y-auto">
                       <SelectItem value="all">Todas las categorías</SelectItem>
                       {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.data?.name || cat.name}>
-                          {t(cat.data?.name || cat.name) || cat.data?.name || cat.name}
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.icon && `${cat.icon} `}{t(cat.name) || cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
