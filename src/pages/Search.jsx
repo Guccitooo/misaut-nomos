@@ -398,7 +398,7 @@ export default function SearchPage() {
     }
   };
 
-  const { data: rawCategories = [], isLoading: loadingCategories } = useQuery({
+  const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       return await base44.entities.ServiceCategory.list();
@@ -408,46 +408,29 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 60,
   });
 
-  const categories = React.useMemo(() => {
-    return rawCategories.map(cat => ({
-      id: cat.id,
-      name: cat.data?.name || cat.name,
-      description: cat.data?.description || cat.description,
-      icon: cat.data?.icon || cat.icon
-    })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [rawCategories]);
-
-  const { data: rawProfiles = [], isLoading: loadingProfiles } = useQuery({
+  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      return allProfiles.filter(p => 
+      console.log('🔍 Total profiles in DB:', allProfiles.length);
+      console.log('🔍 Sample profiles:', allProfiles.slice(0, 3).map(p => ({
+        id: p.id,
+        business_name: p.business_name,
+        visible_en_busqueda: p.visible_en_busqueda,
+        onboarding_completed: p.onboarding_completed
+      })));
+      
+      const visibleProfiles = allProfiles.filter(p => 
         p.visible_en_busqueda === true && p.onboarding_completed === true
       );
+      console.log('✅ Visible profiles:', visibleProfiles.length);
+      
+      return visibleProfiles;
     },
     initialData: [],
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 10,
   });
-
-  const profiles = React.useMemo(() => {
-    return rawProfiles.map(p => ({
-      ...p,
-      business_name: p.data?.business_name || p.business_name,
-      categories: p.data?.categories || p.categories || [],
-      provincia: p.data?.provincia || p.provincia,
-      ciudad: p.data?.ciudad || p.ciudad,
-      descripcion_corta: p.data?.descripcion_corta || p.descripcion_corta,
-      user_id: p.data?.user_id || p.user_id,
-      telefono_contacto: p.data?.telefono_contacto || p.telefono_contacto,
-      metodos_contacto: p.data?.metodos_contacto || p.metodos_contacto || [],
-      imagen_principal: p.data?.imagen_principal || p.imagen_principal,
-      average_rating: p.data?.average_rating || p.average_rating || 0,
-      total_reviews: p.data?.total_reviews || p.total_reviews || 0,
-      visible_en_busqueda: p.data?.visible_en_busqueda !== undefined ? p.data.visible_en_busqueda : p.visible_en_busqueda,
-      onboarding_completed: p.data?.onboarding_completed !== undefined ? p.data.onboarding_completed : p.onboarding_completed
-    }));
-  }, [rawProfiles]);
 
   const { data: professionalUsers = [] } = useQuery({
     queryKey: ['professionalUsers'],
@@ -488,18 +471,40 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 5,
   });
 
-  const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = !debouncedSearchTerm || 
-      profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+  const filteredProfiles = React.useMemo(() => {
+    console.log('🔍 Filtering profiles:', {
+      totalProfiles: profiles.length,
+      selectedCategory,
+      selectedProvincia,
+      selectedCiudad,
+      searchTerm: debouncedSearchTerm
+    });
 
-    const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-    const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-    const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
+    const filtered = profiles.filter(profile => {
+      const matchesSearch = !debouncedSearchTerm || 
+        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
-    return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
-  });
+      const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
+      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
+      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
+
+      if (selectedCategory !== "all") {
+        console.log('🔍 Category filter check:', {
+          profile: profile.business_name,
+          categories: profile.categories,
+          selectedCategory,
+          matches: matchesCategory
+        });
+      }
+
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+    });
+
+    console.log('✅ Filtered results:', filtered.length);
+    return filtered;
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const availableProvincias = React.useMemo(() => {
     const provincias = new Set();
@@ -663,11 +668,11 @@ export default function SearchPage() {
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
                       <SelectValue placeholder="Todas las categorías" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[400px] overflow-y-auto">
+                    <SelectContent>
                       <SelectItem value="all">Todas las categorías</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>
-                          {cat.icon && `${cat.icon} `}{t(cat.name) || cat.name}
+                          {t(cat.name) || cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
