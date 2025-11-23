@@ -235,54 +235,53 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
             )}
           </div>
 
-          <div className="flex gap-1.5 mt-auto">
+          <div className="space-y-2 mt-auto">
             <Button 
               onClick={onClick}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold rounded-lg"
             >
-              Ver perfil
+              Ver perfil completo
             </Button>
 
-            <Button
-              onClick={() => {
-                if (!currentUserId) {
-                  window.location.href = '/api/auth/login?next=' + encodeURIComponent('/Messages?professional=' + profile.user_id);
-                  return;
-                }
-                const conversationId = [currentUserId, profile.user_id].sort().join('_');
-                navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-              }}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
-              title="Enviar mensaje"
-            >
-              <MessageSquare className="w-4 h-4 text-gray-700" />
-            </Button>
-
-            {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
+            <div className="grid grid-cols-3 gap-2">
               <Button
-                onClick={handleCall}
+                onClick={() => {
+                  if (!currentUserId) {
+                    window.location.href = '/api/auth/login?next=' + encodeURIComponent('/Messages?professional=' + profile.user_id);
+                    return;
+                  }
+                  const conversationId = [currentUserId, profile.user_id].sort().join('_');
+                  navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
+                }}
                 variant="outline"
-                size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-gray-400 rounded-lg flex-shrink-0"
-                title="Llamar por teléfono"
+                className="h-10 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex flex-col items-center justify-center gap-0.5 p-1"
               >
-                <Phone className="w-4 h-4 text-gray-700" />
+                <MessageSquare className="w-4 h-4 text-gray-700" />
+                <span className="text-[10px] text-gray-600 font-medium">Mensaje</span>
               </Button>
-            )}
 
-            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <Button
-                onClick={handleWhatsApp}
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
-                title="Contactar por WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4 text-green-600" />
-              </Button>
-            )}
+              {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
+                <Button
+                  onClick={handleCall}
+                  variant="outline"
+                  className="h-10 border-gray-200 hover:bg-gray-50 hover:border-gray-400 rounded-lg flex flex-col items-center justify-center gap-0.5 p-1"
+                >
+                  <Phone className="w-4 h-4 text-gray-700" />
+                  <span className="text-[10px] text-gray-600 font-medium">Llamar</span>
+                </Button>
+              )}
+
+              {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
+                <Button
+                  onClick={handleWhatsApp}
+                  variant="outline"
+                  className="h-10 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex flex-col items-center justify-center gap-0.5 p-1"
+                >
+                  <MessageCircle className="w-4 h-4 text-green-600" />
+                  <span className="text-[10px] text-green-600 font-medium">WhatsApp</span>
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -412,20 +411,7 @@ export default function SearchPage() {
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      console.log('🔍 Total profiles in DB:', allProfiles.length);
-      console.log('🔍 Sample profiles:', allProfiles.slice(0, 3).map(p => ({
-        id: p.id,
-        business_name: p.business_name,
-        visible_en_busqueda: p.visible_en_busqueda,
-        onboarding_completed: p.onboarding_completed
-      })));
-      
-      const visibleProfiles = allProfiles.filter(p => 
-        p.visible_en_busqueda === true && p.onboarding_completed === true
-      );
-      console.log('✅ Visible profiles:', visibleProfiles.length);
-      
-      return visibleProfiles;
+      return allProfiles.filter(p => p.visible_en_busqueda && p.onboarding_completed);
     },
     initialData: [],
     staleTime: 1000 * 60 * 2,
@@ -551,114 +537,151 @@ export default function SearchPage() {
         keywords="buscar autónomos, profesionales, servicios, España"
       />
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {!loadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 mb-6">
-            <div className="max-w-5xl mx-auto px-4 text-center">
-              <h1 className="text-2xl md:text-4xl font-bold mb-3">
-                {t('heroTitle') || 'Encuentra tu autónomo de confianza'}
-              </h1>
-              <p className="text-sm md:text-base text-blue-100 mb-4">
-                {t('heroSubtitle') || 'Chat directo · CRM · Facturación · Pagos online · Soporte 24/7'}
-              </p>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-16 px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">
+                  {t('heroTitle') || 'Encuentra tu autónomo de confianza'}
+                </h1>
+                <p className="text-lg md:text-xl text-blue-50 mb-3 font-medium">
+                  Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.
+                </p>
+                <div className="flex items-center justify-center gap-4 text-sm md:text-base text-blue-100 mb-6 flex-wrap">
+                  <span className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-400" />
+                    Profesionales verificados
+                  </span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                    Opiniones reales
+                  </span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-300" />
+                    Contacto directo
+                  </span>
+                </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-                <Button
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
-                >
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  {t('imFreelancer') || 'Soy autónomo'}
-                </Button>
-                <Button
-                  onClick={() => {
-                    document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  variant="outline"
-                  className="bg-white hover:bg-gray-50 text-blue-700 border-2 border-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  {t('imClient') || 'Busco servicios'}
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
+                  <Button
+                    onClick={() => {
+                      document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="bg-white hover:bg-blue-50 text-blue-700 h-12 px-8 text-base font-bold shadow-xl flex-1 rounded-xl"
+                  >
+                    <SearchIcon className="w-5 h-5 mr-2" />
+                    Busco servicios
+                  </Button>
+                  <Button
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    variant="outline"
+                    className="bg-transparent hover:bg-blue-700 text-white border-2 border-white h-12 px-8 text-base font-bold shadow-xl flex-1 rounded-xl"
+                  >
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    Soy autónomo
+                  </Button>
+                </div>
+
+                <Card className="max-w-5xl mx-auto shadow-2xl border-0 rounded-2xl overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <Input
+                            type="text"
+                            placeholder="Ej: fontanero en Málaga, limpieza de oficinas..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-12 pr-4 h-14 text-base rounded-xl border-gray-200 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+                        <Button className="bg-blue-600 hover:bg-blue-700 h-14 px-8 rounded-xl font-bold text-base shadow-lg hidden md:flex">
+                          Buscar
+                        </Button>
+                      </div>
+
+                      <div className={`grid grid-cols-1 md:grid-cols-3 gap-3`}>
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger className="h-11 rounded-lg border-gray-200 text-sm bg-white">
+                            <SelectValue placeholder={t('allCategories') || "Todas las categorías"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t('allCategories') || 'Todas las categorías'}</SelectItem>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.name}>
+                                {t(cat.name) || cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
+                          <SelectTrigger className="h-11 rounded-lg border-gray-200 text-sm bg-white">
+                            <SelectValue placeholder={t('allProvinces') || "Todas las provincias"} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            <SelectItem value="all">{t('allProvinces') || 'Todas las provincias'}</SelectItem>
+                            {availableProvincias.map((prov) => (
+                              <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
+                          <SelectTrigger className="h-11 rounded-lg border-gray-200 text-sm bg-white">
+                            <SelectValue placeholder={t('allCities') || "Todas las ciudades"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t('allCities') || 'Todas las ciudades'}</SelectItem>
+                            {availableCities.map((ciudad) => (
+                              <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {[
+                          { name: 'Fontanero', icon: Droplets },
+                          { name: 'Electricista', icon: Zap },
+                          { name: 'Cerrajero', icon: Key },
+                          { name: 'Autónomo de limpieza', icon: Sparkles },
+                          { name: 'Albañil / Reformas', icon: HardHat },
+                          { name: 'Transportista', icon: Truck },
+                          { name: 'Asesoría o gestoría', icon: Briefcase }
+                        ].map((cat) => {
+                          const Icon = cat.icon;
+                          return (
+                            <Button
+                              key={cat.name}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedCategory(cat.name)}
+                              className={`h-9 px-4 rounded-full text-xs font-medium transition-all ${
+                                selectedCategory === cat.name
+                                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                  : 'bg-white hover:bg-blue-50 border-gray-200 text-gray-700'
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5 mr-1.5" />
+                              {cat.name}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
         )}
 
-        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-
-          <Card className="mb-6 shadow-sm border-0 rounded-xl bg-white">
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder={t('search') || "Buscar servicio, empresa..."}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11 text-sm rounded-lg border-gray-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setShowFilters(!showFilters)}
-                    variant="outline"
-                    className="lg:hidden flex-1 h-10 border-gray-200 rounded-lg text-sm"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    {t('filters') || 'Filtros'}
-                    {(selectedCategory !== "all" || selectedProvincia !== "all") && (
-                      <Badge className="ml-2 bg-blue-600 text-xs">
-                        {[selectedCategory !== "all" ? 1 : 0, selectedProvincia !== "all" ? 1 : 0].reduce((a, b) => a + b)}
-                      </Badge>
-                    )}
-                  </Button>
-                </div>
-
-                <div className={`grid grid-cols-1 md:grid-cols-3 gap-2 ${showFilters ? '' : 'hidden lg:grid'}`}>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCategories') || "Todas las categorías"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('allCategories') || 'Todas las categorías'}</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {t(cat.name) || cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allProvinces') || "Todas las provincias"} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">{t('allProvinces') || 'Todas las provincias'}</SelectItem>
-                      {availableProvincias.map((prov) => (
-                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCities') || "Todas las ciudades"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('allCities') || 'Todas las ciudades'}</SelectItem>
-                      {availableCities.map((ciudad) => (
-                        <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'py-10'}`} id="search-section">
 
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -685,7 +708,7 @@ export default function SearchPage() {
             </Card>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <AnimatePresence>
               {filteredProfiles.map((profile) => (
                 <motion.div
@@ -708,6 +731,26 @@ export default function SearchPage() {
               ))}
             </AnimatePresence>
           </div>
+
+          {!loadingUser && !user && (
+            <Card className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 border-0 rounded-2xl overflow-hidden shadow-xl">
+              <CardContent className="p-8 md:p-12 text-center text-white">
+                <h3 className="text-2xl md:text-3xl font-bold mb-3">
+                  ¿Eres autónomo en esta zona?
+                </h3>
+                <p className="text-blue-50 text-lg mb-6">
+                  Regístrate gratis y aparece aquí. Empieza a recibir clientes hoy.
+                </p>
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  className="bg-white hover:bg-blue-50 text-blue-700 h-12 px-8 text-base font-bold shadow-lg rounded-xl"
+                >
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Registrarme como autónomo
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </>
