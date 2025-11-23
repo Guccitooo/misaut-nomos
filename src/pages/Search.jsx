@@ -401,11 +401,13 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      return await base44.entities.ServiceCategory.list();
+      const cats = await base44.entities.ServiceCategory.list();
+      console.log('📂 Categories loaded:', cats.length, cats.map(c => c.name));
+      return cats;
     },
     initialData: [],
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -413,23 +415,26 @@ export default function SearchPage() {
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       console.log('🔍 Total profiles in DB:', allProfiles.length);
-      console.log('🔍 Sample profiles:', allProfiles.slice(0, 3).map(p => ({
+      console.log('🔍 Sample profiles:', allProfiles.slice(0, 5).map(p => ({
         id: p.id,
         business_name: p.business_name,
         visible_en_busqueda: p.visible_en_busqueda,
-        onboarding_completed: p.onboarding_completed
+        onboarding_completed: p.onboarding_completed,
+        categories: p.categories,
+        ciudad: p.ciudad,
+        provincia: p.provincia
       })));
       
       const visibleProfiles = allProfiles.filter(p => 
         p.visible_en_busqueda === true && p.onboarding_completed === true
       );
-      console.log('✅ Visible profiles:', visibleProfiles.length);
+      console.log('✅ Visible profiles after filter:', visibleProfiles.length, visibleProfiles.map(p => p.business_name));
       
       return visibleProfiles;
     },
     initialData: [],
-    staleTime: 1000 * 60 * 2,
-    gcTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 1,
+    gcTime: 1000 * 60 * 5,
   });
 
   const { data: professionalUsers = [] } = useQuery({
@@ -471,18 +476,31 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 5,
   });
 
-  const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = !debouncedSearchTerm || 
-      profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+  const filteredProfiles = React.useMemo(() => {
+    console.log('🔎 Filtering profiles:', { 
+      total: profiles.length, 
+      searchTerm: debouncedSearchTerm, 
+      category: selectedCategory,
+      provincia: selectedProvincia,
+      ciudad: selectedCiudad
+    });
+    
+    const filtered = profiles.filter(profile => {
+      const matchesSearch = !debouncedSearchTerm || 
+        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
-    const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-    const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-    const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
+      const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
+      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
+      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
 
-    return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
-  });
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+    });
+    
+    console.log('✅ Filtered results:', filtered.length);
+    return filtered;
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const availableProvincias = React.useMemo(() => {
     const provincias = new Set();
@@ -717,10 +735,16 @@ export default function SearchPage() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                {filteredProfiles.length} {filteredProfiles.length === 1 ? (t('professional') || 'autónomo') : (t('professionals') || 'autónomos')}
+                {filteredProfiles.length} {filteredProfiles.length === 1 ? 'autónomo' : 'autónomos'}
               </h2>
-              <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals') || 'Profesionales verificados'}</p>
+              <p className="text-sm text-gray-600 mt-0.5">Profesionales verificados</p>
             </div>
+            {loadingProfiles && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando...
+              </div>
+            )}
           </div>
 
           {filteredProfiles.length === 0 && !loadingProfiles && (
