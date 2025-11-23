@@ -635,11 +635,11 @@ export default function SearchPage() {
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
                       <SelectValue placeholder="Todas las categorías" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[400px] overflow-y-auto">
                       <SelectItem value="all">Todas las categorías</SelectItem>
                       {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {t(cat.name) || cat.name}
+                        <SelectItem key={cat.id} value={cat.data?.name || cat.name}>
+                          {t(cat.data?.name || cat.name) || cat.data?.name || cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
