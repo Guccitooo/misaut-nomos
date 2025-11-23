@@ -553,32 +553,48 @@ export default function SearchPage() {
 
       <div className="min-h-screen bg-gray-50">
         {!loadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 mb-6">
-            <div className="max-w-5xl mx-auto px-4 text-center">
-              <h1 className="text-2xl md:text-4xl font-bold mb-3">
-                {t('heroTitle') || 'Encuentra tu autónomo de confianza'}
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8">
+            <div className="max-w-6xl mx-auto px-4 text-center">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+                Encuentra tu autónomo de confianza
               </h1>
-              <p className="text-sm md:text-base text-blue-100 mb-4">
-                {t('heroSubtitle') || 'Chat directo · CRM · Facturación · Pagos online · Soporte 24/7'}
+              <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">
+                Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm md:text-base text-blue-100 mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>Profesionales verificados</span>
+                </div>
+                <div className="hidden sm:block w-1 h-1 bg-blue-300 rounded-full"></div>
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span>Opiniones reales</span>
+                </div>
+                <div className="hidden sm:block w-1 h-1 bg-blue-300 rounded-full"></div>
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Contacto directo</span>
+                </div>
+              </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-                <Button
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
-                >
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  {t('imFreelancer') || 'Soy autónomo'}
-                </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
                 <Button
                   onClick={() => {
                     document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  variant="outline"
-                  className="bg-white hover:bg-gray-50 text-blue-700 border-2 border-white h-11 px-6 text-sm font-semibold shadow-lg flex-1"
+                  className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  {t('imClient') || 'Busco servicios'}
+                  <SearchIcon className="w-5 h-5 mr-2" />
+                  Busco servicios
+                </Button>
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  variant="outline"
+                  className="bg-transparent hover:bg-white/10 text-white border-2 border-white h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
+                >
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  Soy autónomo
                 </Button>
               </div>
             </div>
@@ -587,18 +603,26 @@ export default function SearchPage() {
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
 
-          <Card className="mb-6 shadow-sm border-0 rounded-xl bg-white">
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder={t('search') || "Buscar servicio, empresa..."}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11 text-sm rounded-lg border-gray-200 focus:border-blue-500 transition-all"
-                  />
+          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
+            <CardContent className="p-5">
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      type="text"
+                      placeholder="Ej: fontanero en Málaga, limpieza de oficinas…"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-12 pr-4 h-12 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
+                  </div>
+                  <Button
+                    className="hidden md:flex bg-blue-600 hover:bg-blue-700 h-12 px-6 rounded-xl font-semibold shadow-sm"
+                  >
+                    <SearchIcon className="w-5 h-5 mr-2" />
+                    Buscar
+                  </Button>
                 </div>
 
                 <div className="flex gap-2">
@@ -608,7 +632,7 @@ export default function SearchPage() {
                     className="lg:hidden flex-1 h-10 border-gray-200 rounded-lg text-sm"
                   >
                     <Filter className="w-4 h-4 mr-2" />
-                    {t('filters') || 'Filtros'}
+                    Filtros
                     {(selectedCategory !== "all" || selectedProvincia !== "all") && (
                       <Badge className="ml-2 bg-blue-600 text-xs">
                         {[selectedCategory !== "all" ? 1 : 0, selectedProvincia !== "all" ? 1 : 0].reduce((a, b) => a + b)}
@@ -617,13 +641,13 @@ export default function SearchPage() {
                   </Button>
                 </div>
 
-                <div className={`grid grid-cols-1 md:grid-cols-3 gap-2 ${showFilters ? '' : 'hidden lg:grid'}`}>
+                <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${showFilters ? '' : 'hidden lg:grid'}`}>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCategories') || "Todas las categorías"} />
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder="Todas las categorías" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{t('allCategories') || 'Todas las categorías'}</SelectItem>
+                      <SelectItem value="all">Todas las categorías</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>
                           {t(cat.name) || cat.name}
@@ -633,11 +657,11 @@ export default function SearchPage() {
                   </Select>
 
                   <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allProvinces') || "Todas las provincias"} />
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder="Todas las provincias" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">{t('allProvinces') || 'Todas las provincias'}</SelectItem>
+                      <SelectItem value="all">Todas las provincias</SelectItem>
                       {availableProvincias.map((prov) => (
                         <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                       ))}
@@ -645,11 +669,11 @@ export default function SearchPage() {
                   </Select>
 
                   <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                    <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCities') || "Todas las ciudades"} />
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder="Todas las ciudades" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{t('allCities') || 'Todas las ciudades'}</SelectItem>
+                      <SelectItem value="all">Todas las ciudades</SelectItem>
                       {availableCities.map((ciudad) => (
                         <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                       ))}
@@ -659,6 +683,36 @@ export default function SearchPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Categorías rápidas (chips) */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            {[
+              { name: "Fontanero", icon: Droplets },
+              { name: "Electricista", icon: Zap },
+              { name: "Cerrajero", icon: Key },
+              { name: "Autónomo de limpieza", icon: Sparkles, label: "Limpieza" },
+              { name: "Albañil / Reformas", icon: HardHat, label: "Reformas" },
+              { name: "Transportista", icon: Truck, label: "Mudanzas" },
+            ].map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = selectedCategory === cat.name;
+              return (
+                <Button
+                  key={cat.name}
+                  onClick={() => setSelectedCategory(isSelected ? "all" : cat.name)}
+                  variant="outline"
+                  className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${
+                    isSelected
+                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mr-1.5" />
+                  {cat.label || cat.name}
+                </Button>
+              );
+            })}
+          </div>
 
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -685,7 +739,7 @@ export default function SearchPage() {
             </Card>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <AnimatePresence>
               {filteredProfiles.map((profile) => (
                 <motion.div
@@ -708,6 +762,25 @@ export default function SearchPage() {
               ))}
             </AnimatePresence>
           </div>
+
+          {/* CTA para autónomos */}
+          {filteredProfiles.length > 0 && (
+            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
+              <h3 className="text-2xl font-bold mb-2">
+                ¿Eres autónomo en esta zona?
+              </h3>
+              <p className="text-blue-100 mb-5 text-lg">
+                Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
+              </p>
+              <Button
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+                className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
+              >
+                <Briefcase className="w-5 h-5 mr-2" />
+                Registrarme como autónomo
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>
