@@ -401,7 +401,9 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      return await base44.entities.ServiceCategory.list();
+      const cats = await base44.entities.ServiceCategory.list();
+      console.log('📋 Categories loaded:', cats.length, cats.map(c => c.name));
+      return cats;
     },
     initialData: [],
     staleTime: 1000 * 60 * 30,
