@@ -660,9 +660,14 @@ export default function SearchPage() {
                 </div>
 
                 <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${showFilters ? '' : 'hidden lg:grid'}`}>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <Select value={selectedCategory} onValueChange={(value) => {
+                    console.log('📌 Select category changed to:', value);
+                    setSelectedCategory(value);
+                  }}>
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="Todas las categorías" />
+                      <SelectValue placeholder="Todas las categorías">
+                        {selectedCategory === "all" ? "Todas las categorías" : (t(selectedCategory) || selectedCategory)}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas las categorías</SelectItem>
@@ -717,7 +722,11 @@ export default function SearchPage() {
               return (
                 <Button
                   key={cat.name}
-                  onClick={() => setSelectedCategory(isSelected ? "all" : cat.name)}
+                  onClick={() => {
+                    const newValue = isSelected ? "all" : cat.name;
+                    console.log('🔵 Chip clicked:', cat.name, '-> Setting to:', newValue);
+                    setSelectedCategory(newValue);
+                  }}
                   variant="outline"
                   className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${
                     isSelected
