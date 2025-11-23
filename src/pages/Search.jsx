@@ -411,10 +411,21 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
-      return await base44.entities.ProfessionalProfile.filter({
-        visible_en_busqueda: true,
-        onboarding_completed: true
-      });
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      console.log('🔍 Total profiles in DB:', allProfiles.length);
+      console.log('🔍 Sample profiles:', allProfiles.slice(0, 3).map(p => ({
+        id: p.id,
+        business_name: p.business_name,
+        visible_en_busqueda: p.visible_en_busqueda,
+        onboarding_completed: p.onboarding_completed
+      })));
+      
+      const visibleProfiles = allProfiles.filter(p => 
+        p.visible_en_busqueda === true && p.onboarding_completed === true
+      );
+      console.log('✅ Visible profiles:', visibleProfiles.length);
+      
+      return visibleProfiles;
     },
     initialData: [],
     staleTime: 1000 * 60 * 2,
