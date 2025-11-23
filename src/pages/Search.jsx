@@ -555,10 +555,17 @@ export default function SearchPage() {
     }
   };
 
-  const isInitialLoading = loadingUser || loadingProfiles || loadingCategories || loadingSubscriptions;
+  const isInitialLoading = loadingProfiles || loadingCategories;
 
   if (isInitialLoading) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
+          <p className="text-gray-600">Cargando profesionales...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -608,8 +615,7 @@ export default function SearchPage() {
                 </Button>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  variant="outline"
-                  className="bg-transparent hover:bg-white/10 text-white border-2 border-white h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
+                  className="bg-orange-500 hover:bg-orange-600 text-white border-0 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
                 >
                   <Briefcase className="w-5 h-5 mr-2" />
                   Soy autónomo
@@ -796,24 +802,22 @@ export default function SearchPage() {
             </AnimatePresence>
           </div>
 
-          {/* CTA para autónomos */}
-          {filteredProfiles.length > 0 && (
-            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
-              <h3 className="text-2xl font-bold mb-2">
-                ¿Eres autónomo en esta zona?
-              </h3>
-              <p className="text-blue-100 mb-5 text-lg">
-                Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
-              </p>
-              <Button
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-                className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
-              >
-                <Briefcase className="w-5 h-5 mr-2" />
-                Registrarme como autónomo
-              </Button>
-            </div>
-          )}
+          {/* CTA para autónomos - SIEMPRE VISIBLE */}
+          <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
+            <h3 className="text-2xl font-bold mb-2">
+              ¿Eres autónomo en esta zona?
+            </h3>
+            <p className="text-blue-100 mb-5 text-lg">
+              Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
+            </p>
+            <Button
+              onClick={() => navigate(createPageUrl("PricingPlans"))}
+              className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
+            >
+              <Briefcase className="w-5 h-5 mr-2" />
+              Registrarme como autónomo
+            </Button>
+          </div>
         </div>
       </div>
     </>
