@@ -401,9 +401,7 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const cats = await base44.entities.ServiceCategory.list();
-      console.log('📋 Categories loaded:', cats.length, cats.map(c => c.name));
-      return cats;
+      return await base44.entities.ServiceCategory.list();
     },
     initialData: [],
     staleTime: 1000 * 60 * 30,
@@ -414,20 +412,9 @@ export default function SearchPage() {
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      console.log('🔍 Total profiles in DB:', allProfiles.length);
-      console.log('🔍 Sample profiles:', allProfiles.slice(0, 3).map(p => ({
-        id: p.id,
-        business_name: p.business_name,
-        visible_en_busqueda: p.visible_en_busqueda,
-        onboarding_completed: p.onboarding_completed
-      })));
-      
-      const visibleProfiles = allProfiles.filter(p => 
+      return allProfiles.filter(p => 
         p.visible_en_busqueda === true && p.onboarding_completed === true
       );
-      console.log('✅ Visible profiles:', visibleProfiles.length);
-      
-      return visibleProfiles;
     },
     initialData: [],
     staleTime: 1000 * 60 * 2,
@@ -473,40 +460,18 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 5,
   });
 
-  const filteredProfiles = React.useMemo(() => {
-    console.log('🔍 Filtering profiles:', {
-      totalProfiles: profiles.length,
-      selectedCategory,
-      selectedProvincia,
-      selectedCiudad,
-      searchTerm: debouncedSearchTerm
-    });
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = !debouncedSearchTerm || 
+      profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
-    const filtered = profiles.filter(profile => {
-      const matchesSearch = !debouncedSearchTerm || 
-        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
+    const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
+    const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
 
-      const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
-
-      if (selectedCategory !== "all") {
-        console.log('🔍 Category filter check:', {
-          profile: profile.business_name,
-          categories: profile.categories,
-          selectedCategory,
-          matches: matchesCategory
-        });
-      }
-
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
-    });
-
-    console.log('✅ Filtered results:', filtered.length);
-    return filtered;
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
+    return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+  });
 
   const availableProvincias = React.useMemo(() => {
     const provincias = new Set();
