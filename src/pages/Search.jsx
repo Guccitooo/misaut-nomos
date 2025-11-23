@@ -391,9 +391,10 @@ export default function SearchPage() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      setLoadingUser(false);
     } catch (error) {
+      console.log('👤 No user logged in, showing public view');
       setUser(null);
-    } finally {
       setLoadingUser(false);
     }
   };
@@ -410,30 +411,35 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 10,
   });
 
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+  const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      console.log('🔍 Total profiles in DB:', allProfiles.length);
-      console.log('🔍 Sample profiles:', allProfiles.slice(0, 5).map(p => ({
-        id: p.id,
-        business_name: p.business_name,
-        visible_en_busqueda: p.visible_en_busqueda,
-        onboarding_completed: p.onboarding_completed,
-        categories: p.categories,
-        ciudad: p.ciudad,
-        provincia: p.provincia
-      })));
-      
-      const visibleProfiles = allProfiles.filter(p => 
-        p.visible_en_busqueda === true && p.onboarding_completed === true
-      );
-      console.log('✅ Visible profiles after filter:', visibleProfiles.length, visibleProfiles.map(p => p.business_name));
-      
-      return visibleProfiles;
+      try {
+        const allProfiles = await base44.entities.ProfessionalProfile.list();
+        console.log('🔍 Total profiles in DB:', allProfiles.length);
+        console.log('🔍 Sample profiles:', allProfiles.slice(0, 5).map(p => ({
+          id: p.id,
+          business_name: p.business_name,
+          visible_en_busqueda: p.visible_en_busqueda,
+          onboarding_completed: p.onboarding_completed,
+          categories: p.categories,
+          ciudad: p.ciudad,
+          provincia: p.provincia
+        })));
+        
+        const visibleProfiles = allProfiles.filter(p => 
+          p.visible_en_busqueda === true && p.onboarding_completed === true
+        );
+        console.log('✅ Visible profiles after filter:', visibleProfiles.length, visibleProfiles.map(p => p.business_name));
+        
+        return visibleProfiles;
+      } catch (error) {
+        console.error('❌ Error loading profiles:', error);
+        return [];
+      }
     },
-    initialData: [],
-    staleTime: 1000 * 60 * 1,
+    retry: 2,
+    staleTime: 0,
     gcTime: 1000 * 60 * 5,
   });
 
@@ -763,17 +769,35 @@ export default function SearchPage() {
           </div>
 
           {filteredProfiles.length === 0 && !loadingProfiles && (
-            <Card className="p-10 text-center border-0 shadow-sm rounded-xl bg-white">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Card className="p-8 md:p-12 text-center border-0 shadow-sm rounded-xl bg-white">
+              <div className="max-w-2xl mx-auto">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <SearchIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {t('noResults') || 'No se encontraron resultados'}
+                  No se encontraron resultados
                 </h3>
-                <p className="text-sm text-gray-600">
-                  {t('tryDifferentFilters') || 'Intenta con otros filtros o busca en otra ubicación'}
+                <p className="text-sm text-gray-600 mb-8">
+                  Intenta con otros filtros o busca en otra ubicación
                 </p>
+                
+                <div className="border-t border-gray-200 pt-8">
+                  <div className="bg-blue-50 rounded-xl p-6">
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">
+                      ¿Eres autónomo en esta zona?
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Únete gratis y aparece aquí. Empieza a recibir clientes hoy mismo.
+                    </p>
+                    <Button
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
+                      className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-md rounded-lg"
+                    >
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Registrarme como autónomo
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Card>
           )}
