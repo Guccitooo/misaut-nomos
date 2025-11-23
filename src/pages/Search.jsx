@@ -417,7 +417,7 @@ export default function SearchPage() {
     })).sort((a, b) => a.name.localeCompare(b.name));
   }, [rawCategories]);
 
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+  const { data: rawProfiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
@@ -429,6 +429,25 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 10,
   });
+
+  const profiles = React.useMemo(() => {
+    return rawProfiles.map(p => ({
+      ...p,
+      business_name: p.data?.business_name || p.business_name,
+      categories: p.data?.categories || p.categories || [],
+      provincia: p.data?.provincia || p.provincia,
+      ciudad: p.data?.ciudad || p.ciudad,
+      descripcion_corta: p.data?.descripcion_corta || p.descripcion_corta,
+      user_id: p.data?.user_id || p.user_id,
+      telefono_contacto: p.data?.telefono_contacto || p.telefono_contacto,
+      metodos_contacto: p.data?.metodos_contacto || p.metodos_contacto || [],
+      imagen_principal: p.data?.imagen_principal || p.imagen_principal,
+      average_rating: p.data?.average_rating || p.average_rating || 0,
+      total_reviews: p.data?.total_reviews || p.total_reviews || 0,
+      visible_en_busqueda: p.data?.visible_en_busqueda !== undefined ? p.data.visible_en_busqueda : p.visible_en_busqueda,
+      onboarding_completed: p.data?.onboarding_completed !== undefined ? p.data.onboarding_completed : p.onboarding_completed
+    }));
+  }, [rawProfiles]);
 
   const { data: professionalUsers = [] } = useQuery({
     queryKey: ['professionalUsers'],
