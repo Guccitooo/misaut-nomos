@@ -471,40 +471,18 @@ export default function SearchPage() {
     gcTime: 1000 * 60 * 5,
   });
 
-  const filteredProfiles = React.useMemo(() => {
-    console.log('🔍 Filtering profiles:', {
-      totalProfiles: profiles.length,
-      selectedCategory,
-      selectedProvincia,
-      selectedCiudad,
-      searchTerm: debouncedSearchTerm
-    });
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = !debouncedSearchTerm || 
+      profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
-    const filtered = profiles.filter(profile => {
-      const matchesSearch = !debouncedSearchTerm || 
-        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
+    const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
+    const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
 
-      const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
-
-      if (selectedCategory !== "all") {
-        console.log('🔍 Category filter check:', {
-          profile: profile.business_name,
-          categories: profile.categories,
-          selectedCategory,
-          matches: matchesCategory
-        });
-      }
-
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
-    });
-
-    console.log('✅ Filtered results:', filtered.length);
-    return filtered;
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
+    return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+  });
 
   const availableProvincias = React.useMemo(() => {
     const provincias = new Set();
