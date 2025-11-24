@@ -48,11 +48,68 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
-const PROVINCIAS = {
-  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés"],
-  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell"],
-  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto"],
-  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe"]
+const PROVINCIAS_ESPANA = [
+  "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
+  "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ceuta",
+  "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa",
+  "Huelva", "Huesca", "Jaén", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid",
+  "Málaga", "Melilla", "Murcia", "Navarra", "Ourense", "Palencia", "Pontevedra", "Salamanca",
+  "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo",
+  "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza"
+];
+
+const CIUDADES_POR_PROVINCIA = {
+  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
+  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat"],
+  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira", "Mislata", "Burjassot", "Catarroja"],
+  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Los Palacios", "Écija"],
+  "Málaga": ["Málaga", "Marbella", "Vélez-Málaga", "Fuengirola", "Mijas", "Torremolinos", "Estepona", "Benalmádena"],
+  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "Elda", "San Vicente del Raspeig"],
+  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Yecla", "Águilas"],
+  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Tarazona"],
+  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Durango"],
+  "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón", "Oleiros", "Arteixo"],
+  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Arucas", "Agüimes", "Santa Lucía"],
+  "Granada": ["Granada", "Motril", "Almuñécar", "Baza", "Loja", "Armilla"],
+  "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana"],
+  "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba"],
+  "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas"],
+  "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje"],
+  "Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón"],
+  "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres"],
+  "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Zarautz"],
+  "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils"],
+  "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero", "Arroyo de la Encomienda"],
+  "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña"],
+  "Girona": ["Girona", "Figueres", "Lloret de Mar", "Blanes", "Salt"],
+  "Lleida": ["Lleida", "Balaguer", "Tàrrega", "Mollerussa"],
+  "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo"],
+  "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs"],
+  "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena"],
+  "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Ayamonte"],
+  "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos"],
+  "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro"],
+  "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada"],
+  "Álava": ["Vitoria-Gasteiz", "Llodio", "Amurrio"],
+  "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar", "Níjar"],
+  "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro"],
+  "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero"],
+  "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata"],
+  "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Alcázar de San Juan"],
+  "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey"],
+  "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera"],
+  "Huesca": ["Huesca", "Monzón", "Barbastro", "Jaca"],
+  "León": ["León", "Ponferrada", "San Andrés del Rabanedo"],
+  "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro"],
+  "Ourense": ["Ourense", "Verín", "O Barco de Valdeorras"],
+  "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo"],
+  "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo"],
+  "Segovia": ["Segovia", "Cuéllar", "San Ildefonso"],
+  "Soria": ["Soria", "Almazán", "El Burgo de Osma"],
+  "Teruel": ["Teruel", "Alcañiz", "Andorra"],
+  "Zamora": ["Zamora", "Benavente", "Toro"],
+  "Ceuta": ["Ceuta"],
+  "Melilla": ["Melilla"]
 };
 
 const useDebounce = (value, delay) => {
@@ -520,22 +577,15 @@ export default function SearchPage() {
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const availableProvincias = React.useMemo(() => {
-    const provincias = new Set();
-    profiles.forEach(profile => {
-      if (profile.provincia) provincias.add(profile.provincia);
-    });
-    return Array.from(provincias).sort();
-  }, [profiles]);
+    return PROVINCIAS_ESPANA;
+  }, []);
 
   const availableCities = React.useMemo(() => {
-    const cities = new Set();
-    profiles.forEach(profile => {
-      if (profile.ciudad && (!selectedProvincia || selectedProvincia === "all" || profile.provincia === selectedProvincia)) {
-        cities.add(profile.ciudad);
-      }
-    });
-    return Array.from(cities).sort();
-  }, [profiles, selectedProvincia]);
+    if (selectedProvincia === "all" || !selectedProvincia) {
+      return [];
+    }
+    return CIUDADES_POR_PROVINCIA[selectedProvincia] || [];
+  }, [selectedProvincia]);
 
   const handleProvinciaChange = (value) => {
     setSelectedProvincia(value);
