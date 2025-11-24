@@ -380,13 +380,13 @@ export default function ProfessionalProfilePage() {
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Perfil no encontrado
+              {t('profileNotFound')}
             </h2>
             <p className="text-gray-600 mb-6">
-              El perfil que buscas no existe o ha sido eliminado.
+              {t('profileNotFoundDescription')}
             </p>
             <Button onClick={() => navigate(createPageUrl("Search"))} className="bg-blue-600 hover:bg-blue-700">
-              Volver a búsqueda
+              {t('backToSearch')}
             </Button>
           </CardContent>
         </Card>
@@ -429,7 +429,7 @@ export default function ProfessionalProfilePage() {
             className="hover:bg-white mb-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a búsqueda
+            {t('backToSearch')}
           </Button>
           
           {/* CABECERA PERFIL */}
@@ -589,7 +589,7 @@ export default function ProfessionalProfilePage() {
           {/* GALERÍA DE TRABAJOS */}
           {profile.photos && profile.photos.length > 0 && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Galería de trabajos</h3>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">{t('workGalleryTitle')}</h3>
               <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
                 {profile.photos.map((photo, idx) => (
                   <div 
@@ -620,13 +620,13 @@ export default function ProfessionalProfilePage() {
           {/* REDES SOCIALES */}
           {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Redes sociales</h3>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">{t('socialNetworks')}</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.website && (
                   <a href={profile.website} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
                       <Globe className="w-4 h-4 mr-2" />
-                      Sitio web
+                      {t('website')}
                     </Button>
                   </a>
                 )}
@@ -669,19 +669,19 @@ export default function ProfessionalProfilePage() {
           {/* ESTADÍSTICAS (solo propietario) */}
           {isOwner && metrics && (
             <Card className="border-0 shadow-sm rounded-xl bg-blue-50 p-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">📊 Estadísticas (30 días)</h3>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">📊 {t('statistics30Days')}</h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <p className="text-2xl font-bold text-gray-900">{metrics.views}</p>
-                  <p className="text-xs text-gray-500 mt-1">Vistas</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('views')}</p>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <p className="text-2xl font-bold text-gray-900">{metrics.searches}</p>
-                  <p className="text-xs text-gray-500 mt-1">Búsquedas</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('searches')}</p>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <p className="text-2xl font-bold text-gray-900">{metrics.contacts}</p>
-                  <p className="text-xs text-gray-500 mt-1">Contactos</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('contacts')}</p>
                 </div>
               </div>
             </Card>
@@ -689,7 +689,7 @@ export default function ProfessionalProfilePage() {
 
           {/* RESEÑAS */}
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">Opiniones de clientes</h3>
+            <h3 className="text-sm font-bold text-gray-900 mb-3">{t('clientReviews')}</h3>
             <ReviewSection professionalId={professionalId} reviews={reviews} currentUser={user} />
           </Card>
         </div>

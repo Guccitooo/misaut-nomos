@@ -10,8 +10,10 @@ import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info } f
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function PricingPlansPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
@@ -144,27 +146,27 @@ export default function PricingPlansPage() {
   const getPlanBadge = (planId) => {
     switch (planId) {
       case "plan_monthly_trial": 
-        return { text: "2 meses gratis", color: "bg-blue-500" };
+        return { text: t('twoMonthsFree'), color: "bg-blue-500" };
       case "plan_quarterly": 
-        return { text: "Más popular", color: "bg-green-500" };
+        return { text: t('mostPopular'), color: "bg-green-500" };
       case "plan_annual": 
-        return { text: "Mejor valor", color: "bg-orange-500" };
+        return { text: t('bestValue'), color: "bg-orange-500" };
       default: 
         return null;
     }
   };
 
   const getPlanFeatures = () => [
-    "✅ Aparece en búsquedas",
-    "💬 Chat directo con clientes",
-    "📋 CRM completo para clientes",
-    "📄 Sistema de facturación",
-    "💳 Pasarela de pago integrada",
-    "🎫 Soporte 24/7 vía tickets",
-    "⭐ Sistema de valoraciones",
-    "📸 Galería de fotos ilimitada",
-    "🔧 Gestión de trabajos",
-    "❌ Cancela cuando quieras"
+    `✅ ${t('appearInSearches')}`,
+    `💬 ${t('directChatWithClients')}`,
+    `📋 ${t('completeCRM')}`,
+    `📄 ${t('invoicingSystem')}`,
+    `💳 ${t('integratedPaymentGateway')}`,
+    `🎫 ${t('support247')}`,
+    `⭐ ${t('ratingsSystem')}`,
+    `📸 ${t('unlimitedPhotoGallery')}`,
+    `🔧 ${t('jobManagement')}`,
+    `❌ ${t('cancelAnytime')}`
   ];
 
   if (loadingPlans) {
@@ -180,10 +182,10 @@ export default function PricingPlansPage() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
         <div className="text-center">
           <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No hay planes disponibles</h2>
-          <p className="text-gray-600 mb-4">Los planes se están configurando. Intenta de nuevo en unos minutos.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('noPlansAvailable')}</h2>
+          <p className="text-gray-600 mb-4">{t('plansBeingConfigured')}</p>
           <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
-            Recargar página
+            {t('reloadPage')}
           </Button>
         </div>
       </div>
@@ -204,10 +206,10 @@ export default function PricingPlansPage() {
             variant="ghost"
             onClick={handleGoBack}
             className="mb-6 hover:bg-blue-50"
-            aria-label="Volver"
+            aria-label={t('back')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
+            {t('back')}
           </Button>
 
           <div className="text-center mb-12">
@@ -228,7 +230,7 @@ export default function PricingPlansPage() {
             <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Pago cancelado. No te preocupes, puedes volver cuando quieras.
+                {t('paymentCanceled')}
               </AlertDescription>
             </Alert>
           )}
@@ -264,7 +266,9 @@ export default function PricingPlansPage() {
                       </div>
 
                       <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                        {plan.nombre}
+                        {plan.plan_id === "plan_monthly_trial" ? t('monthly') : 
+                         plan.plan_id === "plan_quarterly" ? t('quarterly') : 
+                         t('annual')}
                       </h3>
 
                       <div className="mb-3">
@@ -272,21 +276,21 @@ export default function PricingPlansPage() {
                           0€
                         </p>
                         <p className="text-lg text-gray-600 font-semibold mt-2">
-                          primeros 2 meses
+                          {t('firstTwoMonths')}
                         </p>
                         <p className="text-sm text-gray-500 mt-3">
-                          Luego {Math.round(plan.precio)}€
-                          {plan.plan_id === "plan_monthly_trial" ? "/mes" : 
-                           plan.plan_id === "plan_quarterly" ? " cada 3 meses" : 
-                           "/año"}
+                          {t('then')} {Math.round(plan.precio)}€
+                          {plan.plan_id === "plan_monthly_trial" ? t('perMonth') : 
+                           plan.plan_id === "plan_quarterly" ? ` ${t('every3Months')}` : 
+                           t('perYear')}
                         </p>
                       </div>
 
                       {plan.plan_id !== "plan_monthly_trial" && (
                         <div className="mt-3 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                           <p className="text-sm font-bold text-green-700">
-                            {plan.plan_id === "plan_quarterly" && "💰 Ahorra 10% - Solo 30€/mes"}
-                            {plan.plan_id === "plan_annual" && "🎉 Ahorra 20% - Solo 26€/mes"}
+                            {plan.plan_id === "plan_quarterly" && t('save10')}
+                            {plan.plan_id === "plan_annual" && t('save20')}
                           </p>
                         </div>
                       )}
@@ -313,15 +317,15 @@ export default function PricingPlansPage() {
                       {isProcessing && selectedPlan === plan.plan_id ? (
                         <>
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Procesando...
+                          {t('processing')}
                         </>
                       ) : (
-                        "Empezar ahora"
+                        t('startNow')
                       )}
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 mt-3">
-                      Al hacer clic, irás al checkout seguro de Stripe
+                      {t('clickGoToCheckout')}
                     </p>
                   </CardContent>
                 </Card>
@@ -338,9 +342,9 @@ export default function PricingPlansPage() {
                       <CheckCircle className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-2">¿Qué pasa después de los 2 meses?</h3>
+                      <h3 className="font-bold text-gray-900 mb-2">{t('whatHappensAfter2Months')}</h3>
                       <p className="text-sm text-gray-600">
-                        Se cobrará automáticamente según el plan elegido. Puedes cancelar antes sin coste.
+                        {t('autoChargeExplain')}
                       </p>
                     </div>
                   </div>
@@ -354,9 +358,9 @@ export default function PricingPlansPage() {
                       <CheckCircle className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-2">¿Puedo cancelar cuando quiera?</h3>
+                      <h3 className="font-bold text-gray-900 mb-2">{t('canCancelAnytime')}</h3>
                       <p className="text-sm text-gray-600">
-                        Sí, sin permanencia. Cancela antes de los 60 días y no pagas nada.
+                        {t('noPermanenceExplain')}
                       </p>
                     </div>
                   </div>

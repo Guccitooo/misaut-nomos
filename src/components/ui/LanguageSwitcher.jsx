@@ -1156,6 +1156,11 @@ const translations = {
     removedFromFavorites: 'Removed from favorites',
     addedToFavorites: 'Added to favorites',
     errorFavorites: 'Error managing favorites',
+    processing: 'Processing...',
+    paymentCanceled: 'Payment canceled. No worries, you can come back anytime.',
+    noPhotosAdded: 'No photos added',
+    profileNotFound: 'Profile not found',
+    profileNotFoundDescription: 'The profile you are looking for does not exist or has been deleted.',
   }
 };
 
