@@ -50,6 +50,7 @@ const translations = {
     areYouProfessionalHere: '¿Eres profesional en esta zona?',
     joinFreeAppearHere: 'Únete gratis y aparece aquí. Empieza a recibir clientes hoy.',
     getMoreClients: 'Consigue más clientes con MisAutónomos',
+    registerAsProfessional: 'Regístrate como profesional',
     phoneNumber: 'Número de teléfono',
     callFromYourPhone: 'Llama desde tu teléfono',
     copied: 'Copiado',
