@@ -225,17 +225,26 @@ export default function MessagesPage() {
     refetchInterval: 15000,
   });
 
+  const conversationUserIds = React.useMemo(() => {
+    if (!allMessages || allMessages.length === 0) return [];
+    const userIds = new Set();
+    allMessages.forEach(msg => {
+      if (msg.sender_id !== user?.id) userIds.add(msg.sender_id);
+      if (msg.recipient_id !== user?.id) userIds.add(msg.recipient_id);
+    });
+    return Array.from(userIds);
+  }, [allMessages, user?.id]);
+
   const { data: conversationUsers = {} } = useQuery({
-    queryKey: ['conversationUsers', conversationList.map(c => c.otherUserId).join(',')],
+    queryKey: ['conversationUsers', conversationUserIds.join(',')],
     queryFn: async () => {
-      const userIds = [...new Set(conversationList.map(c => c.otherUserId))];
-      if (userIds.length === 0) return {};
+      if (conversationUserIds.length === 0) return {};
       
       const usersData = {};
       const allUsers = await base44.entities.User.list();
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       
-      for (const userId of userIds) {
+      for (const userId of conversationUserIds) {
         const cached = loadUserFromCache(userId);
         if (cached) {
           usersData[userId] = cached;
@@ -257,7 +266,7 @@ export default function MessagesPage() {
       
       return usersData;
     },
-    enabled: conversationList.length > 0,
+    enabled: conversationUserIds.length > 0,
     staleTime: 1000 * 60 * 5,
   });
 
