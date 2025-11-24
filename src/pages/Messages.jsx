@@ -225,10 +225,50 @@ export default function MessagesPage() {
     refetchInterval: 15000,
   });
 
+  const { data: conversationUsers = {} } = useQuery({
+    queryKey: ['conversationUsers', conversationList.map(c => c.otherUserId).join(',')],
+    queryFn: async () => {
+      const userIds = [...new Set(conversationList.map(c => c.otherUserId))];
+      if (userIds.length === 0) return {};
+      
+      const usersData = {};
+      const allUsers = await base44.entities.User.list();
+      const allProfiles = await base44.entities.ProfessionalProfile.list();
+      
+      for (const userId of userIds) {
+        const cached = loadUserFromCache(userId);
+        if (cached) {
+          usersData[userId] = cached;
+          continue;
+        }
+        
+        const userData = allUsers.find(u => u.id === userId);
+        if (!userData) continue;
+        
+        let fullData = userData;
+        if (userData.user_type === "professionnel") {
+          const profile = allProfiles.find(p => p.user_id === userId);
+          fullData = { ...userData, profile: profile || null };
+        }
+        
+        usersData[userId] = fullData;
+        saveUserToCache(userId, fullData);
+      }
+      
+      return usersData;
+    },
+    enabled: conversationList.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const { data: otherUserData } = useQuery({
     queryKey: ['otherUser', selectedProfessionalId],
     queryFn: async () => {
       if (!selectedProfessionalId) return null;
+      
+      if (conversationUsers[selectedProfessionalId]) {
+        return conversationUsers[selectedProfessionalId];
+      }
       
       const cached = loadUserFromCache(selectedProfessionalId);
       if (cached) {
@@ -259,7 +299,7 @@ export default function MessagesPage() {
     },
     enabled: !!selectedProfessionalId,
     staleTime: 1000 * 60 * 10,
-    placeholderData: () => loadUserFromCache(selectedProfessionalId),
+    placeholderData: () => conversationUsers[selectedProfessionalId] || loadUserFromCache(selectedProfessionalId),
   });
 
   const { data: existingReview } = useQuery({
@@ -366,12 +406,12 @@ export default function MessagesPage() {
     return true;
   };
 
-  const getDisplayName = (userId) => {
+  const getDisplayName = (userId, conversationId = null) => {
     if (!userId) return t("user");
     
     if (userId === user?.id) {
       if (user.user_type === "professionnel") {
-        const conversation = conversations[selectedConversation];
+        const conversation = conversations[conversationId || selectedConversation];
         if (conversation?.messages?.length > 0) {
           const lastMsg = conversation.messages[conversation.messages.length - 1];
           if (lastMsg.sender_id === userId && lastMsg.professional_name) {
@@ -382,9 +422,12 @@ export default function MessagesPage() {
       return user.full_name || user.email?.split('@')[0] || t("you");
     }
     
-    const conversation = conversations[selectedConversation];
-    if (conversation && userId === conversation.otherUserId && conversation.otherUserName) {
-      return conversation.otherUserName;
+    if (conversationUsers[userId]) {
+      const userData = conversationUsers[userId];
+      if (userData.user_type === "professionnel" && userData.profile?.business_name) {
+        return userData.profile.business_name;
+      }
+      return userData.full_name || userData.email?.split('@')[0] || t("user");
     }
     
     if (otherUserData && otherUserData.id === userId) {
@@ -402,12 +445,23 @@ export default function MessagesPage() {
       return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
     }
     
-    if (conversation && userId === conversation.otherUserId && conversation.messages?.length > 0) {
-      const recentMsg = conversation.messages[conversation.messages.length - 1];
-      if (recentMsg.sender_id === userId) {
-        return recentMsg.professional_name || recentMsg.client_name || t("user");
-      } else {
-        return recentMsg.client_name || recentMsg.professional_name || t("user");
+    const conversation = conversations[conversationId || selectedConversation];
+    if (conversation && userId === conversation.otherUserId) {
+      if (conversation.otherUserName && conversation.otherUserName !== "Usuario" && conversation.otherUserName !== "User") {
+        return conversation.otherUserName;
+      }
+      
+      if (conversation.messages?.length > 0) {
+        for (let i = conversation.messages.length - 1; i >= 0; i--) {
+          const msg = conversation.messages[i];
+          if (msg.sender_id === userId) {
+            const name = msg.professional_name || msg.client_name;
+            if (name && name !== "Usuario" && name !== "User") return name;
+          } else if (msg.recipient_id === userId) {
+            const name = msg.professional_name || msg.client_name;
+            if (name && name !== "Usuario" && name !== "User") return name;
+          }
+        }
       }
     }
     
@@ -1191,7 +1245,7 @@ export default function MessagesPage() {
                     
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">
-                        {getDisplayName(conv.otherUserId) || conv.otherUserName || "Usuario"}
+                        {getDisplayName(conv.otherUserId, conv.conversationId)}
                       </p>
                       <p className="text-sm text-gray-500 truncate">
                         {conv.lastMessage.content}
