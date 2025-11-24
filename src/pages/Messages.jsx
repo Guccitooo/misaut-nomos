@@ -286,7 +286,7 @@ export default function MessagesPage() {
         
         let otherUserName;
         if (isUserSender) {
-          otherUserName = msg.professional_name || msg.client_name;
+          otherUserName = msg.client_name || msg.professional_name;
         } else {
           otherUserName = msg.professional_name || msg.client_name;
         }
@@ -301,9 +301,20 @@ export default function MessagesPage() {
         };
       }
       acc[convId].messages.push(msg);
+      
       if (msg.recipient_id === user?.id && !msg.is_read) {
         acc[convId].unreadCount++;
       }
+      
+      const isUserSender = msg.sender_id === user?.id;
+      if (!acc[convId].otherUserName) {
+        if (isUserSender) {
+          acc[convId].otherUserName = msg.client_name || msg.professional_name;
+        } else {
+          acc[convId].otherUserName = msg.professional_name || msg.client_name;
+        }
+      }
+      
       return acc;
     }, {});
   }, [allMessages, user?.id]);
