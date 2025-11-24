@@ -987,18 +987,37 @@ const translations = {
     learnMoreCookies: 'More information:',
     
     // Tickets
-    supportTickets: 'Tickets de soporte',
-    myTickets: 'Mis tickets',
-    openTicket: 'Abrir ticket',
+    supportTickets: 'Support Tickets',
+    myTickets: 'My Tickets',
+    openTicket: 'Open Ticket',
 
     // Common
     loading: 'Loading...',
+    loadingProfessionals: 'Loading professionals...',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
     previous: 'Previous',
     confirm: 'Confirm',
     close: 'Close',
+    search: 'Search',
+    searchPlaceholder: 'E.g: plumber in Málaga, office cleaning…',
+    allCategories: 'All categories',
+    allProvinces: 'All provinces',
+    allCities: 'All cities',
+    results: 'results',
+    professionalSingular: 'professional',
+    professionalPlural: 'professionals',
+    noResultsFound: 'No results found',
+    tryDifferentLocation: 'Try different filters or search in another location',
+    areYouProfessionalHere: 'Are you a professional in this area?',
+    joinFreeAppearHere: 'Join for free and appear here. Start receiving clients today.',
+    registerAsProfessional: 'Register as a professional',
+    getMoreClients: 'Register for free and appear here. Get more clients today.',
+    unread: 'unread',
+    removedFromFavorites: 'Removed from favorites',
+    addedToFavorites: 'Added to favorites',
+    errorFavorites: 'Error managing favorites',
   }
 };
 

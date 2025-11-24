@@ -297,7 +297,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               onClick={onClick}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2"
             >
-              Ver perfil
+              {t('viewProfile')}
             </Button>
 
             <Button
@@ -312,7 +312,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
               variant="outline"
               size="icon"
               className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
-              title="Enviar mensaje"
+              title={t('sendDirectMessage')}
             >
               <MessageSquare className="w-4 h-4 text-gray-700" />
             </Button>
@@ -323,7 +323,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-gray-400 rounded-lg flex-shrink-0"
-                title="Llamar por teléfono"
+                title={t('callPhone')}
               >
                 <Phone className="w-4 h-4 text-gray-700" />
               </Button>
@@ -335,7 +335,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
-                title="Contactar por WhatsApp"
+                title={t('contactViaWhatsApp')}
               >
                 <MessageCircle className="w-4 h-4 text-green-600" />
               </Button>
@@ -637,25 +637,25 @@ export default function SearchPage() {
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8">
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-                Encuentra tu autónomo de confianza
+                {t('heroTitle')}
               </h1>
               <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">
-                Conecta con profesionales verificados cerca de ti. Rápido, fácil y seguro.
+                {t('heroSubtitle')}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm md:text-base text-blue-100 mb-6">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Profesionales verificados</span>
+                  <span>{t('verifiedProfessionals')}</span>
                 </div>
                 <div className="hidden sm:block w-1 h-1 bg-blue-300 rounded-full"></div>
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span>Opiniones reales</span>
+                  <span>{t('realReviews')}</span>
                 </div>
                 <div className="hidden sm:block w-1 h-1 bg-blue-300 rounded-full"></div>
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  <span>Contacto directo</span>
+                  <span>{t('directChat')}</span>
                 </div>
               </div>
 
@@ -667,14 +667,14 @@ export default function SearchPage() {
                   className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
                 >
                   <SearchIcon className="w-5 h-5 mr-2" />
-                  Busco servicios
+                  {t('imClient')}
                 </Button>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
                   className="bg-orange-500 hover:bg-orange-600 text-white border-0 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl"
                 >
                   <Briefcase className="w-5 h-5 mr-2" />
-                  Soy autónomo
+                  {t('imFreelancer')}
                 </Button>
               </div>
             </div>
@@ -692,7 +692,7 @@ export default function SearchPage() {
                     <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <Input
                       type="text"
-                      placeholder="Ej: fontanero en Málaga, limpieza de oficinas…"
+                      placeholder={t('searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-12 pr-4 h-12 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
@@ -702,7 +702,7 @@ export default function SearchPage() {
                     className="hidden md:flex bg-blue-600 hover:bg-blue-700 h-12 px-6 rounded-xl font-semibold shadow-sm"
                   >
                     <SearchIcon className="w-5 h-5 mr-2" />
-                    Buscar
+                    {t('search')}
                   </Button>
                 </div>
 
@@ -712,14 +712,14 @@ export default function SearchPage() {
                     setSelectedCategory(value);
                   }}>
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="Todas las categorías">
-                        {selectedCategory === "all" ? "Todas las categorías" : (t(selectedCategory) || selectedCategory)}
+                      <SelectValue placeholder={t('allCategories')}>
+                        {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px] overflow-y-auto">
-                      <SelectItem value="all">Todas las categorías</SelectItem>
+                      <SelectItem value="all">{t('allCategories')}</SelectItem>
                       {loadingCategories ? (
-                        <SelectItem value="loading" disabled>Cargando...</SelectItem>
+                        <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
                       ) : categories.length === 0 ? (
                         <>
                           <SelectItem value="Electricista">Electricista</SelectItem>
@@ -749,10 +749,10 @@ export default function SearchPage() {
 
                   <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="Todas las provincias" />
+                      <SelectValue placeholder={t('allProvinces')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">Todas las provincias</SelectItem>
+                      <SelectItem value="all">{t('allProvinces')}</SelectItem>
                       {availableProvincias.map((prov) => (
                         <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                       ))}
@@ -761,10 +761,10 @@ export default function SearchPage() {
 
                   <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
                     <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="Todas las ciudades" />
+                      <SelectValue placeholder={t('allCities')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas las ciudades</SelectItem>
+                      <SelectItem value="all">{t('allCities')}</SelectItem>
                       {availableCities.map((ciudad) => (
                         <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                       ))}
@@ -779,9 +779,9 @@ export default function SearchPage() {
 
           <div className="mb-5">
             <h2 className="text-xl font-bold text-gray-900">
-              {isInitialLoading ? 'Cargando...' : `${filteredProfiles.length} ${filteredProfiles.length === 1 ? 'autónomo' : 'autónomos'}`}
+              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${filteredProfiles.length === 1 ? t('professionalSingular') : t('professionals')}`}
             </h2>
-            <p className="text-sm text-gray-600 mt-0.5">Profesionales verificados</p>
+            <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
           </div>
 
           {isInitialLoading && (
@@ -815,27 +815,27 @@ export default function SearchPage() {
                   <SearchIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  No se encontraron resultados
+                  {t('noResultsFound')}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Intenta con otros filtros o busca en otra ubicación
+                  {t('tryDifferentLocation')}
                 </p>
               </Card>
 
               {/* Columna Derecha - CTA para autónomos */}
               <Card className="p-8 text-center border-0 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex flex-col justify-center">
                 <h3 className="text-xl font-bold mb-2">
-                  ¿Eres autónomo en esta zona?
+                  {t('areYouProfessionalHere')}
                 </h3>
                 <p className="text-blue-50 mb-6 text-sm">
-                  Únete gratis y aparece aquí. Empieza a recibir clientes hoy mismo.
+                  {t('joinFreeAppearHere')}
                 </p>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
                   className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 text-sm font-semibold shadow-xl rounded-lg mx-auto"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  Registrarme como autónomo
+                  {t('registerAsProfessional')}
                 </Button>
               </Card>
             </div>
@@ -872,17 +872,17 @@ export default function SearchPage() {
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
               <h3 className="text-2xl font-bold mb-2">
-                ¿Eres autónomo en esta zona?
+                {t('areYouProfessionalHere')}
               </h3>
               <p className="text-blue-100 mb-5 text-lg">
-                Regístrate gratis y aparece aquí. Consigue más clientes hoy mismo.
+                {t('getMoreClients')}
               </p>
               <Button
                 onClick={() => navigate(createPageUrl("PricingPlans"))}
                 className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl"
               >
                 <Briefcase className="w-5 h-5 mr-2" />
-                Registrarme como autónomo
+                {t('registerAsProfessional')}
               </Button>
             </div>
           )}
