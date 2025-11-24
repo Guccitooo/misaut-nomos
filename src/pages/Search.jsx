@@ -428,6 +428,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
   );
 };
 
+// VERSION: 2025-11-24-v2 - Botones de categorías eliminados
 export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
