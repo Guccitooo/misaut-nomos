@@ -129,12 +129,13 @@ const useDebounce = (value, delay) => {
 };
 
 const CategoryBadge = ({ category, categories }) => {
+  const { t } = useLanguage();
   const categoryData = categories.find(c => c.name === category);
-  
+
   return (
     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-medium">
       {categoryData?.icon && <span className="mr-1">{categoryData.icon}</span>}
-      {category}
+      {t(category) || category}
     </Badge>
   );
 };
@@ -692,7 +693,7 @@ export default function SearchPage() {
                     <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <Input
                       type="text"
-                      placeholder={t('searchPlaceholder')}
+                      placeholder={t('search')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-12 pr-4 h-12 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
