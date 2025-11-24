@@ -779,7 +779,7 @@ export default function SearchPage() {
 
           <div className="mb-5">
             <h2 className="text-xl font-bold text-gray-900">
-              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${filteredProfiles.length === 1 ? t('professionalSingular') : t('professionals')}`}
+              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
             </h2>
             <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
           </div>
@@ -815,10 +815,10 @@ export default function SearchPage() {
                   <SearchIcon className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {t('noResultsFound')}
+                  {t('noResults')}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {t('tryDifferentLocation')}
+                  {t('tryDifferentFilters')}
                 </p>
               </Card>
 
