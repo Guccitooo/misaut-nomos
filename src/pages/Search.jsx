@@ -402,9 +402,18 @@ export default function SearchPage() {
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const cats = await base44.entities.ServiceCategory.list();
-      console.log('📂 Categories loaded:', cats.length, cats.map(c => c.name));
-      return cats;
+      try {
+        const cats = await base44.entities.ServiceCategory.list();
+        console.log('📂 Categories loaded from DB:', cats.length, cats.map(c => c.name));
+        if (cats.length === 0) {
+          console.warn('⚠️ No categories found in database, using fallback');
+          return [];
+        }
+        return cats;
+      } catch (error) {
+        console.error('❌ Error loading categories:', error);
+        return [];
+      }
     },
     initialData: [],
     staleTime: 1000 * 60 * 5,
@@ -683,13 +692,34 @@ export default function SearchPage() {
                         {selectedCategory === "all" ? "Todas las categorías" : (t(selectedCategory) || selectedCategory)}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px] overflow-y-auto">
                       <SelectItem value="all">Todas las categorías</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {t(cat.name) || cat.name}
-                        </SelectItem>
-                      ))}
+                      {loadingCategories ? (
+                        <SelectItem value="loading" disabled>Cargando...</SelectItem>
+                      ) : categories.length === 0 ? (
+                        <>
+                          <SelectItem value="Electricista">Electricista</SelectItem>
+                          <SelectItem value="Fontanero">Fontanero</SelectItem>
+                          <SelectItem value="Carpintero">Carpintero</SelectItem>
+                          <SelectItem value="Albañil / Reformas">Albañil / Reformas</SelectItem>
+                          <SelectItem value="Pintor">Pintor</SelectItem>
+                          <SelectItem value="Jardinero">Jardinero</SelectItem>
+                          <SelectItem value="Transportista">Transportista</SelectItem>
+                          <SelectItem value="Autónomo de limpieza">Autónomo de limpieza</SelectItem>
+                          <SelectItem value="Cerrajero">Cerrajero</SelectItem>
+                          <SelectItem value="Instalador de aire acondicionado">Instalador de aire acondicionado</SelectItem>
+                          <SelectItem value="Mantenimiento general">Mantenimiento general</SelectItem>
+                          <SelectItem value="Asesoría o gestoría">Asesoría o gestoría</SelectItem>
+                          <SelectItem value="Empresa multiservicios">Empresa multiservicios</SelectItem>
+                          <SelectItem value="Otro tipo de servicio profesional">Otro tipo de servicio profesional</SelectItem>
+                        </>
+                      ) : (
+                        categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            {t(cat.name) || cat.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
 
