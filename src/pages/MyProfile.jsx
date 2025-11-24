@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 import PremiumDashboard from "../components/premium/PremiumDashboard";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -99,6 +100,7 @@ const categories = [
 ].sort();
 
 export default function MyProfilePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -458,7 +460,7 @@ export default function MyProfilePage() {
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success('✅ Datos personales actualizados');
+      toast.success(t('personalDataUpdated'));
     },
   });
 
@@ -485,7 +487,7 @@ export default function MyProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       setIsEditing(false);
       setSuccess(true);
-      toast.success('✅ Perfil profesional actualizado');
+      toast.success(t('professionalProfileUpdated'));
       setTimeout(() => setSuccess(false), 3000);
     },
   });
@@ -498,7 +500,7 @@ export default function MyProfilePage() {
     },
     onSuccess: (_, visible) => {
       queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success(visible ? '✅ Tu perfil ahora es visible en búsquedas' : '🔒 Tu perfil está oculto en búsquedas');
+      toast.success(visible ? t('profileNowVisible') : t('profileNowHidden'));
     },
   });
 
@@ -525,7 +527,7 @@ export default function MyProfilePage() {
 
     const validFiles = files.filter(file => {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} supera los 5MB`);
+        toast.error(t('exceedsSize').replace('{filename}', file.name));
         return false;
       }
       return true;
@@ -557,10 +559,10 @@ export default function MyProfilePage() {
         queryClient.invalidateQueries({ queryKey: ['myProfile'] });
       }
 
-      toast.success(`✅ ${validFiles.length} foto(s) añadida(s)`);
+      toast.success(t('photosAdded').replace('{count}', validFiles.length));
     } catch (error) {
       console.error("Error uploading photos:", error);
-      toast.error("Error al subir las fotos");
+      toast.error(t('errorUploadingPhotos'));
     } finally {
       setUploadingPhoto(false);
       e.target.value = '';
@@ -580,10 +582,10 @@ export default function MyProfilePage() {
           imagen_principal: user?.profile_picture || newPhotos[0] || ""
         });
         queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-        toast.success("Foto eliminada");
+        toast.success(t('photoRemoved'));
       } catch (error) {
         console.error("Error removing photo:", error);
-        toast.error("Error al eliminar la foto");
+        toast.error(t('errorRemovingPhoto'));
       }
     }
   };
@@ -677,19 +679,19 @@ export default function MyProfilePage() {
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('myProfile')}</h1>
             <p className="text-gray-600">
-              {isProfessional ? "Gestiona tu perfil profesional" : "Gestiona tu información"}
+              {isProfessional ? t('manageYourProfile') : t('manageYourInformation')}
             </p>
             {profile && (
               <div className="mt-2 flex gap-2">
                 {subscriptionStatus?.isActive ? (
                   <Badge className="bg-green-100 text-green-800">
-                    ✓ Visible para clientes
+                    ✓ {t('visibleToClients')}
                   </Badge>
                 ) : (
                   <Badge className="bg-red-100 text-red-800">
-                    ⚠ Perfil oculto
+                    ⚠ {t('hiddenProfile')}
                   </Badge>
                 )}
               </div>
@@ -698,7 +700,7 @@ export default function MyProfilePage() {
           {!isEditing ? (
             <div className="flex gap-2">
               <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-                Editar Perfil
+                {t('editProfile')}
               </Button>
               {!isProfessional && (
                 <Button 
@@ -706,7 +708,7 @@ export default function MyProfilePage() {
                   className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  Hazte Autónomo
+                  {t('becomeFreelancer')}
                 </Button>
               )}
             </div>
@@ -716,7 +718,7 @@ export default function MyProfilePage() {
                 setIsEditing(false);
                 queryClient.invalidateQueries({ queryKey: ['myProfile'] });
               }}>
-                Cancelar
+                {t('cancel')}
               </Button>
               <Button 
                 onClick={handleSave}
@@ -726,12 +728,12 @@ export default function MyProfilePage() {
                 {updateProfileMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Guardando...
+                    {t('saving')}
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    Guardar cambios
+                    {t('saveChanges')}
                   </>
                 )}
               </Button>
@@ -743,7 +745,7 @@ export default function MyProfilePage() {
           <Alert className="mb-6 bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              ✅ Tu perfil se ha actualizado correctamente.
+              {t('profileUpdatedSuccess')}
             </AlertDescription>
           </Alert>
         )}
@@ -757,9 +759,9 @@ export default function MyProfilePage() {
                     <Briefcase className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-gray-900">¿Quieres ofrecer tus servicios?</h3>
+                    <h3 className="font-bold text-lg text-gray-900">{t('wantOfferServices')}</h3>
                     <p className="text-sm text-gray-600">
-                      Conviértete en autónomo y aparece en las búsquedas de clientes
+                      {t('becomeProfessionalAppear')}
                     </p>
                   </div>
                 </div>
@@ -768,7 +770,7 @@ export default function MyProfilePage() {
                   className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  Ver Planes
+                  {t('viewPlans')}
                 </Button>
               </div>
             </CardContent>
@@ -786,17 +788,17 @@ export default function MyProfilePage() {
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
             <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
-              Información Personal
+              {t('personalInformation')}
             </TabsTrigger>
             {isProfessional && (
               <>
                 <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Building2 className="w-4 h-4 mr-2" />
-                  Perfil Profesional
+                  {t('professionalProfile')}
                 </TabsTrigger>
                 <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Camera className="w-4 h-4 mr-2" />
-                  Portfolio
+                  {t('portfolio')}
                 </TabsTrigger>
               </>
             )}
@@ -807,7 +809,7 @@ export default function MyProfilePage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-700" />
-                  Información personal
+                  {t('personalInformation')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -825,12 +827,12 @@ export default function MyProfilePage() {
                 </div>
 
                 <div>
-                  <Label>Email</Label>
+                  <Label>{t('email')}</Label>
                   <Input value={user.email} disabled className="bg-gray-50" />
                 </div>
 
                 <div>
-                  <Label>Nombre completo</Label>
+                  <Label>{t('fullNameLabel')}</Label>
                   <Input
                     value={userData.full_name || ""}
                     onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
@@ -840,7 +842,7 @@ export default function MyProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Teléfono</Label>
+                    <Label>{t('phone')}</Label>
                     <Input
                       value={userData.phone || ""}
                       onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
@@ -849,14 +851,14 @@ export default function MyProfilePage() {
                     />
                   </div>
                   <div>
-                    <Label>Ciudad</Label>
+                    <Label>{t('city')}</Label>
                     <Select
                       value={userData.city || ""}
                       onValueChange={(value) => setUserData({ ...userData, city: value })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona ciudad" />
+                        <SelectValue placeholder={t('selectCityPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {Object.values(ciudadesPorProvincia).flat().sort().map((ciudad) => (
@@ -868,9 +870,9 @@ export default function MyProfilePage() {
                 </div>
 
                 <div>
-                  <Label>Tipo de cuenta</Label>
+                  <Label>{t('accountType')}</Label>
                   <Badge className="bg-blue-100 text-blue-900">
-                    {isProfessional ? "Autónomo" : "Cliente"}
+                    {isProfessional ? t('professional') : t('client')}
                   </Badge>
                 </div>
 
@@ -880,12 +882,12 @@ export default function MyProfilePage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <Label className="text-lg font-bold text-gray-900 mb-2 block">
-                            Gestionar disponibilidad
+                            {t('manageAvailability')}
                           </Label>
                           <p className="text-sm text-gray-700 leading-relaxed">
                             {profile.visible_en_busqueda 
-                              ? "Tu perfil está activo y visible en las búsquedas. Los clientes pueden encontrarte y contactarte." 
-                              : "Tu perfil está pausado. No apareces en búsquedas mientras te tomes un descanso."}
+                              ? t('profileActiveVisible')
+                              : t('profilePausedHidden')}
                           </p>
                         </div>
                         <Switch
@@ -902,10 +904,10 @@ export default function MyProfilePage() {
                             <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="text-sm font-semibold text-green-900 mb-1">
-                                Perfil activo y visible
+                                {t('activeAndVisible')}
                               </p>
                               <p className="text-xs text-green-800">
-                                Los clientes pueden verte en búsquedas y contactarte
+                                {t('clientsCanSee')}
                               </p>
                             </div>
                           </div>
@@ -916,10 +918,10 @@ export default function MyProfilePage() {
                             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="text-sm font-semibold text-amber-900 mb-1">
-                                Perfil pausado
+                                {t('profilePaused')}
                               </p>
                               <p className="text-xs text-amber-800">
-                                Útil si tienes mucho trabajo y no puedes atender nuevos clientes
+                                {t('usefulIfBusy')}
                               </p>
                             </div>
                           </div>
@@ -939,12 +941,12 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-blue-700" />
-                      Identidad Profesional
+                      {t('professionalIdentity')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Nombre profesional *</Label>
+                      <Label>{t('professionalNameRequired')}</Label>
                       <Input
                         value={profileData.business_name}
                         onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
@@ -957,20 +959,14 @@ export default function MyProfilePage() {
                       <div>
                         <Label className="flex items-center gap-2">
                           {profileData.cif_nif ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                          NIF/CIF
+                          {t('nif')}
                         </Label>
-                        <Input
-                          value={profileData.cif_nif}
-                          onChange={(e) => setProfileData({ ...profileData, cif_nif: e.target.value.toUpperCase() })}
-                          disabled={!isEditing}
-                          placeholder="12345678A"
-                          maxLength={9}
-                        />
+...
                       </div>
                       <div>
                         <Label className="flex items-center gap-2">
                           {profileData.years_experience ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                          Años de experiencia
+                          {t('yearsExperience')}
                         </Label>
                         <Input
                           type="number"
@@ -987,7 +983,7 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2">
                         {profileData.email_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                        Email de contacto
+                        {t('emailContact')}
                       </Label>
                       <Input
                         type="email"
@@ -1000,7 +996,7 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2">
                         {profileData.telefono_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                        Teléfono de contacto
+                        {t('phoneContact')}
                       </Label>
                       <Input
                         value={profileData.telefono_contacto}
@@ -1013,7 +1009,7 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2">
                         {profileData.iban ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                        IBAN (para recibir pagos de facturas)
+                        {t('ibanForInvoices')}
                       </Label>
                       <Input
                         value={profileData.iban || ""}
@@ -1023,7 +1019,7 @@ export default function MyProfilePage() {
                         maxLength={34}
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Necesario para recibir los pagos de facturas procesadas por MisAutónomos (transferencia en 7 días)
+                        {t('ibanHelp')}
                       </p>
                     </div>
 
@@ -1032,16 +1028,16 @@ export default function MyProfilePage() {
 
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Servicios y Descripción</CardTitle>
+                    <CardTitle className="text-lg">{t('servicesAndDescription')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Categoría de servicio (elige solo una)</Label>
+                      <Label>{t('serviceCategory')}</Label>
                       {!isEditing ? (
                         <div className="mt-2 flex items-center gap-2">
                           <CheckCircle className="w-5 h-5 text-green-600" />
                           <Badge className="bg-blue-100 text-blue-900 text-sm">
-                            {profileData.categories[0] || "Sin categoría"}
+                            {profileData.categories[0] ? t(profileData.categories[0]) : t('noCategory')}
                           </Badge>
                         </div>
                       ) : (
@@ -1061,7 +1057,7 @@ export default function MyProfilePage() {
                               ) : (
                                 <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
                               )}
-                              <span className="text-sm">{cat}</span>
+                              <span className="text-sm">{t(cat)}</span>
                             </div>
                           ))}
                         </div>
@@ -1070,18 +1066,18 @@ export default function MyProfilePage() {
 
                     {profileData.categories.includes("Otro tipo de servicio profesional") && (
                       <div>
-                        <Label>Especifica tu servicio</Label>
+                        <Label>{t('specifyYourService')}</Label>
                         <Input
                           value={profileData.activity_other}
                           onChange={(e) => setProfileData({ ...profileData, activity_other: e.target.value })}
                           disabled={!isEditing}
-                          placeholder="Instalador de paneles solares..."
+                          placeholder={t('specifyServicePlaceholder')}
                         />
                       </div>
                     )}
 
                     <div>
-                      <Label>Descripción de tus servicios</Label>
+                      <Label>{t('servicesDescription')}</Label>
                       {!isEditing && profileData.descripcion_corta ? (
                         <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                           <div className="flex items-start gap-2">
@@ -1109,7 +1105,7 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-blue-700" />
-                      Ubicación
+                      {t('locationLabel')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1117,7 +1113,7 @@ export default function MyProfilePage() {
                       <div>
                         <Label className="flex items-center gap-2">
                           {profileData.provincia ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                          Provincia
+                          {t('province')}
                         </Label>
                         <Select
                           value={profileData.provincia}
@@ -1129,7 +1125,7 @@ export default function MyProfilePage() {
                           disabled={!isEditing}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecciona provincia" />
+                            <SelectValue placeholder={t('selectProvincePlaceholder')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
                             {provincias.map((prov) => (
@@ -1142,7 +1138,7 @@ export default function MyProfilePage() {
                       <div>
                         <Label className="flex items-center gap-2">
                           {profileData.ciudad ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                          Ciudad
+                          {t('city')}
                         </Label>
                         <Select
                           value={profileData.ciudad}
@@ -1150,7 +1146,7 @@ export default function MyProfilePage() {
                           disabled={!isEditing || !profileData.provincia}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={profileData.provincia ? "Selecciona ciudad" : "Primero elige provincia"} />
+                            <SelectValue placeholder={profileData.provincia ? t('selectCityPlaceholder') : t('firstChooseProvince')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
                             {profileData.provincia && ciudadesPorProvincia[profileData.provincia]?.map((ciudad) => (
@@ -1171,14 +1167,14 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Euro className="w-5 h-5 text-blue-700" />
-                      Tarifas y Pagos
+                      {t('ratesAndPayments')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <Label className="flex items-center gap-2">
                         {profileData.tarifa_base ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                        Tarifa base (€/hora) - opcional
+                        {t('baseRateOptionalLabel')}
                       </Label>
                       <Input
                         type="number"
@@ -1193,14 +1189,14 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2">
                         {profileData.formas_pago.length > 0 ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                        Formas de pago aceptadas
+                        {t('acceptedPaymentMethodsLabel')}
                       </Label>
                       {!isEditing ? (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {profileData.formas_pago.map((forma) => (
                             <Badge key={forma} className="bg-purple-100 text-purple-900 flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
-                              {forma}
+                              {t(forma.toLowerCase())}
                             </Badge>
                           ))}
                         </div>
@@ -1221,7 +1217,7 @@ export default function MyProfilePage() {
                               ) : (
                                 <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
                               )}
-                              <span className="text-sm">{forma}</span>
+                              <span className="text-sm">{t(forma.toLowerCase())}</span>
                             </div>
                           ))}
                         </div>
@@ -1242,7 +1238,7 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Camera className="w-5 h-5 text-blue-700" />
-                      Portfolio ({profileData.photos.length}/10)
+                      {t('portfolio')} ({profileData.photos.length}/10)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1263,8 +1259,8 @@ export default function MyProfilePage() {
                         ) : (
                           <>
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Haz clic para añadir fotos ({profileData.photos.length}/10)</p>
-                            <p className="text-xs text-gray-500 mt-1">Puedes seleccionar varias a la vez</p>
+                            <p className="text-sm text-gray-600">{t('clickToAddPhotos').replace('{count}', profileData.photos.length)}</p>
+                            <p className="text-xs text-gray-500 mt-1">{t('selectMultiple')}</p>
                           </>
                         )}
                       </div>
@@ -1276,7 +1272,7 @@ export default function MyProfilePage() {
                       <div key={idx} className="relative group">
                         <img
                           src={photo}
-                          alt={`Foto ${idx + 1}`}
+                          alt={t('photoNumber').replace('{number}', idx + 1)}
                           className="w-full h-32 object-cover rounded-lg shadow-md"
                         />
                         {isEditing && (
@@ -1289,7 +1285,7 @@ export default function MyProfilePage() {
                         )}
                         {idx === 0 && (
                           <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
-                            Principal
+                            {t('mainPhotoLabel')}
                           </div>
                         )}
                       </div>
@@ -1302,7 +1298,7 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Globe className="w-5 h-5 text-blue-700" />
-                    Redes Sociales
+                    {t('socialNetworksLabel')}
                   </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -1310,7 +1306,7 @@ export default function MyProfilePage() {
                     <div>
                       <Label className="flex items-center gap-2 text-xs text-gray-600">
                         {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                        Sitio web
+                        {t('sitioWeb')}
                       </Label>
                       {!isEditing && profileData.website ? (
                         <a 

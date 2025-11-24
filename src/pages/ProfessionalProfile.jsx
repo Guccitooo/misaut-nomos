@@ -626,7 +626,7 @@ export default function ProfessionalProfilePage() {
                   <a href={profile.website} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="h-9 px-4 text-sm">
                       <Globe className="w-4 h-4 mr-2" />
-                      {t('website')}
+                      {t('sitioWeb')}
                     </Button>
                   </a>
                 )}

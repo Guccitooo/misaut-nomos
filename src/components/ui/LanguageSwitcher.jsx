@@ -1228,6 +1228,7 @@ const translations = {
     noCategory: 'No category',
     saveChanges: 'Save changes',
     saving: 'Saving...',
+    sitioWeb: 'Sitio web',
     
     // ProfessionalProfile  
     backToSearch: 'Back to search',
