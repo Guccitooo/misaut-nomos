@@ -213,14 +213,14 @@ export default function PricingPlansPage() {
           <div className="text-center mb-12">
               <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg">
                 <Gift className="w-6 h-6" />
-                2 MESES GRATIS
+                {t('twoMonthsFree')}
               </div>
 
               <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4">
-                Empieza gratis hoy
+                {t('startFreeToday')}
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Sin permanencia • Cancela cuando quieras • Pago 100% seguro
+                {t('noCommitment')} • {t('cancelAnytime')} • {t('securePayment')}
               </p>
             </div>
 
