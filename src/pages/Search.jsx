@@ -438,7 +438,6 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProvincia, setSelectedProvincia] = useState("all");
   const [selectedCiudad, setSelectedCiudad] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -694,6 +693,7 @@ export default function SearchPage() {
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
 
+          {/* Filtros de búsqueda - siempre visibles */}
           <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
             <CardContent className="p-5">
               <div className="space-y-4">
@@ -716,23 +716,7 @@ export default function SearchPage() {
                   </Button>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setShowFilters(!showFilters)}
-                    variant="outline"
-                    className="lg:hidden flex-1 h-10 border-gray-200 rounded-lg text-sm"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filtros
-                    {(selectedCategory !== "all" || selectedProvincia !== "all") && (
-                      <Badge className="ml-2 bg-blue-600 text-xs">
-                        {[selectedCategory !== "all" ? 1 : 0, selectedProvincia !== "all" ? 1 : 0].reduce((a, b) => a + b)}
-                      </Badge>
-                    )}
-                  </Button>
-                </div>
-
-                <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${showFilters ? '' : 'hidden lg:grid'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Select value={selectedCategory} onValueChange={(value) => {
                     console.log('📌 Select category changed to:', value);
                     setSelectedCategory(value);
@@ -801,41 +785,7 @@ export default function SearchPage() {
             </CardContent>
           </Card>
 
-          {/* Categorías rápidas (chips) - SIEMPRE VISIBLE */}
-          {!loadingCategories && (
-            <div className="mb-6 flex flex-wrap gap-2">
-              {[
-                { name: "Fontanero", icon: Droplets },
-                { name: "Electricista", icon: Zap },
-                { name: "Cerrajero", icon: Key },
-                { name: "Autónomo de limpieza", icon: Sparkles, label: "Limpieza" },
-                { name: "Albañil / Reformas", icon: HardHat, label: "Reformas" },
-                { name: "Transportista", icon: Truck, label: "Mudanzas" },
-              ].map((cat) => {
-                const Icon = cat.icon;
-                const isSelected = selectedCategory === cat.name;
-                return (
-                  <Button
-                    key={cat.name}
-                    onClick={() => {
-                      const newValue = isSelected ? "all" : cat.name;
-                      console.log('🔵 Chip clicked:', cat.name, '-> Setting to:', newValue);
-                      setSelectedCategory(newValue);
-                    }}
-                    variant="outline"
-                    className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${
-                      isSelected
-                        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 mr-1.5" />
-                    {cat.label || cat.name}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
+
 
           <div className="mb-5 flex items-center justify-between">
             <div>
