@@ -624,17 +624,6 @@ export default function SearchPage() {
 
   const isInitialLoading = loadingProfiles || loadingCategories;
 
-  if (isInitialLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-          <p className="text-gray-600">Cargando profesionales...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <SEOHead 
@@ -788,22 +777,37 @@ export default function SearchPage() {
 
 
 
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {filteredProfiles.length} {filteredProfiles.length === 1 ? 'autónomo' : 'autónomos'}
-              </h2>
-              <p className="text-sm text-gray-600 mt-0.5">Profesionales verificados</p>
-            </div>
-            {loadingProfiles && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Cargando...
-              </div>
-            )}
+          <div className="mb-5">
+            <h2 className="text-xl font-bold text-gray-900">
+              {isInitialLoading ? 'Cargando...' : `${filteredProfiles.length} ${filteredProfiles.length === 1 ? 'autónomo' : 'autónomos'}`}
+            </h2>
+            <p className="text-sm text-gray-600 mt-0.5">Profesionales verificados</p>
           </div>
 
-          {filteredProfiles.length === 0 && !loadingProfiles && (
+          {isInitialLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, idx) => (
+                <Card key={idx} className="border border-gray-100 rounded-xl overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-full" />
+                    </div>
+                    <Skeleton className="h-9 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!isInitialLoading && filteredProfiles.length === 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Columna Izquierda - No se encontraron resultados */}
               <Card className="p-8 text-center border-0 shadow-sm rounded-xl bg-white flex flex-col justify-center">
@@ -837,8 +841,8 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* LISTADO DE AUTÓNOMOS - SIEMPRE VISIBLE */}
-          {filteredProfiles.length > 0 && (
+          {/* LISTADO DE AUTÓNOMOS */}
+          {!isInitialLoading && filteredProfiles.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               <AnimatePresence>
                 {filteredProfiles.map((profile) => (
@@ -865,7 +869,7 @@ export default function SearchPage() {
           )}
 
           {/* CTA para autónomos - SOLO CUANDO HAY RESULTADOS */}
-          {filteredProfiles.length > 0 && (
+          {!isInitialLoading && filteredProfiles.length > 0 && (
             <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
               <h3 className="text-2xl font-bold mb-2">
                 ¿Eres autónomo en esta zona?
