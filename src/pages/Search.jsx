@@ -409,6 +409,7 @@ export default function SearchPage() {
     initialData: [],
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
+    refetchOnMount: true,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles, error: profilesError } = useQuery({
@@ -441,6 +442,7 @@ export default function SearchPage() {
     retry: 2,
     staleTime: 0,
     gcTime: 1000 * 60 * 5,
+    refetchOnMount: true,
   });
 
   const { data: professionalUsers = [] } = useQuery({
@@ -719,39 +721,41 @@ export default function SearchPage() {
             </CardContent>
           </Card>
 
-          {/* Categorías rápidas (chips) */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            {[
-              { name: "Fontanero", icon: Droplets },
-              { name: "Electricista", icon: Zap },
-              { name: "Cerrajero", icon: Key },
-              { name: "Autónomo de limpieza", icon: Sparkles, label: "Limpieza" },
-              { name: "Albañil / Reformas", icon: HardHat, label: "Reformas" },
-              { name: "Transportista", icon: Truck, label: "Mudanzas" },
-            ].map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.name;
-              return (
-                <Button
-                  key={cat.name}
-                  onClick={() => {
-                    const newValue = isSelected ? "all" : cat.name;
-                    console.log('🔵 Chip clicked:', cat.name, '-> Setting to:', newValue);
-                    setSelectedCategory(newValue);
-                  }}
-                  variant="outline"
-                  className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mr-1.5" />
-                  {cat.label || cat.name}
-                </Button>
-              );
-            })}
-          </div>
+          {/* Categorías rápidas (chips) - SIEMPRE VISIBLE */}
+          {!loadingCategories && (
+            <div className="mb-6 flex flex-wrap gap-2">
+              {[
+                { name: "Fontanero", icon: Droplets },
+                { name: "Electricista", icon: Zap },
+                { name: "Cerrajero", icon: Key },
+                { name: "Autónomo de limpieza", icon: Sparkles, label: "Limpieza" },
+                { name: "Albañil / Reformas", icon: HardHat, label: "Reformas" },
+                { name: "Transportista", icon: Truck, label: "Mudanzas" },
+              ].map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = selectedCategory === cat.name;
+                return (
+                  <Button
+                    key={cat.name}
+                    onClick={() => {
+                      const newValue = isSelected ? "all" : cat.name;
+                      console.log('🔵 Chip clicked:', cat.name, '-> Setting to:', newValue);
+                      setSelectedCategory(newValue);
+                    }}
+                    variant="outline"
+                    className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mr-1.5" />
+                    {cat.label || cat.name}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -802,29 +806,32 @@ export default function SearchPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <AnimatePresence>
-              {filteredProfiles.map((profile) => (
-                <motion.div
-                  key={profile.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ProfileCard
-                    profile={profile}
-                    onClick={() => handleViewProfile(profile)}
-                    onToggleFavorite={() => handleToggleFavorite(profile)}
-                    isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
-                    userCategories={categories}
-                    professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                    currentUserId={user?.id}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          {/* LISTADO DE AUTÓNOMOS - SIEMPRE VISIBLE */}
+          {filteredProfiles.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <AnimatePresence>
+                {filteredProfiles.map((profile) => (
+                  <motion.div
+                    key={profile.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ProfileCard
+                      profile={profile}
+                      onClick={() => handleViewProfile(profile)}
+                      onToggleFavorite={() => handleToggleFavorite(profile)}
+                      isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                      userCategories={categories}
+                      professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                      currentUserId={user?.id}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* CTA para autónomos - SOLO CUANDO HAY RESULTADOS */}
           {filteredProfiles.length > 0 && (
