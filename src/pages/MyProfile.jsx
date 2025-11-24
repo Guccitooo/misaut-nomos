@@ -28,6 +28,7 @@ import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 import PremiumDashboard from "../components/premium/PremiumDashboard";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
+import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -388,6 +389,32 @@ export default function MyProfilePage() {
     },
     enabled: !!user && !!profile,
     staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: invoicingSettings } = useQuery({
+    queryKey: ['invoicingSettings', user?.id],
+    queryFn: async () => {
+      const settings = await base44.entities.InvoicingSettings.filter({ professional_id: user.id });
+      return settings[0] || null;
+    },
+    enabled: !!user && !!profile,
+  });
+
+  const saveInvoicingSettingsMutation = useMutation({
+    mutationFn: async (data) => {
+      if (invoicingSettings) {
+        return await base44.entities.InvoicingSettings.update(invoicingSettings.id, data);
+      } else {
+        return await base44.entities.InvoicingSettings.create({
+          ...data,
+          professional_id: user.id
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['invoicingSettings']);
+      toast.success(t('invoicingSettingsSaved') || 'Datos de facturación guardados');
+    },
   });
 
   const getSubscriptionStatus = () => {
@@ -785,7 +812,7 @@ export default function MyProfilePage() {
         )}
 
         <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 bg-white shadow-md">
             <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
               {t('personalInformation')}
@@ -799,6 +826,10 @@ export default function MyProfilePage() {
                 <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Camera className="w-4 h-4 mr-2" />
                   {t('portfolio')}
+                </TabsTrigger>
+                <TabsTrigger value="invoicing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <Euro className="w-4 h-4 mr-2" />
+                  {t('invoicingData') || 'Datos facturación'}
                 </TabsTrigger>
               </>
             )}
@@ -1429,6 +1460,15 @@ export default function MyProfilePage() {
                   </div>
                   </TabsContent>
                   )}
+
+          {isProfessional && (
+            <TabsContent value="invoicing">
+              <InvoicingSettingsForm
+                settings={invoicingSettings}
+                onSave={(data) => saveInvoicingSettingsMutation.mutate(data)}
+              />
+            </TabsContent>
+          )}
         </Tabs>
 
 
