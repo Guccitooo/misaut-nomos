@@ -29,6 +29,8 @@ import Jobs from './pages/Jobs';
 import PayInvoice from './pages/PayInvoice';
 import CategorySearch from './pages/CategorySearch';
 import ProfessionalSlug from './pages/ProfessionalSlug';
+import Autonomo from './pages/Autonomo';
+import Categoria from './pages/Categoria';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +66,8 @@ export const PAGES = {
     "PayInvoice": PayInvoice,
     "CategorySearch": CategorySearch,
     "ProfessionalSlug": ProfessionalSlug,
+    "Autonomo": Autonomo,
+    "Categoria": Categoria,
 }
 
 export const pagesConfig = {
