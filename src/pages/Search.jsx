@@ -47,6 +47,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
+import { getProfessionalUrl, getCategoryUrl, getCategoryLocationUrl, slugify } from "../components/utils/slugUtils";
 
 const PROVINCIAS_ESPANA = [
   "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
@@ -594,7 +595,14 @@ export default function SearchPage() {
   };
 
   const handleViewProfile = (profile) => {
-    navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
+    // Usar URL SEO-friendly si tiene slug, sino fallback a ID
+    if (profile.slug_publico) {
+      navigate(`/autonomo/${profile.slug_publico}`);
+    } else {
+      // Generar slug temporal basado en nombre
+      const slug = slugify(profile.business_name);
+      navigate(`/autonomo/${slug}?id=${profile.user_id}`);
+    }
   };
 
   const handleToggleFavorite = async (profile) => {
