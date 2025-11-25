@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const BASE_URL = 'https://misautonomos.es';
 
+// Genera slug limpio: sin acentos, sin IDs aleatorios
 function slugify(text) {
   if (!text) return '';
   return text
@@ -9,8 +10,9 @@ function slugify(text) {
     .toLowerCase()
     .trim()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
     .replace(/ñ/g, 'n')
+    .replace(/ç/g, 'c')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
