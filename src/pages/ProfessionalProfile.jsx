@@ -47,7 +47,6 @@ import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import { slugify, generateProfessionalSlug } from "../components/utils/slugUtils";
 import {
   Tooltip,
   TooltipContent,
@@ -68,25 +67,6 @@ export default function ProfessionalProfilePage() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const professionalId = urlParams.get("id");
-  
-  // Redirección a URL SEO si tenemos slug
-  useEffect(() => {
-    const checkAndRedirect = async () => {
-      if (professionalId) {
-        try {
-          const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: professionalId });
-          const profile = profiles[0];
-          if (profile?.slug_publico) {
-            // Redirigir a URL con slug
-            navigate(`/autonomo/${profile.slug_publico}`, { replace: true });
-          }
-        } catch (error) {
-          console.error("Error checking slug:", error);
-        }
-      }
-    };
-    checkAndRedirect();
-  }, [professionalId]);
 
   useEffect(() => {
     loadUser();
