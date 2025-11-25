@@ -416,6 +416,112 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, userCateg
                 window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
                 setShowWhatsAppModal(false);
               }}
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
+              title={t('sendDirectMessage')}
+            >
+              <MessageSquare className="w-4 h-4 text-gray-700" />
+            </Button>
+
+            {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
+              <Button
+                onClick={handleCall}
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-gray-200 hover:bg-gray-50 hover:border-gray-400 rounded-lg flex-shrink-0"
+                title={t('callPhone')}
+              >
+                <Phone className="w-4 h-4 text-gray-700" />
+              </Button>
+            )}
+
+            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
+              <Button
+                onClick={handleWhatsApp}
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
+                title={t('contactViaWhatsApp')}
+              >
+                <MessageCircle className="w-4 h-4 text-green-600" />
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+              <Phone className="w-7 h-7 text-blue-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {t('phoneNumber') || 'Número de teléfono'}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              {profile.business_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative w-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 rounded-2xl blur-xl opacity-20"></div>
+              <div className="relative p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 w-full text-center">
+                <p className="text-3xl font-bold text-blue-900 tracking-wider">
+                  {profile.telefono_contacto}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => copyToClipboard(profile.telefono_contacto)}
+              variant="outline"
+              className="w-full h-12 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl font-semibold transition-all"
+              size="lg"
+            >
+              {copiedPhone ? (
+                <>
+                  <Check className="w-5 h-5 mr-2 text-green-600" />
+                  <span className="text-green-600">{t('copied') || '¡Copiado!'}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5 mr-2 text-gray-700" />
+                  <span className="text-gray-700">{t('copyNumber') || 'Copiar número'}</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-2">
+              <MessageCircle className="w-7 h-7 text-green-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              WhatsApp
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              {profile.business_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="relative w-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-600 rounded-2xl blur-xl opacity-20"></div>
+              <div className="relative p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-200 w-full text-center">
+                <p className="text-3xl font-bold text-green-900 tracking-wider">
+                  {profile.telefono_contacto}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+                setShowWhatsAppModal(false);
+              }}
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
               size="lg"
             >
@@ -594,8 +700,25 @@ export default function SearchPage() {
   };
 
   const handleViewProfile = (profile) => {
-    navigate(createPageUrl("ProfessionalProfile") + `?id=${profile.user_id}`);
+    // URL SEO-friendly con slug
+    const slug = profile.slug_publico || slugify(profile.business_name);
+    navigate(createPageUrl("Autonomo") + `?slug=${slug}`);
   };
+  
+  // Función para generar slug
+  function slugify(text) {
+    if (!text) return '';
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ñ/g, 'n')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-');
+  }
 
   const handleToggleFavorite = async (profile) => {
     if (!user) {
