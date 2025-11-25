@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Función para generar slug
+// Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
   if (!text) return '';
   return text
@@ -46,11 +46,21 @@ function slugify(text) {
     .toLowerCase()
     .trim()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
     .replace(/ñ/g, 'n')
+    .replace(/ç/g, 'c')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
+}
+
+// Limpiar slug antiguo que puede tener IDs o acentos
+function cleanOldSlug(slug) {
+  if (!slug) return '';
+  // Eliminar IDs hexadecimales al final (ej: -5e8405)
+  let cleaned = slug.replace(/-[a-f0-9]{6,}$/i, '');
+  // Aplicar slugify para limpiar acentos
+  return slugify(cleaned);
 }
 
 export default function AutonomoPage() {
@@ -81,35 +91,70 @@ export default function AutonomoPage() {
     }
   };
 
-  // Buscar perfil por slug
-  const { data: profile, isLoading: loadingProfile } = useQuery({
+  // Buscar perfil por slug con soporte de redirección de slugs antiguos
+  const { data: profileData, isLoading: loadingProfile } = useQuery({
     queryKey: ['autonomoBySlug', slug],
     queryFn: async () => {
-      if (!slug) return null;
+      if (!slug) return { profile: null, redirect: null };
       
       const allProfiles = await base44.entities.ProfessionalProfile.list();
+      const cleanedInputSlug = slugify(slug); // Limpiar el slug de entrada
       
-      // Buscar por slug_publico exacto
+      // 1. Buscar por slug_publico exacto (slug ya migrado)
       let found = allProfiles.find(p => p.slug_publico === slug);
+      if (found) return { profile: found, redirect: null };
       
-      // Si no, buscar por slug generado del nombre
-      if (!found) {
-        found = allProfiles.find(p => slugify(p.business_name) === slug);
+      // 2. Buscar por slug limpio (sin acentos/IDs) 
+      found = allProfiles.find(p => p.slug_publico === cleanedInputSlug);
+      if (found) {
+        // Redirigir al slug correcto
+        return { profile: found, redirect: found.slug_publico };
       }
       
-      // Si no, buscar por coincidencia parcial
-      if (!found) {
+      // 3. Buscar por slug generado del nombre actual
+      found = allProfiles.find(p => slugify(p.business_name) === cleanedInputSlug);
+      if (found) {
+        return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
+      }
+      
+      // 4. Buscar slugs antiguos con IDs (ej: juan-perez-5e8405 → juan-perez)
+      const baseSlugFromInput = cleanOldSlug(slug);
+      if (baseSlugFromInput !== cleanedInputSlug) {
         found = allProfiles.find(p => {
-          const nameSlug = slugify(p.business_name);
-          return nameSlug.includes(slug) || slug.includes(nameSlug);
+          const profileBaseSlug = slugify(p.business_name);
+          return profileBaseSlug === baseSlugFromInput;
         });
+        if (found) {
+          return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
+        }
       }
       
-      return found || null;
+      // 5. Búsqueda flexible por coincidencia parcial (último recurso)
+      found = allProfiles.find(p => {
+        const nameSlug = slugify(p.business_name);
+        return nameSlug.startsWith(cleanedInputSlug) || cleanedInputSlug.startsWith(nameSlug);
+      });
+      if (found) {
+        return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
+      }
+      
+      return { profile: null, redirect: null };
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
   });
+
+  const profile = profileData?.profile;
+  const redirectSlug = profileData?.redirect;
+
+  // Redirigir automáticamente a slug limpio si es diferente
+  useEffect(() => {
+    if (redirectSlug && redirectSlug !== slug && profile) {
+      // Actualizar URL sin recargar la página (redirección 301 conceptual)
+      const newUrl = createPageUrl("Autonomo") + `?slug=${redirectSlug}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [redirectSlug, slug, profile]);
 
   const { data: professionalUser } = useQuery({
     queryKey: ['professionalUser', profile?.user_id],

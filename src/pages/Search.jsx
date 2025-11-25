@@ -41,7 +41,7 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
-// Función para generar slug
+// Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
   if (!text) return '';
   return text
@@ -49,8 +49,9 @@ function slugify(text) {
     .toLowerCase()
     .trim()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
     .replace(/ñ/g, 'n')
+    .replace(/ç/g, 'c')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-');
@@ -407,7 +408,7 @@ export default function SearchPage() {
   };
 
   const handleViewProfile = (profile) => {
-    // URL SEO-friendly con slug
+    // URL SEO-friendly con slug limpio (priorizar slug_publico ya migrado)
     const slug = profile.slug_publico || slugify(profile.business_name);
     navigate(createPageUrl("Autonomo") + `?slug=${slug}`);
   };
