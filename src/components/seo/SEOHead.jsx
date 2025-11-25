@@ -72,14 +72,16 @@ export default function SEOHead({
     updateMetaTag('twitter:image', image);
     updateMetaTag('twitter:site', '@MisAutonomos');
     
-    // Canonical URL
+    // Canonical URL - limpiar parámetros de query para evitar duplicados
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');
       canonical.setAttribute('rel', 'canonical');
       document.head.appendChild(canonical);
     }
-    canonical.setAttribute('href', canonicalUrl);
+    // Usar URL sin query params como canónica
+    const cleanCanonicalUrl = canonicalUrl.split('?')[0];
+    canonical.setAttribute('href', cleanCanonicalUrl);
 
     // Hreflang for alternate languages
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
