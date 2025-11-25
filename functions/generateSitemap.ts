@@ -103,12 +103,12 @@ Deno.serve(async (req) => {
   
   <!-- Categorías -->`;
 
-    // Añadir categorías
+    // Añadir categorías con URLs limpias usando query params
     for (const cat of categories) {
       const slug = CATEGORY_SLUGS[cat.name] || slugify(cat.name);
       xml += `
   <url>
-    <loc>${BASE_URL}/${slug}</loc>
+    <loc>${BASE_URL}/Categoria?name=${slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       for (const city of MAIN_CITIES) {
         xml += `
   <url>
-    <loc>${BASE_URL}/${slug}/${slugify(city)}</loc>
+    <loc>${BASE_URL}/Categoria?name=${slug}&amp;ciudad=${slugify(city)}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -130,14 +130,14 @@ Deno.serve(async (req) => {
   
   <!-- Perfiles de profesionales -->`;
 
-    // Añadir perfiles
+    // Añadir perfiles con URLs limpias usando query params
     for (const profile of visibleProfiles) {
       const slug = profile.slug_publico || slugify(profile.business_name);
       const lastMod = profile.updated_date ? profile.updated_date.split('T')[0] : today;
       
       xml += `
   <url>
-    <loc>${BASE_URL}/autonomo/${slug}</loc>
+    <loc>${BASE_URL}/Autonomo?slug=${slug}</loc>
     <lastmod>${lastMod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
