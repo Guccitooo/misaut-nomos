@@ -27,6 +27,8 @@ import CRM from './pages/CRM';
 import Invoices from './pages/Invoices';
 import Jobs from './pages/Jobs';
 import PayInvoice from './pages/PayInvoice';
+import CategorySearch from './pages/CategorySearch';
+import ProfessionalSlug from './pages/ProfessionalSlug';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +62,8 @@ export const PAGES = {
     "Invoices": Invoices,
     "Jobs": Jobs,
     "PayInvoice": PayInvoice,
+    "CategorySearch": CategorySearch,
+    "ProfessionalSlug": ProfessionalSlug,
 }
 
 export const pagesConfig = {
