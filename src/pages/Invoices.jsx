@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import InvoiceForm from "../components/invoicing/InvoiceForm";
 import InvoicePreview from "../components/invoicing/InvoicePreview";
 import InvoicesList from "../components/invoicing/InvoicesList";
 import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm";
+import InvoicingStats from "../components/invoicing/InvoicingStats";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function InvoicesPage() {
@@ -339,6 +340,10 @@ export default function InvoicesPage() {
               <FileText className="w-4 h-4 mr-2" />
               {t('invoices') || 'Facturas'}
             </TabsTrigger>
+            <TabsTrigger value="stats">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Estadísticas
+            </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
               {t('invoicingData') || 'Datos de facturación'}
@@ -358,6 +363,10 @@ export default function InvoicesPage() {
               onMarkAsPaid={handleMarkAsPaid}
               loadingActions={loadingActions}
             />
+          </TabsContent>
+
+          <TabsContent value="stats">
+            <InvoicingStats invoices={invoices} loading={loadingInvoices} />
           </TabsContent>
 
           <TabsContent value="settings">
