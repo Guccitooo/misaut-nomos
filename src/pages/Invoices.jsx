@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Loader2, Settings, FileText } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvoiceForm from "../components/invoicing/InvoiceForm";
@@ -24,6 +25,9 @@ export default function InvoicesPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [loadingActions, setLoadingActions] = useState({});
+  const [paymentLinkDialog, setPaymentLinkDialog] = useState(null);
+  const [confirmPaidDialog, setConfirmPaidDialog] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -173,6 +177,91 @@ export default function InvoicesPage() {
     }
   };
 
+  // Enviar factura por email al cliente
+  const handleSendEmail = async (invoice) => {
+    if (!invoice.client_email) {
+      toast.error('Esta factura no tiene email de cliente');
+      return;
+    }
+    
+    setLoadingActions(prev => ({ ...prev, [`email_${invoice.id}`]: true }));
+    
+    try {
+      const response = await base44.functions.invoke('sendInvoiceEmail', { 
+        invoiceId: invoice.id 
+      });
+      
+      if (response.data.error) {
+        toast.error(response.data.error);
+      } else {
+        toast.success(`📧 Factura enviada a ${invoice.client_email}`);
+        queryClient.invalidateQueries(['invoices']);
+      }
+    } catch (error) {
+      toast.error('Error al enviar la factura');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [`email_${invoice.id}`]: false }));
+    }
+  };
+
+  // Crear link de pago Stripe
+  const handleCreatePaymentLink = async (invoice) => {
+    // Si ya tiene link, mostrar diálogo para copiar/abrir
+    if (invoice.payment_link) {
+      setPaymentLinkDialog(invoice);
+      return;
+    }
+    
+    setLoadingActions(prev => ({ ...prev, [`stripe_${invoice.id}`]: true }));
+    
+    try {
+      const response = await base44.functions.invoke('createInvoicePayment', { 
+        invoiceId: invoice.id 
+      });
+      
+      if (response.data.error) {
+        toast.error(response.data.error);
+      } else {
+        toast.success('💳 Link de pago creado');
+        queryClient.invalidateQueries(['invoices']);
+        // Mostrar diálogo con el link
+        setPaymentLinkDialog({ ...invoice, payment_link: response.data.url });
+      }
+    } catch (error) {
+      toast.error('Error al crear link de pago');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [`stripe_${invoice.id}`]: false }));
+    }
+  };
+
+  // Marcar factura como pagada
+  const handleMarkAsPaid = (invoice) => {
+    setConfirmPaidDialog(invoice);
+  };
+
+  const confirmMarkAsPaid = async () => {
+    if (!confirmPaidDialog) return;
+    
+    try {
+      await base44.entities.Invoice.update(confirmPaidDialog.id, {
+        status: 'paid',
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: 'manual'
+      });
+      toast.success('✅ Factura marcada como pagada');
+      queryClient.invalidateQueries(['invoices']);
+    } catch (error) {
+      toast.error('Error al actualizar la factura');
+    } finally {
+      setConfirmPaidDialog(null);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Link copiado al portapapeles');
+  };
+
   if (loading || loadingSettings) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -220,6 +309,10 @@ export default function InvoicesPage() {
               onDownload={handleDownloadPDF}
               onDelete={(id) => deleteInvoiceMutation.mutate(id)}
               onStatusChange={(id, status) => changeStatusMutation.mutate({ id, status })}
+              onSendEmail={handleSendEmail}
+              onCreatePaymentLink={handleCreatePaymentLink}
+              onMarkAsPaid={handleMarkAsPaid}
+              loadingActions={loadingActions}
             />
           </TabsContent>
 
@@ -255,6 +348,93 @@ export default function InvoicesPage() {
             <InvoicePreview invoiceData={previewData} />
           </DialogContent>
         </Dialog>
+
+        {/* Diálogo link de pago */}
+        <Dialog open={!!paymentLinkDialog} onOpenChange={() => setPaymentLinkDialog(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <span className="text-2xl">💳</span> Link de pago Stripe
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <p className="text-sm text-purple-800 mb-2">
+                  <strong>Factura:</strong> {paymentLinkDialog?.invoice_number}
+                </p>
+                <p className="text-sm text-purple-800">
+                  <strong>Importe:</strong> {paymentLinkDialog?.total?.toFixed(2)}€
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-2">Link de pago:</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={paymentLinkDialog?.payment_link || ''}
+                    readOnly
+                    className="flex-1 text-xs bg-white border rounded px-2 py-1.5"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(paymentLinkDialog?.payment_link)}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => window.open(paymentLinkDialog?.payment_link, '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Abrir link
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    copyToClipboard(paymentLinkDialog?.payment_link);
+                    setPaymentLinkDialog(null);
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar y cerrar
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">
+                Comparte este link con tu cliente para que pague con tarjeta.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirmar marcar como pagada */}
+        <AlertDialog open={!!confirmPaidDialog} onOpenChange={() => setConfirmPaidDialog(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Marcar factura como pagada?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vas a marcar la factura <strong>{confirmPaidDialog?.invoice_number}</strong> como pagada manualmente.
+                <br /><br />
+                <strong>Importe:</strong> {confirmPaidDialog?.total?.toFixed(2)}€
+                <br />
+                <strong>Cliente:</strong> {confirmPaidDialog?.client_name}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmMarkAsPaid} className="bg-green-600 hover:bg-green-700">
+                Sí, marcar como pagada
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
