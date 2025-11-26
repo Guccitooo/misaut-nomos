@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { Plus, Trash2, Eye, Sparkles } from "lucide-react";
 import { useLanguage } from "../ui/LanguageSwitcher";
+import InvoiceAIAssistant from "./InvoiceAIAssistant";
 
 export default function InvoiceForm({ invoice, settings, clients = [], onSave, onCancel, onPreview }) {
   const { t } = useLanguage();
@@ -87,6 +88,31 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
     
     status: invoice?.status || "draft",
   });
+
+  const [showAIAssistant, setShowAIAssistant] = useState(true);
+
+  const handleSuggestionSelect = (suggestion) => {
+    // Buscar el primer item vacío o añadir uno nuevo
+    const emptyIndex = formData.items.findIndex(item => !item.description || item.description.trim() === '');
+    
+    if (emptyIndex >= 0) {
+      updateItem(emptyIndex, 'description', suggestion.description);
+      updateItem(emptyIndex, 'unit_price', suggestion.suggestedPrice);
+    } else {
+      const newItem = {
+        description: suggestion.description,
+        quantity: 1,
+        unit_price: suggestion.suggestedPrice,
+        discount_percent: 0,
+        iva_percent: settings?.iva_por_defecto || 21,
+        exenta_iva: false,
+        subtotal: suggestion.suggestedPrice,
+        iva_amount: suggestion.suggestedPrice * 0.21,
+        total: suggestion.suggestedPrice * 1.21
+      };
+      setFormData(prev => ({ ...prev, items: [...prev.items, calculateLineTotal(newItem)] }));
+    }
+  };
 
   const calculateLineTotal = (item) => {
     const subtotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
@@ -174,6 +200,14 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{invoice ? t('editInvoice') : t('newInvoice')}</h2>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+            className={showAIAssistant ? "bg-purple-50 text-purple-700 border-purple-300" : ""}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            IA
+          </Button>
           <Button variant="outline" onClick={onCancel}>
             {t('cancel')}
           </Button>
@@ -186,6 +220,17 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
           </Button>
         </div>
       </div>
+
+      {/* AI Assistant */}
+      {showAIAssistant && (
+        <InvoiceAIAssistant 
+          invoice={formData}
+          onSelectSuggestion={handleSuggestionSelect}
+          onClose={() => setShowAIAssistant(false)}
+          showValidation={true}
+          showSuggestions={true}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
