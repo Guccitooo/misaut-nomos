@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3 } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import InvoicePreview from "../components/invoicing/InvoicePreview";
 import InvoicesList from "../components/invoicing/InvoicesList";
 import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm";
 import InvoicingStats from "../components/invoicing/InvoicingStats";
+import InvoiceExportDialog from "../components/invoicing/InvoiceExportDialog";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function InvoicesPage() {
@@ -29,6 +30,7 @@ export default function InvoicesPage() {
   const [loadingActions, setLoadingActions] = useState({});
   const [paymentLinkDialog, setPaymentLinkDialog] = useState(null);
   const [confirmPaidDialog, setConfirmPaidDialog] = useState(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -328,10 +330,16 @@ export default function InvoicesPage() {
               <p className="text-gray-600 mt-1">{invoices.length} {t('invoicesTotal') || 'facturas totales'}</p>
             </div>
           </div>
-          <Button onClick={() => { setEditingInvoice(null); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            {t('newInvoice') || 'Nueva factura'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowExportDialog(true)}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </Button>
+            <Button onClick={() => { setEditingInvoice(null); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              {t('newInvoice') || 'Nueva factura'}
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="invoices" className="space-y-6">
@@ -466,6 +474,13 @@ export default function InvoicesPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Diálogo de exportación */}
+        <InvoiceExportDialog 
+          open={showExportDialog} 
+          onOpenChange={setShowExportDialog}
+          invoices={invoices}
+        />
 
         {/* Confirmar marcar como pagada */}
         <AlertDialog open={!!confirmPaidDialog} onOpenChange={() => setConfirmPaidDialog(null)}>
