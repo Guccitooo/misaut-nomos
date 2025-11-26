@@ -261,59 +261,82 @@ Deno.serve(async (req) => {
                     ? `¡Bienvenido! Disfruta 2 meses gratis con ${planName}` 
                     : `¡Tu suscripción a ${planName} está activa!`;
 
-                // ✅ Email de bienvenida profesional
+                // ✅ Email de bienvenida profesional (inicio de prueba)
+                const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+                const trialDays = isTrialing ? 60 : 0;
+                const renewalDate = new Date(subscription.current_period_end * 1000).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
                 await base44.asServiceRole.integrations.Core.SendEmail({
                     to: metadata.email,
-                    subject: planMessage,
+                    subject: isTrialing 
+                        ? `🎉 ¡Bienvenido a MisAutónomos! Tu prueba de ${trialDays} días ha comenzado`
+                        : `✅ ¡Tu suscripción a MisAutónomos está activa!`,
                     body: `
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
-    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
-    .content { padding: 40px 30px; }
-    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
-    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
-    .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 25px; margin: 25px 0; border-radius: 8px; }
-    .success-box h3 { color: #065f46; margin: 0 0 15px 0; font-size: 20px; }
-    .success-box p { color: #047857; margin: 5px 0; }
-    .cta { text-align: center; margin: 35px 0; }
-    .button { display: inline-block; background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
-    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
-    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
-    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 64px; height: 64px; margin: 0 auto 16px; }
+    .logo img { width: 100%; height: 100%; border-radius: 12px; }
+    .header h1 { color: white; margin: 0; font-size: 22px; font-weight: 700; }
+    .header p { color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 15px; }
+    .content { padding: 40px 32px; }
+    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 700; }
+    .message { color: #4b5563; line-height: 1.7; font-size: 15px; margin-bottom: 24px; }
+    .highlight-box { background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .highlight-box h3 { color: #047857; margin: 0 0 8px 0; font-size: 17px; }
+    .highlight-box p { color: #065f46; margin: 4px 0; font-size: 14px; }
+    .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .warning-box h3 { color: #b45309; margin: 0 0 8px 0; font-size: 17px; }
+    .warning-box p { color: #78350f; margin: 4px 0; font-size: 14px; }
+    .features { margin: 24px 0; list-style: none; padding: 0; }
+    .features li { color: #4b5563; margin-bottom: 10px; padding-left: 24px; position: relative; line-height: 1.5; font-size: 14px; }
+    .features li:before { content: '✓'; position: absolute; left: 0; color: #10b981; font-weight: bold; }
+    .cta { text-align: center; margin: 32px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white !important; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; }
+    .info-box { background: #f3f4f6; border-left: 4px solid #6b7280; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .info-box p { color: #4b5563; margin: 4px 0; font-size: 13px; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 28px; text-align: center; font-size: 13px; line-height: 1.6; }
     .footer a { color: #60a5fa; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">🎉</div>
-      <h1>${planMessage}</h1>
+      <div class="logo"><img src="${LOGO_URL}" alt="MisAutónomos" /></div>
+      <h1>${isTrialing ? '🎉 ¡Bienvenido a MisAutónomos!' : '✅ ¡Suscripción activa!'}</h1>
+      <p>${isTrialing ? 'Tu prueba gratuita ha comenzado' : 'Tu cuenta profesional está lista'}</p>
     </div>
-    
+
     <div class="content">
-      <p class="greeting">¡Hola ${metadata.fullName || metadata.email}!</p>
+      <p class="greeting">¡Hola ${metadata.fullName || metadata.email.split('@')[0]}!</p>
       
-      <div class="success-box">
-        <h3>✅ Pago confirmado</h3>
-        <p>Tu suscripción está activa. Ahora completa tu perfil para empezar.</p>
+      <div class="highlight-box">
+        <h3>${isTrialing ? `🎁 ${trialDays} días GRATIS sin compromiso` : '✅ Pago confirmado'}</h3>
+        <p>${isTrialing ? 'Tu cuenta profesional está activa. Tienes 60 días para probar todas las funcionalidades sin coste.' : 'Tu suscripción está activa y tu perfil ya es visible para clientes.'}</p>
       </div>
       
-      <p class="message">
-        <strong>📋 Detalles de tu plan:</strong>
-      </p>
-      <ul style="color: #4b5563; line-height: 1.8; margin-bottom: 25px;">
-        <li><strong>Plan:</strong> ${planName}</li>
-        <li><strong>Estado:</strong> ${isTrialing ? 'Prueba gratuita (2 meses)' : 'Activo'}</li>
-        <li><strong>Renovación:</strong> ${new Date(subscription.current_period_end * 1000).toLocaleDateString('es-ES')}</li>
+      <p class="message"><strong>¿Qué incluye tu ${isTrialing ? 'prueba gratuita' : 'suscripción'}?</strong></p>
+      
+      <ul class="features">
+        <li>Tu perfil visible en las búsquedas de clientes</li>
+        <li>Chat directo con clientes interesados</li>
+        <li>Galería de fotos ilimitada</li>
+        <li>Sistema de valoraciones y reseñas</li>
+        <li>CRM para gestionar tus clientes</li>
+        <li>Sistema de facturación integrado</li>
+        <li>Soporte 24/7 vía tickets</li>
       </ul>
+      
+      <div class="warning-box">
+        <h3>📋 Tu siguiente paso</h3>
+        <p>Completa tu perfil profesional para empezar a recibir clientes. Cuanto más completo, más visibilidad tendrás.</p>
+      </div>
       
       <div class="cta">
         <a href="https://misautonomos.es/ProfileOnboarding" class="button">
@@ -321,25 +344,36 @@ Deno.serve(async (req) => {
         </a>
       </div>
       
-      <p class="message" style="font-size: 14px; color: #6b7280; text-align: center;">
-        ¿Necesitas ayuda?<br/>
-        <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6; text-decoration: none;">soporte@misautonomos.es</a>
+      ${isTrialing ? `
+      <div class="info-box">
+        <p><strong>💳 ¿Y después de la prueba?</strong></p>
+        <p>Si decides continuar, la suscripción es de ${plan.precio}€/${plan.duracion_dias === 30 ? 'mes' : plan.duracion_dias === 90 ? 'trimestre' : 'año'}. Puedes cancelar en cualquier momento antes de que termine la prueba sin coste alguno.</p>
+        <p><strong>Fecha de renovación:</strong> ${renewalDate}</p>
+      </div>
+      ` : `
+      <div class="info-box">
+        <p><strong>📋 Detalles de tu plan:</strong></p>
+        <p><strong>Plan:</strong> ${planName}</p>
+        <p><strong>Próxima renovación:</strong> ${renewalDate}</p>
+      </div>
+      `}
+      
+      <p style="font-size: 13px; color: #6b7280; text-align: center;">
+        ¿Necesitas ayuda? <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6;">soporte@misautonomos.es</a>
       </p>
     </div>
-    
+
     <div class="footer">
-      <strong>Equipo Misautónomos</strong>
-      <p class="tagline">Tu autónomo de confianza</p>
-      <p>
-        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
-        <a href="https://misautonomos.es">misautonomos.es</a>
-      </p>
+      <strong style="color: #fff; font-size: 16px;">MisAutónomos</strong><br/>
+      <span style="color: #60a5fa; font-style: italic;">Tu autónomo de confianza</span><br/><br/>
+      <a href="https://misautonomos.es">misautonomos.es</a> · <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/><br/>
+      <a href="https://misautonomos.es/HelpCenter">Centro de ayuda</a> · <a href="https://misautonomos.es/PrivacyPolicy">Privacidad</a> · <a href="https://misautonomos.es/TermsConditions">Términos</a>
     </div>
   </div>
 </body>
 </html>
                         `,
-                    from_name: "Misautónomos"
+                    from_name: "MisAutónomos"
                 });
 
                 console.log('✅ ========== SUSCRIPCIÓN PROCESADA ==========');
@@ -467,6 +501,75 @@ Deno.serve(async (req) => {
 
                 if (subs.length > 0) {
                     const dbSub = subs[0];
+                    
+                    // Obtener usuario para enviar email
+                    const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
+                    if (users.length > 0) {
+                        const user = users[0];
+                        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
+                        const userName = profiles[0]?.business_name || user.full_name || user.email.split('@')[0];
+                        
+                        // Enviar email de pago fallido
+                        const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+                        
+                        await base44.asServiceRole.integrations.Core.SendEmail({
+                            to: user.email,
+                            subject: `⚠️ ${userName}, hubo un problema con tu pago`,
+                            body: `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 64px; height: 64px; margin: 0 auto 16px; }
+    .logo img { width: 100%; height: 100%; border-radius: 12px; }
+    .header h1 { color: white; margin: 0; font-size: 22px; font-weight: 700; }
+    .content { padding: 40px 32px; }
+    .greeting { font-size: 18px; color: #1f2937; margin-bottom: 16px; font-weight: 600; }
+    .message { color: #4b5563; line-height: 1.7; font-size: 15px; margin-bottom: 20px; }
+    .error-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+    .error-box h3 { color: #b91c1c; margin: 0 0 8px 0; font-size: 17px; }
+    .error-box p { color: #991b1b; margin: 4px 0; font-size: 14px; }
+    .cta { text-align: center; margin: 28px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white !important; padding: 14px 36px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 15px; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 24px; text-align: center; font-size: 12px; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo"><img src="${LOGO_URL}" alt="MisAutónomos" /></div>
+      <h1>⚠️ Problema con tu pago</h1>
+    </div>
+    <div class="content">
+      <p class="greeting">Hola ${userName},</p>
+      <div class="error-box">
+        <h3>❌ No hemos podido procesar tu pago</h3>
+        <p>Hubo un problema al cobrar tu suscripción. Tu perfil puede dejar de ser visible pronto.</p>
+      </div>
+      <p class="message">Esto puede ocurrir por: tarjeta caducada, fondos insuficientes o bloqueo temporal del banco.</p>
+      <p class="message"><strong>Actualiza tu método de pago</strong> para mantener tu perfil activo.</p>
+      <div class="cta">
+        <a href="https://misautonomos.es/SubscriptionManagement" class="button">Actualizar método de pago →</a>
+      </div>
+      <p style="font-size: 13px; color: #6b7280; text-align: center;">¿Crees que es un error? <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6;">Contacta con soporte</a></p>
+    </div>
+    <div class="footer">
+      <strong style="color: #fff;">MisAutónomos</strong> · <a href="https://misautonomos.es">misautonomos.es</a>
+    </div>
+  </div>
+</body>
+</html>
+                            `,
+                            from_name: "MisAutónomos"
+                        });
+                        console.log('📧 Email de pago fallido enviado a', user.email);
+                    }
                     
                     // Si ya expiró, ocultar
                     if (!isSubscriptionActive(subscription.status, subscription.current_period_end)) {
