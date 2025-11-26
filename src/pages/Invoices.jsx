@@ -158,22 +158,33 @@ export default function InvoicesPage() {
   };
 
   const handleDownloadPDF = async (invoice) => {
+    setLoadingActions(prev => ({ ...prev, [`pdf_${invoice.id}`]: true }));
     try {
       const response = await base44.functions.invoke('generateInvoicePDF', { invoiceId: invoice.id });
       
-      if (response.data.error) {
+      // Si la respuesta es un error JSON
+      if (response.data?.error) {
         toast.error(response.data.error);
         return;
       }
 
+      // El PDF viene como arraybuffer directamente
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = response.data.pdf_url;
+      link.href = url;
       link.download = `${invoice.invoice_number}.pdf`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast.success(t('pdfDownloaded') || 'PDF descargado');
     } catch (error) {
+      console.error('Error downloading PDF:', error);
       toast.error(t('errorGeneratingPDF') || 'Error al generar PDF');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [`pdf_${invoice.id}`]: false }));
     }
   };
 

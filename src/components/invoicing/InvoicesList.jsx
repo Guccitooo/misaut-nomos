@@ -204,8 +204,19 @@ export default function InvoicesList({
                     <Button variant="ghost" size="icon" onClick={() => onView(invoice)} title={t('view') || 'Ver'} className="h-8 w-8">
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDownload(invoice)} title={t('downloadPDF') || 'Descargar PDF'} className="h-8 w-8">
-                      <Download className="w-4 h-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onDownload(invoice)} 
+                      disabled={loadingActions[`pdf_${invoice.id}`]}
+                      title={t('downloadPDF') || 'Descargar PDF'} 
+                      className="h-8 w-8"
+                    >
+                      {loadingActions[`pdf_${invoice.id}`] ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
                     </Button>
                     {invoice.status === 'draft' && (
                       <Button variant="ghost" size="icon" onClick={() => onDelete(invoice.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8" title={t('delete') || 'Eliminar'}>
