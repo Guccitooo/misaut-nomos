@@ -111,23 +111,19 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return true;
   };
 
+  // Cargar usuario solo una vez al montar
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [loadUser]);
 
   useEffect(() => {
     if (user) {
       loadUnreadCount();
     }
-  }, [user]);
+  }, [user, loadUnreadCount]);
 
-  useEffect(() => {
-    if (location.pathname === createPageUrl("Search") || 
-        location.pathname === createPageUrl("MyProfile") ||
-        location.pathname === createPageUrl("ProfessionalDashboard")) {
-      loadUser();
-    }
-  }, [location.pathname]);
+  // Eliminado: No recargar usuario en cada cambio de ruta
+  // Los datos del usuario ya están cacheados en sessionStorage
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -142,36 +138,21 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const loadUser = React.useCallback(async () => {
     try {
+      // Cache más agresivo: 5 minutos
       const cached = sessionStorage.getItem('current_user');
       if (cached) {
         const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 60000) {
+        // 5 minutos de cache
+        if (Date.now() - timestamp < 300000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
           setLoadingUser(false);
-          
-          base44.auth.me().then(async (freshUser) => {
-            if (freshUser.user_type === "professionnel") {
-              const profiles = await base44.entities.ProfessionalProfile.filter({
-                user_id: freshUser.id
-              });
-              const profile = profiles[0] || null;
-              sessionStorage.setItem('current_user', JSON.stringify({
-                user: freshUser,
-                profile,
-                timestamp: Date.now()
-              }));
-              setUser(freshUser);
-              setProfessionalProfile(profile);
-            }
-          }).catch(() => {});
-          
           return;
         }
       }
-      
+
       const currentUser = await base44.auth.me();
-      
+
       if (currentUser && currentUser.user_type === "professionnel") {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
@@ -191,7 +172,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           timestamp: Date.now()
         }));
       }
-      
+
       setUser(currentUser);
     } catch (error) {
       setUser(null);
@@ -203,16 +184,19 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }, []);
 
   const loadUnreadCount = React.useCallback(async () => {
+    if (!user?.id) return;
+
     try {
+      // Cache de 2 minutos para mensajes no leídos
       const cached = sessionStorage.getItem('unread_count');
       if (cached) {
         const { count, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 30000) {
+        if (Date.now() - timestamp < 120000) {
           setUnreadCount(count);
           return;
         }
       }
-      
+
       const messages = await base44.entities.Message.filter({
         recipient_id: user.id,
         is_read: false
@@ -1091,7 +1075,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
-      <div style={{ overflow: 'hidden auto', height: '100vh' }}>
+      <div id="app-scroll-container" style={{ overflow: 'hidden auto', height: '100vh' }}>
         <LayoutContent children={children} currentPageName={currentPageName} />
       </div>
     </LanguageProvider>

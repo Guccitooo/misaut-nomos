@@ -1,16 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 export default function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
-  useEffect(() => {
-    // Small delay to prevent flash and ensure DOM is ready
-    const timer = setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, 0);
+  // useLayoutEffect se ejecuta ANTES del repintado del navegador
+  useLayoutEffect(() => {
+    // Scroll inmediato sin animación
+    window.scrollTo(0, 0);
     
-    return () => clearTimeout(timer);
+    // También hacer scroll en el contenedor principal si existe
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
+    
+    // Y en el contenedor principal de la app
+    const scrollContainer = document.getElementById('app-scroll-container');
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
+  }, [pathname, search]);
+
+  // Backup con useEffect por si acaso
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, [pathname]);
 
   return null;

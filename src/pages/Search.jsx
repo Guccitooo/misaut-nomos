@@ -351,7 +351,9 @@ export default function SearchPage() {
       return cats.length > 0 ? cats : [];
     },
     initialData: [],
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30, // 30 minutos - categorías cambian poco
+    gcTime: 1000 * 60 * 60, // 1 hora en cache
+    refetchOnWindowFocus: false,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -360,8 +362,9 @@ export default function SearchPage() {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       return allProfiles.filter(p => p.visible_en_busqueda === true && p.onboarding_completed === true);
     },
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+    gcTime: 1000 * 60 * 5, // 5 minutos en cache
+    refetchOnWindowFocus: false,
   });
 
   const { data: professionalUsers = [] } = useQuery({
@@ -373,6 +376,8 @@ export default function SearchPage() {
       return allUsers.filter(u => userIds.includes(u.id));
     },
     enabled: profiles.length > 0,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    refetchOnWindowFocus: false,
   });
 
   const { data: favorites = [] } = useQuery({
@@ -382,6 +387,8 @@ export default function SearchPage() {
       return await base44.entities.Favorite.filter({ client_id: user.id });
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+    refetchOnWindowFocus: false,
   });
 
   const filteredProfiles = React.useMemo(() => {
