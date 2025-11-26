@@ -990,9 +990,21 @@ export default function MyProfilePage() {
                       <div>
                         <Label className="flex items-center gap-2">
                           {profileData.cif_nif ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
-                          {t('nif')}
+                          NIF / CIF / NIE *
                         </Label>
-...
+                        <Input
+                          value={profileData.cif_nif || ""}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            setProfileData({ ...profileData, cif_nif: value });
+                          }}
+                          disabled={!isEditing}
+                          placeholder="12345678A o B12345678"
+                          maxLength={9}
+                        />
+                        {isEditing && profileData.cif_nif && profileData.cif_nif.length > 0 && profileData.cif_nif.length < 8 && (
+                          <p className="text-xs text-amber-600 mt-1">El NIF/CIF debe tener al menos 8 caracteres</p>
+                        )}
                       </div>
                       <div>
                         <Label className="flex items-center gap-2">
