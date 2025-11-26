@@ -111,31 +111,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return true;
   };
 
-  // Cargar usuario solo una vez al montar
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  useEffect(() => {
-    if (user) {
-      loadUnreadCount();
-    }
-  }, [user, loadUnreadCount]);
-
-  // Eliminado: No recargar usuario en cada cambio de ruta
-  // Los datos del usuario ya están cacheados en sessionStorage
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  const isProfessional = React.useMemo(() => {
-    if (!user) return false;
-    if (user.user_type === "professionnel") return true;
-    if (professionalProfile && professionalProfile.user_id === user.id) return true;
-    return false;
-  }, [user, professionalProfile]);
-
   const loadUser = React.useCallback(async () => {
     try {
       // Cache más agresivo: 5 minutos
@@ -211,6 +186,28 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       setUnreadCount(0);
     }
   }, [user?.id]);
+
+  // Cargar usuario solo una vez al montar
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  useEffect(() => {
+    if (user) {
+      loadUnreadCount();
+    }
+  }, [user, loadUnreadCount]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const isProfessional = React.useMemo(() => {
+    if (!user) return false;
+    if (user.user_type === "professionnel") return true;
+    if (professionalProfile && professionalProfile.user_id === user.id) return true;
+    return false;
+  }, [user, professionalProfile]);
 
   const handleLogout = () => {
     base44.auth.logout();
