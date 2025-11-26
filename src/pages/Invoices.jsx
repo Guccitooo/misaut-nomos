@@ -245,6 +245,38 @@ export default function InvoicesPage() {
     }
   };
 
+  // Enviar email con link de pago
+  const handleSendPaymentEmail = async (invoice) => {
+    if (!invoice.client_email) {
+      toast.error('Esta factura no tiene email de cliente');
+      return;
+    }
+    if (!invoice.payment_link) {
+      toast.error('Esta factura no tiene link de pago. Créalo primero.');
+      return;
+    }
+    
+    setLoadingActions(prev => ({ ...prev, [`payemail_${invoice.id}`]: true }));
+    
+    try {
+      const response = await base44.functions.invoke('sendInvoiceEmail', { 
+        invoiceId: invoice.id,
+        includePaymentLink: true
+      });
+      
+      if (response.data.error) {
+        toast.error(response.data.error);
+      } else {
+        toast.success(`💳 Enlace de pago enviado a ${invoice.client_email}`);
+        queryClient.invalidateQueries(['invoices']);
+      }
+    } catch (error) {
+      toast.error('Error al enviar el enlace de pago');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [`payemail_${invoice.id}`]: false }));
+    }
+  };
+
   // Marcar factura como pagada
   const handleMarkAsPaid = (invoice) => {
     setConfirmPaidDialog(invoice);
@@ -322,6 +354,7 @@ export default function InvoicesPage() {
               onStatusChange={(id, status) => changeStatusMutation.mutate({ id, status })}
               onSendEmail={handleSendEmail}
               onCreatePaymentLink={handleCreatePaymentLink}
+              onSendPaymentEmail={handleSendPaymentEmail}
               onMarkAsPaid={handleMarkAsPaid}
               loadingActions={loadingActions}
             />

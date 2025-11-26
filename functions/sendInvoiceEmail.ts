@@ -1,4 +1,136 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { jsPDF } from 'npm:jspdf@2.5.1';
+
+// Función para generar PDF de la factura
+async function generateInvoicePDF(invoice) {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let yPos = 20;
+
+  // Título FACTURA
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+  doc.text('FACTURA', 15, yPos);
+  
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'normal');
+  doc.text(invoice.invoice_number, 15, yPos + 8);
+  yPos += 20;
+
+  // Emisor y Cliente
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.text('EMISOR', 15, yPos);
+  doc.text('CLIENTE', pageWidth - 80, yPos);
+  yPos += 5;
+
+  doc.setFont(undefined, 'normal');
+  const emisorLines = [
+    invoice.emisor_razon_social,
+    `NIF/CIF: ${invoice.emisor_nif || 'N/A'}`,
+    invoice.emisor_direccion,
+    `${invoice.emisor_cp || ''} ${invoice.emisor_ciudad || ''}`,
+    invoice.emisor_telefono ? `Tel: ${invoice.emisor_telefono}` : null,
+    invoice.emisor_email ? `Email: ${invoice.emisor_email}` : null,
+  ].filter(Boolean);
+
+  const clientLines = [
+    invoice.client_name,
+    invoice.client_nif ? `NIF/CIF: ${invoice.client_nif}` : null,
+    invoice.client_address,
+    invoice.client_email ? `Email: ${invoice.client_email}` : null,
+  ].filter(Boolean);
+
+  const maxLines = Math.max(emisorLines.length, clientLines.length);
+  for (let i = 0; i < maxLines; i++) {
+    if (emisorLines[i]) doc.text(emisorLines[i], 15, yPos);
+    if (clientLines[i]) doc.text(clientLines[i], pageWidth - 80, yPos);
+    yPos += 5;
+  }
+
+  yPos += 10;
+
+  // Fechas
+  doc.setFont(undefined, 'bold');
+  doc.text(`Fecha emisión: `, 15, yPos);
+  doc.setFont(undefined, 'normal');
+  doc.text(new Date(invoice.issue_date).toLocaleDateString('es-ES'), 50, yPos);
+  
+  doc.setFont(undefined, 'bold');
+  doc.text(`Vencimiento: `, 15, yPos + 5);
+  doc.setFont(undefined, 'normal');
+  doc.text(new Date(invoice.due_date).toLocaleDateString('es-ES'), 50, yPos + 5);
+  yPos += 15;
+
+  // Tabla de conceptos
+  doc.setFillColor(240, 240, 240);
+  doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+  
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(8);
+  doc.text('DESCRIPCIÓN', 17, yPos + 5);
+  doc.text('CANT.', pageWidth - 100, yPos + 5, { align: 'center' });
+  doc.text('P. UNIT.', pageWidth - 70, yPos + 5, { align: 'right' });
+  doc.text('TOTAL', pageWidth - 20, yPos + 5, { align: 'right' });
+  yPos += 10;
+
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(9);
+  
+  (invoice.items || []).forEach((item) => {
+    const desc = doc.splitTextToSize(item.description || '', 90);
+    doc.text(desc, 17, yPos);
+    doc.text(String(item.quantity || 0), pageWidth - 100, yPos, { align: 'center' });
+    doc.text(`${(item.unit_price || 0).toFixed(2)}€`, pageWidth - 70, yPos, { align: 'right' });
+    doc.text(`${(item.total || 0).toFixed(2)}€`, pageWidth - 20, yPos, { align: 'right' });
+    yPos += desc.length * 5 + 3;
+  });
+
+  yPos += 10;
+
+  // Totales
+  const summaryX = pageWidth - 80;
+  doc.setDrawColor(200);
+  doc.line(summaryX - 5, yPos - 5, pageWidth - 15, yPos - 5);
+  
+  doc.text('Base imponible:', summaryX, yPos);
+  doc.text(`${(invoice.subtotal || 0).toFixed(2)}€`, pageWidth - 20, yPos, { align: 'right' });
+  yPos += 6;
+
+  doc.text('Total IVA:', summaryX, yPos);
+  doc.text(`${(invoice.total_iva || 0).toFixed(2)}€`, pageWidth - 20, yPos, { align: 'right' });
+  yPos += 6;
+
+  if (invoice.aplica_retencion) {
+    doc.text(`Retención IRPF (${invoice.porcentaje_retencion}%):`, summaryX, yPos);
+    doc.text(`-${(invoice.total_retencion || 0).toFixed(2)}€`, pageWidth - 20, yPos, { align: 'right' });
+    yPos += 6;
+  }
+
+  doc.setLineWidth(0.5);
+  doc.line(summaryX - 5, yPos, pageWidth - 15, yPos);
+  yPos += 6;
+
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(12);
+  doc.text('TOTAL:', summaryX, yPos);
+  doc.text(`${(invoice.total || 0).toFixed(2)}€`, pageWidth - 20, yPos, { align: 'right' });
+  yPos += 10;
+
+  // IBAN
+  if (invoice.emisor_iban) {
+    doc.setFillColor(245, 245, 245);
+    doc.rect(15, yPos, pageWidth - 30, 12, 'F');
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(8);
+    doc.text('DATOS BANCARIOS:', 17, yPos + 4);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(invoice.emisor_iban, 17, yPos + 9);
+  }
+
+  return doc.output('base64');
+}
 
 Deno.serve(async (req) => {
   try {
@@ -9,7 +141,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { invoiceId } = await req.json();
+    const { invoiceId, includePaymentLink } = await req.json();
 
     const invoices = await base44.entities.Invoice.filter({ id: invoiceId });
     const invoice = invoices[0];
@@ -42,14 +174,18 @@ Deno.serve(async (req) => {
       </tr>
     `).join('');
 
+    // Generar PDF de la factura
+    const pdfBase64 = await generateInvoicePDF(invoice);
+
     // Botón de pago si existe link de Stripe
     const paymentButtonHTML = invoice.payment_link ? `
-      <div style="text-align: center; margin: 32px 0;">
+      <div style="text-align: center; margin: 32px 0; padding: 24px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px;">
+        <p style="font-size: 16px; color: #047857; margin: 0 0 16px 0; font-weight: 600;">💳 Paga cómodamente con tarjeta</p>
         <a href="${invoice.payment_link}" 
-           style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px;">
-          💳 Pagar factura online →
+           style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);">
+          Pagar ${(invoice.total || 0).toFixed(2)}€ →
         </a>
-        <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">Pago seguro con tarjeta de crédito/débito</p>
+        <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">Pago 100% seguro con Stripe</p>
       </div>
     ` : '';
 
@@ -192,11 +328,21 @@ Deno.serve(async (req) => {
 </html>
     `;
 
-    // Enviar email
+    // Enviar email con PDF adjunto
     await base44.integrations.Core.SendEmail({
       to: invoice.client_email,
-      subject: `📄 Factura ${invoice.invoice_number} de ${professionalName}`,
-      body: emailBody
+      subject: invoice.payment_link && includePaymentLink 
+        ? `💳 Paga tu factura ${invoice.invoice_number} - ${professionalName}`
+        : `📄 Factura ${invoice.invoice_number} de ${professionalName}`,
+      body: emailBody,
+      attachments: [
+        {
+          filename: `${invoice.invoice_number}.pdf`,
+          content: pdfBase64,
+          encoding: 'base64',
+          contentType: 'application/pdf'
+        }
+      ]
     });
 
     // Actualizar estado de la factura

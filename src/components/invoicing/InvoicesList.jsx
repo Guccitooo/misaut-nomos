@@ -23,6 +23,7 @@ export default function InvoicesList({
   onStatusChange,
   onSendEmail,
   onCreatePaymentLink,
+  onSendPaymentEmail,
   onMarkAsPaid,
   loadingActions = {}
 }) {
@@ -168,6 +169,28 @@ export default function InvoicesList({
                         <span className="hidden md:inline ml-1 text-xs">
                           {invoice.payment_link ? 'Link' : 'Stripe'}
                         </span>
+                      </Button>
+                    )}
+                    
+                    {/* Enviar link de pago por email */}
+                    {invoice.status !== 'paid' && invoice.payment_link && invoice.client_email && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onSendPaymentEmail(invoice)}
+                        disabled={loadingActions[`payemail_${invoice.id}`]}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 px-2"
+                        title="Enviar enlace de pago por email"
+                      >
+                        {loadingActions[`payemail_${invoice.id}`] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4" />
+                            <CreditCard className="w-3 h-3 -ml-1" />
+                          </>
+                        )}
+                        <span className="hidden md:inline ml-1 text-xs">Cobrar</span>
                       </Button>
                     )}
                     
