@@ -234,6 +234,28 @@ Deno.serve(async (req) => {
                     throw subError; // Re-throw to be caught by the main try-catch
                 }
 
+                // LOG TRIAL USAGE
+                if (metadata.trial_offered === 'true') {
+                    const nifHash = metadata.nif_cif ? createHash('sha256').update(metadata.nif_cif).digest('hex') : null;
+                    const phoneHash = metadata.telefono_contacto ? createHash('sha256').update(metadata.telefono_contacto).digest('hex') : null;
+
+                    if (nifHash) {
+                        await base44.asServiceRole.entities.TrialUsageLog.create({
+                            identifier_type: 'nif',
+                            identifier_hash: nifHash,
+                            user_id: userId
+                        }).catch(e => console.log('Log NIF ya existe, omitiendo.'));
+                    }
+                    if (phoneHash) {
+                         await base44.asServiceRole.entities.TrialUsageLog.create({
+                            identifier_type: 'phone',
+                            identifier_hash: phoneHash,
+                            user_id: userId
+                        }).catch(e => console.log('Log Teléfono ya existe, omitiendo.'));
+                    }
+                    console.log('✅ Log de prueba gratuita guardado para NIF y/o teléfono.');
+                }
+
                 console.log('5️⃣ Actualizando perfil profesional si existe...');
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
                     user_id: userId
