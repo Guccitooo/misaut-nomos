@@ -119,9 +119,11 @@ Deno.serve(async (req) => {
 
     // ✅ CONFIGURAR URLs
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
+    
+    // Si es nuevo usuario (no reactivación), redirigir al cuestionario de onboarding
     const successUrl = isReactivation 
       ? `${baseUrl}/MyProfile?reactivation=success`
-      : `${baseUrl}/MyProfile?subscription=pending`;
+      : `${baseUrl}/ProfileOnboarding?payment=success`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
