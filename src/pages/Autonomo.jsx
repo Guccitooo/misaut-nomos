@@ -26,7 +26,10 @@ import {
   Check,
   ArrowLeft,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  BadgeCheck,
+  Briefcase
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -483,8 +486,8 @@ export default function AutonomoPage() {
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100 mt-3">
                 {profile.years_experience > 0 && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
-                    <Award className="w-3.5 h-3.5 mr-1.5" />
-                    {profile.years_experience} años experiencia
+                    <Briefcase className="w-3.5 h-3.5 mr-1.5" />
+                    {profile.years_experience} años de experiencia
                   </Badge>
                 )}
                 {profile.tarifa_base > 0 && (
@@ -496,6 +499,48 @@ export default function AutonomoPage() {
               </div>
             )}
           </Card>
+
+          {/* HABILIDADES */}
+          {profile.skills && profile.skills.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                Habilidades
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.skills.map((skill, idx) => (
+                  <Badge 
+                    key={idx} 
+                    className="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 text-sm"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1.5" />
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* CERTIFICACIONES */}
+          {profile.certifications && profile.certifications.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <BadgeCheck className="w-4 h-4 text-amber-600" />
+                Certificaciones y Títulos
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.certifications.map((cert, idx) => (
+                  <Badge 
+                    key={idx} 
+                    className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 text-sm"
+                  >
+                    <Award className="w-3 h-3 mr-1.5" />
+                    {cert}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* GALERÍA */}
           {profile.photos && profile.photos.length > 0 && (
