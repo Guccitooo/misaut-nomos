@@ -475,7 +475,7 @@ export default function AutonomoPage() {
             {profile.descripcion_corta && (
               <p className="text-sm text-gray-700 mb-3">{profile.descripcion_corta}</p>
             )}
-            {profile.description && (
+            {profile.description && profile.description !== profile.descripcion_corta && (
               <p className="text-sm text-gray-600">{profile.description}</p>
             )}
 

@@ -19,11 +19,13 @@ import {
   ChevronRight,
   TrendingUp,
   HelpCircle,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
 import { FAQPageSchema } from "../components/seo/StructuredData";
+import PublicTicketForm from "../components/support/PublicTicketForm";
 
 const categoryConfig = {
   platform: {
@@ -284,21 +286,19 @@ export default function HelpCenterPage() {
             </div>
           </div>
 
-          <div className="mt-12 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-8 border-2 border-blue-200">
-            <div className="text-center max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                {language === 'es' ? '¿No encuentras lo que buscas?' : "Can't find what you're looking for?"}
-              </h3>
-              <p className="text-gray-700 mb-6">
-                {language === 'es' 
-                  ? 'Nuestro equipo de soporte está aquí para ayudarte'
-                  : 'Our support team is here to help you'}
-              </p>
-              <a href="mailto:soporte@misautonomos.es">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                  {language === 'es' ? 'Contactar soporte' : 'Contact support'}
-                </Button>
-              </a>
+          {/* FORMULARIO DE CONTACTO PÚBLICO */}
+          <div className="mt-12" id="contact-form">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+              <MessageSquare className="w-8 h-8 text-blue-600" />
+              {language === 'es' ? '¿No encuentras lo que buscas?' : "Can't find what you're looking for?"}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {language === 'es' 
+                ? 'Envíanos tu consulta y te responderemos lo antes posible'
+                : 'Send us your inquiry and we will respond as soon as possible'}
+            </p>
+            <div className="max-w-2xl">
+              <PublicTicketForm language={language} />
             </div>
           </div>
         </div>
