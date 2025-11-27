@@ -29,6 +29,9 @@ import ProfileCompleteness from "../components/profile/ProfileCompleteness";
 import PremiumDashboard from "../components/premium/PremiumDashboard";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm";
+import SkillsSection from "../components/profile/SkillsSection";
+import PortfolioSection from "../components/profile/PortfolioSection";
+import FAQSection from "../components/profile/FAQSection";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -155,6 +158,9 @@ export default function MyProfilePage() {
     metodos_contacto: ['chat_interno'],
     years_experience: "",
     certifications: [],
+    skills: [],
+    portfolio_items: [],
+    faq_items: [],
   });
 
   const [newCertification, setNewCertification] = useState("");
@@ -371,6 +377,9 @@ export default function MyProfilePage() {
         metodos_contacto: profile.metodos_contacto || ['chat_interno'],
         years_experience: profile.years_experience || "",
         certifications: profile.certifications || [],
+        skills: profile.skills || [],
+        portfolio_items: profile.portfolio_items || [],
+        faq_items: profile.faq_items || [],
       });
     }
   }, [profile]);
@@ -812,24 +821,37 @@ export default function MyProfilePage() {
         )}
 
         <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 bg-white shadow-md">
+          <TabsList className={`grid w-full ${isProfessional ? 'grid-cols-3 lg:grid-cols-6' : 'grid-cols-1'} bg-white shadow-md`}>
             <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
-              {t('personalInformation')}
+              <span className="hidden sm:inline">{t('personalInformation')}</span>
+              <span className="sm:hidden">Personal</span>
             </TabsTrigger>
             {isProfessional && (
               <>
                 <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Building2 className="w-4 h-4 mr-2" />
-                  {t('professionalProfile')}
+                  <span className="hidden sm:inline">{t('professionalProfile')}</span>
+                  <span className="sm:hidden">Perfil</span>
+                </TabsTrigger>
+                <TabsTrigger value="skills" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <Award className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Habilidades</span>
+                  <span className="sm:hidden">Skills</span>
                 </TabsTrigger>
                 <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Camera className="w-4 h-4 mr-2" />
                   {t('portfolio')}
                 </TabsTrigger>
+                <TabsTrigger value="faq" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">FAQ</span>
+                  <span className="sm:hidden">FAQ</span>
+                </TabsTrigger>
                 <TabsTrigger value="invoicing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <Euro className="w-4 h-4 mr-2" />
-                  {t('invoicingData') || 'Datos facturación'}
+                  <span className="hidden sm:inline">{t('invoicingData') || 'Facturación'}</span>
+                  <span className="sm:hidden">Fact.</span>
                 </TabsTrigger>
               </>
             )}
@@ -1275,16 +1297,40 @@ export default function MyProfilePage() {
           )}
 
           {isProfessional && (
+            <TabsContent value="skills">
+              <SkillsSection
+                skills={profileData.skills || []}
+                certifications={profileData.certifications || []}
+                yearsExperience={profileData.years_experience}
+                isEditing={isEditing}
+                onSkillsChange={(skills) => setProfileData({ ...profileData, skills })}
+                onCertificationsChange={(certifications) => setProfileData({ ...profileData, certifications })}
+                onYearsChange={(years) => setProfileData({ ...profileData, years_experience: years })}
+              />
+            </TabsContent>
+          )}
+
+          {isProfessional && (
             <TabsContent value="portfolio">
               <div className="space-y-6">
+                {/* Portfolio de trabajos con descripciones */}
+                <PortfolioSection
+                  portfolioItems={profileData.portfolio_items || []}
+                  isEditing={isEditing}
+                  onPortfolioChange={(items) => setProfileData({ ...profileData, portfolio_items: items })}
+                  categories={categories}
+                />
+
+                {/* Galería simple de fotos */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Camera className="w-5 h-5 text-blue-700" />
-                      {t('portfolio')} ({profileData.photos.length}/10)
+                      Galería de Fotos ({profileData.photos.length}/10)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">Fotos adicionales de tus trabajos</p>
 
                   {isEditing && profileData.photos.length < 10 && (
                     <label className="cursor-pointer block">
@@ -1471,7 +1517,17 @@ export default function MyProfilePage() {
                   </Card>
                   </div>
                   </TabsContent>
-                  )}
+          )}
+
+          {isProfessional && (
+            <TabsContent value="faq">
+              <FAQSection
+                faqItems={profileData.faq_items || []}
+                isEditing={isEditing}
+                onFAQChange={(items) => setProfileData({ ...profileData, faq_items: items })}
+              />
+            </TabsContent>
+          )}
 
           {isProfessional && (
             <TabsContent value="invoicing">
