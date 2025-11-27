@@ -128,7 +128,9 @@ export default function ProfileOnboardingPage() {
     queryKey: ['categories'],
     queryFn: async () => {
       const cats = await base44.entities.ServiceCategory.list();
-      return cats.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      return cats
+        .filter(c => c.name)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
     },
     staleTime: 1000 * 60 * 30,
   });

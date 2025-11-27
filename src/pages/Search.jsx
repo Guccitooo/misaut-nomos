@@ -349,7 +349,9 @@ export default function SearchPage() {
     queryFn: async () => {
       const cats = await base44.entities.ServiceCategory.list();
       // Ordenar alfabéticamente considerando tildes y ñ
-      return cats.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      return cats
+        .filter(c => c.name)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
     },
     initialData: [],
     staleTime: 1000 * 60 * 30,
