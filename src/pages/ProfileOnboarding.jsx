@@ -397,7 +397,11 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
-      toast.success("¡Perfil completado y publicado con éxito!");
+      if (shouldBeVisible) {
+        toast.success("¡Perfil completado y publicado con éxito! Ya eres visible para clientes.");
+      } else {
+        toast.warning("Perfil guardado. Activa tu suscripción para ser visible en búsquedas.");
+      }
 
       setTimeout(() => {
         navigate(createPageUrl("MyProfile") + "?onboarding=completed");
