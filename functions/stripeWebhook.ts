@@ -147,9 +147,9 @@ Deno.serve(async (req) => {
                 console.log('✅ Suscripción creada');
             }
 
-            // ✅ ACTUALIZAR USUARIO
+            // ✅ ACTUALIZAR USUARIO - CRÍTICO: Cambiar a profesional
             const userUpdateData = {
-                user_type: 'professionnel',
+                user_type: 'professionnel',  // ✅ SIEMPRE cambiar a profesional al pagar
                 subscription_status: profileStatus.estado,
                 subscription_start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString().split('T')[0],
                 subscription_end_date: new Date(stripeSubscription.current_period_end * 1000).toISOString().split('T')[0]
@@ -159,8 +159,9 @@ Deno.serve(async (req) => {
                 userUpdateData.has_used_trial = true;
             }
 
+            console.log('📝 Actualizando usuario con:', userUpdateData);
             await base44.asServiceRole.entities.User.update(userId, userUpdateData);
-            console.log('✅ Usuario actualizado');
+            console.log('✅ Usuario actualizado a user_type: professionnel');
 
             // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });

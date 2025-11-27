@@ -390,8 +390,49 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
+      // 1. Obtener perfiles visibles con onboarding completado
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      return allProfiles.filter(p => p.visible_en_busqueda === true && p.onboarding_completed === true);
+      const visibleProfiles = allProfiles.filter(p => 
+        p.visible_en_busqueda === true && 
+        p.onboarding_completed === true
+      );
+      
+      if (visibleProfiles.length === 0) return [];
+      
+      // 2. Obtener todas las suscripciones activas
+      const allSubscriptions = await base44.entities.Subscription.list();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // 3. Crear set de user_ids con suscripción válida
+      const activeUserIds = new Set();
+      allSubscriptions.forEach(sub => {
+        const estado = sub.estado?.toLowerCase();
+        const fechaExp = new Date(sub.fecha_expiracion);
+        fechaExp.setHours(0, 0, 0, 0);
+        
+        // Suscripción activa: estado válido Y no expirada
+        const isActive = (
+          estado === 'activo' || 
+          estado === 'active' || 
+          estado === 'en_prueba' || 
+          estado === 'trialing' || 
+          estado === 'trial_active'
+        ) && fechaExp >= today;
+        
+        // Cancelada pero no expirada también cuenta
+        const isCanceledButValid = (
+          estado === 'cancelado' || 
+          estado === 'canceled'
+        ) && fechaExp >= today;
+        
+        if (isActive || isCanceledButValid) {
+          activeUserIds.add(sub.user_id);
+        }
+      });
+      
+      // 4. Filtrar perfiles: solo los que tienen suscripción válida
+      return visibleProfiles.filter(p => activeUserIds.has(p.user_id));
     },
     staleTime: 1000 * 60 * 2, // 2 minutos
     gcTime: 1000 * 60 * 5, // 5 minutos en cache
