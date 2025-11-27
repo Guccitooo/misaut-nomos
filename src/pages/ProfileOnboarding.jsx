@@ -305,9 +305,32 @@ export default function ProfileOnboardingPage() {
         user_id: user.id
       });
 
-      // Si ya existe perfil (creado por webhook de Stripe), mantener visible_en_busqueda
       const existingProfile = existingProfiles[0];
-      const shouldBeVisible = existingProfile ? existingProfile.visible_en_busqueda : true;
+
+      // ✅ Verificar si hay suscripción activa para determinar visibilidad
+      let shouldBeVisible = true; // Por defecto visible si pagó
+      try {
+        const subs = await base44.entities.Subscription.filter({ user_id: user.id });
+        if (subs.length > 0) {
+          const sub = subs[0];
+          const estado = sub.estado?.toLowerCase();
+          const fechaExp = new Date(sub.fecha_expiracion);
+          const today = new Date();
+          
+          // Suscripción activa = visible
+          if ((estado === 'activo' || estado === 'en_prueba' || estado === 'trialing' || estado === 'active') && fechaExp >= today) {
+            shouldBeVisible = true;
+          } else if (estado === 'cancelado' && fechaExp >= today) {
+            shouldBeVisible = true;
+          } else {
+            shouldBeVisible = false;
+          }
+        }
+      } catch (e) {
+        console.log('Error verificando suscripción:', e);
+        // Si hay error, mantener visible si el perfil ya existía visible
+        shouldBeVisible = existingProfile?.visible_en_busqueda ?? true;
+      }
 
       const profileData = {
         user_id: user.id,
@@ -340,7 +363,7 @@ export default function ProfileOnboardingPage() {
         average_rating: 0,
         total_reviews: 0,
         estado_perfil: "activo",
-        visible_en_busqueda: shouldBeVisible, // Mantener el valor del webhook si existe
+        visible_en_busqueda: shouldBeVisible,
         onboarding_completed: true,
         acepta_terminos: formData.acepta_terminos,
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
@@ -355,6 +378,7 @@ export default function ProfileOnboardingPage() {
         await base44.entities.ProfessionalProfile.create(profileData);
       }
 
+      // ✅ SIEMPRE actualizar user_type a professionnel al completar onboarding
       await base44.auth.updateMe({
         user_type: "professionnel",
         full_name: formData.business_name

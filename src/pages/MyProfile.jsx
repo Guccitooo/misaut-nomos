@@ -717,8 +717,10 @@ export default function MyProfilePage() {
   const isProfessional = (profile && profile.onboarding_completed) || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
   
-  // El perfil está visible si: tiene suscripción activa Y visible_en_busqueda = true
-  const isProfileVisible = profile?.visible_en_busqueda === true && subscriptionStatus?.isActive;
+  // El perfil está visible si: tiene suscripción activa Y visible_en_busqueda = true Y onboarding completado
+  const isProfileVisible = profile?.visible_en_busqueda === true && 
+                           subscriptionStatus?.isActive && 
+                           profile?.onboarding_completed === true;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
