@@ -301,6 +301,14 @@ export default function ProfileOnboardingPage() {
         ? `${formData.ciudad}, ${formData.provincia}`
         : formData.provincia;
 
+      const existingProfiles = await base44.entities.ProfessionalProfile.filter({
+        user_id: user.id
+      });
+
+      // Si ya existe perfil (creado por webhook de Stripe), mantener visible_en_busqueda
+      const existingProfile = existingProfiles[0];
+      const shouldBeVisible = existingProfile ? existingProfile.visible_en_busqueda : true;
+
       const profileData = {
         user_id: user.id,
         business_name: formData.business_name,
@@ -332,7 +340,7 @@ export default function ProfileOnboardingPage() {
         average_rating: 0,
         total_reviews: 0,
         estado_perfil: "activo",
-        visible_en_busqueda: false, // Se activa en el webhook de Stripe cuando paga
+        visible_en_busqueda: shouldBeVisible, // Mantener el valor del webhook si existe
         onboarding_completed: true,
         acepta_terminos: formData.acepta_terminos,
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
@@ -341,12 +349,8 @@ export default function ProfileOnboardingPage() {
         certifications: []
       };
 
-      const existingProfiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: user.id
-      });
-
-      if (existingProfiles.length > 0) {
-        await base44.entities.ProfessionalProfile.update(existingProfiles[0].id, profileData);
+      if (existingProfile) {
+        await base44.entities.ProfessionalProfile.update(existingProfile.id, profileData);
       } else {
         await base44.entities.ProfessionalProfile.create(profileData);
       }
