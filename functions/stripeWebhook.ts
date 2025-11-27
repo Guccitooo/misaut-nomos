@@ -162,14 +162,26 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.User.update(userId, userUpdateData);
             console.log('✅ Usuario actualizado');
 
-            // ✅ ACTUALIZAR PERFIL PROFESIONAL SI EXISTE
+            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
             if (profiles.length > 0) {
+                // Actualizar perfil existente - SIEMPRE activar después de pago
                 await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    visible_en_busqueda: profileStatus.visible_en_busqueda,
-                    estado_perfil: profileStatus.estado_perfil
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo'
                 });
-                console.log('✅ Perfil actualizado - Visible:', profileStatus.visible_en_busqueda);
+                console.log('✅ Perfil existente actualizado - Visible: true');
+            } else {
+                // Crear perfil básico si no existe
+                await base44.asServiceRole.entities.ProfessionalProfile.create({
+                    user_id: userId,
+                    business_name: userEmail.split('@')[0],
+                    email_contacto: userEmail,
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    onboarding_completed: false
+                });
+                console.log('✅ Perfil nuevo creado - Visible: true');
             }
 
             // ✅ ENVIAR EMAIL DE BIENVENIDA
