@@ -307,8 +307,8 @@ export default function ProfileOnboardingPage() {
 
       const existingProfile = existingProfiles[0];
 
-      // ✅ Verificar si hay suscripción activa para determinar visibilidad
-      let shouldBeVisible = true; // Por defecto visible si pagó
+      // ✅ CRÍTICO: Verificar suscripción activa - El perfil DEBE ser visible si tiene suscripción válida
+      let shouldBeVisible = false;
       try {
         const subs = await base44.entities.Subscription.filter({ user_id: user.id });
         if (subs.length > 0) {
@@ -316,20 +316,33 @@ export default function ProfileOnboardingPage() {
           const estado = sub.estado?.toLowerCase();
           const fechaExp = new Date(sub.fecha_expiracion);
           const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          fechaExp.setHours(0, 0, 0, 0);
           
-          // Suscripción activa = visible
-          if ((estado === 'activo' || estado === 'en_prueba' || estado === 'trialing' || estado === 'active') && fechaExp >= today) {
-            shouldBeVisible = true;
-          } else if (estado === 'cancelado' && fechaExp >= today) {
-            shouldBeVisible = true;
-          } else {
-            shouldBeVisible = false;
-          }
+          // Suscripción válida = SIEMPRE visible
+          const isActiveSubscription = (
+            estado === 'activo' || 
+            estado === 'active' || 
+            estado === 'en_prueba' || 
+            estado === 'trialing' ||
+            estado === 'trial_active'
+          ) && fechaExp >= today;
+          
+          const isCanceledButValid = (
+            estado === 'cancelado' || 
+            estado === 'canceled'
+          ) && fechaExp >= today;
+          
+          shouldBeVisible = isActiveSubscription || isCanceledButValid;
+          console.log('✅ Suscripción verificada:', estado, 'Visible:', shouldBeVisible);
+        } else {
+          // Sin suscripción = NO visible
+          shouldBeVisible = false;
+          console.log('⚠️ Sin suscripción encontrada - Perfil NO será visible');
         }
       } catch (e) {
         console.log('Error verificando suscripción:', e);
-        // Si hay error, mantener visible si el perfil ya existía visible
-        shouldBeVisible = existingProfile?.visible_en_busqueda ?? true;
+        shouldBeVisible = false; // Por seguridad, no mostrar sin suscripción verificada
       }
 
       const profileData = {

@@ -163,26 +163,31 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.User.update(userId, userUpdateData);
             console.log('✅ Usuario actualizado a user_type: professionnel');
 
-            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL
+            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL - CRÍTICO: SIEMPRE visible después de pago
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
             if (profiles.length > 0) {
-                // Actualizar perfil existente - SIEMPRE activar después de pago
-                await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    visible_en_busqueda: true,
+                const existingProfile = profiles[0];
+                // SIEMPRE activar después de pago exitoso
+                // Si onboarding está completado -> visible inmediatamente
+                // Si onboarding no está completado -> visible pero esperando datos
+                const shouldBeVisible = existingProfile.onboarding_completed === true;
+                
+                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
+                    visible_en_busqueda: shouldBeVisible,
                     estado_perfil: 'activo'
                 });
-                console.log('✅ Perfil existente actualizado - Visible: true');
+                console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (onboarding: ${existingProfile.onboarding_completed})`);
             } else {
-                // Crear perfil básico si no existe
+                // Crear perfil básico - NO visible hasta completar onboarding
                 await base44.asServiceRole.entities.ProfessionalProfile.create({
                     user_id: userId,
                     business_name: userEmail.split('@')[0],
                     email_contacto: userEmail,
-                    visible_en_busqueda: true,
+                    visible_en_busqueda: false,  // Esperando onboarding
                     estado_perfil: 'activo',
                     onboarding_completed: false
                 });
-                console.log('✅ Perfil nuevo creado - Visible: true');
+                console.log('✅ Perfil nuevo creado - Visible: false (esperando onboarding)');
             }
 
             // ✅ ENVIAR EMAIL DE BIENVENIDA
