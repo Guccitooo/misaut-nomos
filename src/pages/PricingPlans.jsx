@@ -102,28 +102,29 @@ export default function PricingPlansPage() {
     setIsProcessing(true);
 
     try {
-      const invokePromise = base44.functions.invoke('createCheckoutSession', {
+      console.log('🛒 Creando sesión de checkout para plan:', plan.plan_id);
+      
+      const response = await base44.functions.invoke('createCheckoutSession', {
         planId: plan.plan_id,
         planPrice: plan.precio,
         isReactivation: false
       });
-      
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 10000)
-      );
-      
-      const response = await Promise.race([invokePromise, timeout]);
 
-      if (response.data.error) {
+      console.log('📦 Respuesta del servidor:', response);
+
+      if (response.data?.error) {
         throw new Error(response.data.error);
       }
 
-      if (response.data.url) {
+      if (response.data?.url) {
+        console.log('✅ Redirigiendo a Stripe:', response.data.url);
         window.location.href = response.data.url;
       } else {
+        console.error('❌ Sin URL en respuesta:', response);
         throw new Error('No se pudo crear la sesión de pago');
       }
     } catch (err) {
+      console.error('❌ Error en handleSelectPlan:', err);
       toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
       setIsProcessing(false);
       setSelectedPlan(null);
