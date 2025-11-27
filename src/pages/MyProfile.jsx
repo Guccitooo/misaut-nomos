@@ -713,8 +713,12 @@ export default function MyProfilePage() {
     );
   }
 
-  const isProfessional = profile || user?.user_type === "professionnel";
+  // Determinar si es profesional: tiene perfil con onboarding completado O tiene user_type professionnel
+  const isProfessional = (profile && profile.onboarding_completed) || user?.user_type === "professionnel";
   const subscriptionStatus = getSubscriptionStatus();
+  
+  // El perfil está visible si: tiene suscripción activa Y visible_en_busqueda = true
+  const isProfileVisible = profile?.visible_en_busqueda === true && subscriptionStatus?.isActive;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
