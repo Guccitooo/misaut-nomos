@@ -332,7 +332,7 @@ export default function ProfileOnboardingPage() {
         average_rating: 0,
         total_reviews: 0,
         estado_perfil: "activo",
-        visible_en_busqueda: true,
+        visible_en_busqueda: false, // Se activa en el webhook de Stripe cuando paga
         onboarding_completed: true,
         acepta_terminos: formData.acepta_terminos,
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
