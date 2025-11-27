@@ -4,6 +4,8 @@ import Stripe from 'npm:stripe@17.5.0';
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
 Deno.serve(async (req) => {
+  console.log('🛒 ========== CREAR CHECKOUT SESSION ==========');
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -12,34 +14,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('👤 Usuario:', user.email, '- ID:', user.id);
+
     const body = await req.json();
     const { planId, planPrice, isReactivation = false } = body;
 
-    if (user.has_used_trial === true) {
-      return Response.json({ 
-        error: 'Ya has usado tu periodo de prueba gratuito de 2 meses. Ahora el pago se aplicará inmediatamente.' 
-      }, { status: 400 });
+    console.log('📦 Plan solicitado:', planId, '- Precio:', planPrice, '- Reactivación:', isReactivation);
+
+    // ✅ VERIFICAR SI YA USÓ TRIAL
+    if (user.has_used_trial === true && !isReactivation) {
+      console.log('⚠️ Usuario ya usó prueba gratuita');
     }
 
-    // ✅ VERIFICAR SUSCRIPCIONES EXISTENTES EN BASE DE DATOS
-    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({ 
-      user_id: user.id 
-    });
-    
-    if (!isReactivation && existingSubscriptions.length > 0) {
-      const activeSub = existingSubscriptions.find(sub => 
-        sub.estado === 'activo' || sub.estado === 'en_prueba'
-      );
-      if (activeSub) {
-        return Response.json({ 
-          error: 'Ya tienes una suscripción activa' 
-        }, { status: 400 });
-      }
-    }
-
-    // ✅ VERIFICAR SUSCRIPCIONES ACTIVAS EN STRIPE
+    // ✅ BUSCAR/CREAR CLIENTE EN STRIPE
     let stripeCustomerId = null;
+    let existingStripeSubscription = null;
+
     try {
+      // Buscar cliente existente en Stripe
       const customers = await stripe.customers.list({
         email: user.email,
         limit: 1
@@ -47,44 +39,105 @@ Deno.serve(async (req) => {
       
       if (customers.data.length > 0) {
         stripeCustomerId = customers.data[0].id;
-        console.log(`✅ Cliente de Stripe encontrado: ${stripeCustomerId}`);
+        console.log('✅ Cliente Stripe encontrado:', stripeCustomerId);
         
-        // Buscar suscripciones activas en Stripe
+        // ✅ VERIFICAR SUSCRIPCIONES ACTIVAS EN STRIPE (fuente de verdad)
         const activeStripeSubscriptions = await stripe.subscriptions.list({
           customer: stripeCustomerId,
-          status: 'active',
+          status: 'all',
           limit: 10
         });
 
-        if (activeStripeSubscriptions.data.length > 0) {
-          console.log(`⚠️ Se encontraron ${activeStripeSubscriptions.data.length} suscripciones activas en Stripe`);
+        // Buscar suscripción activa o en trial
+        existingStripeSubscription = activeStripeSubscriptions.data.find(sub => 
+          sub.status === 'active' || sub.status === 'trialing'
+        );
+
+        if (existingStripeSubscription && !isReactivation) {
+          console.log(`❌ Ya tiene suscripción activa en Stripe: ${existingStripeSubscription.id} (${existingStripeSubscription.status})`);
           return Response.json({ 
-            error: 'Ya tienes una suscripción activa en Stripe. Por favor contacta con soporte.' 
+            error: 'Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.' 
           }, { status: 400 });
         }
+
+        // Si es reactivación, cancelar suscripciones anteriores
+        if (isReactivation && existingStripeSubscription) {
+          console.log('🔄 Cancelando suscripción anterior para reactivación...');
+          await stripe.subscriptions.cancel(existingStripeSubscription.id);
+        }
+      } else {
+        // ✅ CREAR NUEVO CLIENTE EN STRIPE con todos los datos
+        console.log('➕ Creando nuevo cliente en Stripe...');
+        
+        // Obtener perfil profesional si existe
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+          user_id: user.id
+        });
+        const profile = profiles[0];
+
+        const customerData = {
+          email: user.email,
+          name: profile?.business_name || user.full_name || user.email.split('@')[0],
+          metadata: {
+            user_id: user.id,
+            platform: 'misautonomos',
+            created_from: 'checkout_session'
+          }
+        };
+
+        // Añadir teléfono si existe
+        if (profile?.telefono_contacto) {
+          customerData.phone = profile.telefono_contacto;
+        }
+
+        // Añadir NIF en metadata si existe
+        if (profile?.cif_nif) {
+          customerData.metadata.nif_cif = profile.cif_nif;
+        }
+
+        const newCustomer = await stripe.customers.create(customerData);
+        stripeCustomerId = newCustomer.id;
+        console.log('✅ Cliente Stripe creado:', stripeCustomerId);
       }
     } catch (stripeError) {
-      console.error('⚠️ Error verificando Stripe (continuando):', stripeError);
+      console.error('❌ Error con Stripe:', stripeError.message);
+      return Response.json({ 
+        error: 'Error conectando con el sistema de pagos. Inténtalo de nuevo.' 
+      }, { status: 500 });
     }
 
+    // ✅ OBTENER PLAN
     const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
     const plan = plans[0];
 
     if (!plan) {
+      console.error('❌ Plan no encontrado:', planId);
       return Response.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
 
+    console.log('💼 Plan encontrado:', plan.nombre, '- Precio:', plan.precio);
+
+    // ✅ CONFIGURAR URLs
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
     const successUrl = isReactivation 
       ? `${baseUrl}/MyProfile?reactivation=success`
-      : `${baseUrl}/MyProfile?onboarding=pending`;
+      : `${baseUrl}/MyProfile?subscription=pending`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
+    // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
     const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
     const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
 
-    let sessionParams = {
+    // ✅ DETERMINAR SI OFRECER TRIAL
+    const offerTrial = !user.has_used_trial && !isReactivation;
+    const trialDays = offerTrial ? 60 : 0;
+
+    console.log('🎁 Ofrecer trial:', offerTrial, '- Días:', trialDays);
+
+    // ✅ CREAR SESIÓN DE CHECKOUT
+    const sessionParams = {
       mode: 'subscription',
+      customer: stripeCustomerId, // ✅ SIEMPRE usar customer ID
       allow_promotion_codes: false,
       billing_address_collection: 'required',
       success_url: successUrl,
@@ -94,16 +147,16 @@ Deno.serve(async (req) => {
         user_email: user.email,
         plan_id: planId,
         is_reactivation: isReactivation.toString(),
-        trial_offered: 'true'
+        trial_offered: offerTrial.toString()
       },
       line_items: [{
         price_data: {
           currency: 'eur',
           product_data: {
-            name: `${plan.nombre} - 2 meses gratis`,
-            description: plan.descripcion || `Suscripción ${plan.nombre}`,
+            name: offerTrial ? `${plan.nombre} - 2 meses gratis` : plan.nombre,
+            description: plan.descripcion || `Suscripción ${plan.nombre} MisAutónomos`,
           },
-          unit_amount: planPrice * 100,
+          unit_amount: Math.round(plan.precio * 100), // ✅ Usar precio del plan
           recurring: {
             interval: interval,
             interval_count: intervalCount
@@ -112,35 +165,36 @@ Deno.serve(async (req) => {
         quantity: 1
       }],
       subscription_data: {
-        trial_period_days: 60,
         metadata: {
           user_id: user.id,
           user_email: user.email,
           plan_id: planId,
-          discount: planId === 'plan_monthly_trial' ? '0' : planId === 'plan_quarterly' ? '10' : '20',
-          trial: '2 meses'
+          platform: 'misautonomos'
         }
       },
       payment_method_collection: 'always'
     };
 
-    // ✅ Si existe el cliente en Stripe, usarlo en lugar de customer_email
-    if (stripeCustomerId) {
-      sessionParams.customer = stripeCustomerId;
-      console.log(`✅ Usando cliente existente: ${stripeCustomerId}`);
-    } else {
-      sessionParams.customer_email = user.email;
-      console.log(`✅ Creando nuevo cliente con email: ${user.email}`);
+    // ✅ AÑADIR TRIAL SI CORRESPONDE
+    if (offerTrial) {
+      sessionParams.subscription_data.trial_period_days = trialDays;
     }
 
+    console.log('📋 Creando sesión de checkout...');
     const session = await stripe.checkout.sessions.create(sessionParams);
+
+    console.log('✅ Sesión creada:', session.id);
+    console.log('🔗 URL:', session.url);
 
     return Response.json({
       sessionId: session.id,
-      url: session.url
+      url: session.url,
+      customerId: stripeCustomerId
     });
 
   } catch (error) {
+    console.error('❌ Error general:', error.message);
+    console.error('❌ Stack:', error.stack);
     return Response.json({ 
       error: error.message || 'Error al crear la sesión de pago' 
     }, { status: 500 });
