@@ -348,11 +348,12 @@ export default function SearchPage() {
     queryKey: ['categories'],
     queryFn: async () => {
       const cats = await base44.entities.ServiceCategory.list();
-      return cats.length > 0 ? cats : [];
+      // Ordenar alfabéticamente considerando tildes y ñ
+      return cats.sort((a, b) => a.name.localeCompare(b.name, 'es'));
     },
     initialData: [],
-    staleTime: 1000 * 60 * 30, // 30 minutos - categorías cambian poco
-    gcTime: 1000 * 60 * 60, // 1 hora en cache
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
 
@@ -511,19 +512,9 @@ export default function SearchPage() {
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
                       <SelectItem value="all">{t('allCategories')}</SelectItem>
-                      {categories.length > 0 ? categories.map((cat) => (
+                      {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
-                      )) : (
-                        <>
-                          <SelectItem value="Electricista">Electricista</SelectItem>
-                          <SelectItem value="Fontanero">Fontanero</SelectItem>
-                          <SelectItem value="Carpintero">Carpintero</SelectItem>
-                          <SelectItem value="Albañil / Reformas">Albañil / Reformas</SelectItem>
-                          <SelectItem value="Pintor">Pintor</SelectItem>
-                          <SelectItem value="Jardinero">Jardinero</SelectItem>
-                          <SelectItem value="Cerrajero">Cerrajero</SelectItem>
-                        </>
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
 

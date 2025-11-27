@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,21 +78,7 @@ const CIUDADES_POR_PROVINCIA = {
   "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Alfaro"]
 };
 
-const CATEGORIAS = [
-  "Albañil / Reformas",
-  "Autónomo de limpieza",
-  "Carpintero",
-  "Cerrajero",
-  "Electricista",
-  "Fontanero",
-  "Instalador de aire acondicionado",
-  "Jardinero",
-  "Mantenimiento de piscinas",
-  "Mantenimiento general",
-  "Pintor",
-  "Transportista",
-  "Otro tipo de servicio profesional"
-];
+// Categorías se cargarán dinámicamente desde BD
 
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();
@@ -136,6 +123,15 @@ export default function ProfileOnboardingPage() {
   });
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const cats = await base44.entities.ServiceCategory.list();
+      return cats.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    },
+    staleTime: 1000 * 60 * 30,
+  });
 
   useEffect(() => {
     loadUser();
@@ -614,27 +610,33 @@ export default function ProfileOnboardingPage() {
 
                 <div>
                   <Label className="mb-3 block">Categoría de servicio * (elige solo una)</Label>
-                  <div className="grid grid-cols-1 gap-3">
-                    {CATEGORIAS.map((cat) => (
-                      <div
-                        key={cat}
-                        onClick={() => toggleCategory(cat)}
-                        className="flex items-center gap-3 p-4 border-2 rounded-lg transition-all cursor-pointer hover:bg-blue-50"
-                        style={{
-                          borderColor: formData.categories.includes(cat) ? '#3B82F6' : '#E5E7EB',
-                          backgroundColor: formData.categories.includes(cat) ? '#EFF6FF' : 'white'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.categories.includes(cat)}
-                          onChange={() => {}}
-                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 pointer-events-none flex-shrink-0"
-                        />
-                        <span className="text-sm font-medium text-gray-700 flex-1">{cat}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {categories.length === 0 ? (
+                    <div className="text-center py-4">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      {categories.map((cat) => (
+                        <div
+                          key={cat.id}
+                          onClick={() => toggleCategory(cat.name)}
+                          className="flex items-center gap-3 p-4 border-2 rounded-lg transition-all cursor-pointer hover:bg-blue-50"
+                          style={{
+                            borderColor: formData.categories.includes(cat.name) ? '#3B82F6' : '#E5E7EB',
+                            backgroundColor: formData.categories.includes(cat.name) ? '#EFF6FF' : 'white'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.categories.includes(cat.name)}
+                            onChange={() => {}}
+                            className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 pointer-events-none flex-shrink-0"
+                          />
+                          <span className="text-sm font-medium text-gray-700 flex-1">{cat.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {formData.categories.includes("Otro tipo de servicio profesional") && (

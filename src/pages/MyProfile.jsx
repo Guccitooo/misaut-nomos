@@ -96,12 +96,7 @@ const ciudadesPorProvincia = {
   "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Ibiza"],
 };
 
-const categories = [
-  "Electricista", "Fontanero", "Carpintero", "Albañil / Reformas",
-  "Jardinero", "Pintor", "Transportista", "Autónomo de limpieza",
-  "Asesoría o gestoría", "Empresa multiservicios",
-  "Otro tipo de servicio profesional"
-].sort();
+// Eliminado - se cargarán dinámicamente desde BD
 
 export default function MyProfilePage() {
   const { t } = useLanguage();
@@ -398,6 +393,15 @@ export default function MyProfilePage() {
     },
     enabled: !!user && !!profile,
     staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const cats = await base44.entities.ServiceCategory.list();
+      return cats.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    },
+    staleTime: 1000 * 60 * 30,
   });
 
   const { data: invoicingSettings } = useQuery({
@@ -1109,20 +1113,20 @@ export default function MyProfilePage() {
                         <div className="grid grid-cols-1 gap-2 mt-2">
                           {categories.map((cat) => (
                             <div
-                              key={cat}
-                              onClick={() => selectCategory(cat)}
+                              key={cat.id}
+                              onClick={() => selectCategory(cat.name)}
                               className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer ${
-                                profileData.categories.includes(cat)
+                                profileData.categories.includes(cat.name)
                                   ? "border-blue-600 bg-blue-50"
                                   : "border-gray-200 hover:bg-gray-50"
                               }`}
                             >
-                              {profileData.categories.includes(cat) ? (
+                              {profileData.categories.includes(cat.name) ? (
                                 <CheckCircle className="w-5 h-5 text-blue-600" />
                               ) : (
                                 <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
                               )}
-                              <span className="text-sm">{t(cat)}</span>
+                              <span className="text-sm">{t(cat.name) || cat.name}</span>
                             </div>
                           ))}
                         </div>
@@ -1318,7 +1322,7 @@ export default function MyProfilePage() {
                   portfolioItems={profileData.portfolio_items || []}
                   isEditing={isEditing}
                   onPortfolioChange={(items) => setProfileData({ ...profileData, portfolio_items: items })}
-                  categories={categories}
+                  categories={categories.map(c => c.name)}
                 />
 
                 {/* Galería simple de fotos */}
