@@ -731,7 +731,7 @@ export default function MyProfilePage() {
             </p>
             {profile && (
               <div className="mt-2 flex gap-2">
-                {subscriptionStatus?.isActive ? (
+                {isProfileVisible ? (
                   <Badge className="bg-green-100 text-green-800">
                     ✓ {t('visibleToClients')}
                   </Badge>
