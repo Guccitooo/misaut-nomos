@@ -344,16 +344,44 @@ export default function SearchPage() {
     }
   };
 
+  // Categorías de fallback (se usan si BD no responde o no hay auth)
+  const FALLBACK_CATEGORIES = [
+    "Abogado",
+    "Albañil / Reformas",
+    "Asesoría o gestoría",
+    "Autónomo de limpieza",
+    "Carpintero",
+    "Cerrajero",
+    "Climatización / Calefacción",
+    "Electricista",
+    "Empresa multiservicios",
+    "Fontanero",
+    "Informático a domicilio / soporte IT",
+    "Jardinero",
+    "Marketing digital / diseño web",
+    "Peluquería y estética a domicilio",
+    "Persianas y toldos",
+    "Pintor",
+    "Transportista"
+  ].map((name, idx) => ({ id: `fallback_${idx}`, name }));
+
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const cats = await base44.entities.ServiceCategory.list();
-      // Ordenar alfabéticamente considerando tildes y ñ
-      return cats
-        .filter(c => c.name)
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      try {
+        const cats = await base44.entities.ServiceCategory.list();
+        if (cats && cats.length > 0) {
+          return cats
+            .filter(c => c.name)
+            .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+        }
+        return FALLBACK_CATEGORIES;
+      } catch (error) {
+        console.log('Usando categorías de fallback');
+        return FALLBACK_CATEGORIES;
+      }
     },
-    initialData: [],
+    initialData: FALLBACK_CATEGORIES,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
