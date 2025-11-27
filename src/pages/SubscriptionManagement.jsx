@@ -58,8 +58,25 @@ export default function SubscriptionManagementPage() {
     }
   };
 
+  // ✅ SINCRONIZAR CON STRIPE AL CARGAR
+  const { data: syncResult, isLoading: syncing } = useQuery({
+    queryKey: ['syncStripe', user?.id],
+    queryFn: async () => {
+      try {
+        const response = await base44.functions.invoke('syncStripeSubscription', {});
+        console.log('🔄 Sincronización Stripe:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Error sincronizando con Stripe:', error);
+        return null;
+      }
+    },
+    enabled: !!user,
+    staleTime: 0, // Siempre sincronizar
+  });
+
   const { data: subscription, isLoading: loadingSubscription } = useQuery({
-    queryKey: ['subscription', user?.id],
+    queryKey: ['subscription', user?.id, syncResult],
     queryFn: async () => {
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
@@ -67,7 +84,7 @@ export default function SubscriptionManagementPage() {
       
       return subs[0];
     },
-    enabled: !!user,
+    enabled: !!user && !syncing,
     retry: 1,
   });
 
@@ -176,10 +193,13 @@ export default function SubscriptionManagementPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  if (!user || loadingSubscription) {
+  if (!user || loadingSubscription || syncing) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+        {syncing && (
+          <p className="text-sm text-gray-600">Sincronizando con Stripe...</p>
+        )}
       </div>
     );
   }
@@ -274,6 +294,27 @@ export default function SubscriptionManagementPage() {
                     </div>
                     {getStatusBadge(subscription.estado)}
                   </div>
+
+                  {/* Mostrar IDs de Stripe si existen */}
+                  {subscription.stripe_subscription_id && (
+                    <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+                      <p><strong>Stripe ID:</strong> {subscription.stripe_subscription_id}</p>
+                      {subscription.stripe_customer_id && (
+                        <p><strong>Customer ID:</strong> {subscription.stripe_customer_id}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Alerta si no hay ID de Stripe pero dice activo */}
+                  {!subscription.stripe_subscription_id && (subscription.estado === 'activo' || subscription.estado === 'en_prueba') && (
+                    <Alert className="bg-red-50 border-red-200">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-800 text-sm">
+                        <strong>⚠️ Problema detectado:</strong> Tu suscripción no está sincronizada con Stripe. 
+                        El pago no se realizará correctamente. Por favor, contacta con soporte o reactiva tu suscripción.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <Separator />
 
