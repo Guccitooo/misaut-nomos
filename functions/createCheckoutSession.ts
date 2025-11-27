@@ -28,7 +28,6 @@ Deno.serve(async (req) => {
 
     // ✅ BUSCAR/CREAR CLIENTE EN STRIPE
     let stripeCustomerId = null;
-    let existingStripeSubscription = null;
 
     try {
       // Buscar cliente existente en Stripe
@@ -40,60 +39,19 @@ Deno.serve(async (req) => {
       if (customers.data.length > 0) {
         stripeCustomerId = customers.data[0].id;
         console.log('✅ Cliente Stripe encontrado:', stripeCustomerId);
-        
-        // ✅ VERIFICAR SUSCRIPCIONES ACTIVAS EN STRIPE (fuente de verdad)
-        const activeStripeSubscriptions = await stripe.subscriptions.list({
-          customer: stripeCustomerId,
-          status: 'all',
-          limit: 10
-        });
-
-        // Buscar suscripción activa o en trial
-        existingStripeSubscription = activeStripeSubscriptions.data.find(sub => 
-          sub.status === 'active' || sub.status === 'trialing'
-        );
-
-        if (existingStripeSubscription && !isReactivation) {
-          console.log(`❌ Ya tiene suscripción activa en Stripe: ${existingStripeSubscription.id} (${existingStripeSubscription.status})`);
-          return Response.json({ 
-            error: 'Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.' 
-          }, { status: 400 });
-        }
-
-        // Si es reactivación, cancelar suscripciones anteriores
-        if (isReactivation && existingStripeSubscription) {
-          console.log('🔄 Cancelando suscripción anterior para reactivación...');
-          await stripe.subscriptions.cancel(existingStripeSubscription.id);
-        }
       } else {
-        // ✅ CREAR NUEVO CLIENTE EN STRIPE con todos los datos
+        // ✅ CREAR NUEVO CLIENTE EN STRIPE
         console.log('➕ Creando nuevo cliente en Stripe...');
         
-        // Obtener perfil profesional si existe
-        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
-          user_id: user.id
-        });
-        const profile = profiles[0];
-
         const customerData = {
           email: user.email,
-          name: profile?.business_name || user.full_name || user.email.split('@')[0],
+          name: user.full_name || user.email.split('@')[0],
           metadata: {
             user_id: user.id,
             platform: 'misautonomos',
             created_from: 'checkout_session'
           }
         };
-
-        // Añadir teléfono si existe
-        if (profile?.telefono_contacto) {
-          customerData.phone = profile.telefono_contacto;
-        }
-
-        // Añadir NIF en metadata si existe
-        if (profile?.cif_nif) {
-          customerData.metadata.nif_cif = profile.cif_nif;
-        }
 
         const newCustomer = await stripe.customers.create(customerData);
         stripeCustomerId = newCustomer.id;
