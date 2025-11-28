@@ -58,13 +58,20 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  // ✅ SINCRONIZAR CON STRIPE AL CARGAR
-  const { data: syncResult, isLoading: syncing } = useQuery({
+  // ✅ SINCRONIZAR CON STRIPE AL CARGAR - SIEMPRE
+  const { data: syncResult, isLoading: syncing, refetch: refetchSync } = useQuery({
     queryKey: ['syncStripe', user?.id],
     queryFn: async () => {
       try {
+        console.log('🔄 Iniciando sincronización con Stripe...');
         const response = await base44.functions.invoke('syncStripeSubscription', {});
         console.log('🔄 Sincronización Stripe:', response.data);
+        
+        // Si la sincronización encontró suscripción, invalidar cache
+        if (response.data?.ok && response.data?.subscription) {
+          sessionStorage.removeItem('current_user');
+        }
+        
         return response.data;
       } catch (error) {
         console.error('Error sincronizando con Stripe:', error);
@@ -72,12 +79,22 @@ export default function SubscriptionManagementPage() {
       }
     },
     enabled: !!user,
-    staleTime: 0, // Siempre sincronizar
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
   });
 
-  const { data: subscription, isLoading: loadingSubscription } = useQuery({
-    queryKey: ['subscription', user?.id, syncResult],
+  const { data: subscription, isLoading: loadingSubscription, refetch: refetchSubscription } = useQuery({
+    queryKey: ['subscription', user?.id, syncResult?.subscription?.id],
     queryFn: async () => {
+      // Si syncResult tiene suscripción activa, usar esos datos
+      if (syncResult?.subscription?.active) {
+        const subs = await base44.entities.Subscription.filter({
+          user_id: user.id
+        });
+        return subs[0];
+      }
+      
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
       });
@@ -85,7 +102,8 @@ export default function SubscriptionManagementPage() {
       return subs[0];
     },
     enabled: !!user && !syncing,
-    retry: 1,
+    retry: 2,
+    staleTime: 0,
   });
 
   const { data: plan } = useQuery({
@@ -244,6 +262,21 @@ export default function SubscriptionManagementPage() {
                   {t('needPlanToAppear')}
                 </p>
 
+                {/* Mostrar info de sync si hay datos */}
+                {syncResult && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left text-sm">
+                    <p className="font-medium text-gray-700 mb-2">Diagnóstico:</p>
+                    <p className="text-gray-600">
+                      {syncResult.message || 'Sin información adicional'}
+                    </p>
+                    {syncResult.subscription && (
+                      <p className="text-gray-600 mt-1">
+                        Estado en Stripe: <strong>{syncResult.subscription.status}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                     onClick={() => navigate(createPageUrl("PricingPlans"))}
@@ -254,26 +287,31 @@ export default function SubscriptionManagementPage() {
                     {t('viewAvailablePlans')}
                   </Button>
                   
-                  {user?.role === 'admin' && (
-                    <Button
-                      onClick={handleFixSubscription}
-                      disabled={isFixing}
-                      variant="outline"
-                      size="lg"
-                    >
-                      {isFixing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t('verifying')}
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          {t('verifyPaymentAdmin')}
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  {/* Botón de resincronizar para todos los usuarios */}
+                  <Button
+                    onClick={async () => {
+                      setIsFixing(true);
+                      await refetchSync();
+                      await refetchSubscription();
+                      setIsFixing(false);
+                      toast.info("Sincronización completada");
+                    }}
+                    disabled={isFixing}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {isFixing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Sincronizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Sincronizar con Stripe
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -404,23 +404,31 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
-      // ✅ Llamar función de activación para garantizar sincronización
+      // ✅ Llamar sincronización con Stripe para garantizar estado correcto
       try {
-        const activationResult = await base44.functions.invoke('activateProfile', {});
-        console.log('🔄 Resultado activación:', activationResult.data);
+        const syncResult = await base44.functions.invoke('syncStripeSubscription', {});
+        console.log('🔄 Sync resultado:', syncResult.data);
         
-        // Usar el resultado de la función para determinar visibilidad real
-        if (activationResult.data?.profile?.visible) {
+        // Si hay suscripción activa, el perfil debe ser visible
+        if (syncResult.data?.subscription?.active) {
           shouldBeVisible = true;
+          
+          // Actualizar perfil a visible
+          if (existingProfile) {
+            await base44.entities.ProfessionalProfile.update(existingProfile.id, {
+              visible_en_busqueda: true,
+              estado_perfil: 'activo'
+            });
+          }
         }
-      } catch (activationError) {
-        console.log('⚠️ Error en activación:', activationError);
+      } catch (syncError) {
+        console.log('⚠️ Error en sync:', syncError);
       }
 
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 
-      if (shouldBeVisible) {
+      if (shouldBeVisible || hasActiveSubscription) {
         toast.success("¡Perfil completado y publicado con éxito! Ya eres visible para clientes.");
         // Ir al dashboard si tiene suscripción activa
         setTimeout(() => {
