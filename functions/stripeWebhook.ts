@@ -266,6 +266,17 @@ Deno.serve(async (req) => {
             });
 
             console.log('📧 Email de bienvenida enviado');
+            
+            // ✅ VERIFICACIÓN FINAL: Si el perfil tiene onboarding completo, forzar visibilidad
+            const finalProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
+            if (finalProfiles.length > 0 && finalProfiles[0].onboarding_completed === true) {
+                await base44.asServiceRole.entities.ProfessionalProfile.update(finalProfiles[0].id, {
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo'
+                });
+                console.log('✅ FORZADO: Perfil visible porque onboarding completo + pago confirmado');
+            }
+            
             console.log('✅ ========== CHECKOUT PROCESADO ==========');
             return Response.json({ received: true, processed: true });
         }
