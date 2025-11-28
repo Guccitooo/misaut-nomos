@@ -73,39 +73,41 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
 
     const userMessage = inputValue.trim();
     setInputValue('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    
+    // Guardar mensajes actuales y añadir el del usuario
+    const currentMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(currentMessages);
     setIsLoading(true);
 
     try {
-      // Referencia para rastrear el último mensaje procesado
-      let lastProcessedContent = '';
-      let streamingMsgId = Date.now();
-
-      // Suscribirse a actualizaciones
+      // Suscribirse a actualizaciones - solo mostrar el mensaje final
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data.messages && data.messages.length > 0) {
-          const lastMsg = data.messages[data.messages.length - 1];
-          if (lastMsg.role === 'assistant' && lastMsg.content !== lastProcessedContent) {
-            lastProcessedContent = lastMsg.content;
+          // Encontrar el último mensaje del asistente
+          const assistantMessages = data.messages.filter(m => m.role === 'assistant');
+          if (assistantMessages.length > 0) {
+            const lastAssistantMsg = assistantMessages[assistantMessages.length - 1];
             
-            // Reemplazar el mensaje de streaming en lugar de añadir nuevos
+            // Solo actualizar si el contenido ha cambiado
             setMessages(prev => {
-              const userMessages = prev.filter(m => m.role === 'user');
-              const otherAssistantMessages = prev.filter(m => 
-                m.role === 'assistant' && m.streamingId !== streamingMsgId
-              );
-              return [
-                ...userMessages.slice(0, -1), // Todos los mensajes de usuario menos el último
-                ...otherAssistantMessages,
-                prev.find(m => m.role === 'user' && m.content === userMessage), // El último mensaje del usuario
-                { ...lastMsg, streamingId: streamingMsgId }
-              ].filter(Boolean);
+              // Mantener todos los mensajes de usuario y el mensaje de bienvenida
+              const baseMessages = prev.filter(m => m.role === 'user' || m.isWelcome);
+              
+              // Añadir solo el último mensaje del asistente (reemplazando cualquier anterior de esta respuesta)
+              const lastAssistantInPrev = prev.filter(m => m.role === 'assistant' && !m.isWelcome);
+              
+              // Si es el mismo mensaje parcial, actualizar; si no, reemplazar
+              if (lastAssistantInPrev.length === 0 || 
+                  lastAssistantMsg.content.length > (lastAssistantInPrev[lastAssistantInPrev.length - 1]?.content?.length || 0)) {
+                return [...baseMessages, lastAssistantMsg];
+              }
+              return prev;
             });
           }
         }
       });
 
-      // Añadir mensaje del usuario
+      // Añadir mensaje del usuario al agente
       await base44.agents.addMessage(conversation, {
         role: 'user',
         content: userMessage
@@ -114,10 +116,11 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
       // Buscar profesionales relevantes basado en la consulta
       await searchRelevantProfessionals(userMessage);
 
+      // Dar tiempo para que el agente responda completamente
       setTimeout(() => {
         unsubscribe();
         setIsLoading(false);
-      }, 15000);
+      }, 12000);
 
     } catch (error) {
       console.error('Error sending message:', error);
