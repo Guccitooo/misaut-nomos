@@ -125,15 +125,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const loadUser = React.useCallback(async () => {
     try {
-      // Cache de 30 segundos - más corto para detectar cambios post-pago inmediatamente
-      const cached = sessionStorage.getItem('current_user');
+      // Detectar si es post-pago o post-onboarding
       const urlParams = new URLSearchParams(window.location.search);
-      const isPostPayment = urlParams.get('session_id') || urlParams.get('onboarding') || location.pathname.includes('PaymentSuccess');
+      const isPostPayment = urlParams.get('session_id') || 
+                            urlParams.get('onboarding') || 
+                            location.pathname.includes('PaymentSuccess') ||
+                            location.pathname.includes('SubscriptionManagement');
 
-      // No usar cache si viene de un pago o onboarding
+      // Cache de 30 segundos - NO usar cache si viene de pago/onboarding
+      const cached = sessionStorage.getItem('current_user');
       if (cached && !isPostPayment) {
         const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        // 30 segundos de cache normal
         if (Date.now() - timestamp < 30000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
@@ -144,19 +146,22 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
       const currentUser = await base44.auth.me();
 
-      // Siempre verificar perfil profesional (puede haber cambiado después del pago)
       if (currentUser) {
+        // Verificar perfil profesional
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
         });
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
 
-        sessionStorage.setItem('current_user', JSON.stringify({
-          user: currentUser,
-          profile,
-          timestamp: Date.now()
-        }));
+        // Solo cachear si no es post-pago
+        if (!isPostPayment) {
+          sessionStorage.setItem('current_user', JSON.stringify({
+            user: currentUser,
+            profile,
+            timestamp: Date.now()
+          }));
+        }
       } else {
         setProfessionalProfile(null);
       }
