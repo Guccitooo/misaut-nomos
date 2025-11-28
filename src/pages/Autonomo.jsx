@@ -437,10 +437,12 @@ export default function AutonomoPage() {
                 {showPhone && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={handlePhoneClick} variant="outline" className="flex-1 h-9 text-sm hover:bg-blue-50">
-                        <Phone className="w-4 h-4 mr-1" />
-                        {t('call') || 'Llamar'}
-                      </Button>
+                      <a href={`tel:${profile.telefono_contacto?.replace(/[^\d+]/g, '').startsWith('+') ? profile.telefono_contacto.replace(/[^\d+]/g, '') : '+34' + profile.telefono_contacto.replace(/[^\d+]/g, '')}`} className="flex-1">
+                        <Button variant="outline" className="w-full h-9 text-sm hover:bg-blue-50">
+                          <Phone className="w-4 h-4 mr-1" />
+                          {t('call') || 'Llamar'}
+                        </Button>
+                      </a>
                     </TooltipTrigger>
                     <TooltipContent><p>Llamar por teléfono</p></TooltipContent>
                   </Tooltip>

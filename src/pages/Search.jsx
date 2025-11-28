@@ -261,10 +261,12 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             </Button>
 
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-              <Button onClick={handleCall} variant="outline" size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" title={t('callPhone')}>
-                <Phone className="w-4 h-4 text-gray-700" />
-              </Button>
+              <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`} className="inline-flex">
+                <Button variant="outline" size="icon"
+                  className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" title={t('callPhone')}>
+                  <Phone className="w-4 h-4 text-gray-700" />
+                </Button>
+              </a>
             )}
 
             {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
