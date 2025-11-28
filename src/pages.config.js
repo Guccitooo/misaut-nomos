@@ -29,6 +29,7 @@ import Jobs from './pages/Jobs';
 import PayInvoice from './pages/PayInvoice';
 import Autonomo from './pages/Autonomo';
 import Categoria from './pages/Categoria';
+import PaymentSuccess from './pages/PaymentSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "PayInvoice": PayInvoice,
     "Autonomo": Autonomo,
     "Categoria": Categoria,
+    "PaymentSuccess": PaymentSuccess,
 }
 
 export const pagesConfig = {

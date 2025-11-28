@@ -163,13 +163,11 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.User.update(userId, userUpdateData);
             console.log('✅ Usuario actualizado a user_type: professionnel');
 
-            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL - CRÍTICO: SIEMPRE visible después de pago
+            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
             if (profiles.length > 0) {
                 const existingProfile = profiles[0];
-                // SIEMPRE activar después de pago exitoso
-                // Si onboarding está completado -> visible inmediatamente
-                // Si onboarding no está completado -> visible pero esperando datos
+                // Si onboarding completado -> visible inmediatamente
                 const shouldBeVisible = existingProfile.onboarding_completed === true;
                 
                 await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
@@ -178,16 +176,16 @@ Deno.serve(async (req) => {
                 });
                 console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (onboarding: ${existingProfile.onboarding_completed})`);
             } else {
-                // Crear perfil básico - NO visible hasta completar onboarding
+                // Crear perfil básico para el nuevo profesional
                 await base44.asServiceRole.entities.ProfessionalProfile.create({
                     user_id: userId,
                     business_name: userEmail.split('@')[0],
                     email_contacto: userEmail,
-                    visible_en_busqueda: false,  // Esperando onboarding
+                    visible_en_busqueda: false,
                     estado_perfil: 'activo',
                     onboarding_completed: false
                 });
-                console.log('✅ Perfil nuevo creado - Visible: false (esperando onboarding)');
+                console.log('✅ Perfil nuevo creado - Esperando onboarding');
             }
 
             // ✅ ENVIAR EMAIL DE BIENVENIDA
