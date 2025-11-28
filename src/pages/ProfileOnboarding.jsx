@@ -404,6 +404,19 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
+      // ✅ Llamar función de activación para garantizar sincronización
+      try {
+        const activationResult = await base44.functions.invoke('activateProfile', {});
+        console.log('🔄 Resultado activación:', activationResult.data);
+        
+        // Usar el resultado de la función para determinar visibilidad real
+        if (activationResult.data?.profile?.visible) {
+          shouldBeVisible = true;
+        }
+      } catch (activationError) {
+        console.log('⚠️ Error en activación:', activationError);
+      }
+
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { CheckCircle, Loader2, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle, Loader2, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
@@ -101,16 +101,17 @@ export default function PaymentSuccessPage() {
         console.log('✅ user_type actualizado a professionnel');
       }
 
-      // Si tiene suscripción Y onboarding completo, asegurar que perfil sea visible
-      if (subscriptionFound && isOnboardingDone && hasProfile) {
-        const profile = profiles[0];
-        if (!profile.visible_en_busqueda) {
-          await base44.entities.ProfessionalProfile.update(profile.id, {
-            visible_en_busqueda: true,
-            estado_perfil: 'activo'
-          });
-          console.log('✅ Perfil actualizado a visible');
+      // Llamar a la función de activación para garantizar sincronización
+      try {
+        const activationResult = await base44.functions.invoke('activateProfile', {});
+        console.log('🔄 Resultado activación:', activationResult.data);
+        
+        // Actualizar estados según resultado
+        if (activationResult.data?.profile?.visible) {
+          setOnboardingCompleted(true);
         }
+      } catch (activationError) {
+        console.log('⚠️ Error en activación (no crítico):', activationError);
       }
 
       // Limpiar cache de nuevo para tener datos frescos
