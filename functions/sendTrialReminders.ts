@@ -217,14 +217,14 @@ function generateEndingEmail(userName, endDate, monthlyPrice) {
       <p class="greeting">Hola ${userName},</p>
       
       <div class="highlight-box">
-        <h3>📅 Mañana termina tu prueba gratuita</h3>
-        <p>Tu periodo de prueba finaliza el <strong>${endDate}</strong>.</p>
+        <h3>📅 Mañana termina tu periodo de prueba gratuito</h3>
+        <p>Tu periodo de prueba de <strong>60 días</strong> finaliza el <strong>${endDate}</strong>.</p>
       </div>
       
       <p class="message"><strong>¿Qué pasará mañana?</strong></p>
       
       <ul class="features">
-        <li>Se realizará el primer cobro de <strong>${monthlyPrice}€</strong> automáticamente</li>
+        <li>Se realizará el primer cobro de <strong>33€/mes</strong> automáticamente</li>
         <li>Tu perfil seguirá visible y activo sin interrupciones</li>
         <li>Continuarás recibiendo mensajes de clientes</li>
       </ul>
@@ -240,7 +240,7 @@ function generateEndingEmail(userName, endDate, monthlyPrice) {
       </div>
       
       <div class="info-box">
-        <p><strong>¿Quieres seguir?</strong> No necesitas hacer nada. Tu suscripción se activará automáticamente.</p>
+        <p><strong>¿Quieres seguir?</strong> No necesitas hacer nada. Tu suscripción se activará automáticamente a 33€/mes.</p>
       </div>
       
       <p style="font-size: 13px; color: #6b7280; text-align: center;">
