@@ -75,13 +75,10 @@ Deno.serve(async (req) => {
 
     console.log('💼 Plan encontrado:', plan.nombre, '- Precio:', plan.precio);
 
-    // ✅ CONFIGURAR URLs
+    // ✅ CONFIGURAR URLs - SIEMPRE ir a PaymentSuccess para verificar pago
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
     
-    // Si es nuevo usuario (no reactivación), redirigir al cuestionario de onboarding
-    const successUrl = isReactivation 
-      ? `${baseUrl}/MyProfile?reactivation=success`
-      : `${baseUrl}/ProfileOnboarding?payment=success`;
+    const successUrl = `${baseUrl}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
