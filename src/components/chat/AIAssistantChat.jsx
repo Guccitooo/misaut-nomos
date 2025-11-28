@@ -77,20 +77,29 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
     setIsLoading(true);
 
     try {
+      // Referencia para rastrear el último mensaje procesado
+      let lastProcessedContent = '';
+      let streamingMsgId = Date.now();
+
       // Suscribirse a actualizaciones
       const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
         if (data.messages && data.messages.length > 0) {
           const lastMsg = data.messages[data.messages.length - 1];
-          if (lastMsg.role === 'assistant') {
+          if (lastMsg.role === 'assistant' && lastMsg.content !== lastProcessedContent) {
+            lastProcessedContent = lastMsg.content;
+            
+            // Reemplazar el mensaje de streaming en lugar de añadir nuevos
             setMessages(prev => {
-              const withoutLoading = prev.filter(m => !m.isLoading);
-              const exists = withoutLoading.some(m => 
-                m.role === 'assistant' && m.content === lastMsg.content
+              const userMessages = prev.filter(m => m.role === 'user');
+              const otherAssistantMessages = prev.filter(m => 
+                m.role === 'assistant' && m.streamingId !== streamingMsgId
               );
-              if (!exists) {
-                return [...withoutLoading, lastMsg];
-              }
-              return withoutLoading;
+              return [
+                ...userMessages.slice(0, -1), // Todos los mensajes de usuario menos el último
+                ...otherAssistantMessages,
+                prev.find(m => m.role === 'user' && m.content === userMessage), // El último mensaje del usuario
+                { ...lastMsg, streamingId: streamingMsgId }
+              ].filter(Boolean);
             });
           }
         }
@@ -108,7 +117,7 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
       setTimeout(() => {
         unsubscribe();
         setIsLoading(false);
-      }, 10000);
+      }, 15000);
 
     } catch (error) {
       console.error('Error sending message:', error);
