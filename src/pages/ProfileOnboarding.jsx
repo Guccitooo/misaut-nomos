@@ -309,8 +309,12 @@ export default function ProfileOnboardingPage() {
 
       // ✅ CRÍTICO: Verificar suscripción activa - El perfil DEBE ser visible si tiene suscripción válida
       let shouldBeVisible = false;
+      let hasActiveSubscription = false;
+      
       try {
         const subs = await base44.entities.Subscription.filter({ user_id: user.id });
+        console.log('🔍 Suscripciones encontradas:', subs.length);
+        
         if (subs.length > 0) {
           const sub = subs[0];
           const estado = sub.estado?.toLowerCase();
@@ -318,6 +322,8 @@ export default function ProfileOnboardingPage() {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           fechaExp.setHours(0, 0, 0, 0);
+          
+          console.log('📊 Estado suscripción:', estado, 'Expira:', fechaExp.toISOString());
           
           // Suscripción válida = SIEMPRE visible
           const isActiveSubscription = (
@@ -333,16 +339,17 @@ export default function ProfileOnboardingPage() {
             estado === 'canceled'
           ) && fechaExp >= today;
           
-          shouldBeVisible = isActiveSubscription || isCanceledButValid;
-          console.log('✅ Suscripción verificada:', estado, 'Visible:', shouldBeVisible);
+          hasActiveSubscription = isActiveSubscription || isCanceledButValid;
+          shouldBeVisible = hasActiveSubscription;
+          console.log('✅ Suscripción verificada:', estado, 'Activa:', hasActiveSubscription, 'Visible:', shouldBeVisible);
         } else {
-          // Sin suscripción = NO visible
+          // Sin suscripción = NO visible pero seguimos guardando el perfil
           shouldBeVisible = false;
-          console.log('⚠️ Sin suscripción encontrada - Perfil NO será visible');
+          console.log('⚠️ Sin suscripción encontrada - Perfil guardado pero NO visible');
         }
       } catch (e) {
         console.log('Error verificando suscripción:', e);
-        shouldBeVisible = false; // Por seguridad, no mostrar sin suscripción verificada
+        shouldBeVisible = false;
       }
 
       const profileData = {
@@ -397,15 +404,21 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
+      // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
+      sessionStorage.removeItem('current_user');
+
       if (shouldBeVisible) {
         toast.success("¡Perfil completado y publicado con éxito! Ya eres visible para clientes.");
+        // Ir al dashboard si tiene suscripción activa
+        setTimeout(() => {
+          navigate(createPageUrl("ProfessionalDashboard") + "?onboarding=completed");
+        }, 1500);
       } else {
         toast.warning("Perfil guardado. Activa tu suscripción para ser visible en búsquedas.");
+        setTimeout(() => {
+          navigate(createPageUrl("PricingPlans") + "?from=onboarding");
+        }, 1500);
       }
-
-      setTimeout(() => {
-        navigate(createPageUrl("MyProfile") + "?onboarding=completed");
-      }, 1000);
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Error al guardar el perfil: " + error.message);

@@ -125,12 +125,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const loadUser = React.useCallback(async () => {
     try {
-      // Cache de 1 minuto - más corto para detectar cambios post-pago
+      // Cache de 30 segundos - más corto para detectar cambios post-pago inmediatamente
       const cached = sessionStorage.getItem('current_user');
-      if (cached) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPostPayment = urlParams.get('session_id') || urlParams.get('onboarding') || location.pathname.includes('PaymentSuccess');
+
+      // No usar cache si viene de un pago o onboarding
+      if (cached && !isPostPayment) {
         const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        // 1 minuto de cache
-        if (Date.now() - timestamp < 60000) {
+        // 30 segundos de cache normal
+        if (Date.now() - timestamp < 30000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
           setLoadingUser(false);
@@ -165,7 +169,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     } finally {
       setLoadingUser(false);
     }
-  }, []);
+  }, [location.pathname]);
 
   const loadUnreadCount = React.useCallback(async () => {
     if (!user?.id) return;

@@ -167,14 +167,24 @@ Deno.serve(async (req) => {
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
             if (profiles.length > 0) {
                 const existingProfile = profiles[0];
-                // Si onboarding completado -> visible inmediatamente
+                // Si onboarding completado -> visible inmediatamente (suscripción ya verificada)
                 const shouldBeVisible = existingProfile.onboarding_completed === true;
                 
-                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
+                const profileUpdateData = {
                     visible_en_busqueda: shouldBeVisible,
                     estado_perfil: 'activo'
-                });
+                };
+                
+                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, profileUpdateData);
                 console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (onboarding: ${existingProfile.onboarding_completed})`);
+                
+                // Si ya tiene onboarding completo, forzar visibilidad
+                if (existingProfile.onboarding_completed && !shouldBeVisible) {
+                    console.log('⚠️ Forzando visibilidad porque onboarding está completo');
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
+                        visible_en_busqueda: true
+                    });
+                }
             } else {
                 // Crear perfil básico para el nuevo profesional
                 await base44.asServiceRole.entities.ProfessionalProfile.create({
@@ -183,7 +193,11 @@ Deno.serve(async (req) => {
                     email_contacto: userEmail,
                     visible_en_busqueda: false,
                     estado_perfil: 'activo',
-                    onboarding_completed: false
+                    onboarding_completed: false,
+                    categories: [],
+                    photos: [],
+                    formas_pago: [],
+                    metodos_contacto: ['chat_interno']
                 });
                 console.log('✅ Perfil nuevo creado - Esperando onboarding');
             }
