@@ -87,9 +87,19 @@ Deno.serve(async (req) => {
             console.log('📊 Metadata:', JSON.stringify(session.metadata));
 
             const metadata = session.metadata || {};
-            const userId = metadata.user_id;
-            const userEmail = metadata.user_email || session.customer_email;
+            let userId = metadata.user_id;
+            let userEmail = metadata.user_email || session.customer_email;
             const planId = metadata.plan_id || 'plan_monthly_trial';
+
+            // ✅ Si no hay userId en metadata, buscar por email
+            if (!userId && userEmail) {
+                console.log('🔍 Buscando usuario por email:', userEmail);
+                const users = await base44.asServiceRole.entities.User.filter({ email: userEmail });
+                if (users.length > 0) {
+                    userId = users[0].id;
+                    console.log('✅ Usuario encontrado por email:', userId);
+                }
+            }
 
             if (!userId || !userEmail) {
                 console.error('❌ Faltan datos: userId=', userId, 'email=', userEmail);
