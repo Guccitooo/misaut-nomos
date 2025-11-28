@@ -157,19 +157,38 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
           visible_en_busqueda: true
         });
 
-        // Filtrar por categoría y ubicación
-        const filtered = profiles.filter(p => {
-          const categoryMatch = p.categories?.some(c => 
+        const searchLocation = extraction.location?.toLowerCase() || '';
+        
+        // Filtrar por categoría
+        const categoryMatches = profiles.filter(p => {
+          return p.categories?.some(c => 
             c.toLowerCase().includes(extraction.category.toLowerCase()) ||
             extraction.category.toLowerCase().includes(c.toLowerCase())
           );
-          const locationMatch = !extraction.location || 
-            p.provincia?.toLowerCase().includes(extraction.location.toLowerCase()) ||
-            p.ciudad?.toLowerCase().includes(extraction.location.toLowerCase());
-          return categoryMatch && locationMatch;
-        }).slice(0, 3);
+        });
 
-        setSuggestedProfessionals(filtered);
+        // Primero buscar coincidencia exacta en ciudad/provincia
+        let filtered = categoryMatches.filter(p => {
+          if (!searchLocation) return true;
+          return p.ciudad?.toLowerCase().includes(searchLocation) ||
+                 p.provincia?.toLowerCase().includes(searchLocation) ||
+                 p.municipio?.toLowerCase().includes(searchLocation) ||
+                 p.service_area?.toLowerCase().includes(searchLocation);
+        });
+
+        // Si no hay resultados exactos, buscar por provincia completa
+        if (filtered.length === 0 && searchLocation) {
+          filtered = categoryMatches.filter(p => {
+            return p.provincia?.toLowerCase().includes(searchLocation);
+          });
+        }
+
+        // Si aún no hay resultados, mostrar todos de la categoría
+        if (filtered.length === 0) {
+          filtered = categoryMatches;
+        }
+
+        setSuggestedProfessionals(filtered.slice(0, 3));
       }
     } catch (error) {
       console.error('Error searching professionals:', error);
