@@ -262,7 +262,10 @@ export default function CRMPage() {
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay clientes</h3>
               <p className="text-gray-600 mb-6">Empieza a añadir tus clientes y prospectos</p>
-              <Button onClick={() => { resetForm(); setShowDialog(true); }}>
+              <Button 
+                onClick={() => { resetForm(); setShowDialog(true); }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Añadir primer cliente
               </Button>
