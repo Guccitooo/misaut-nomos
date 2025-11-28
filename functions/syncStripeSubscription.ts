@@ -1,244 +1,201 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@17.5.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 
-// ✅ Esta función sincroniza el estado de suscripción con Stripe
-// Se llama cuando el usuario accede a "Mi Suscripción" para asegurar datos actualizados
+/**
+ * Sincroniza la suscripción del usuario con Stripe
+ * - Busca la suscripción activa en Stripe por email
+ * - Crea/actualiza la suscripción en la BD
+ * - Actualiza el perfil y usuario
+ */
 
 Deno.serve(async (req) => {
-    console.log('🔄 ========== SINCRONIZAR CON STRIPE ==========');
+    console.log('🔄 ========== SYNC STRIPE SUBSCRIPTION ==========');
     
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
-
+        
         if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+            return Response.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        console.log('👤 Usuario:', user.email);
+        console.log('👤 Usuario:', user.email, '- ID:', user.id);
 
-        // ✅ BUSCAR SUSCRIPCIÓN EN BD
-        const dbSubs = await base44.asServiceRole.entities.Subscription.filter({
-            user_id: user.id
+        // Obtener body si existe
+        let sessionId = null;
+        try {
+            const body = await req.json();
+            sessionId = body.sessionId;
+        } catch (e) {
+            // No hay body, está bien
+        }
+
+        // ✅ BUSCAR CLIENTE EN STRIPE
+        let stripeCustomer = null;
+        let stripeSubscription = null;
+
+        // 1. Buscar cliente por email
+        const customers = await stripe.customers.list({
+            email: user.email,
+            limit: 1
         });
 
-        if (dbSubs.length === 0) {
-            console.log('ℹ️ No hay suscripción en BD');
-            return Response.json({ 
-                synced: true, 
-                hasSubscription: false,
-                message: 'No subscription found' 
+        if (customers.data.length > 0) {
+            stripeCustomer = customers.data[0];
+            console.log('✅ Cliente Stripe encontrado:', stripeCustomer.id);
+
+            // 2. Buscar suscripciones activas del cliente
+            const subscriptions = await stripe.subscriptions.list({
+                customer: stripeCustomer.id,
+                status: 'all',
+                limit: 5
             });
+
+            console.log('📊 Suscripciones en Stripe:', subscriptions.data.length);
+
+            // Filtrar suscripciones activas o en trial
+            const activeOrTrialing = subscriptions.data.filter(sub => 
+                sub.status === 'active' || sub.status === 'trialing'
+            );
+
+            if (activeOrTrialing.length > 0) {
+                stripeSubscription = activeOrTrialing[0];
+                console.log('✅ Suscripción activa encontrada:', stripeSubscription.id, '- Status:', stripeSubscription.status);
+            } else if (subscriptions.data.length > 0) {
+                // Tomar la más reciente aunque no esté activa
+                stripeSubscription = subscriptions.data[0];
+                console.log('⚠️ Suscripción más reciente:', stripeSubscription.id, '- Status:', stripeSubscription.status);
+            }
+        } else {
+            console.log('⚠️ No se encontró cliente en Stripe para:', user.email);
         }
 
-        const dbSub = dbSubs[0];
-        console.log('📊 Suscripción BD:', dbSub.estado, '- Stripe ID:', dbSub.stripe_subscription_id);
-
-        // ✅ SI NO HAY ID DE STRIPE, BUSCAR POR EMAIL
-        if (!dbSub.stripe_subscription_id) {
-            console.log('⚠️ No hay stripe_subscription_id, buscando por email...');
+        // ✅ SI NO HAY SUSCRIPCIÓN EN STRIPE, VERIFICAR EN BD
+        if (!stripeSubscription) {
+            const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: user.id });
             
-            const customers = await stripe.customers.list({
-                email: user.email,
-                limit: 1
-            });
-
-            if (customers.data.length === 0) {
-                console.log('❌ No hay cliente en Stripe');
-                
-                // Marcar como inactivo si la BD dice activo pero no hay nada en Stripe
-                if (dbSub.estado === 'activo' || dbSub.estado === 'en_prueba') {
-                    console.log('🔴 Corrigiendo: BD dice activo pero no hay suscripción en Stripe');
-                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                        estado: 'finalizada',
-                        renovacion_automatica: false
-                    });
-
-                    // Ocultar perfil
-                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
-                    if (profiles.length > 0) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: false,
-                            estado_perfil: 'inactivo'
-                        });
-                    }
-
-                    return Response.json({
-                        synced: true,
-                        corrected: true,
-                        hasSubscription: false,
-                        message: 'Subscription marked as inactive - no Stripe record found'
-                    });
-                }
-
-                return Response.json({ 
-                    synced: true, 
-                    hasSubscription: false,
-                    message: 'No Stripe customer found' 
+            if (existingSubs.length > 0) {
+                const sub = existingSubs[0];
+                return Response.json({
+                    ok: true,
+                    source: 'database',
+                    subscription: {
+                        id: sub.id,
+                        status: sub.estado,
+                        active: ['activo', 'en_prueba', 'trialing', 'active'].includes(sub.estado?.toLowerCase()),
+                        expiration: sub.fecha_expiracion
+                    },
+                    message: 'Suscripción encontrada en BD (no en Stripe)'
                 });
-            }
-
-            const customerId = customers.data[0].id;
-            console.log('✅ Cliente Stripe encontrado:', customerId);
-
-            // Buscar suscripciones del cliente
-            const stripeSubs = await stripe.subscriptions.list({
-                customer: customerId,
-                limit: 10
-            });
-
-            if (stripeSubs.data.length === 0) {
-                console.log('❌ Cliente existe pero no tiene suscripciones en Stripe');
-                
-                if (dbSub.estado === 'activo' || dbSub.estado === 'en_prueba') {
-                    console.log('🔴 Corrigiendo: BD dice activo pero no hay suscripción en Stripe');
-                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                        estado: 'finalizada',
-                        renovacion_automatica: false,
-                        stripe_customer_id: customerId
-                    });
-
-                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
-                    if (profiles.length > 0) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: false,
-                            estado_perfil: 'inactivo'
-                        });
-                    }
-
-                    return Response.json({
-                        synced: true,
-                        corrected: true,
-                        hasSubscription: false,
-                        message: 'Subscription marked as inactive - customer has no subscriptions in Stripe'
-                    });
-                }
-
-                return Response.json({ 
-                    synced: true, 
-                    hasSubscription: false,
-                    stripeCustomerId: customerId 
-                });
-            }
-
-            // Usar la suscripción más reciente
-            const stripeSub = stripeSubs.data[0];
-            console.log('✅ Suscripción Stripe encontrada:', stripeSub.id, '- Status:', stripeSub.status);
-
-            // Actualizar BD con IDs de Stripe
-            dbSub.stripe_subscription_id = stripeSub.id;
-            dbSub.stripe_customer_id = customerId;
-        }
-
-        // ✅ OBTENER ESTADO ACTUAL DE STRIPE
-        let stripeSub;
-        try {
-            stripeSub = await stripe.subscriptions.retrieve(dbSub.stripe_subscription_id);
-            console.log('✅ Suscripción Stripe:', stripeSub.status);
-        } catch (stripeErr) {
-            console.error('❌ Suscripción no encontrada en Stripe:', stripeErr.message);
-            
-            // Si la suscripción no existe en Stripe, marcar como inactiva
-            if (dbSub.estado === 'activo' || dbSub.estado === 'en_prueba') {
-                console.log('🔴 Corrigiendo estado...');
-                await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                    estado: 'finalizada',
-                    renovacion_automatica: false
-                });
-
-                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
-                if (profiles.length > 0) {
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                        visible_en_busqueda: false,
-                        estado_perfil: 'inactivo'
-                    });
-                }
             }
 
             return Response.json({
-                synced: true,
-                corrected: true,
-                hasSubscription: false,
-                error: 'Stripe subscription not found'
+                ok: false,
+                subscription: null,
+                message: 'No se encontró suscripción en Stripe ni en BD'
             });
         }
 
-        // ✅ CALCULAR ESTADO CORRECTO BASADO EN STRIPE
-        let correctEstado;
-        let correctVisible;
+        // ✅ CALCULAR ESTADO
+        const isActive = stripeSubscription.status === 'active' || stripeSubscription.status === 'trialing';
+        const estado = stripeSubscription.status === 'trialing' ? 'en_prueba' : 
+                       stripeSubscription.status === 'active' ? 'activo' :
+                       stripeSubscription.status === 'canceled' ? 'cancelado' : 'finalizada';
+
+        // ✅ OBTENER PLAN
+        const planId = stripeSubscription.metadata?.plan_id || 'plan_monthly_trial';
+        const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
+        const plan = plans[0] || { nombre: 'Plan Mensual', precio: 33 };
+
+        // ✅ CREAR/ACTUALIZAR SUSCRIPCIÓN EN BD
+        const subscriptionData = {
+            user_id: user.id,
+            plan_id: planId,
+            plan_nombre: plan.nombre,
+            plan_precio: plan.precio,
+            fecha_inicio: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+            fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+            estado: estado,
+            renovacion_automatica: !stripeSubscription.cancel_at_period_end,
+            metodo_pago: 'stripe',
+            stripe_subscription_id: stripeSubscription.id,
+            stripe_customer_id: stripeCustomer.id
+        };
+
+        const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: user.id });
         
-        if (stripeSub.status === 'active') {
-            correctEstado = 'activo';
-            correctVisible = true;
-        } else if (stripeSub.status === 'trialing') {
-            correctEstado = 'en_prueba';
-            correctVisible = true;
-        } else if (stripeSub.status === 'canceled') {
-            // Cancelado pero puede seguir activo hasta fin de periodo
-            const endDate = new Date(stripeSub.current_period_end * 1000);
-            if (endDate > new Date()) {
-                correctEstado = 'cancelado';
-                correctVisible = true;
-            } else {
-                correctEstado = 'finalizada';
-                correctVisible = false;
-            }
+        let subscriptionId;
+        if (existingSubs.length > 0) {
+            await base44.asServiceRole.entities.Subscription.update(existingSubs[0].id, subscriptionData);
+            subscriptionId = existingSubs[0].id;
+            console.log('✅ Suscripción actualizada en BD:', subscriptionId);
         } else {
-            correctEstado = 'finalizada';
-            correctVisible = false;
+            const newSub = await base44.asServiceRole.entities.Subscription.create(subscriptionData);
+            subscriptionId = newSub.id;
+            console.log('✅ Suscripción creada en BD:', subscriptionId);
         }
 
-        console.log('📊 Estado correcto según Stripe:', correctEstado, '- Visible:', correctVisible);
-        console.log('📊 Estado actual en BD:', dbSub.estado);
+        // ✅ ACTUALIZAR USUARIO
+        const userUpdateData = {
+            user_type: 'professionnel',
+            subscription_status: estado,
+            subscription_start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString().split('T')[0],
+            subscription_end_date: new Date(stripeSubscription.current_period_end * 1000).toISOString().split('T')[0]
+        };
 
-        // ✅ ACTUALIZAR SI HAY DIFERENCIAS
-        const needsUpdate = dbSub.estado !== correctEstado;
+        if (stripeSubscription.status === 'trialing') {
+            userUpdateData.has_used_trial = true;
+        }
+
+        await base44.asServiceRole.entities.User.update(user.id, userUpdateData);
+        console.log('✅ Usuario actualizado');
+
+        // ✅ ACTUALIZAR PERFIL SI EXISTE Y ONBOARDING COMPLETADO
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
         
-        if (needsUpdate) {
-            console.log('🔄 Actualizando BD para sincronizar con Stripe...');
+        let profileVisible = false;
+        if (profiles.length > 0) {
+            const profile = profiles[0];
+            const shouldBeVisible = profile.onboarding_completed === true && isActive;
             
-            await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                estado: correctEstado,
-                fecha_expiracion: new Date(stripeSub.current_period_end * 1000).toISOString(),
-                renovacion_automatica: !stripeSub.cancel_at_period_end,
-                stripe_subscription_id: stripeSub.id,
-                stripe_customer_id: stripeSub.customer
+            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                visible_en_busqueda: shouldBeVisible,
+                estado_perfil: isActive ? 'activo' : 'inactivo'
             });
-
-            // Actualizar perfil
-            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
-            if (profiles.length > 0) {
-                await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    visible_en_busqueda: correctVisible,
-                    estado_perfil: correctVisible ? 'activo' : 'inactivo'
-                });
-            }
-
-            // Actualizar usuario
-            await base44.asServiceRole.entities.User.update(user.id, {
-                subscription_status: correctEstado
-            });
-
-            console.log('✅ BD sincronizada con Stripe');
+            
+            profileVisible = shouldBeVisible;
+            console.log('✅ Perfil actualizado - Visible:', shouldBeVisible);
         }
+
+        console.log('✅ ========== SYNC COMPLETADO ==========');
 
         return Response.json({
-            synced: true,
-            corrected: needsUpdate,
-            hasSubscription: true,
-            stripeStatus: stripeSub.status,
-            dbStatus: correctEstado,
-            stripeSubscriptionId: stripeSub.id,
-            stripeCustomerId: stripeSub.customer,
-            visible: correctVisible,
-            renewalDate: new Date(stripeSub.current_period_end * 1000).toISOString(),
-            cancelAtPeriodEnd: stripeSub.cancel_at_period_end
+            ok: true,
+            source: 'stripe',
+            subscription: {
+                id: subscriptionId,
+                stripe_id: stripeSubscription.id,
+                status: estado,
+                active: isActive,
+                expiration: subscriptionData.fecha_expiracion,
+                trial: stripeSubscription.status === 'trialing'
+            },
+            profile: {
+                exists: profiles.length > 0,
+                visible: profileVisible,
+                onboarding_completed: profiles.length > 0 ? profiles[0].onboarding_completed : false
+            },
+            message: 'Suscripción sincronizada correctamente'
         });
 
     } catch (error) {
         console.error('❌ Error:', error.message);
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error('❌ Stack:', error.stack);
+        return Response.json({ 
+            ok: false,
+            error: error.message 
+        }, { status: 500 });
     }
 });

@@ -1,277 +1,224 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { CheckCircle, Loader2, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
+import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function PaymentSuccessPage() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState("verifying"); // verifying, success, error
-  const [countdown, setCountdown] = useState(5);
-  const [profileExists, setProfileExists] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [status, setStatus] = useState("processing");
+  const [message, setMessage] = useState("Activando tu cuenta profesional...");
+  const hasProcessed = useRef(false);
 
   const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
-    if (sessionId) {
-      verifyPaymentAndSetup();
-    } else {
-      // Sin session_id, ir directo a verificar estado
-      checkUserStatus();
-    }
-  }, [sessionId]);
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+    
+    processPayment();
+  }, []);
 
-  useEffect(() => {
-    if (status === "success" && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (status === "success" && countdown === 0) {
-      handleContinue();
-    }
-  }, [status, countdown]);
-
-  const verifyPaymentAndSetup = async () => {
+  const processPayment = async () => {
     try {
-      // Limpiar cache para forzar datos frescos
+      // Limpiar cache
       sessionStorage.removeItem('current_user');
       
-      // Esperar un momento para que el webhook procese
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // Obtener usuario actualizado
+      // Obtener usuario
       const user = await base44.auth.me();
-      
       if (!user) {
         setStatus("error");
+        setMessage("No se encontró tu sesión. Por favor inicia sesión.");
         return;
       }
 
-      // Verificar suscripción con reintentos
-      let attempts = 0;
-      const maxAttempts = 12;
-      let subscriptionFound = false;
-      let lastSub = null;
+      console.log('👤 Usuario:', user.email);
+      setMessage("Verificando pago con Stripe...");
 
-      while (attempts < maxAttempts && !subscriptionFound) {
-        const subs = await base44.entities.Subscription.filter({ user_id: user.id });
-        
-        if (subs.length > 0) {
-          lastSub = subs[0];
-          const estado = lastSub.estado?.toLowerCase();
+      // ✅ LLAMAR A LA FUNCIÓN QUE SINCRONIZA CON STRIPE Y CREA LA SUSCRIPCIÓN
+      let syncResult = null;
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await base44.functions.invoke('syncStripeSubscription', {
+            sessionId: sessionId
+          });
+          syncResult = response.data;
+          console.log('🔄 Sync resultado:', syncResult);
           
-          if (estado === 'activo' || estado === 'en_prueba' || estado === 'trialing' || estado === 'active' || estado === 'trial_active') {
-            subscriptionFound = true;
-            console.log('✅ Suscripción encontrada:', estado);
+          if (syncResult?.subscription?.active) {
             break;
           }
+        } catch (e) {
+          console.log('Intento', attempts + 1, 'fallido:', e.message);
         }
         
         attempts++;
-        console.log(`🔄 Intento ${attempts}/${maxAttempts} - Esperando webhook...`);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-
-      if (!subscriptionFound) {
-        // Intentar una última vez después de más espera
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const finalSubs = await base44.entities.Subscription.filter({ user_id: user.id });
-        if (finalSubs.length > 0) {
-          subscriptionFound = true;
-          lastSub = finalSubs[0];
+        if (attempts < maxAttempts) {
+          setMessage(`Esperando confirmación de Stripe... (${attempts}/${maxAttempts})`);
+          await new Promise(r => setTimeout(r, 2000));
         }
       }
 
-      // Verificar perfil
-      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-      const hasProfile = profiles.length > 0;
-      const isOnboardingDone = hasProfile && profiles[0].onboarding_completed === true;
+      // ✅ VERIFICAR SUSCRIPCIÓN EN BD
+      setMessage("Verificando suscripción...");
+      const subs = await base44.entities.Subscription.filter({ user_id: user.id });
       
-      setProfileExists(hasProfile);
-      setOnboardingCompleted(isOnboardingDone);
+      let hasSubscription = false;
+      if (subs.length > 0) {
+        const sub = subs[0];
+        const estado = sub.estado?.toLowerCase();
+        const fechaExp = new Date(sub.fecha_expiracion);
+        const today = new Date();
+        
+        hasSubscription = (
+          estado === 'activo' || 
+          estado === 'en_prueba' || 
+          estado === 'trialing' ||
+          estado === 'active'
+        ) && fechaExp >= today;
+        
+        console.log('📊 Suscripción encontrada:', estado, 'Activa:', hasSubscription);
+      }
 
-      // Forzar actualización del user_type si no está correcto
+      // ✅ ACTUALIZAR USUARIO A PROFESIONAL
       if (user.user_type !== 'professionnel') {
         await base44.auth.updateMe({ user_type: 'professionnel' });
-        console.log('✅ user_type actualizado a professionnel');
+        console.log('✅ Usuario actualizado a professionnel');
       }
 
-      // Llamar a la función de activación para garantizar sincronización
-      try {
-        const activationResult = await base44.functions.invoke('activateProfile', {});
-        console.log('🔄 Resultado activación:', activationResult.data);
+      // ✅ VERIFICAR PERFIL PROFESIONAL
+      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+      const hasProfile = profiles.length > 0;
+      const onboardingDone = hasProfile && profiles[0].onboarding_completed === true;
+
+      console.log('📋 Perfil:', hasProfile, 'Onboarding:', onboardingDone);
+
+      // Limpiar cache de nuevo
+      sessionStorage.removeItem('current_user');
+
+      // ✅ DETERMINAR DESTINO
+      if (!hasSubscription) {
+        // Sin suscripción activa - mostrar error pero permitir continuar
+        setStatus("warning");
+        setMessage("El pago está siendo procesado. Por favor completa tu perfil.");
         
-        // Actualizar estados según resultado
-        if (activationResult.data?.profile?.visible) {
-          setOnboardingCompleted(true);
-        }
-      } catch (activationError) {
-        console.log('⚠️ Error en activación (no crítico):', activationError);
-      }
-
-      // Limpiar cache de nuevo para tener datos frescos
-      sessionStorage.removeItem('current_user');
-
-      setStatus("success");
-
-    } catch (error) {
-      console.error("Error verificando pago:", error);
-      setStatus("error");
-    }
-  };
-
-  const checkUserStatus = async () => {
-    try {
-      sessionStorage.removeItem('current_user');
-      const user = await base44.auth.me();
-      
-      if (!user) {
-        navigate(createPageUrl("PricingPlans"));
+        setTimeout(() => {
+          if (!onboardingDone) {
+            navigate(createPageUrl("ProfileOnboarding"));
+          } else {
+            navigate(createPageUrl("ProfessionalDashboard"));
+          }
+        }, 2000);
         return;
       }
 
-      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-      setProfileExists(profiles.length > 0);
-      setOnboardingCompleted(profiles.length > 0 && profiles[0].onboarding_completed === true);
-      
+      // ✅ ÉXITO - Redirigir automáticamente
       setStatus("success");
+      
+      if (onboardingDone) {
+        setMessage("¡Todo listo! Redirigiendo a tu dashboard...");
+        setTimeout(() => {
+          navigate(createPageUrl("ProfessionalDashboard"));
+        }, 1500);
+      } else {
+        setMessage("¡Pago confirmado! Ahora completa tu perfil profesional...");
+        setTimeout(() => {
+          navigate(createPageUrl("ProfileOnboarding"));
+        }, 1500);
+      }
+
     } catch (error) {
+      console.error("Error:", error);
       setStatus("error");
+      setMessage("Error al procesar. Por favor contacta con soporte.");
     }
   };
-
-  const handleContinue = () => {
-    sessionStorage.removeItem('current_user');
-    
-    if (onboardingCompleted) {
-      // Perfil completo -> ir al dashboard
-      navigate(createPageUrl("ProfessionalDashboard"));
-    } else {
-      // Necesita completar onboarding
-      navigate(createPageUrl("ProfileOnboarding"));
-    }
-  };
-
-  if (status === "verifying") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-2xl border-0">
-          <CardContent className="p-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">
-              Verificando tu pago...
-            </h1>
-            <p className="text-gray-600">
-              Estamos confirmando tu suscripción y preparando tu cuenta profesional.
-            </p>
-            <p className="text-sm text-gray-500 mt-4">
-              Esto solo tardará unos segundos...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full shadow-2xl border-0">
-          <CardContent className="p-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-4xl">⚠️</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">
-              Hubo un problema
-            </h1>
-            <p className="text-gray-600 mb-6">
-              No pudimos verificar tu pago. Si acabas de pagar, espera unos minutos y recarga la página.
-            </p>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => window.location.reload()} 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Reintentar
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-                className="w-full"
-              >
-                Volver a planes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full shadow-2xl border-0 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-white rounded-full flex items-center justify-center shadow-lg">
-            <CheckCircle className="w-12 h-12 text-green-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            ¡Pago confirmado!
-          </h1>
-          <p className="text-green-100 text-lg">
-            Tu suscripción está activa
-          </p>
-        </div>
-
-        <CardContent className="p-6">
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-              <Sparkles className="w-6 h-6 text-green-600" />
-              <div>
-                <p className="font-semibold text-green-900">Ya eres profesional</p>
-                <p className="text-sm text-green-700">Tu cuenta tiene acceso a todas las funcionalidades</p>
+    <div className={`min-h-screen flex items-center justify-center p-4 ${
+      status === "success" ? "bg-gradient-to-br from-green-50 to-emerald-100" :
+      status === "error" ? "bg-gradient-to-br from-red-50 to-orange-100" :
+      status === "warning" ? "bg-gradient-to-br from-amber-50 to-yellow-100" :
+      "bg-gradient-to-br from-blue-50 to-indigo-100"
+    }`}>
+      <Card className="max-w-md w-full shadow-2xl border-0">
+        <CardContent className="p-8 text-center">
+          {status === "processing" && (
+            <>
+              <div className="w-20 h-20 mx-auto mb-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
               </div>
-            </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                Procesando tu pago
+              </h1>
+              <p className="text-gray-600">{message}</p>
+            </>
+          )}
 
-            {!onboardingCompleted && (
-              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <ArrowRight className="w-6 h-6 text-blue-600" />
-                <div>
-                  <p className="font-semibold text-blue-900">Siguiente paso</p>
-                  <p className="text-sm text-blue-700">Completa tu perfil para aparecer en búsquedas</p>
-                </div>
+          {status === "success" && (
+            <>
+              <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-12 h-12 text-green-600" />
               </div>
-            )}
-
-            {onboardingCompleted && (
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                <CheckCircle className="w-6 h-6 text-purple-600" />
-                <div>
-                  <p className="font-semibold text-purple-900">¡Perfil visible!</p>
-                  <p className="text-sm text-purple-700">Los clientes ya pueden encontrarte</p>
-                </div>
+              <h1 className="text-2xl font-bold text-green-800 mb-3">
+                ¡Pago confirmado!
+              </h1>
+              <p className="text-gray-600 mb-4">{message}</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Redirigiendo...
               </div>
-            )}
-          </div>
+            </>
+          )}
 
-          <Button 
-            onClick={handleContinue}
-            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
-          >
-            {onboardingCompleted ? "Ir a mi dashboard" : "Completar mi perfil"}
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
+          {status === "warning" && (
+            <>
+              <div className="w-20 h-20 mx-auto mb-6 bg-amber-100 rounded-full flex items-center justify-center">
+                <ArrowRight className="w-12 h-12 text-amber-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-amber-800 mb-3">
+                Procesando...
+              </h1>
+              <p className="text-gray-600 mb-4">{message}</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Redirigiendo...
+              </div>
+            </>
+          )}
 
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Redirigiendo automáticamente en {countdown} segundos...
-          </p>
+          {status === "error" && (
+            <>
+              <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-4xl">⚠️</span>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                Hubo un problema
+              </h1>
+              <p className="text-gray-600 mb-6">{message}</p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate(createPageUrl("ProfileOnboarding"))} 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Completar mi perfil
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
+                  className="w-full"
+                >
+                  Ver mi suscripción
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
