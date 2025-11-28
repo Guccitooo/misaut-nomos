@@ -61,7 +61,8 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
       // Mensaje de bienvenida
       setMessages([{
         role: 'assistant',
-        content: '¡Hola! 👋 Soy el asistente de MisAutónomos. Puedo ayudarte a:\n\n• Encontrar profesionales en tu zona\n• Responder preguntas sobre servicios\n• Conectarte con el especialista adecuado\n\n¿Qué necesitas hoy?'
+        content: '¡Hola! 👋 Soy el asistente de MisAutónomos. Puedo ayudarte a:\n\n• Encontrar profesionales en tu zona\n• Responder preguntas sobre servicios\n• Conectarte con el especialista adecuado\n\n¿Qué necesitas hoy?',
+        isWelcome: true
       }]);
     } catch (error) {
       console.error('Error initializing conversation:', error);
