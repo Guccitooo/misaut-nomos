@@ -833,41 +833,39 @@ export default function MyProfilePage() {
         )}
 
         <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
-          <TabsList className={`grid w-full ${isProfessional ? 'grid-cols-3 lg:grid-cols-6' : 'grid-cols-1'} bg-white shadow-md`}>
-            <TabsTrigger value="personal" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              <User className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">{t('personalInformation')}</span>
-              <span className="sm:hidden">Personal</span>
-            </TabsTrigger>
-            {isProfessional && (
-              <>
-                <TabsTrigger value="business" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">{t('professionalProfile')}</span>
-                  <span className="sm:hidden">Perfil</span>
-                </TabsTrigger>
-                <TabsTrigger value="skills" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <Award className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Habilidades</span>
-                  <span className="sm:hidden">Skills</span>
-                </TabsTrigger>
-                <TabsTrigger value="portfolio" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <Camera className="w-4 h-4 mr-2" />
-                  {t('portfolio')}
-                </TabsTrigger>
-                <TabsTrigger value="faq" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">FAQ</span>
-                  <span className="sm:hidden">FAQ</span>
-                </TabsTrigger>
-                <TabsTrigger value="invoicing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                  <Euro className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">{t('invoicingData') || 'Facturación'}</span>
-                  <span className="sm:hidden">Fact.</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
+          {/* Tabs móvil: scroll horizontal */}
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-6' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
+              <TabsTrigger value="personal" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                <User className="w-4 h-4" />
+                Personal
+              </TabsTrigger>
+              {isProfessional && (
+                <>
+                  <TabsTrigger value="business" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Building2 className="w-4 h-4" />
+                    Perfil
+                  </TabsTrigger>
+                  <TabsTrigger value="skills" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Award className="w-4 h-4" />
+                    Skills
+                  </TabsTrigger>
+                  <TabsTrigger value="portfolio" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Camera className="w-4 h-4" />
+                    Portfolio
+                  </TabsTrigger>
+                  <TabsTrigger value="faq" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <BarChart3 className="w-4 h-4" />
+                    FAQ
+                  </TabsTrigger>
+                  <TabsTrigger value="invoicing" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Euro className="w-4 h-4" />
+                    Fact.
+                  </TabsTrigger>
+                </>
+              )}
+            </TabsList>
+          </div>
 
           <TabsContent value="personal">
             <Card className="shadow-sm border-0 bg-white">
