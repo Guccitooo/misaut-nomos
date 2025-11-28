@@ -98,11 +98,24 @@ Deno.serve(async (req) => {
             });
         }
 
-        // ✅ CALCULAR ESTADO
-        const isActive = stripeSubscription.status === 'active' || stripeSubscription.status === 'trialing';
-        const estado = stripeSubscription.status === 'trialing' ? 'en_prueba' : 
-                       stripeSubscription.status === 'active' ? 'activo' :
-                       stripeSubscription.status === 'canceled' ? 'cancelado' : 'finalizada';
+        // ✅ CALCULAR ESTADO - Respetar cancel_at_period_end de Stripe
+        const isCanceledAtPeriodEnd = stripeSubscription.cancel_at_period_end === true;
+        const isActive = (stripeSubscription.status === 'active' || stripeSubscription.status === 'trialing') && !isCanceledAtPeriodEnd;
+        
+        let estado;
+        if (isCanceledAtPeriodEnd) {
+            estado = 'cancelado'; // Usuario canceló, no renovará
+        } else if (stripeSubscription.status === 'trialing') {
+            estado = 'en_prueba';
+        } else if (stripeSubscription.status === 'active') {
+            estado = 'activo';
+        } else if (stripeSubscription.status === 'canceled') {
+            estado = 'finalizada';
+        } else {
+            estado = 'finalizada';
+        }
+        
+        console.log('📊 Estado calculado:', estado, '- Cancel at period end:', isCanceledAtPeriodEnd);
 
         // ✅ OBTENER PLAN
         const planId = stripeSubscription.metadata?.plan_id || 'plan_monthly_trial';
