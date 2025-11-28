@@ -213,10 +213,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const isProfessional = React.useMemo(() => {
     if (!user) return false;
-    // Si tiene perfil profesional con onboarding completado, ES profesional
-    if (professionalProfile && professionalProfile.user_id === user.id && professionalProfile.onboarding_completed) return true;
-    // También si user_type es professionnel
+    // Es profesional si user_type es professionnel (después del pago)
     if (user.user_type === "professionnel") return true;
+    // O si tiene perfil profesional
+    if (professionalProfile && professionalProfile.user_id === user.id) return true;
     return false;
   }, [user, professionalProfile]);
 
