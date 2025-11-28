@@ -171,15 +171,16 @@ Deno.serve(async (req) => {
         let profileVisible = false;
         if (profiles.length > 0) {
             const profile = profiles[0];
-            const shouldBeVisible = profile.onboarding_completed === true && isActive;
+            // Solo visible si: onboarding completado + suscripción activa (no cancelada)
+            const shouldBeVisible = profile.onboarding_completed === true && isActive && !isCanceledAtPeriodEnd;
             
             await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
                 visible_en_busqueda: shouldBeVisible,
-                estado_perfil: isActive ? 'activo' : 'inactivo'
+                estado_perfil: isActive && !isCanceledAtPeriodEnd ? 'activo' : 'inactivo'
             });
             
             profileVisible = shouldBeVisible;
-            console.log('✅ Perfil actualizado - Visible:', shouldBeVisible);
+            console.log('✅ Perfil actualizado - Visible:', shouldBeVisible, '- Cancelado:', isCanceledAtPeriodEnd);
         }
 
         console.log('✅ ========== SYNC COMPLETADO ==========');
