@@ -125,12 +125,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const loadUser = React.useCallback(async () => {
     try {
-      // Cache más agresivo: 5 minutos
+      // Cache de 1 minuto - más corto para detectar cambios post-pago
       const cached = sessionStorage.getItem('current_user');
       if (cached) {
         const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        // 5 minutos de cache
-        if (Date.now() - timestamp < 300000) {
+        // 1 minuto de cache
+        if (Date.now() - timestamp < 60000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
           setLoadingUser(false);
@@ -140,12 +140,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
       const currentUser = await base44.auth.me();
 
-      if (currentUser && currentUser.user_type === "professionnel") {
+      // Siempre verificar perfil profesional (puede haber cambiado después del pago)
+      if (currentUser) {
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
         });
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
+
         sessionStorage.setItem('current_user', JSON.stringify({
           user: currentUser,
           profile,
@@ -153,11 +155,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         }));
       } else {
         setProfessionalProfile(null);
-        sessionStorage.setItem('current_user', JSON.stringify({
-          user: currentUser,
-          profile: null,
-          timestamp: Date.now()
-        }));
       }
 
       setUser(currentUser);
