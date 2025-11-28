@@ -42,7 +42,7 @@ export default function PaymentSuccessPage() {
       sessionStorage.removeItem('current_user');
       
       // Esperar un momento para que el webhook procese
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2500));
       
       // Obtener usuario actualizado
       const user = await base44.auth.me();
@@ -52,25 +52,28 @@ export default function PaymentSuccessPage() {
         return;
       }
 
-      // Verificar suscripción
+      // Verificar suscripción con reintentos
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 12;
       let subscriptionFound = false;
+      let lastSub = null;
 
       while (attempts < maxAttempts && !subscriptionFound) {
         const subs = await base44.entities.Subscription.filter({ user_id: user.id });
         
         if (subs.length > 0) {
-          const sub = subs[0];
-          const estado = sub.estado?.toLowerCase();
+          lastSub = subs[0];
+          const estado = lastSub.estado?.toLowerCase();
           
-          if (estado === 'activo' || estado === 'en_prueba' || estado === 'trialing' || estado === 'active') {
+          if (estado === 'activo' || estado === 'en_prueba' || estado === 'trialing' || estado === 'active' || estado === 'trial_active') {
             subscriptionFound = true;
+            console.log('✅ Suscripción encontrada:', estado);
             break;
           }
         }
         
         attempts++;
+        console.log(`🔄 Intento ${attempts}/${maxAttempts} - Esperando webhook...`);
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
@@ -80,17 +83,34 @@ export default function PaymentSuccessPage() {
         const finalSubs = await base44.entities.Subscription.filter({ user_id: user.id });
         if (finalSubs.length > 0) {
           subscriptionFound = true;
+          lastSub = finalSubs[0];
         }
       }
 
       // Verificar perfil
       const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-      setProfileExists(profiles.length > 0);
-      setOnboardingCompleted(profiles.length > 0 && profiles[0].onboarding_completed === true);
+      const hasProfile = profiles.length > 0;
+      const isOnboardingDone = hasProfile && profiles[0].onboarding_completed === true;
+      
+      setProfileExists(hasProfile);
+      setOnboardingCompleted(isOnboardingDone);
 
       // Forzar actualización del user_type si no está correcto
       if (user.user_type !== 'professionnel') {
         await base44.auth.updateMe({ user_type: 'professionnel' });
+        console.log('✅ user_type actualizado a professionnel');
+      }
+
+      // Si tiene suscripción Y onboarding completo, asegurar que perfil sea visible
+      if (subscriptionFound && isOnboardingDone && hasProfile) {
+        const profile = profiles[0];
+        if (!profile.visible_en_busqueda) {
+          await base44.entities.ProfessionalProfile.update(profile.id, {
+            visible_en_busqueda: true,
+            estado_perfil: 'activo'
+          });
+          console.log('✅ Perfil actualizado a visible');
+        }
       }
 
       // Limpiar cache de nuevo para tener datos frescos
