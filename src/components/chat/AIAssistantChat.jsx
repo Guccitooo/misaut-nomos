@@ -22,14 +22,24 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import ReactMarkdown from 'react-markdown';
 
-export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) {
+export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', browsingContext = {}, initialProactiveMessage = null }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState(initialQuery);
   const [isLoading, setIsLoading] = useState(false);
   const [conversation, setConversation] = useState(null);
   const [suggestedProfessionals, setSuggestedProfessionals] = useState([]);
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Cargar búsquedas guardadas
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ai_saved_searches');
+      if (saved) setSavedSearches(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     if (isOpen && !conversation) {
@@ -47,26 +57,76 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '' }) 
     }
   }, [isOpen]);
 
+  // Generar mensaje de bienvenida personalizado basado en contexto
+  const getPersonalizedWelcome = () => {
+    const { currentPage, searchQuery, category, viewedProfiles, searchHistory } = browsingContext;
+    
+    // Si viene de ver perfiles, sugerir guardarlo
+    if (viewedProfiles?.length >= 2) {
+      return `¡Hola! 👋 Veo que has estado explorando profesionales. ¿Quieres que te ayude a:\n\n• Comparar los perfiles que has visto\n• Encontrar más opciones similares\n• Guardar tus criterios de búsqueda favoritos\n\n¿En qué puedo ayudarte?`;
+    }
+    
+    // Si tiene búsquedas recientes
+    if (searchHistory?.length > 0) {
+      const lastSearch = searchHistory[searchHistory.length - 1];
+      return `¡Hola! 👋 Veo que buscaste "${lastSearch.query || lastSearch.category}". ¿Encontraste lo que necesitabas?\n\nPuedo ayudarte a:\n• Refinar la búsqueda\n• Encontrar más opciones\n• Guardar estos criterios para futuras búsquedas`;
+    }
+    
+    // Si está en una categoría específica
+    if (category) {
+      return `¡Hola! 👋 Veo que estás buscando servicios de ${category}. ¿Necesitas ayuda para:\n\n• Encontrar profesionales específicos\n• Comparar opciones\n• Saber qué preguntar a un profesional\n\n¿Cómo puedo ayudarte?`;
+    }
+    
+    // Mensaje por defecto
+    return '¡Hola! 👋 Soy el asistente de MisAutónomos. Puedo ayudarte a:\n\n• Encontrar profesionales en tu zona\n• Responder preguntas sobre servicios\n• Guardar tus búsquedas favoritas\n\n¿Qué necesitas hoy?';
+  };
+
   const initializeConversation = async () => {
     try {
       const conv = await base44.agents.createConversation({
         agent_name: 'clientAssistant',
         metadata: {
           name: 'Asistente IA',
-          started_at: new Date().toISOString()
+          started_at: new Date().toISOString(),
+          browsingContext: browsingContext
         }
       });
       setConversation(conv);
       
-      // Mensaje de bienvenida
+      // Mensaje de bienvenida personalizado
+      const welcomeMessage = getPersonalizedWelcome();
       setMessages([{
         role: 'assistant',
-        content: '¡Hola! 👋 Soy el asistente de MisAutónomos. Puedo ayudarte a:\n\n• Encontrar profesionales en tu zona\n• Responder preguntas sobre servicios\n• Conectarte con el especialista adecuado\n\n¿Qué necesitas hoy?',
+        content: welcomeMessage,
         isWelcome: true
       }]);
+
+      // Si hay un mensaje proactivo pendiente, añadirlo
+      if (initialProactiveMessage) {
+        setTimeout(() => {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: initialProactiveMessage,
+            isProactive: true
+          }]);
+        }, 1500);
+      }
     } catch (error) {
       console.error('Error initializing conversation:', error);
     }
+  };
+
+  // Guardar búsqueda
+  const saveSearch = (searchCriteria) => {
+    const newSaved = [...savedSearches, {
+      ...searchCriteria,
+      id: Date.now(),
+      savedAt: new Date().toISOString()
+    }].slice(-5); // Máximo 5 búsquedas guardadas
+    
+    setSavedSearches(newSaved);
+    localStorage.setItem('ai_saved_searches', JSON.stringify(newSaved));
+    setShowSavePrompt(false);
   };
 
   const sendMessage = async () => {
