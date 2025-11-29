@@ -348,7 +348,45 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
             {/* Profesionales sugeridos */}
             {suggestedProfessionals.length > 0 && (
               <div className="space-y-2 pt-2">
-                <p className="text-xs text-gray-500 font-medium">Profesionales recomendados:</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500 font-medium">Profesionales recomendados:</p>
+                  {!showSavePrompt && (
+                    <button 
+                      onClick={() => setShowSavePrompt(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Guardar búsqueda
+                    </button>
+                  )}
+                </div>
+                
+                {showSavePrompt && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                    <p className="text-xs text-blue-800 mb-2">¿Guardar estos criterios de búsqueda?</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        className="h-7 text-xs bg-blue-600 hover:bg-blue-700"
+                        onClick={() => saveSearch({
+                          category: browsingContext.category,
+                          query: browsingContext.searchQuery,
+                          professionals: suggestedProfessionals.map(p => p.id)
+                        })}
+                      >
+                        Sí, guardar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setShowSavePrompt(false)}
+                      >
+                        No, gracias
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 {suggestedProfessionals.map((pro) => (
                   <Link 
                     key={pro.id} 
@@ -383,6 +421,30 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
                       </div>
                     </div>
                   </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Búsquedas guardadas */}
+            {savedSearches.length > 0 && messages.length <= 1 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-xs text-gray-500 font-medium">Tus búsquedas guardadas:</p>
+                {savedSearches.slice(-3).map((search) => (
+                  <button
+                    key={search.id}
+                    onClick={() => {
+                      const query = search.query || search.category || 'profesionales';
+                      setInputValue(`Buscar ${query}`);
+                    }}
+                    className="w-full text-left bg-gray-50 hover:bg-gray-100 border rounded-lg p-2 text-xs transition-colors"
+                  >
+                    <span className="font-medium text-gray-700">
+                      {search.query || search.category || 'Búsqueda guardada'}
+                    </span>
+                    <span className="text-gray-400 ml-2">
+                      {new Date(search.savedAt).toLocaleDateString('es-ES')}
+                    </span>
+                  </button>
                 ))}
               </div>
             )}
