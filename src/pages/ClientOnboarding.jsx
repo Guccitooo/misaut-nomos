@@ -53,16 +53,26 @@ export default function ClientOnboardingPage() {
   });
 
   const serviciosDisponibles = categories.length > 0 ? categories : [
-    "Electricista",
-    "Fontanero",
-    "Carpintero",
+    "Abogado",
     "Albañil / Reformas",
-    "Jardinero",
-    "Pintor",
-    "Transportista",
-    "Autónomo de limpieza",
     "Asesoría o gestoría",
-    "Empresa multiservicios"
+    "Autónomo de limpieza",
+    "Carpintero",
+    "Cerrajero",
+    "Climatización / Calefacción",
+    "Electricista",
+    "Empresa multiservicios",
+    "Fontanero",
+    "Informático a domicilio / soporte IT",
+    "Instalador de aire acondicionado",
+    "Jardinero",
+    "Mantenimiento de piscinas",
+    "Mantenimiento general",
+    "Marketing digital / diseño web",
+    "Peluquería y estética a domicilio",
+    "Persianas y toldos",
+    "Pintor",
+    "Transportista"
   ];
 
   // ✅ AMPLIADO: TODAS las provincias españolas ordenadas alfabéticamente
