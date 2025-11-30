@@ -58,6 +58,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to={createPageUrl("DashboardProInfo")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
+                  {t('dashboardProInfo') || 'Dashboard Pro'}
+                </Link>
+              </li>
+              <li>
                 <Link to={createPageUrl("FAQ")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('faq')}
                 </Link>
@@ -172,6 +177,9 @@ export default function Footer() {
               </Link>
               <Link to={createPageUrl("PricingPlans")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('becomeFreelancer')}
+              </Link>
+              <Link to={createPageUrl("DashboardProInfo")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
+                {t('dashboardProInfo') || 'Dashboard Pro'}
               </Link>
               <Link to={createPageUrl("FAQ")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
                 {t('faq')}
