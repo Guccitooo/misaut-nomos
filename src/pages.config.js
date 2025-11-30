@@ -33,6 +33,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import DashboardProInfo from './pages/DashboardProInfo';
 import ClientDetail from './pages/ClientDetail';
 import CRMAutomations from './pages/CRMAutomations';
+import Calendar from './pages/Calendar';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "DashboardProInfo": DashboardProInfo,
     "ClientDetail": ClientDetail,
     "CRMAutomations": CRMAutomations,
+    "Calendar": Calendar,
 }
 
 export const pagesConfig = {
