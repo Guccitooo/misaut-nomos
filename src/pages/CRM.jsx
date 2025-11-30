@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, Plus, Mail, Phone, Building, ArrowLeft, Search, Edit2, Trash2, IdCard, MapPin } from "lucide-react";
+import { Users, Plus, Mail, Phone, Building, ArrowLeft, Search, Edit2, Trash2, IdCard, MapPin, Eye, Tag, Star, Filter, TrendingUp, Euro } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
 
@@ -47,6 +47,8 @@ export default function CRMPage() {
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [segmentFilter, setSegmentFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [formData, setFormData] = useState({
     client_name: "",
     client_email: "",
@@ -58,6 +60,8 @@ export default function CRMPage() {
     source: "",
     notes: "",
     estimated_value: "",
+    segment: "",
+    tags: "",
   });
 
   useEffect(() => {
@@ -129,6 +133,8 @@ export default function CRMPage() {
       source: "",
       notes: "",
       estimated_value: "",
+      segment: "",
+      tags: "",
     });
     setEditingContact(null);
   };
@@ -138,6 +144,7 @@ export default function CRMPage() {
     const dataToSend = {
       ...formData,
       estimated_value: formData.estimated_value ? parseFloat(formData.estimated_value) : 0,
+      tags: formData.tags ? formData.tags.split(",").map(t => t.trim()).filter(t => t) : [],
     };
 
     if (editingContact) {
@@ -160,6 +167,8 @@ export default function CRMPage() {
       source: contact.source || "",
       notes: contact.notes || "",
       estimated_value: contact.estimated_value || "",
+      segment: contact.segment || "",
+      tags: contact.tags?.join(", ") || "",
     });
     setShowDialog(true);
   };
@@ -176,6 +185,9 @@ export default function CRMPage() {
 
   if (loading) return <Loader />;
 
+  // Obtener todas las etiquetas únicas
+  const allTags = [...new Set(contacts.flatMap(c => c.tags || []))].sort();
+
   const filteredContacts = contacts.filter(c => {
     const matchesSearch = c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          c.client_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -183,8 +195,18 @@ export default function CRMPage() {
                          c.client_nif?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          c.company?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesSegment = segmentFilter === "all" || c.segment === segmentFilter;
+    const matchesTag = tagFilter === "all" || (c.tags && c.tags.includes(tagFilter));
+    return matchesSearch && matchesStatus && matchesSegment && matchesTag;
   });
+
+  // Estadísticas rápidas
+  const stats = {
+    total: contacts.length,
+    leads: contacts.filter(c => c.status === 'lead').length,
+    clients: contacts.filter(c => c.status === 'client').length,
+    totalValue: contacts.reduce((sum, c) => sum + (c.estimated_value || 0), 0),
+  };
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -193,6 +215,7 @@ export default function CRMPage() {
       negotiating: "bg-purple-100 text-purple-800",
       client: "bg-green-100 text-green-800",
       inactive: "bg-gray-100 text-gray-800",
+      vip: "bg-amber-100 text-amber-800",
     };
     const labels = {
       lead: "Lead",
@@ -200,15 +223,20 @@ export default function CRMPage() {
       negotiating: "Negociando",
       client: "Cliente",
       inactive: "Inactivo",
+      vip: "VIP",
     };
     return <Badge className={colors[status]}>{labels[status]}</Badge>;
+  };
+
+  const handleViewDetails = (contact) => {
+    navigate(createPageUrl("ClientDetail") + `?id=${contact.id}`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate(createPageUrl("ProfessionalDashboard"))}>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -225,6 +253,55 @@ export default function CRMPage() {
           </Button>
         </div>
 
+        {/* Estadísticas rápidas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs text-gray-500">Total contactos</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.leads}</p>
+                <p className="text-xs text-gray-500">Leads</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.clients}</p>
+                <p className="text-xs text-gray-500">Clientes</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Euro className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalValue.toLocaleString()}€</p>
+                <p className="text-xs text-gray-500">Valor estimado</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -238,18 +315,45 @@ export default function CRMPage() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-48 h-11">
+                <SelectTrigger className="w-full md:w-40 h-11">
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="lead">Lead</SelectItem>
                   <SelectItem value="contacted">Contactado</SelectItem>
                   <SelectItem value="negotiating">Negociando</SelectItem>
                   <SelectItem value="client">Cliente</SelectItem>
+                  <SelectItem value="vip">VIP</SelectItem>
                   <SelectItem value="inactive">Inactivo</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={segmentFilter} onValueChange={setSegmentFilter}>
+                <SelectTrigger className="w-full md:w-40 h-11">
+                  <SelectValue placeholder="Segmento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="residential">Residencial</SelectItem>
+                  <SelectItem value="commercial">Comercial</SelectItem>
+                  <SelectItem value="industrial">Industrial</SelectItem>
+                  <SelectItem value="government">Administración</SelectItem>
+                  <SelectItem value="other">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+              {allTags.length > 0 && (
+                <Select value={tagFilter} onValueChange={setTagFilter}>
+                  <SelectTrigger className="w-full md:w-40 h-11">
+                    <SelectValue placeholder="Etiqueta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {allTags.map(tag => (
+                      <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -287,12 +391,32 @@ export default function CRMPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-bold text-gray-900">{contact.client_name}</h3>
                             {getStatusBadge(contact.status)}
+                            {contact.rating && (
+                              <div className="flex items-center">
+                                {[...Array(contact.rating)].map((_, i) => (
+                                  <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {contact.company && (
                             <p className="text-sm text-gray-600 flex items-center gap-1">
                               <Building className="w-3 h-3" />
                               {contact.company}
                             </p>
+                          )}
+                          {contact.tags?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {contact.tags.slice(0, 3).map((tag, i) => (
+                                <Badge key={i} variant="outline" className="text-xs py-0">
+                                  <Tag className="w-2 h-2 mr-1" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {contact.tags.length > 3 && (
+                                <Badge variant="outline" className="text-xs py-0">+{contact.tags.length - 3}</Badge>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -329,12 +453,20 @@ export default function CRMPage() {
                         <div className="flex items-center justify-end gap-2">
                           <Button 
                             size="sm" 
+                            variant="default"
+                            onClick={() => handleViewDetails(contact)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                          >
+                            <Eye className="w-4 h-4 mr-1.5" />
+                            Ver detalle
+                          </Button>
+                          <Button 
+                            size="sm" 
                             variant="outline"
                             onClick={() => handleEdit(contact)}
                             className="bg-white hover:bg-blue-50 text-blue-700 border-blue-300 font-medium"
                           >
-                            <Edit2 className="w-4 h-4 mr-1.5" />
-                            Editar
+                            <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button 
                             size="sm" 
@@ -342,8 +474,7 @@ export default function CRMPage() {
                             onClick={() => handleDelete(contact)}
                             className="bg-white hover:bg-red-50 text-red-700 border-red-300 font-medium"
                           >
-                            <Trash2 className="w-4 h-4 mr-1.5" />
-                            Eliminar
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -446,6 +577,30 @@ export default function CRMPage() {
                   className="mt-1.5"
                 />
               </div>
+              <div>
+                <Label className="text-sm font-semibold">Segmento</Label>
+                <Select value={formData.segment || ""} onValueChange={(value) => setFormData({...formData, segment: value})}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residential">Residencial</SelectItem>
+                    <SelectItem value="commercial">Comercial</SelectItem>
+                    <SelectItem value="industrial">Industrial</SelectItem>
+                    <SelectItem value="government">Administración pública</SelectItem>
+                    <SelectItem value="other">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Etiquetas (separadas por coma)</Label>
+              <Input
+                value={formData.tags}
+                onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                placeholder="Ej: urgente, preferido, obras..."
+                className="mt-1.5"
+              />
             </div>
             <div>
               <Label className="text-sm font-semibold">Dirección</Label>
