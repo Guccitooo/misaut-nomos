@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -811,6 +811,9 @@ export default function MyProfilePage() {
                     <p className="text-sm text-gray-600">
                       {t('becomeProfessionalAppear')}
                     </p>
+                    <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-1 inline-block">
+                      Ver todo lo que incluye el Dashboard Pro →
+                    </Link>
                   </div>
                 </div>
                 <Button
