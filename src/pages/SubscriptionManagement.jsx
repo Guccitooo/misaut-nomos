@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -258,9 +258,13 @@ export default function SubscriptionManagementPage() {
                   {t('noActiveSubscription')}
                 </h2>
                 
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                <p className="text-gray-600 mb-4 max-w-md mx-auto">
                   {t('needPlanToAppear')}
                 </p>
+                
+                <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-6 inline-block">
+                  Descubre todo lo que incluye el Dashboard Pro →
+                </Link>
 
                 {/* Mostrar info de sync si hay datos */}
                 {syncResult && (
