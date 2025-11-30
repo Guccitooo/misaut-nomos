@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
+import { CheckCircle, Loader2, ArrowRight, Eye, MessageSquare, FileText, CreditCard, Users, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -157,7 +157,41 @@ export default function PaymentSuccessPage() {
               <h1 className="text-2xl font-bold text-gray-900 mb-3">
                 Procesando tu pago
               </h1>
-              <p className="text-gray-600">{message}</p>
+              <p className="text-gray-600 mb-6">{message}</p>
+              
+              {/* What you get section */}
+              <div className="bg-blue-50 rounded-xl p-4 text-left">
+                <h3 className="font-semibold text-gray-900 mb-3 text-sm">¿Qué obtienes con tu suscripción?</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-blue-600" />
+                    <span className="text-gray-700">Perfil visible</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-green-600" />
+                    <span className="text-gray-700">Contactos directos</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-purple-600" />
+                    <span className="text-gray-700">Facturas pro</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-700">Cobros fáciles</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-teal-600" />
+                    <span className="text-gray-700">Gestión clientes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+                    <span className="text-gray-700">Panel Pro</span>
+                  </div>
+                </div>
+                <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-xs font-medium mt-3 inline-flex items-center">
+                  Saber más <ArrowRight className="w-3 h-3 ml-1" />
+                </Link>
+              </div>
             </>
           )}
 
