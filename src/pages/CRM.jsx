@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, Plus, Mail, Phone, Building, ArrowLeft, Search, Edit2, Trash2, IdCard, MapPin, Eye, Tag, Star, Filter, TrendingUp, Euro } from "lucide-react";
+import { Users, Plus, Mail, Phone, Building, ArrowLeft, Search, Edit2, Trash2, IdCard, MapPin, Eye, Tag, Star, Filter, TrendingUp, Euro, Zap } from "lucide-react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
 
@@ -247,10 +247,16 @@ export default function CRMPage() {
               <p className="text-gray-600 mt-1">{filteredContacts.length} de {contacts.length} clientes</p>
             </div>
           </div>
-          <Button onClick={() => { resetForm(); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo cliente
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(createPageUrl("CRMAutomations"))}>
+              <Zap className="w-4 h-4 mr-2" />
+              Automatizaciones
+            </Button>
+            <Button onClick={() => { resetForm(); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo cliente
+            </Button>
+          </div>
         </div>
 
         {/* Estadísticas rápidas */}
