@@ -87,18 +87,32 @@ export function FAQPageSchema({ faqs }) {
       document.head.appendChild(script);
     }
     
+    // Filtrar FAQs inválidas y asegurar que tienen name y text
+    const validFaqs = faqs.filter(faq => {
+      const question = faq.question || faq.name;
+      const answer = faq.answer || faq.text;
+      return question && question.trim() !== '' && answer && answer.trim() !== '';
+    });
+
+    if (validFaqs.length === 0) return;
+    
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      "mainEntity": faqs.map(faq => ({
+      "mainEntity": validFaqs.map(faq => ({
         "@type": "Question",
-        "name": faq.question,
+        "name": String(faq.question || faq.name).trim(),
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": faq.answer
+          "text": String(faq.answer || faq.text).trim()
         }
       }))
     });
+
+    return () => {
+      const existingScript = document.getElementById('structured-data-faq');
+      if (existingScript) existingScript.remove();
+    };
   }, [faqs]);
 
   return null;

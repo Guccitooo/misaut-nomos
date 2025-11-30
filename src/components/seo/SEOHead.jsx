@@ -11,7 +11,8 @@ export default function SEOHead({
   author = "MisAutónomos",
   publishedTime,
   modifiedTime,
-  noindex = false
+  noindex = false,
+  structuredData = null
 }) {
   const location = useLocation();
   const { language } = useLanguage();
@@ -144,13 +145,24 @@ export default function SEOHead({
       "@type": "Organization",
       "name": "MisAutónomos",
       "url": "https://misautonomos.es",
-      "logo": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png",
+        "width": 512,
+        "height": 512
+      },
       "description": description,
+      "foundingDate": "2024",
+      "areaServed": {
+        "@type": "Country",
+        "name": "España"
+      },
       "contactPoint": {
         "@type": "ContactPoint",
         "email": "soporte@misautonomos.es",
         "contactType": "customer support",
-        "areaServed": "ES"
+        "areaServed": "ES",
+        "availableLanguage": ["Spanish", "English"]
       },
       "sameAs": [
         "https://facebook.com/misautonomos",
@@ -158,8 +170,20 @@ export default function SEOHead({
         "https://linkedin.com/company/misautonomos"
       ]
     });
+
+    // Custom structured data if provided
+    if (structuredData) {
+      let customScript = document.getElementById('structured-data-custom');
+      if (!customScript) {
+        customScript = document.createElement('script');
+        customScript.setAttribute('type', 'application/ld+json');
+        customScript.setAttribute('id', 'structured-data-custom');
+        document.head.appendChild(customScript);
+      }
+      customScript.textContent = JSON.stringify(structuredData);
+    }
     
-  }, [title, description, image, canonicalUrl, keywords, type, author, language, publishedTime, modifiedTime, noindex]);
+  }, [title, description, image, canonicalUrl, keywords, type, author, language, publishedTime, modifiedTime, noindex, structuredData]);
 
   return null;
 }
