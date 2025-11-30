@@ -32,6 +32,7 @@ import Categoria from './pages/Categoria';
 import PaymentSuccess from './pages/PaymentSuccess';
 import DashboardProInfo from './pages/DashboardProInfo';
 import ClientDetail from './pages/ClientDetail';
+import CRMAutomations from './pages/CRMAutomations';
 import __Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "PaymentSuccess": PaymentSuccess,
     "DashboardProInfo": DashboardProInfo,
     "ClientDetail": ClientDetail,
+    "CRMAutomations": CRMAutomations,
 }
 
 export const pagesConfig = {
