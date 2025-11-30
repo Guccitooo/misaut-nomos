@@ -276,6 +276,21 @@ Deno.serve(async (req) => {
             });
 
             console.log('📧 Email de bienvenida enviado');
+
+            // ========== NOTIFICACIÓN SLACK ==========
+            try {
+                await base44.asServiceRole.functions.invoke('notifySlackSale', {
+                    amount: plan.precio || 0,
+                    currency: 'EUR',
+                    customerName: userEmail.split('@')[0],
+                    customerEmail: userEmail,
+                    productName: plan.nombre || 'Suscripción MisAutónomos',
+                    type: 'subscription'
+                });
+                console.log('📱 Notificación Slack enviada');
+            } catch (slackError) {
+                console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
+            }
             
             // ✅ VERIFICACIÓN FINAL: Si el perfil tiene onboarding completo, forzar visibilidad
             const finalProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
