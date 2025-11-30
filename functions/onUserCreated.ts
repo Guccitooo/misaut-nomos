@@ -137,6 +137,17 @@ Deno.serve(async (req) => {
       from_name: "MisAutónomos"
     });
 
+    // Notificar en Slack
+    try {
+      await base44.asServiceRole.functions.invoke('notifySlackNewClient', {
+        clientName: userName,
+        clientEmail: user.email,
+        clientType: 'client'
+      });
+    } catch (slackError) {
+      console.error('Error Slack (no crítico):', slackError.message);
+    }
+
     return Response.json({ 
       ok: true,
       message: 'Welcome email sent successfully'

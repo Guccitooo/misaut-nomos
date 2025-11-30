@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
 
             console.log('📧 Email de bienvenida enviado');
 
-            // ========== NOTIFICACIÓN SLACK ==========
+            // ========== NOTIFICACIÓN SLACK (Venta) ==========
             try {
                 await base44.asServiceRole.functions.invoke('notifySlackSale', {
                     amount: plan.precio || 0,
@@ -287,7 +287,20 @@ Deno.serve(async (req) => {
                     productName: plan.nombre || 'Suscripción MisAutónomos',
                     type: 'subscription'
                 });
-                console.log('📱 Notificación Slack enviada');
+                console.log('📱 Notificación Slack venta enviada');
+            } catch (slackError) {
+                console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
+            }
+
+            // ========== NOTIFICACIÓN SLACK (Nuevo profesional) ==========
+            try {
+                await base44.asServiceRole.functions.invoke('notifySlackNewClient', {
+                    clientName: userEmail.split('@')[0],
+                    clientEmail: userEmail,
+                    clientType: 'professional',
+                    planName: plan.nombre
+                });
+                console.log('📱 Notificación Slack nuevo profesional enviada');
             } catch (slackError) {
                 console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
             }
