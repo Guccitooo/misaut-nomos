@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
+import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
