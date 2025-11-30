@@ -386,8 +386,8 @@ img {
 /* ✨ MOBILE OPTIMIZATIONS */
 @media (max-width: 768px) {
   button, a[role="button"], [role="button"] {
-    min-height: 48px;
-    min-width: 48px;
+    min-height: 44px;
+    min-width: 44px;
     touch-action: manipulation;
   }
   
@@ -395,4 +395,9 @@ img {
     font-size: 16px !important;
     padding: 12px !important;
   }
+}
+
+/* Safe area para móviles con notch */
+.safe-area-bottom {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
