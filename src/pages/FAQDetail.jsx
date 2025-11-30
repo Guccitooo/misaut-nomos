@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
+import { FAQPageSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 
 const categoryConfig = {
@@ -156,6 +157,12 @@ export default function FAQDetailPage() {
       : categoryConfig[category]?.label_en;
   };
 
+  // Schema FAQ con campos name y text correctos
+  const faqSchemaData = [{
+    question: language === 'es' ? faq.title_es : faq.title_en,
+    answer: language === 'es' ? (faq.content_es || faq.summary_es) : (faq.content_en || faq.summary_en)
+  }];
+
   return (
     <>
       <SEOHead 
@@ -165,6 +172,9 @@ export default function FAQDetailPage() {
         publishedTime={faq.created_date}
         modifiedTime={faq.updated_date}
       />
+      
+      {/* Schema JSON-LD para FAQPage */}
+      <FAQPageSchema faqs={faqSchemaData} />
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">

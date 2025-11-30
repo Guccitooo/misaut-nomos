@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
+import { FAQPageSchema } from "../components/seo/StructuredData";
 
 const categoryConfig = {
   platform: { icon: BookOpen, color: "bg-blue-500", label_es: "Sobre la plataforma", label_en: "About the platform" },
@@ -86,6 +87,12 @@ export default function FAQPage() {
     return acc;
   }, {});
 
+  // Preparar FAQs para el schema JSON-LD con campos correctos
+  const faqSchemaData = filteredFaqs.map(faq => ({
+    question: language === 'es' ? faq.title_es : faq.title_en,
+    answer: language === 'es' ? (faq.summary_es || faq.content_es) : (faq.summary_en || faq.content_en)
+  }));
+
   return (
     <>
       <SEOHead 
@@ -94,6 +101,9 @@ export default function FAQPage() {
           ? "Todas las respuestas a tus preguntas sobre MisAutónomos en un solo lugar."
           : "All answers to your questions about MisAutónomos in one place."}
       />
+      
+      {/* Schema JSON-LD para FAQPage */}
+      <FAQPageSchema faqs={faqSchemaData} />
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
         <div className="max-w-7xl mx-auto">
