@@ -30,6 +30,7 @@ import PayInvoice from './pages/PayInvoice';
 import Autonomo from './pages/Autonomo';
 import Categoria from './pages/Categoria';
 import PaymentSuccess from './pages/PaymentSuccess';
+import DashboardProInfo from './pages/DashboardProInfo';
 import __Layout from './Layout.jsx';
 
 
@@ -66,6 +67,7 @@ export const PAGES = {
     "Autonomo": Autonomo,
     "Categoria": Categoria,
     "PaymentSuccess": PaymentSuccess,
+    "DashboardProInfo": DashboardProInfo,
 }
 
 export const pagesConfig = {
