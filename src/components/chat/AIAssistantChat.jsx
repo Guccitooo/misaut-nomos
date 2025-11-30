@@ -177,11 +177,11 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
       // Buscar profesionales relevantes basado en la consulta
       await searchRelevantProfessionals(userMessage);
 
-      // Dar tiempo para que el agente responda completamente
+      // Reducir tiempo de espera y desuscribirse cuando hay contenido
       setTimeout(() => {
         unsubscribe();
         setIsLoading(false);
-      }, 12000);
+      }, 5000);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -265,16 +265,21 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end p-4 md:p-6 pointer-events-none">
-      <Card className="w-full max-w-md h-[600px] max-h-[80vh] flex flex-col shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
-        <CardHeader className="flex-shrink-0 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:justify-end md:p-6 pointer-events-none">
+      {/* Overlay para móvil */}
+      <div 
+        className="absolute inset-0 bg-black/50 md:hidden pointer-events-auto"
+        onClick={onClose}
+      />
+      <Card className="w-full md:max-w-md h-[70vh] md:h-[600px] md:max-h-[80vh] flex flex-col shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-300 rounded-t-2xl md:rounded-lg relative">
+        <CardHeader className="flex-shrink-0 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl md:rounded-t-lg py-3 px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <CardTitle className="text-lg">Asistente IA</CardTitle>
+                <CardTitle className="text-base">Asistente IA</CardTitle>
                 <p className="text-xs text-blue-100">MisAutónomos</p>
               </div>
             </div>
@@ -282,14 +287,14 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 h-9 w-9"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
         </CardHeader>
 
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-3 md:p-4">
           <div className="space-y-4">
             {messages.map((msg, idx) => (
               <div
@@ -453,7 +458,7 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
           </div>
         </ScrollArea>
 
-        <div className="flex-shrink-0 p-4 border-t bg-gray-50">
+        <div className="flex-shrink-0 p-3 md:p-4 border-t bg-white safe-area-bottom">
           <div className="flex gap-2">
             <Input
               ref={inputRef}
@@ -461,22 +466,22 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Escribe tu mensaje..."
-              className="flex-1"
+              className="flex-1 h-11 text-base"
               disabled={isLoading}
             />
             <Button 
               onClick={sendMessage} 
               disabled={!inputValue.trim() || isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 h-11 w-11 p-0"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               )}
             </Button>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-2">
+          <p className="text-xs text-gray-400 text-center mt-2 hidden md:block">
             Powered by AI • MisAutónomos
           </p>
         </div>
