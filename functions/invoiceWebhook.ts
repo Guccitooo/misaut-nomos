@@ -252,6 +252,21 @@ Deno.serve(async (req) => {
         console.log('📧 Email de confirmación enviado al cliente:', invoice.client_email);
       }
 
+      // ========== NOTIFICACIÓN SLACK ==========
+      try {
+        await base44.asServiceRole.functions.invoke('notifySlackSale', {
+          amount: invoice.total,
+          currency: 'EUR',
+          customerName: invoice.client_name,
+          customerEmail: invoice.client_email,
+          invoiceNumber: invoice.invoice_number,
+          type: 'invoice'
+        });
+        console.log('📱 Notificación Slack enviada');
+      } catch (slackError) {
+        console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
+      }
+
       console.log('✅ ========== PAGO DE FACTURA PROCESADO ==========');
     }
 
