@@ -36,7 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ReviewSection from "../components/profile/ReviewSection";
 import SEOHead from "../components/seo/SEOHead";
-import { LocalBusinessSchema } from "../components/seo/StructuredData";
+import { LocalBusinessSchema, FAQPageSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -334,9 +334,16 @@ export default function AutonomoPage() {
   }
 
   // SEO
-  const canonicalUrl = `https://misautonomos.es/Autonomo?slug=${slug}`;
+  const canonicalSlug = profile.slug_publico || slugify(profile.business_name);
+  const canonicalUrl = `https://misautonomos.es/Autonomo?slug=${canonicalSlug}`;
   const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || profile.provincia} | MisAutónomos`;
   const seoDescription = profile.descripcion_corta || `${profile.business_name} ofrece servicios de ${profile.categories?.[0] || 'profesional'} en ${profile.ciudad || profile.provincia}. Contacta ahora gratis.`;
+  
+  // Schema FAQ para el perfil si tiene FAQ items
+  const profileFaqData = profile.faq_items?.filter(f => f.question && f.answer).map(f => ({
+    question: f.question,
+    answer: f.answer
+  })) || [];
 
   const showPhone = profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto;
   const showWhatsApp = profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto;
@@ -351,14 +358,18 @@ export default function AutonomoPage() {
         type="profile"
       />
       
-      {/* Canonical tag explícita */}
-      <link rel="canonical" href={canonicalUrl} />
+
       
       <LocalBusinessSchema 
         profile={profile}
         reviews={reviews}
         professionalUser={professionalUser}
       />
+      
+      {/* FAQ Schema si el perfil tiene FAQs */}
+      {profileFaqData.length > 0 && (
+        <FAQPageSchema faqs={profileFaqData} />
+      )}
       
       <div className="min-h-screen bg-gray-50 py-3 px-3 md:py-4 md:px-4">
         <div className="max-w-5xl mx-auto space-y-3">
