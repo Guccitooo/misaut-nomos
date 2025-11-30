@@ -530,6 +530,16 @@ export default function SearchPage() {
         description="Encuentra y contacta con profesionales autónomos verificados en toda España. Electricistas, fontaneros, carpinteros y más."
         keywords="buscar autónomos, profesionales, servicios, España"
       />
+      
+      {/* Schemas estructurados para SEO */}
+      <ServiceSchema 
+        categories={categories.map(c => c.name)} 
+        location={selectedProvincia !== "all" ? selectedProvincia : "España"} 
+      />
+      <BreadcrumbSchema items={[
+        { name: "Inicio", url: "https://misautonomos.es" },
+        { name: "Buscar Profesionales", url: "https://misautonomos.es/Search" }
+      ]} />
 
       <div className="min-h-screen bg-gray-50">
         {!loadingUser && !user && (
