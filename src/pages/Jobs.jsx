@@ -464,7 +464,7 @@ export default function JobsPage() {
                     ? 'Crea tu primer trabajo para empezar a gestionar tus proyectos'
                     : 'Create your first job to start managing your projects'}
                 </p>
-                <Button onClick={() => setShowJobDialog(true)}>
+                <Button onClick={() => setShowJobDialog(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   {language === 'es' ? 'Crear trabajo' : 'Create job'}
                 </Button>
