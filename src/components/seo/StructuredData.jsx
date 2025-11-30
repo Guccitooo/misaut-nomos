@@ -162,62 +162,104 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
       script.setAttribute('id', 'structured-data-business');
       document.head.appendChild(script);
     }
+
+    // Generar slug para URL canónica
+    const slugify = (text) => {
+      if (!text) return '';
+      return text.toString().toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    };
+    const profileSlug = profile.slug_publico || slugify(profile.business_name);
+    const profileUrl = `https://misautonomos.es/Autonomo?slug=${profileSlug}`;
     
     const schema = {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "ProfessionalService",
+      "@id": profileUrl,
       "name": profile.business_name,
-      "description": profile.descripcion_corta || profile.description,
-      "image": profile.photos || [],
+      "description": profile.descripcion_corta || profile.description || `${profile.business_name} - Profesional autónomo en ${profile.ciudad || profile.provincia}`,
+      "image": profile.imagen_principal || (profile.photos && profile.photos[0]) || professionalUser?.profile_picture,
+      "url": profileUrl,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": profileUrl
+      },
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": profile.ciudad,
-        "addressRegion": profile.provincia,
+        "addressLocality": profile.ciudad || "",
+        "addressRegion": profile.provincia || "",
         "addressCountry": "ES"
       },
-      "geo": {
+      "areaServed": {
         "@type": "GeoCircle",
         "geoMidpoint": {
           "@type": "GeoCoordinates",
-          "addressLocality": profile.ciudad,
-          "addressRegion": profile.provincia
+          "name": `${profile.ciudad || ''}, ${profile.provincia || ''}`
         },
-        "geoRadius": `${profile.radio_servicio_km || 10}000`
+        "geoRadius": `${(profile.radio_servicio_km || 10) * 1000}`
       },
-      "telephone": profile.telefono_contacto,
-      "email": profile.email_contacto,
+      ...(profile.telefono_contacto && { "telephone": profile.telefono_contacto }),
+      ...(profile.email_contacto && { "email": profile.email_contacto }),
       "priceRange": profile.price_range || "€€",
-      "paymentAccepted": profile.formas_pago?.join(', '),
-      "servesCuisine": profile.categories?.join(', '),
-      ...(profile.website && { "url": profile.website }),
-      ...(profile.social_links?.facebook && { "sameAs": [
-        profile.social_links.facebook,
-        profile.social_links.instagram,
-        profile.social_links.linkedin
-      ].filter(Boolean) }),
+      ...(profile.formas_pago?.length > 0 && { "paymentAccepted": profile.formas_pago.join(', ') }),
+      ...(profile.categories?.length > 0 && { 
+        "knowsAbout": profile.categories,
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Servicios profesionales",
+          "itemListElement": profile.categories.map((cat, idx) => ({
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": cat
+            }
+          }))
+        }
+      }),
+      ...(profile.years_experience > 0 && { 
+        "foundingDate": new Date().getFullYear() - profile.years_experience
+      }),
+      ...(profile.certifications?.length > 0 && {
+        "hasCredential": profile.certifications.map(cert => ({
+          "@type": "EducationalOccupationalCredential",
+          "credentialCategory": "certification",
+          "name": cert
+        }))
+      }),
+      ...(profile.website && { "sameAs": [profile.website] }),
+      ...(profile.social_links && { 
+        "sameAs": [
+          profile.social_links.facebook,
+          profile.social_links.instagram,
+          profile.social_links.linkedin,
+          profile.social_links.tiktok
+        ].filter(Boolean) 
+      }),
       ...(profile.average_rating > 0 && {
         "aggregateRating": {
           "@type": "AggregateRating",
-          "ratingValue": profile.average_rating,
-          "reviewCount": profile.total_reviews,
-          "bestRating": 5,
-          "worstRating": 1
+          "ratingValue": profile.average_rating.toFixed(1),
+          "reviewCount": profile.total_reviews || 1,
+          "bestRating": "5",
+          "worstRating": "1"
         }
       }),
       ...(reviews && reviews.length > 0 && {
-        "review": reviews.slice(0, 5).map(review => ({
+        "review": reviews.slice(0, 10).map(review => ({
           "@type": "Review",
           "author": {
             "@type": "Person",
-            "name": review.client_name
+            "name": review.client_name || "Cliente verificado"
           },
-          "datePublished": review.created_date,
-          "reviewBody": review.comment,
+          "datePublished": review.created_date?.split('T')[0],
+          ...(review.comment && { "reviewBody": review.comment }),
           "reviewRating": {
             "@type": "Rating",
-            "ratingValue": review.rating,
-            "bestRating": 5,
-            "worstRating": 1
+            "ratingValue": review.rating?.toString() || "5",
+            "bestRating": "5",
+            "worstRating": "1"
           }
         }))
       }),
@@ -230,11 +272,82 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
           : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
         "opens": profile.horario_apertura || "09:00",
         "closes": profile.horario_cierre || "18:00"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "MisAutónomos",
+        "url": "https://misautonomos.es"
       }
     };
     
     script.textContent = JSON.stringify(schema);
+
+    return () => {
+      const existing = document.getElementById('structured-data-business');
+      if (existing) existing.remove();
+    };
   }, [profile, reviews, professionalUser]);
+
+  return null;
+}
+
+// Schema para Person/Professional
+export function ProfessionalPersonSchema({ profile, professionalUser }) {
+  useEffect(() => {
+    if (!profile) return;
+    
+    let script = document.getElementById('structured-data-person');
+    if (!script) {
+      script = document.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('id', 'structured-data-person');
+      document.head.appendChild(script);
+    }
+
+    const slugify = (text) => {
+      if (!text) return '';
+      return text.toString().toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    };
+    const profileSlug = profile.slug_publico || slugify(profile.business_name);
+    
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": profile.business_name,
+      "jobTitle": profile.categories?.[0] || "Profesional autónomo",
+      "description": profile.descripcion_corta,
+      "image": professionalUser?.profile_picture || profile.imagen_principal,
+      "url": `https://misautonomos.es/Autonomo?slug=${profileSlug}`,
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": profile.ciudad,
+        "addressRegion": profile.provincia,
+        "addressCountry": "ES"
+      },
+      ...(profile.skills?.length > 0 && { "knowsAbout": profile.skills }),
+      ...(profile.years_experience > 0 && { 
+        "hasOccupation": {
+          "@type": "Occupation",
+          "name": profile.categories?.[0] || "Profesional",
+          "experienceRequirements": `${profile.years_experience} años de experiencia`
+        }
+      }),
+      "worksFor": {
+        "@type": "Organization",
+        "name": profile.business_name
+      }
+    };
+    
+    script.textContent = JSON.stringify(schema);
+
+    return () => {
+      const existing = document.getElementById('structured-data-person');
+      if (existing) existing.remove();
+    };
+  }, [profile, professionalUser]);
 
   return null;
 }

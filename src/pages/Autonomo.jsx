@@ -36,7 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ReviewSection from "../components/profile/ReviewSection";
 import SEOHead from "../components/seo/SEOHead";
-import { LocalBusinessSchema, FAQPageSchema } from "../components/seo/StructuredData";
+import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -336,17 +336,47 @@ export default function AutonomoPage() {
     );
   }
 
-  // SEO
+  // SEO optimizado
   const canonicalSlug = profile.slug_publico || slugify(profile.business_name);
   const canonicalUrl = `https://misautonomos.es/Autonomo?slug=${canonicalSlug}`;
-  const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || 'Profesional'} en ${profile.ciudad || profile.provincia} | MisAutónomos`;
-  const seoDescription = profile.descripcion_corta || `${profile.business_name} ofrece servicios de ${profile.categories?.[0] || 'profesional'} en ${profile.ciudad || profile.provincia}. Contacta ahora gratis.`;
-  
+
+  // Título SEO optimizado (máx 60 caracteres ideal)
+  const categoryName = profile.categories?.[0] || 'Profesional';
+  const locationName = profile.ciudad || profile.provincia || 'España';
+  const seoTitle = `${profile.business_name} - ${categoryName} en ${locationName} | MisAutónomos`;
+
+  // Descripción SEO optimizada (máx 160 caracteres ideal)
+  const ratingText = profile.average_rating > 0 ? `★${profile.average_rating.toFixed(1)} (${profile.total_reviews} opiniones). ` : '';
+  const experienceText = profile.years_experience > 0 ? `${profile.years_experience} años de experiencia. ` : '';
+  const baseDescription = profile.descripcion_corta || `Servicios de ${categoryName.toLowerCase()} en ${locationName}`;
+  const seoDescription = `${ratingText}${experienceText}${baseDescription}. Contacta gratis con ${profile.business_name}.`.slice(0, 160);
+
+  // Keywords dinámicas
+  const seoKeywords = [
+    profile.business_name,
+    categoryName,
+    categoryName.toLowerCase(),
+    locationName,
+    profile.provincia,
+    'autónomo',
+    'profesional',
+    ...(profile.skills || []),
+    ...(profile.categories || [])
+  ].filter(Boolean).join(', ');
+
   // Schema FAQ para el perfil si tiene FAQ items
   const profileFaqData = profile.faq_items?.filter(f => f.question && f.answer).map(f => ({
     question: f.question,
     answer: f.answer
   })) || [];
+
+  // Breadcrumb items para SEO
+  const breadcrumbItems = [
+    { name: "Inicio", url: "https://misautonomos.es" },
+    { name: "Buscar Profesionales", url: "https://misautonomos.es/Search" },
+    { name: categoryName, url: `https://misautonomos.es/Categoria?name=${slugify(categoryName)}` },
+    { name: profile.business_name, url: canonicalUrl }
+  ];
 
   const showPhone = profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto;
   const showWhatsApp = profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto;
@@ -357,18 +387,27 @@ export default function AutonomoPage() {
       <SEOHead 
         title={seoTitle}
         description={seoDescription}
-        keywords={`${profile.categories?.join(', ')}, ${profile.ciudad}, ${profile.provincia}, autónomo, profesional`}
+        keywords={seoKeywords}
         type="profile"
+        image={professionalUser?.profile_picture || profile.imagen_principal || profile.photos?.[0]}
       />
       
 
       
+      {/* Schema.org estructurados para SEO */}
       <LocalBusinessSchema 
         profile={profile}
         reviews={reviews}
         professionalUser={professionalUser}
       />
-      
+
+      <ProfessionalPersonSchema 
+        profile={profile}
+        professionalUser={professionalUser}
+      />
+
+      <BreadcrumbSchema items={breadcrumbItems} />
+
       {/* FAQ Schema si el perfil tiene FAQs */}
       {profileFaqData.length > 0 && (
         <FAQPageSchema faqs={profileFaqData} />

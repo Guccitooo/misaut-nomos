@@ -12,7 +12,9 @@ export default function SEOHead({
   publishedTime,
   modifiedTime,
   noindex = false,
-  structuredData = null
+  structuredData = null,
+  rating = null,
+  reviewCount = null
 }) {
   const location = useLocation();
   const { language } = useLanguage();
@@ -72,6 +74,12 @@ export default function SEOHead({
     updateMetaTag('twitter:description', description);
     updateMetaTag('twitter:image', image);
     updateMetaTag('twitter:site', '@MisAutonomos');
+    
+    // Rich Snippets adicionales para perfiles
+    if (rating && reviewCount) {
+      updateMetaTag('rating', rating.toString());
+      updateMetaTag('reviewCount', reviewCount.toString());
+    }
     
     // Canonical URL - limpiar parámetros de query para evitar duplicados
     let canonical = document.querySelector('link[rel="canonical"]');

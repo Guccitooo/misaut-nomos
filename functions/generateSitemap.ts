@@ -149,14 +149,40 @@ Deno.serve(async (req) => {
       const slug = profile.slug_publico || slugify(profile.business_name);
       const lastMod = profile.updated_date ? profile.updated_date.split('T')[0] : today;
       
+      // Prioridad más alta para perfiles con más reseñas
+      const priority = profile.total_reviews >= 10 ? 0.8 : profile.total_reviews >= 5 ? 0.7 : 0.6;
+      
       xml += `
   <url>
     <loc>${BASE_URL}/Autonomo?slug=${slug}</loc>
     <lastmod>${lastMod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>${priority}</priority>
   </url>`;
     }
+    
+    // Añadir páginas adicionales importantes
+    xml += `
+  
+  <!-- Páginas informativas -->
+  <url>
+    <loc>${BASE_URL}/FAQ</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${BASE_URL}/DashboardProInfo</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${BASE_URL}/LegalNotice</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>`;
 
     xml += `
 </urlset>`;
