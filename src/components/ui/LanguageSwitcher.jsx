@@ -500,6 +500,9 @@ const translations = {
     myTickets: 'Mis tickets',
     openTicket: 'Abrir ticket',
 
+    // Dashboard Pro Info
+    dashboardProInfo: 'Dashboard Pro',
+
     // Pricing Plans
     startFreeToday: 'Empieza gratis hoy',
     twoMonthsFree: '2 MESES GRATIS',
@@ -1221,6 +1224,9 @@ const translations = {
     supportTickets: 'Support Tickets',
     myTickets: 'My Tickets',
     openTicket: 'Open Ticket',
+
+    // Dashboard Pro Info
+    dashboardProInfo: 'Pro Dashboard',
 
     // Pricing Plans
     startFreeToday: 'Start free today',
