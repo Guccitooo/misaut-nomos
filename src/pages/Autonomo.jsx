@@ -81,6 +81,13 @@ export default function AutonomoPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const slug = urlParams.get("slug");
 
+  // Redirigir a búsqueda si no hay slug
+  useEffect(() => {
+    if (!slug) {
+      navigate(createPageUrl("Search"));
+    }
+  }, [slug, navigate]);
+
   useEffect(() => {
     loadUser();
   }, []);
