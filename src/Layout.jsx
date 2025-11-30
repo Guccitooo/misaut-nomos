@@ -12,7 +12,8 @@ import {
   Briefcase,
   LayoutDashboard,
   CreditCard,
-  X
+  X,
+  Calendar
 } from "lucide-react";
 import {
   Sidebar,
@@ -292,6 +293,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       title: "Dashboard Pro",
       url: createPageUrl("ProfessionalDashboard"),
       icon: LayoutDashboard,
+    });
+    navigationItems.push({
+      title: "Calendario",
+      url: createPageUrl("Calendar"),
+      icon: Calendar,
     });
   }
 
