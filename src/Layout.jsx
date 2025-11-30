@@ -233,9 +233,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }, [user, professionalProfile]);
 
   const handleLogout = () => {
-    base44.auth.logout();
+    // Limpiar cache de sesión
+    sessionStorage.removeItem('current_user');
+    sessionStorage.removeItem('unread_count');
+    // Limpiar estado local
     setUser(null);
     setUnreadCount(0);
+    setProfessionalProfile(null);
+    // Cerrar sesión (redirige automáticamente)
+    base44.auth.logout(createPageUrl("Search"));
   };
 
   const handleLogin = () => {
