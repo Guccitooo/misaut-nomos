@@ -3,13 +3,14 @@ import { ImageIcon } from 'lucide-react';
 
 const OptimizedImage = React.memo(function OptimizedImage({ 
   src, 
-  alt, 
+  alt = "", 
   className = "", 
   fallback = null,
   priority = false,
   objectFit = "cover",
   width,
-  height
+  height,
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -94,9 +95,10 @@ const OptimizedImage = React.memo(function OptimizedImage({
       {isInView && actualSrc && (
         <img
           src={actualSrc}
-          alt={alt}
+          alt={alt || "Imagen"}
           width={width}
           height={height}
+          sizes={sizes}
           loading={priority ? "eager" : "lazy"}
           fetchpriority={priority ? "high" : "auto"}
           className={`${className} transition-opacity duration-300 ${
