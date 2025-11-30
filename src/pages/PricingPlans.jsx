@@ -10,6 +10,7 @@ import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info } f
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
+import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 export default function PricingPlansPage() {
@@ -200,6 +201,7 @@ export default function PricingPlansPage() {
         description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 2 meses gratis. Sin permanencia."
         keywords="planes autónomos, precios profesionales, 2 meses gratis, suscripción mensual, plan anual"
       />
+      <SubscriptionProductSchema plans={plans} />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <div className="max-w-6xl mx-auto px-4 py-8">
