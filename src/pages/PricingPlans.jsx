@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info } from "lucide-react";
+import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
+import ProFeaturesSection from "../components/pricing/ProFeaturesSection";
 
 export default function PricingPlansPage() {
   const { t } = useLanguage();
@@ -334,6 +335,29 @@ export default function PricingPlansPage() {
                 </Card>
               );
             })}
+          </div>
+
+          {/* Pro Features Section */}
+          <div className="mb-12">
+            <ProFeaturesSection />
+          </div>
+
+          {/* Social Proof */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-12 text-white text-center">
+            <div className="flex items-center justify-center gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+            <h3 className="text-2xl font-bold mb-2">
+              {t('language') === 'en' ? "Thousands of Clients Will See You Every Day" : "Miles de Clientes te Verán Cada Día"}
+            </h3>
+            <p className="text-blue-100 max-w-2xl mx-auto">
+              {t('language') === 'en' 
+                ? "Increase your visibility instantly. Get more work opportunities with your professional profile."
+                : "Aumenta tu visibilidad al instante. Consigue más oportunidades de trabajo con tu perfil profesional."
+              }
+            </p>
           </div>
 
           <div className="max-w-4xl mx-auto">
