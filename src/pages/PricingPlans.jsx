@@ -204,7 +204,7 @@ export default function PricingPlansPage() {
       />
       <SubscriptionProductSchema plans={plans} />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <Button
             variant="ghost"
@@ -216,19 +216,36 @@ export default function PricingPlansPage() {
             {t('back')}
           </Button>
 
+          {/* Hero Section mejorado */}
           <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg">
-                <Gift className="w-6 h-6" />
-                {t('twoMonthsFree')}
-              </div>
-
-              <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4">
-                {t('startFreeToday')}
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                {t('noCommitment')} • {t('cancelAnytime')} • {t('securePayment')}
-              </p>
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg animate-pulse">
+              <Gift className="w-6 h-6" />
+              {t('twoMonthsFree')}
             </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 leading-tight">
+              {t('startFreeToday')}
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
+              {t('noCommitment')} • {t('cancelAnytime')} • {t('securePayment')}
+            </p>
+            
+            {/* Trust badges */}
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <span>Pago 100% seguro</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <span>+5.000 búsquedas/día</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-purple-600" />
+                <span>Activo en minutos</span>
+              </div>
+            </div>
+          </div>
 
           {canceled && (
             <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
@@ -239,7 +256,8 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Plan cards con diseño mejorado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isPopular = plan.plan_id === "plan_quarterly";
@@ -247,8 +265,8 @@ export default function PricingPlansPage() {
               return (
                 <Card 
                   key={plan.plan_id}
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-white ${
-                    isPopular ? "border-green-500 shadow-xl" : "border-gray-200"
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
+                    isPopular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
                   }`}
                 >
                   {badge && (
