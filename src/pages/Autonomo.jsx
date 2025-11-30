@@ -229,7 +229,8 @@ export default function AutonomoPage() {
 
   const handleToggleFavorite = async () => {
     if (!user) {
-      base44.auth.redirectToLogin();
+      const currentUrl = window.location.href;
+      base44.auth.redirectToLogin(currentUrl);
       return;
     }
 
@@ -258,7 +259,9 @@ export default function AutonomoPage() {
 
   const handleStartChat = async () => {
     if (!user) {
-      base44.auth.redirectToLogin();
+      // Guardar URL actual para regresar después del login
+      const currentUrl = window.location.href;
+      base44.auth.redirectToLogin(currentUrl);
       return;
     }
     const conversationId = [user.id, profile.user_id].sort().join('_');
