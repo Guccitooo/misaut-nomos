@@ -18,7 +18,7 @@ export default function LegalNoticePage() {
       sections: [
         {
           title: "1. Datos Identificativos",
-          text: "En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, se informa que: Titular: MisAutónomos, Domicilio: Madrid, España, Email: info@misautonomos.es, Web: https://misautonomos.es"
+          text: "En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico, se informa que: Titular: Astra Invest and Finance S.L., CIF: B10865418, Domicilio: Calle Andalucía 18, Melilla, España, Email: info@misautonomos.es, Web: https://misautonomos.es"
         },
         {
           title: "2. Objeto",
@@ -60,7 +60,7 @@ export default function LegalNoticePage() {
       sections: [
         {
           title: "1. Identifying Information",
-          text: "In compliance with article 10 of Law 34/2002 on Information Society Services and Electronic Commerce, we inform: Owner: MisAutónomos, Address: Madrid, Spain, Email: info@misautonomos.es, Website: https://misautonomos.es"
+          text: "In compliance with article 10 of Law 34/2002 on Information Society Services and Electronic Commerce, we inform: Owner: Astra Invest and Finance S.L., Tax ID: B10865418, Address: Calle Andalucía 18, Melilla, Spain, Email: info@misautonomos.es, Website: https://misautonomos.es"
         },
         {
           title: "2. Purpose",
