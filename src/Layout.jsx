@@ -50,6 +50,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const [professionalProfile, setProfessionalProfile] = useState(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Redirect from old domain to new domain
+  useEffect(() => {
+    if (window.location.hostname === 'autonomosmil.es' || window.location.hostname === 'www.autonomosmil.es') {
+      window.location.replace('https://misautonomos.es' + window.location.pathname + window.location.search);
+    }
+  }, []);
+
 
   useEffect(() => {
     if (window.gtag) {
