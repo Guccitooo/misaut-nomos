@@ -244,7 +244,10 @@ export default function Footer() {
 
       <div className="border-t border-gray-700 py-6 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-          <p>© 2025 <strong className="text-white">MisAutónomos</strong>. {t('allRightsReserved')}.</p>
+          <div className="text-center md:text-left">
+            <p>© 2025 <strong className="text-white">MisAutónomos</strong>. {t('allRightsReserved')}.</p>
+            <p className="text-xs mt-1">Astra Invest and Finance S.L. · CIF: B10865418</p>
+          </div>
           <p className="text-xs">{t('tagline')}</p>
         </div>
       </div>
