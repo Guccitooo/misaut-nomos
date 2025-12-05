@@ -678,7 +678,7 @@ export default function SearchPage() {
           )}
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${user ? 'lg:grid-cols-3' : 'md:grid-cols-3 lg:grid-cols-4'} gap-4`}
               <AnimatePresence>
                 {filteredProfiles.map((profile) => (
                   <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
