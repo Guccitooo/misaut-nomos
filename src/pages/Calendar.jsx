@@ -408,9 +408,10 @@ export default function CalendarPage() {
                       <Checkbox
                         checked={filters[filterKey]}
                         onCheckedChange={(checked) => setFilters(f => ({ ...f, [filterKey]: checked }))}
+                        className="border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                       />
                       <span className={`w-3 h-3 rounded-full ${config.color}`} />
-                      <span className="text-sm">{config.label}</span>
+                      <span className="text-sm text-gray-700">{config.label}</span>
                     </label>
                   );
                 })}
