@@ -578,10 +578,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             }
           }
           
-          .mobile-bottom-nav {
-            display: none !important;
+          @media (min-width: 1024px) {
+            .mobile-bottom-nav {
+              display: none !important;
+            }
           }
-          
+
           @media (max-width: 1023px) {
             .mobile-bottom-nav {
               display: grid !important;
