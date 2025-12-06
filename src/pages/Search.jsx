@@ -646,8 +646,8 @@ export default function SearchPage() {
           </div>
 
           {isInitialLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, idx) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, idx) => (
                 <Card key={idx} className="border border-gray-100 rounded-xl">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3 mb-3">
@@ -683,7 +683,7 @@ export default function SearchPage() {
           )}
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${user ? 'lg:grid-cols-3' : 'md:grid-cols-3 lg:grid-cols-4'} gap-4`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
                             <AnimatePresence>
                 {filteredProfiles.map((profile) => (
                   <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
