@@ -14,7 +14,8 @@ import {
   CreditCard,
   X,
   Calendar,
-  Search as SearchIcon
+  Search as SearchIcon,
+  FileText
 } from "lucide-react";
 import {
   Sidebar,
