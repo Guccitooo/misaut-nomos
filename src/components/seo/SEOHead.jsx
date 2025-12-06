@@ -94,18 +94,6 @@ export default function SEOHead({
     // Cache control hint (meta tag)
     updateMetaTag('Cache-Control', 'public, max-age=31536000, immutable', false, true);
 
-    // Preload critical CSS to reduce render-blocking
-    const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
-    cssLinks.forEach(link => {
-      if (link.href.includes('/assets/index-') && !document.querySelector(`link[rel="preload"][href="${link.href}"]`)) {
-        const preload = document.createElement('link');
-        preload.setAttribute('rel', 'preload');
-        preload.setAttribute('as', 'style');
-        preload.setAttribute('href', link.href);
-        document.head.insertBefore(preload, link);
-      }
-    });
-
     // Hreflang for alternate languages
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
     existingHreflangs.forEach(link => link.remove());

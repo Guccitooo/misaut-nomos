@@ -407,11 +407,6 @@ img {
   height: auto;
 }
 
-/* Critical CSS inline hint */
-html {
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
 /* Optimize font loading */
 @font-face {
   font-display: swap;
@@ -420,15 +415,6 @@ html {
 /* Prevent layout shift for images */
 img {
   height: auto;
-}
-
-/* GPU acceleration for animations */
-.animate-fade-in,
-.animate-slide-up,
-.animate-slide-down,
-.animate-scale-in {
-  will-change: transform, opacity;
-  transform: translateZ(0);
 }
 
 /* Defer non-critical CSS */

@@ -588,7 +588,7 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
+          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white" style={{ minHeight: '200px' }}>
             <CardContent className="p-5">
               <div className="space-y-4">
                 <div className="flex gap-2">
