@@ -477,7 +477,7 @@ export default function AutonomoPage() {
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
             <div className="flex items-center gap-4 mb-3">
               <Avatar 
-                className="w-14 h-14 border-2 border-gray-100 flex-shrink-0 cursor-pointer overflow-hidden"
+                className="w-14 h-14 border-2 border-gray-100 flex-shrink-0 cursor-pointer"
                 onClick={() => {
                   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                   if (photoUrl) {
@@ -489,11 +489,7 @@ export default function AutonomoPage() {
                 {(() => {
                   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                   return photoUrl ? (
-                    <AvatarImage 
-                      src={photoUrl} 
-                      alt={profile.business_name} 
-                      className="w-full h-full object-cover object-center"
-                    />
+                    <AvatarImage src={photoUrl} alt={profile.business_name} className="object-cover" />
                   ) : (
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
                       {profile.business_name?.charAt(0)}

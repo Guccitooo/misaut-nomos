@@ -200,20 +200,19 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
       <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
         <CardContent className="p-4 flex flex-col flex-1">
           <div className="flex items-start gap-3 mb-3">
-            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
+            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0" onClick={onClick}>
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
                   <OptimizedImage
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="w-full h-full rounded-full object-cover object-center"
+                    className="w-full h-full rounded-full"
                     objectFit="cover"
                     width={48}
                     height={48}
                     quality={75}
                     sizes="48px"
-                    centered={true}
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">

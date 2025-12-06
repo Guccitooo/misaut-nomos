@@ -431,22 +431,9 @@ img:not([width]) {
 /* Center small images (avatars, icons, logos) */
 .avatar img, 
 [class*="avatar"] img,
-[class*="logo"] img,
-[data-radix-avatar-image],
-img[alt*="perfil"],
-img[alt*="profile"] {
-  object-fit: cover !important;
-  object-position: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  display: block !important;
-}
-
-/* Asegurar que los contenedores de avatar también tengan overflow hidden */
-.avatar,
-[class*="avatar"],
-[data-radix-avatar] {
-  overflow: hidden !important;
+[class*="logo"] img {
+  object-fit: cover;
+  object-position: center;
 }
 
 /* Defer non-critical CSS */
