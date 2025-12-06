@@ -126,9 +126,16 @@ export default function RequestQuotePage() {
       });
 
       if (professional?.user?.email) {
+        const urgencyLabels = {
+          baja: "🟢 Baja",
+          media: "🟡 Media",
+          alta: "🟠 Alta",
+          urgente: "🔴 Urgente"
+        };
+        
         base44.integrations.Core.SendEmail({
           to: professional.user.email,
-          subject: "Nueva solicitud de presupuesto - MisAutónomos",
+          subject: `🔔 Nueva solicitud de presupuesto - ${data.title}`,
           body: `
 <!DOCTYPE html>
 <html>
@@ -136,47 +143,125 @@ export default function RequestQuotePage() {
   <meta charset="UTF-8">
   <style>
     body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
-    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); padding: 40px 20px; text-align: center; }
+    .logo { width: 70px; height: 70px; background: white; border-radius: 20px; display: inline-block; line-height: 70px; font-size: 40px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .content { padding: 40px 30px; }
-    .quote-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 8px; }
-    .cta { text-align: center; margin: 35px 0; }
-    .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; }
+    .alert-box { background: #dbeafe; border: 2px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 12px; text-align: center; }
+    .alert-box h2 { color: #1e40af; margin: 0 0 10px 0; font-size: 22px; }
+    .quote-details { background: #f9fafb; border: 1px solid #e5e7eb; padding: 25px; margin: 20px 0; border-radius: 12px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { font-weight: 600; color: #4b5563; }
+    .detail-value { color: #1f2937; text-align: right; }
+    .description-box { background: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .description-box h3 { margin: 0 0 15px 0; color: #1e40af; font-size: 18px; }
+    .description-box p { color: #374151; line-height: 1.7; margin: 0; white-space: pre-wrap; }
+    .attachments { background: #fef3c7; border: 1px solid #fbbf24; padding: 15px; margin: 20px 0; border-radius: 8px; }
+    .attachments h4 { margin: 0 0 10px 0; color: #92400e; }
+    .cta { text-align: center; margin: 40px 0; }
+    .button { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 18px 50px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); transition: transform 0.2s; }
+    .button:hover { transform: translateY(-2px); }
+    .info-banner { background: #eff6ff; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; border: 1px solid #bfdbfe; }
+    .footer { background: #111827; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; }
+    .footer strong { color: #ffffff; display: block; margin-bottom: 10px; font-size: 20px; }
+    .footer p { margin: 5px 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <div class="logo">📋</div>
-      <h1>Nueva solicitud de presupuesto</h1>
+      <h1>¡Nueva Solicitud de Presupuesto!</h1>
     </div>
+    
     <div class="content">
-      <p class="message">Hola,</p>
-      <div class="quote-box">
-        <p><strong>Cliente:</strong> ${data.client_name}</p>
-        <p><strong>Trabajo:</strong> ${data.title}</p>
-        <p><strong>Descripción:</strong> ${data.description}</p>
-        <p><strong>Ubicación:</strong> ${data.location || 'No especificada'}</p>
-        <p><strong>Urgencia:</strong> ${data.urgency}</p>
+      <div class="alert-box">
+        <h2>💼 ${data.title}</h2>
+        <p style="color: #4b5563; margin: 0;">Un cliente está interesado en tus servicios</p>
       </div>
+
+      <div class="quote-details">
+        <div class="detail-row">
+          <span class="detail-label">👤 Cliente:</span>
+          <span class="detail-value"><strong>${data.client_name}</strong></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">📧 Email:</span>
+          <span class="detail-value">${data.client_email}</span>
+        </div>
+        ${data.client_phone ? `
+        <div class="detail-row">
+          <span class="detail-label">📱 Teléfono:</span>
+          <span class="detail-value"><strong>${data.client_phone}</strong></span>
+        </div>
+        ` : ''}
+        <div class="detail-row">
+          <span class="detail-label">📍 Ubicación:</span>
+          <span class="detail-value">${data.ciudad ? `${data.ciudad}, ${data.provincia}` : (data.provincia || 'No especificada')}</span>
+        </div>
+        ${data.location ? `
+        <div class="detail-row">
+          <span class="detail-label">🏠 Dirección:</span>
+          <span class="detail-value">${data.location}</span>
+        </div>
+        ` : ''}
+        <div class="detail-row">
+          <span class="detail-label">💰 Presupuesto estimado:</span>
+          <span class="detail-value"><strong>${data.budget_range === 'no_definido' ? 'No definido' : data.budget_range + '€'}</strong></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">⚡ Urgencia:</span>
+          <span class="detail-value"><strong>${urgencyLabels[data.urgency] || data.urgency}</strong></span>
+        </div>
+        ${data.deadline ? `
+        <div class="detail-row">
+          <span class="detail-label">📅 Fecha límite:</span>
+          <span class="detail-value">${new Date(data.deadline).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="description-box">
+        <h3>📝 Descripción detallada del trabajo:</h3>
+        <p>${data.description}</p>
+      </div>
+
+      ${data.attachments && data.attachments.length > 0 ? `
+      <div class="attachments">
+        <h4>📎 Archivos adjuntos (${data.attachments.length})</h4>
+        <p style="color: #92400e; margin: 0;">El cliente ha adjuntado ${data.attachments.length} archivo(s). Podrás verlos al responder la solicitud.</p>
+      </div>
+      ` : ''}
+
+      <div class="info-banner">
+        <p style="color: #1e40af; margin: 0; font-size: 15px;">
+          <strong>💡 Consejo:</strong> Responde rápido para aumentar tus posibilidades de conseguir el trabajo. Los clientes valoran la rapidez de respuesta.
+        </p>
+      </div>
+
       <div class="cta">
         <a href="https://misautonomos.es/QuoteRequests" class="button">
-          Ver solicitud y responder →
+          Ver Solicitud y Responder →
         </a>
       </div>
+
+      <p style="color: #6b7280; text-align: center; font-size: 14px; margin-top: 30px;">
+        Puedes responder a esta solicitud directamente desde tu panel de control en MisAutónomos.
+      </p>
     </div>
+    
     <div class="footer">
-      <strong style="color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px;">Equipo MisAutónomos</strong>
+      <strong>Equipo MisAutónomos</strong>
       <p style="color: #60a5fa; margin-bottom: 15px; font-style: italic;">Tu autónomo de confianza</p>
+      <p>Si tienes alguna pregunta, contáctanos en soporte@misautonomos.es</p>
     </div>
   </div>
 </body>
 </html>
           `,
-          from_name: "MisAutónomos"
+          from_name: "MisAutónomos - Solicitud de Presupuesto"
         }).catch(err => console.log('Email error:', err));
       }
 
