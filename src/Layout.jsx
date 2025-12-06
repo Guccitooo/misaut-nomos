@@ -326,7 +326,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       icon: LayoutDashboard,
     });
     navigationItems.push({
-      title: "Calendario",
+      title: t('calendar'),
       url: createPageUrl("Calendar"),
       icon: Calendar,
     });
