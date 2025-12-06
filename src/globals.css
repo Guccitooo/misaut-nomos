@@ -446,6 +446,26 @@ img {
   contain: layout style paint;
 }
 
+/* GPU acceleration for animations */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-down,
+.animate-scale-in {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Content visibility for off-screen content */
+.lazy-load {
+  content-visibility: auto;
+}
+
+/* Reduce repaints */
+.profile-card,
+.professional-card {
+  contain: layout style paint;
+}
+
 /* Optimize scrolling */
 * {
   scroll-behavior: smooth;

@@ -152,22 +152,7 @@ export default function SEOHead({
       document.head.appendChild(resourceHints);
     }
 
-    // DNS prefetch for external domains
-    const dnsPrefetchDomains = [
-      'https://qtrypzzcjebvfcihiynt.supabase.co',
-      'https://fonts.googleapis.com',
-      'https://fonts.gstatic.com'
-    ];
 
-    dnsPrefetchDomains.forEach(domain => {
-      let dnsPrefetch = document.querySelector(`link[rel="dns-prefetch"][href="${domain}"]`);
-      if (!dnsPrefetch) {
-        dnsPrefetch = document.createElement('link');
-        dnsPrefetch.setAttribute('rel', 'dns-prefetch');
-        dnsPrefetch.setAttribute('href', domain);
-        document.head.appendChild(dnsPrefetch);
-      }
-    });
 
     // Structured Data - Organization
     let structuredDataOrg = document.getElementById('structured-data-org');
