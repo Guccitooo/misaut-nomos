@@ -149,7 +149,7 @@ export default function PricingPlansPage() {
   const getPlanBadge = (planId) => {
     switch (planId) {
       case "plan_monthly_trial": 
-        return { text: t('twoMonthsFree'), color: "bg-blue-500" };
+        return { text: t('sevenDaysTrial'), color: "bg-blue-500" };
       case "plan_quarterly": 
         return { text: t('mostPopular'), color: "bg-green-500" };
       case "plan_annual": 
@@ -198,9 +198,9 @@ export default function PricingPlansPage() {
   return (
     <>
       <SEOHead 
-        title="Planes y Precios - MisAutónomos | 2 Meses Gratis"
-        description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 2 meses gratis. Sin permanencia."
-        keywords="planes autónomos, precios profesionales, 2 meses gratis, suscripción mensual, plan anual"
+        title="Planes y Precios - MisAutónomos | 7 Días Gratis"
+        description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 7 días gratis. Sin permanencia."
+        keywords="planes autónomos, precios profesionales, 7 días gratis, suscripción mensual, plan anual"
       />
       <SubscriptionProductSchema plans={plans} />
       
@@ -220,7 +220,7 @@ export default function PricingPlansPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg animate-pulse">
               <Gift className="w-6 h-6" />
-              {t('twoMonthsFree')}
+              {t('sevenDaysTrial')}
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 leading-tight">
@@ -298,7 +298,7 @@ export default function PricingPlansPage() {
                           0€
                         </p>
                         <p className="text-lg text-gray-600 font-semibold mt-2">
-                          {t('firstTwoMonths')}
+                          {t('firstSevenDays')}
                         </p>
                         <p className="text-sm text-gray-500 mt-3">
                           {t('then')} {Math.round(plan.precio)}€
@@ -387,7 +387,7 @@ export default function PricingPlansPage() {
                       <CheckCircle className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-2">{t('whatHappensAfter2Months')}</h3>
+                      <h3 className="font-bold text-gray-900 mb-2">{t('whatHappensAfterTrial')}</h3>
                       <p className="text-sm text-gray-600">
                         {t('autoChargeExplain')}
                       </p>
