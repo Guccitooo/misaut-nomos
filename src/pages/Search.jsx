@@ -196,7 +196,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
 
   return (
     <>
-      <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col">
+      <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
         <CardContent className="p-4 flex flex-col flex-1">
           <div className="flex items-start gap-3 mb-3">
             <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0" onClick={onClick}>
@@ -652,21 +652,20 @@ export default function SearchPage() {
           {isInitialLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, idx) => (
-                <Card key={idx} className="border border-gray-100 rounded-xl h-[220px]">
+                <Card key={idx} className="border border-gray-100 rounded-xl" style={{ minHeight: '220px' }}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3 mb-3">
-                      <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
+                      <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" style={{ width: '48px', height: '48px' }} />
                       <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-4 w-3/4" style={{ height: '16px' }} />
+                        <Skeleton className="h-3 w-1/2" style={{ height: '12px' }} />
                       </div>
                     </div>
-                    <div className="space-y-2 mb-3">
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-2/3" />
+                    <div className="space-y-2 mb-3" style={{ height: '48px' }}>
+                      <Skeleton className="h-3 w-full" style={{ height: '12px' }} />
+                      <Skeleton className="h-3 w-full" style={{ height: '12px' }} />
                     </div>
-                    <Skeleton className="h-9 w-full mt-auto" />
+                    <Skeleton className="h-9 w-full" style={{ height: '36px' }} />
                   </CardContent>
                 </Card>
               ))}
@@ -692,22 +691,37 @@ export default function SearchPage() {
           )}
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                            <AnimatePresence>
-                {filteredProfiles.map((profile) => (
-                  <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                    <ProfileCard
-                      profile={profile}
-                      onClick={() => handleViewProfile(profile)}
-                      onToggleFavorite={() => handleToggleFavorite(profile)}
-                      isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
-                      professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                      currentUserId={user?.id}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                <AnimatePresence>
+                  {filteredProfiles.slice(0, displayLimit).map((profile) => (
+                    <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                      <ProfileCard
+                        profile={profile}
+                        onClick={() => handleViewProfile(profile)}
+                        onToggleFavorite={() => handleToggleFavorite(profile)}
+                        isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                        professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                        currentUserId={user?.id}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              
+              {filteredProfiles.length > displayLimit && (
+                <div className="text-center mt-8">
+                  <Button
+                    onClick={() => setDisplayLimit(prev => prev + 12)}
+                    variant="outline"
+                    size="lg"
+                    className="px-8 rounded-xl hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    {t('viewAll')} ({filteredProfiles.length - displayLimit} {t('professionals')})
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
