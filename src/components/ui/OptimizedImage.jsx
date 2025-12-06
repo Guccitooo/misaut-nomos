@@ -41,9 +41,8 @@ const OptimizedImage = React.memo(function OptimizedImage({
     // Optimize Supabase images with parameters
     if (src.includes('supabase.co')) {
       const url = new URL(src);
-      // Usa el doble del tamaño solicitado para pantallas retina
-      const optimalWidth = width ? Math.min(width * 2, 800) : 400;
-      const optimalHeight = height ? Math.min(height * 2, 800) : 400;
+      const optimalWidth = width || 400;
+      const optimalHeight = height || 400;
       
       url.searchParams.set('width', optimalWidth.toString());
       url.searchParams.set('height', optimalHeight.toString());
