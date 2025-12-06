@@ -311,6 +311,39 @@ export default function AutonomoPage() {
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
+  // Formatear enlaces de redes sociales
+  const formatSocialLink = (value, platform) => {
+    if (!value) return null;
+    
+    const cleanValue = value.trim();
+    
+    // Si ya es una URL completa, devolverla
+    if (cleanValue.startsWith('http://') || cleanValue.startsWith('https://')) {
+      return cleanValue;
+    }
+    
+    // Si es un username (sin http), generar el link según la plataforma
+    const username = cleanValue.replace(/^@/, ''); // Eliminar @ si lo tiene
+    
+    switch (platform) {
+      case 'instagram':
+        return `https://instagram.com/${username}`;
+      case 'facebook':
+        return `https://facebook.com/${username}`;
+      case 'linkedin':
+        return cleanValue.includes('/') 
+          ? `https://linkedin.com/${username}` 
+          : `https://linkedin.com/in/${username}`;
+      case 'tiktok':
+        return `https://tiktok.com/@${username}`;
+      case 'website':
+        // Para web, añadir https:// si no lo tiene
+        return `https://${cleanValue}`;
+      default:
+        return cleanValue;
+    }
+  };
+
   if (loadingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 md:p-8">
