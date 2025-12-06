@@ -203,15 +203,13 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <OptimizedImage
+                  <img
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="rounded-full"
-                    width={96}
-                    height={96}
-                    quality={80}
-                    sizes="48px"
-                    objectFit="cover"
+                    className="w-full h-full object-cover rounded-full"
+                    loading="lazy"
+                    width="48"
+                    height="48"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">

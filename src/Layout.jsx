@@ -1105,7 +1105,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     </Button>
                   )}
                   {!shouldShowBottomBar() && user && <div className="w-10"></div>}
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <OptimizedImage
                       src={LOGO_URL}
                       alt="Logo MisAutónomos"
@@ -1117,7 +1117,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       sizes="32px"
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
-                  </Link>
+                  </div>
                   <div className="flex items-center gap-2">
                     {user && <NotificationCenter user={user} />}
                     <div className="flex gap-1 bg-gray-100 rounded-lg p-1">

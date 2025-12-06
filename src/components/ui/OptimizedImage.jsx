@@ -40,35 +40,21 @@ const OptimizedImage = React.memo(function OptimizedImage({
 
     // Optimize Supabase images with parameters
     if (src.includes('supabase.co')) {
-      try {
-        const url = new URL(src);
-        const optimalWidth = width || 400;
-        const optimalHeight = height || 400;
-        
-        url.searchParams.set('width', optimalWidth.toString());
-        url.searchParams.set('height', optimalHeight.toString());
-        url.searchParams.set('quality', quality.toString());
-        url.searchParams.set('resize', 'cover');
-        url.searchParams.set('format', 'webp');
-        
-        // Preload critical images
-        if (priority && typeof window !== 'undefined') {
-          const link = document.createElement('link');
-          link.rel = 'preload';
-          link.as = 'image';
-          link.href = url.toString();
-          link.fetchpriority = 'high';
-          document.head.appendChild(link);
-        }
-        
-        setActualSrc(url.toString());
-      } catch (e) {
-        setActualSrc(src);
-      }
+      const url = new URL(src);
+      // Usa el doble del tamaño solicitado para pantallas retina
+      const optimalWidth = width ? Math.min(width * 2, 800) : 400;
+      const optimalHeight = height ? Math.min(height * 2, 800) : 400;
+      
+      url.searchParams.set('width', optimalWidth.toString());
+      url.searchParams.set('height', optimalHeight.toString());
+      url.searchParams.set('quality', quality.toString());
+      url.searchParams.set('resize', 'cover');
+      url.searchParams.set('format', 'webp');
+      setActualSrc(url.toString());
     } else {
       setActualSrc(src);
     }
-  }, [src, width, height, quality, priority]);
+  }, [src, width, height, quality]);
 
   useEffect(() => {
     if (priority) {
@@ -138,18 +124,13 @@ const OptimizedImage = React.memo(function OptimizedImage({
           sizes={sizes}
           loading={priority ? "eager" : "lazy"}
           fetchpriority={priority ? "high" : "auto"}
-          className={`${className} transition-opacity duration-150 ${
+          className={`${className} transition-opacity duration-200 ${
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
-          style={{ 
-            objectFit: objectFit || 'cover',
-            width: '100%', 
-            height: '100%',
-            objectPosition: 'center'
-          }}
+          style={{ objectFit, maxWidth: '100%', height: 'auto' }}
           onLoad={handleLoad}
           onError={handleError}
-          decoding="async"
+          decoding={priority ? "sync" : "async"}
         />
       )}
     </div>
