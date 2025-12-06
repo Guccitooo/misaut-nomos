@@ -487,7 +487,7 @@ export default function AutonomoPage() {
                 {(() => {
                   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                   return photoUrl ? (
-                    <AvatarImage src={photoUrl} alt={profile.business_name} className="object-cover" />
+                    <AvatarImage src={photoUrl} alt={profile.business_name} className="object-cover object-center w-full h-full" />
                   ) : (
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
                       {profile.business_name?.charAt(0)}
