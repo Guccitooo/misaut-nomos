@@ -40,6 +40,7 @@ import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, Breadcrum
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
@@ -156,6 +157,9 @@ export default function AutonomoPage() {
 
   const profile = profileData?.profile;
   const redirectSlug = profileData?.redirect;
+  
+  // Traducción automática del perfil
+  const { translatedProfile, isTranslating } = useProfileTranslation(profile);
 
   // Redirigir automáticamente a slug limpio si es diferente
   useEffect(() => {
@@ -376,6 +380,9 @@ export default function AutonomoPage() {
     );
   }
 
+  // Usar perfil traducido para SEO y display
+  const displayProfile = translatedProfile || profile;
+  
   // SEO optimizado
   const canonicalSlug = profile.slug_publico || slugify(profile.business_name);
   const canonicalUrl = `https://misautonomos.es/Autonomo?slug=${canonicalSlug}`;
@@ -570,11 +577,11 @@ export default function AutonomoPage() {
 
           {/* DESCRIPCIÓN */}
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-            {profile.descripcion_corta && (
-              <p className="text-sm text-gray-700 mb-3">{profile.descripcion_corta}</p>
+            {displayProfile.descripcion_corta && (
+              <p className="text-sm text-gray-700 mb-3">{displayProfile.descripcion_corta}</p>
             )}
-            {profile.description && profile.description !== profile.descripcion_corta && (
-              <p className="text-sm text-gray-600">{profile.description}</p>
+            {displayProfile.description && displayProfile.description !== displayProfile.descripcion_corta && (
+              <p className="text-sm text-gray-600">{displayProfile.description}</p>
             )}
 
             {(profile.years_experience > 0 || profile.tarifa_base > 0) && (
@@ -588,7 +595,7 @@ export default function AutonomoPage() {
                 {profile.tarifa_base > 0 && (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
                     <Euro className="w-3.5 h-3.5 mr-1.5" />
-                    {profile.tarifa_base}€/hora
+                    {profile.tarifa_base}€/{t('language') === 'en' ? 'hour' : 'hora'}
                   </Badge>
                 )}
               </div>
@@ -596,14 +603,14 @@ export default function AutonomoPage() {
           </Card>
 
           {/* HABILIDADES */}
-          {profile.skills && profile.skills.length > 0 && (
+          {displayProfile.skills && displayProfile.skills.length > 0 && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
                 {t('skills')}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill, idx) => (
+                {displayProfile.skills.map((skill, idx) => (
                   <Badge 
                     key={idx} 
                     className="bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 text-sm"
@@ -617,14 +624,14 @@ export default function AutonomoPage() {
           )}
 
           {/* CERTIFICACIONES */}
-          {profile.certifications && profile.certifications.length > 0 && (
+          {displayProfile.certifications && displayProfile.certifications.length > 0 && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <BadgeCheck className="w-4 h-4 text-amber-600" />
                 {t('certificationsAndTitles')}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {profile.certifications.map((cert, idx) => (
+                {displayProfile.certifications.map((cert, idx) => (
                   <Badge 
                     key={idx} 
                     className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 text-sm"
