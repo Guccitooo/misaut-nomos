@@ -40,20 +40,35 @@ const OptimizedImage = React.memo(function OptimizedImage({
 
     // Optimize Supabase images with parameters
     if (src.includes('supabase.co')) {
-      const url = new URL(src);
-      const optimalWidth = width || 400;
-      const optimalHeight = height || 400;
-      
-      url.searchParams.set('width', optimalWidth.toString());
-      url.searchParams.set('height', optimalHeight.toString());
-      url.searchParams.set('quality', quality.toString());
-      url.searchParams.set('resize', 'cover');
-      url.searchParams.set('format', 'webp');
-      setActualSrc(url.toString());
+      try {
+        const url = new URL(src);
+        const optimalWidth = width || 400;
+        const optimalHeight = height || 400;
+        
+        url.searchParams.set('width', optimalWidth.toString());
+        url.searchParams.set('height', optimalHeight.toString());
+        url.searchParams.set('quality', quality.toString());
+        url.searchParams.set('resize', 'cover');
+        url.searchParams.set('format', 'webp');
+        
+        // Preload critical images
+        if (priority && typeof window !== 'undefined') {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'image';
+          link.href = url.toString();
+          link.fetchpriority = 'high';
+          document.head.appendChild(link);
+        }
+        
+        setActualSrc(url.toString());
+      } catch (e) {
+        setActualSrc(src);
+      }
     } else {
       setActualSrc(src);
     }
-  }, [src, width, height, quality]);
+  }, [src, width, height, quality, priority]);
 
   useEffect(() => {
     if (priority) {
@@ -123,13 +138,13 @@ const OptimizedImage = React.memo(function OptimizedImage({
           sizes={sizes}
           loading={priority ? "eager" : "lazy"}
           fetchpriority={priority ? "high" : "auto"}
-          className={`${className} transition-opacity duration-200 ${
+          className={`${className} transition-opacity duration-150 ${
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
           style={{ objectFit, maxWidth: '100%', height: 'auto' }}
           onLoad={handleLoad}
           onError={handleError}
-          decoding={priority ? "sync" : "async"}
+          decoding="async"
         />
       )}
     </div>
