@@ -653,7 +653,7 @@ export default function SearchPage() {
           </div>
 
           {isInitialLoading && (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${!user ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${!loadingUser && !user ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
               {[...Array(6)].map((_, idx) => (
                 <div key={idx} className="border border-gray-100 rounded-xl bg-white p-4" style={{ height: '220px' }}>
                   <div className="flex items-start gap-3 mb-3">
@@ -693,7 +693,7 @@ export default function SearchPage() {
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
-              <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${!user ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+              <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${!loadingUser && !user ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
                 <AnimatePresence>
                   {filteredProfiles.slice(0, displayLimit).map((profile) => (
                     <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
