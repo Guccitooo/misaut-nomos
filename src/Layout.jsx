@@ -46,43 +46,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language, changeLanguage } = useLanguage();
-  const [user, setUser] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem('current_user');
-      if (cached) {
-        const { user: cachedUser, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 30000) {
-          return cachedUser;
-        }
-      }
-    } catch {}
-    return null;
-  });
-  const [loadingUser, setLoadingUser] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem('current_user');
-      if (cached) {
-        const { timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 30000) {
-          return false;
-        }
-      }
-    } catch {}
-    return true;
-  });
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [professionalProfile, setProfessionalProfile] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem('current_user');
-      if (cached) {
-        const { profile: cachedProfile, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 30000) {
-          return cachedProfile;
-        }
-      }
-    } catch {}
-    return undefined;
-  });
+  const [professionalProfile, setProfessionalProfile] = useState(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Redirect from old domain to new domain
@@ -1047,7 +1014,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && !loadingUser && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
