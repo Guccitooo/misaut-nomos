@@ -46,10 +46,43 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language, changeLanguage } = useLanguage();
-  const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('current_user');
+      if (cached) {
+        const { user: cachedUser, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 30000) {
+          return cachedUser;
+        }
+      }
+    } catch {}
+    return null;
+  });
+  const [loadingUser, setLoadingUser] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('current_user');
+      if (cached) {
+        const { timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 30000) {
+          return false;
+        }
+      }
+    } catch {}
+    return true;
+  });
   const [unreadCount, setUnreadCount] = useState(0);
-  const [professionalProfile, setProfessionalProfile] = useState(undefined);
+  const [professionalProfile, setProfessionalProfile] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('current_user');
+      if (cached) {
+        const { profile: cachedProfile, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 30000) {
+          return cachedProfile;
+        }
+      }
+    } catch {}
+    return undefined;
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Redirect from old domain to new domain
