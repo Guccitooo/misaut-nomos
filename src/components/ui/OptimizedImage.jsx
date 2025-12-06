@@ -142,9 +142,10 @@ const OptimizedImage = React.memo(function OptimizedImage({
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
           style={{ 
-            objectFit, 
-            width: width ? `${width}px` : '100%', 
-            height: height ? `${height}px` : '100%'
+            objectFit: objectFit || 'cover',
+            width: '100%', 
+            height: '100%',
+            objectPosition: 'center'
           }}
           onLoad={handleLoad}
           onError={handleError}
