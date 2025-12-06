@@ -829,7 +829,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </Sidebar>
             )}
 
-            {mobileMenuOpen && (
+            {mobileMenuOpen && shouldShowBottomBar() && (
               <>
                 <div 
                   className="mobile-menu-overlay lg:hidden" 
