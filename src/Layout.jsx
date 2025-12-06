@@ -133,6 +133,24 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return true;
   };
 
+  // Redirigir a onboarding si es profesional sin completar
+  useEffect(() => {
+    if (loadingUser || !user) return;
+    
+    const isOnboardingRoute = location.pathname === createPageUrl("ProfileOnboarding") || 
+                              location.pathname === createPageUrl("PricingPlans") ||
+                              location.pathname === createPageUrl("SubscriptionManagement") ||
+                              location.pathname === createPageUrl("PaymentSuccess");
+    
+    if (user.user_type === "professionnel" && professionalProfile !== undefined) {
+      if (!professionalProfile || !professionalProfile.onboarding_completed) {
+        if (!isOnboardingRoute) {
+          navigate(createPageUrl("ProfileOnboarding"));
+        }
+      }
+    }
+  }, [user, professionalProfile, loadingUser, location.pathname]);
+
   const loadUser = React.useCallback(async () => {
     try {
       // Detectar si es post-pago o post-onboarding
