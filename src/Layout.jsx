@@ -784,18 +784,19 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 <SidebarFooter className="border-t border-gray-100 p-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 px-2">
-                      <Avatar className="w-10 h-10 border-2 border-blue-600">
+                      <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden">
                         {getProfilePicture() ? (
                           <OptimizedImage
                             src={getProfilePicture()}
                             alt={`Foto de perfil de ${getDisplayName()}`}
-                            className="w-full h-full rounded-full"
+                            className="w-full h-full rounded-full object-cover object-center"
                             objectFit="cover"
                             width={40}
                             height={40}
                             quality={75}
                             sizes="40px"
                             priority={true}
+                            centered={true}
                           />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -877,18 +878,19 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   <div className="p-3">
                     {user && (
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
-                        <Avatar className="w-10 h-10 border-2 border-blue-600">
+                        <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden">
                           {getProfilePicture() ? (
                             <OptimizedImage
                               src={getProfilePicture()}
                               alt={`Foto de perfil de ${getDisplayName()}`}
-                              className="w-full h-full rounded-full"
+                              className="w-full h-full rounded-full object-cover object-center"
                               objectFit="cover"
                               width={40}
                               height={40}
                               quality={75}
                               sizes="40px"
                               priority={true}
+                              centered={true}
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
