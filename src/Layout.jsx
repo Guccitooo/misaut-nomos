@@ -722,8 +722,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       loading="eager"
                       fetchpriority="high"
                       decoding="sync"
-                      width={48}
-                      height={48}
+                      width="48"
+                      height="48"
                     />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
@@ -1019,8 +1019,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         loading="eager"
                         fetchpriority="high"
                         decoding="sync"
-                        width={48}
-                        height={48}
+                        width="48"
+                        height="48"
                       />
                       <div>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
@@ -1100,8 +1100,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       className="w-8 h-8 rounded"
                       loading="eager"
                       fetchpriority="high"
-                      width={32}
-                      height={32}
+                      width="32"
+                      height="32"
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>

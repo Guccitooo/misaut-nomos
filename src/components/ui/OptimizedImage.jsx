@@ -88,9 +88,16 @@ const OptimizedImage = React.memo(function OptimizedImage({
   }
 
   return (
-    <div ref={imgRef} className={`relative ${className}`}>
+    <div 
+      ref={imgRef} 
+      className={`relative ${className}`}
+      style={width && height ? { aspectRatio: `${width}/${height}` } : {}}
+    >
       {isLoading && (
-        <div className={`absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse`} />
+        <div 
+          className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" 
+          style={width && height ? { width, height } : {}}
+        />
       )}
       {isInView && actualSrc && (
         <img
@@ -101,14 +108,13 @@ const OptimizedImage = React.memo(function OptimizedImage({
           sizes={sizes}
           loading={priority ? "eager" : "lazy"}
           fetchpriority={priority ? "high" : "auto"}
-          className={`${className} transition-opacity duration-300 ${
+          className={`${className} transition-opacity duration-200 ${
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
-          style={{ objectFit }}
+          style={{ objectFit, maxWidth: '100%', height: 'auto' }}
           onLoad={handleLoad}
           onError={handleError}
           decoding={priority ? "sync" : "async"}
-          crossOrigin="anonymous"
         />
       )}
     </div>
