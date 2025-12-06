@@ -206,11 +206,12 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                   <OptimizedImage
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="w-full h-full object-cover rounded-full"
+                    className="rounded-full"
                     width={96}
                     height={96}
                     quality={80}
                     sizes="48px"
+                    objectFit="cover"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">

@@ -141,7 +141,11 @@ const OptimizedImage = React.memo(function OptimizedImage({
           className={`${className} transition-opacity duration-150 ${
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
-          style={{ objectFit, maxWidth: '100%', height: 'auto' }}
+          style={{ 
+            objectFit, 
+            width: width ? `${width}px` : '100%', 
+            height: height ? `${height}px` : '100%'
+          }}
           onLoad={handleLoad}
           onError={handleError}
           decoding="async"
