@@ -11,7 +11,8 @@ const OptimizedImage = React.memo(function OptimizedImage({
   width,
   height,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
-  quality = 85
+  quality = 75,
+  centered = true
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -114,11 +115,19 @@ const OptimizedImage = React.memo(function OptimizedImage({
     return fallback || defaultFallback;
   }
 
+  const wrapperStyle = centered && width && height ? {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: `${width}px`,
+    height: `${height}px`
+  } : width && height ? { aspectRatio: `${width}/${height}` } : {};
+
   return (
     <div 
       ref={imgRef} 
-      className={`relative ${className}`}
-      style={width && height ? { aspectRatio: `${width}/${height}` } : {}}
+      className={`relative ${className} ${centered ? 'flex items-center justify-center' : ''}`}
+      style={wrapperStyle}
     >
       {isLoading && (
         <div 
@@ -135,10 +144,10 @@ const OptimizedImage = React.memo(function OptimizedImage({
           sizes={sizes}
           loading={priority ? "eager" : "lazy"}
           fetchpriority={priority ? "high" : "auto"}
-          className={`${className} transition-opacity duration-200 ${
+          className={`transition-opacity duration-200 ${
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
-          style={{ objectFit, maxWidth: '100%', height: 'auto' }}
+          style={{ objectFit, maxWidth: '100%', maxHeight: '100%', height: 'auto' }}
           onLoad={handleLoad}
           onError={handleError}
           decoding={priority ? "sync" : "async"}

@@ -417,6 +417,20 @@ img {
   height: auto;
 }
 
+/* Optimize all images by default */
+img:not([width]) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Center small images (avatars, icons, logos) */
+.avatar img, 
+[class*="avatar"] img,
+[class*="logo"] img {
+  object-fit: cover;
+  object-position: center;
+}
+
 /* Defer non-critical CSS */
 @media print {
   * {
