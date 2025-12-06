@@ -659,28 +659,33 @@ export default function AutonomoPage() {
           )}
 
           {/* REDES SOCIALES */}
-          {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin) && (
+          {(profile.website || profile.social_links?.facebook || profile.social_links?.instagram || profile.social_links?.linkedin || profile.social_links?.tiktok) && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3">{t('socialNetworks') || 'Redes sociales'}</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.website && (
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                  <a href={formatSocialLink(profile.website, 'website')} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm"><Globe className="w-4 h-4 mr-2" />Web</Button>
                   </a>
                 )}
-                {profile.social_links?.facebook && (
-                  <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm"><Facebook className="w-4 h-4 mr-2 text-blue-600" />Facebook</Button>
-                  </a>
-                )}
                 {profile.social_links?.instagram && (
-                  <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                  <a href={formatSocialLink(profile.social_links.instagram, 'instagram')} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm"><Instagram className="w-4 h-4 mr-2 text-pink-600" />Instagram</Button>
                   </a>
                 )}
+                {profile.social_links?.facebook && (
+                  <a href={formatSocialLink(profile.social_links.facebook, 'facebook')} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm"><Facebook className="w-4 h-4 mr-2 text-blue-600" />Facebook</Button>
+                  </a>
+                )}
                 {profile.social_links?.linkedin && (
-                  <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                  <a href={formatSocialLink(profile.social_links.linkedin, 'linkedin')} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm"><Linkedin className="w-4 h-4 mr-2 text-blue-700" />LinkedIn</Button>
+                  </a>
+                )}
+                {profile.social_links?.tiktok && (
+                  <a href={formatSocialLink(profile.social_links.tiktok, 'tiktok')} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm"><Music className="w-4 h-4 mr-2 text-black" />TikTok</Button>
                   </a>
                 )}
               </div>
