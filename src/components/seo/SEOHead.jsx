@@ -132,9 +132,9 @@ export default function SEOHead({
     });
 
     // Preload critical images to improve LCP
-    if (image && location.pathname === '/') {
-      let preloadImage = document.querySelector(`link[rel="preload"][as="image"][href="${image}"]`);
-      if (!preloadImage) {
+    if (image && (location.pathname === '/' || location.pathname.includes('Search'))) {
+      let preloadImage = document.querySelector(`link[rel="preload"][as="image"][href*="${image.split('?')[0].split('/').pop()}"]`);
+      if (!preloadImage && !image.includes('supabase')) {
         preloadImage = document.createElement('link');
         preloadImage.setAttribute('rel', 'preload');
         preloadImage.setAttribute('as', 'image');
@@ -142,6 +142,14 @@ export default function SEOHead({
         preloadImage.setAttribute('fetchpriority', 'high');
         document.head.appendChild(preloadImage);
       }
+    }
+
+    // Resource hints
+    const resourceHints = document.createElement('link');
+    resourceHints.setAttribute('rel', 'preconnect');
+    resourceHints.setAttribute('href', 'https://fonts.googleapis.com');
+    if (!document.querySelector('link[rel="preconnect"][href="https://fonts.googleapis.com"]')) {
+      document.head.appendChild(resourceHints);
     }
 
     // DNS prefetch for external domains
