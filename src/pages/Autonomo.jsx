@@ -537,7 +537,7 @@ export default function AutonomoPage() {
                         </Button>
                       </a>
                     </TooltipTrigger>
-                    <TooltipContent><p>Llamar por teléfono</p></TooltipContent>
+                    <TooltipContent><p>{t('callByPhone')}</p></TooltipContent>
                   </Tooltip>
                 )}
                 
@@ -549,7 +549,7 @@ export default function AutonomoPage() {
                         WhatsApp
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Contactar por WhatsApp</p></TooltipContent>
+                    <TooltipContent><p>{t('contactByWhatsApp')}</p></TooltipContent>
                   </Tooltip>
                 )}
                 
@@ -561,7 +561,7 @@ export default function AutonomoPage() {
                         {t('chat') || 'Chat'}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Enviar mensaje directo</p></TooltipContent>
+                    <TooltipContent><p>{t('sendDirectMessageTooltip')}</p></TooltipContent>
                   </Tooltip>
                 )}
               </div>
@@ -582,7 +582,7 @@ export default function AutonomoPage() {
                 {profile.years_experience > 0 && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
                     <Briefcase className="w-3.5 h-3.5 mr-1.5" />
-                    {profile.years_experience} años de experiencia
+                    {profile.years_experience} {t('yearsOfExperience')}
                   </Badge>
                 )}
                 {profile.tarifa_base > 0 && (
@@ -600,7 +600,7 @@ export default function AutonomoPage() {
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
-                Habilidades
+                {t('skills')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((skill, idx) => (
@@ -621,7 +621,7 @@ export default function AutonomoPage() {
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <BadgeCheck className="w-4 h-4 text-amber-600" />
-                Certificaciones y Títulos
+                {t('certificationsAndTitles')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {profile.certifications.map((cert, idx) => (
@@ -704,7 +704,7 @@ export default function AutonomoPage() {
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Número de teléfono</DialogTitle>
+            <DialogTitle>{t('phoneNumberTitle')}</DialogTitle>
             <DialogDescription>{profile.business_name}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
@@ -712,7 +712,7 @@ export default function AutonomoPage() {
               <p className="text-3xl font-bold text-blue-700">{profile.telefono_contacto}</p>
             </div>
             <Button onClick={() => copyToClipboard(profile.telefono_contacto)} variant="outline" className="w-full">
-              {copiedPhone ? <><Check className="w-4 h-4 mr-2 text-green-600" />Copiado</> : <><Copy className="w-4 h-4 mr-2" />Copiar número</>}
+              {copiedPhone ? <><Check className="w-4 h-4 mr-2 text-green-600" />{t('copied')}</> : <><Copy className="w-4 h-4 mr-2" />{t('copyNumber')}</>}
             </Button>
           </div>
         </DialogContent>
@@ -736,7 +736,7 @@ export default function AutonomoPage() {
               }}
               className="w-full bg-green-600 hover:bg-green-700 h-12"
             >
-              <MessageCircle className="w-5 h-5 mr-2" />Abrir WhatsApp
+              <MessageCircle className="w-5 h-5 mr-2" />{t('openWhatsApp')}
             </Button>
           </div>
         </DialogContent>
@@ -776,7 +776,7 @@ export default function AutonomoPage() {
             </>
           )}
           
-          <img src={selectedImage} alt="Vista ampliada" className="max-w-full max-h-full object-contain rounded-xl" onClick={(e) => e.stopPropagation()} />
+          <img src={selectedImage} alt={t('enlargedView')} className="max-w-full max-h-full object-contain rounded-xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </>

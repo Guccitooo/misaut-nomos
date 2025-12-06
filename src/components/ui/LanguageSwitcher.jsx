@@ -749,6 +749,17 @@ const translations = {
     paymentCanceled: 'Pago cancelado. No te preocupes, puedes volver cuando quieras.',
     profileNotFound: 'Perfil no encontrado',
     profileNotFoundDescription: 'El perfil que buscas no existe o ha sido eliminado.',
+    callByPhone: 'Llamar por teléfono',
+    contactByWhatsApp: 'Contactar por WhatsApp',
+    sendDirectMessageTooltip: 'Enviar mensaje directo',
+    yearsOfExperience: 'años de experiencia',
+    skills: 'Habilidades',
+    certificationsAndTitles: 'Certificaciones y Títulos',
+    phoneNumberTitle: 'Número de teléfono',
+    copied: 'Copiado',
+    copyNumber: 'Copiar número',
+    openWhatsApp: 'Abrir WhatsApp',
+    enlargedView: 'Vista ampliada',
   },
   en: {
     // Navigation
@@ -1502,6 +1513,15 @@ const translations = {
     noPhotosAdded: 'No photos added',
     profileNotFound: 'Profile not found',
     profileNotFoundDescription: 'The profile you are looking for does not exist or has been deleted.',
+    callByPhone: 'Call by phone',
+    contactByWhatsApp: 'Contact by WhatsApp',
+    sendDirectMessageTooltip: 'Send direct message',
+    yearsOfExperience: 'years of experience',
+    skills: 'Skills',
+    certificationsAndTitles: 'Certifications and Titles',
+    phoneNumberTitle: 'Phone number',
+    openWhatsApp: 'Open WhatsApp',
+    enlargedView: 'Enlarged view',
   }
 };
 
