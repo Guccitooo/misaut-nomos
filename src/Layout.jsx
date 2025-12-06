@@ -346,11 +346,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       url: createPageUrl("Calendar"),
       icon: Calendar,
     });
-    navigationItems.push({
-      title: "Presupuestos",
-      url: createPageUrl("QuoteRequests"),
-      icon: FileText,
-    });
   }
 
   navigationItems.push({
