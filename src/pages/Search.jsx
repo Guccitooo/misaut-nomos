@@ -347,6 +347,7 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProvincia, setSelectedProvincia] = useState("all");
   const [selectedCiudad, setSelectedCiudad] = useState("all");
+  const [displayLimit, setDisplayLimit] = useState(12);
 
   useEffect(() => {
     loadUser();
