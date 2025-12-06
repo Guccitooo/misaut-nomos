@@ -378,10 +378,16 @@ export default function CalendarPage() {
             <p className="text-gray-600">Gestiona tu agenda de trabajos, facturas y tareas</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={goToToday} className="hidden md:flex">
+            <Button 
+              onClick={goToToday} 
+              className="hidden md:flex bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+            >
               Hoy
             </Button>
-            <Button onClick={() => openTaskDialog(selectedDate)}>
+            <Button 
+              onClick={() => openTaskDialog(selectedDate)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Nueva tarea
             </Button>
