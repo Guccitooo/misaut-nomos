@@ -409,7 +409,12 @@ img {
 
 /* Optimize font loading */
 @font-face {
-  font-display: swap;
+  font-display: optional;
+}
+
+/* Preload critical fonts */
+body {
+  font-display: optional;
 }
 
 /* Prevent layout shift for images */

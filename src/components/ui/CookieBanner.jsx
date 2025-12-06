@@ -21,17 +21,31 @@ export default function CookieBanner() {
     const savedConsent = localStorage.getItem(CONSENT_KEY);
     
     if (!savedConsent) {
-      setTimeout(() => setShowBanner(true), 500);
+      // Defer banner until page is idle to avoid blocking LCP
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => setTimeout(() => setShowBanner(true), 1000));
+      } else {
+        setTimeout(() => setShowBanner(true), 2000);
+      }
     } else {
       try {
         const consent = JSON.parse(savedConsent);
         applyConsent(consent);
       } catch (error) {
-        setTimeout(() => setShowBanner(true), 500);
+        setTimeout(() => setShowBanner(true), 2000);
       }
     }
 
-    base44.auth.me().then(setUser).catch(() => setUser(null));
+    // Load user in background (non-blocking)
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        base44.auth.me().then(setUser).catch(() => setUser(null));
+      });
+    } else {
+      setTimeout(() => {
+        base44.auth.me().then(setUser).catch(() => setUser(null));
+      }, 100);
+    }
   }, []);
 
   useEffect(() => {
@@ -144,13 +158,14 @@ export default function CookieBanner() {
 
       {showBanner && (
         <div 
-          className="fixed bottom-0 left-0 right-0 z-[9999] flex justify-center px-4 pb-4 pointer-events-none"
+          className="fixed bottom-0 left-0 right-0 z-[9999] flex justify-center px-4 pb-safe pointer-events-none"
           style={{ 
             opacity: showBanner ? 1 : 0,
-            transition: 'opacity 150ms ease-in-out'
+            transition: 'opacity 150ms ease-in-out',
+            marginBottom: 'env(safe-area-inset-bottom, 16px)'
           }}
         >
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 max-w-2xl w-full pointer-events-auto">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 max-w-2xl w-full pointer-events-auto" style={{ minHeight: '180px' }}>
             <div className="text-center mb-4">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 🍪 Este sitio utiliza cookies

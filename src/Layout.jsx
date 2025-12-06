@@ -64,7 +64,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       return;
     }
 
-    // Defer Google Analytics loading
+    // Defer Google Analytics loading - wait until page is idle
     const loadAnalytics = () => {
       // Google Analytics (GA4)
       const scriptGA = document.createElement('script');
@@ -106,11 +106,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     gtag('config', 'AW-17763802205');
     };
 
-    // Load analytics after page is interactive
-    if (document.readyState === 'complete') {
-    setTimeout(loadAnalytics, 1000);
+    // Load analytics after page is fully interactive (requestIdleCallback or fallback)
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => setTimeout(loadAnalytics, 2000));
+    } else if (document.readyState === 'complete') {
+      setTimeout(loadAnalytics, 2000);
     } else {
-    window.addEventListener('load', () => setTimeout(loadAnalytics, 1000));
+      window.addEventListener('load', () => setTimeout(loadAnalytics, 2000));
     }
     }, []);
 
@@ -739,7 +741,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     priority={true}
                     width={48}
                     height={48}
-                    quality={90}
+                    quality={80}
                     sizes="48px"
                   />
                     <div>
@@ -1031,25 +1033,25 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!loadingUser && !user && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
-                      <img
+                      <OptimizedImage
                         src={LOGO_URL}
                         alt="Logo MisAutónomos"
                         className="w-12 h-12 rounded-lg"
-                        loading="eager"
-                        fetchpriority="high"
-                        decoding="sync"
-                        width="48"
-                        height="48"
+                        priority={true}
+                        width={48}
+                        height={48}
+                        quality={80}
+                        sizes="48px"
                       />
-                      <div>
+                      <div style={{ minWidth: '150px' }}>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
-                    </Link>
+                      </Link>
                     
                     <div className="flex items-center gap-3">
                       <Button

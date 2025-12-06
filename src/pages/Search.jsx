@@ -571,8 +571,9 @@ export default function SearchPage() {
       ]} />
 
       <div className="min-h-screen bg-gray-50">
-        {!loadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8">
+        {/* Hero visible inmediatamente sin esperar a loadUser */}
+        {!user && (
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '320px' }}>
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
               <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
@@ -605,7 +606,7 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white" style={{ minHeight: '200px' }}>
+          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white" style={{ minHeight: '220px' }}>
             <CardContent className="p-5">
               <div className="space-y-4">
                 <div className="flex gap-2">

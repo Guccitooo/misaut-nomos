@@ -88,9 +88,9 @@ export default function AIAssistantButton() {
     } catch (e) {}
   }, []);
 
-  // Trigger proactivo basado en inactividad
+  // Trigger proactivo basado en inactividad - defer to avoid blocking
   useEffect(() => {
-    if (isOpen) return; // No mostrar si el chat está abierto
+    if (isOpen) return;
 
     let trigger = null;
     let delay = 0;
@@ -108,15 +108,26 @@ export default function AIAssistantButton() {
 
     if (!trigger) return;
 
-    const timer = setTimeout(() => {
-      // Solo mostrar si no se ha interactuado recientemente
-      const timeSinceActivity = Date.now() - browsingContext.lastActivity;
-      if (timeSinceActivity >= delay - 5000) {
-        setProactiveMessage(trigger.message);
-        setShowProactiveBubble(true);
-      }
-    }, delay);
+    // Defer execution using requestIdleCallback
+    const scheduleProactive = () => {
+      const timer = setTimeout(() => {
+        const timeSinceActivity = Date.now() - browsingContext.lastActivity;
+        if (timeSinceActivity >= delay - 5000) {
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+              setProactiveMessage(trigger.message);
+              setShowProactiveBubble(true);
+            });
+          } else {
+            setProactiveMessage(trigger.message);
+            setShowProactiveBubble(true);
+          }
+        }
+      }, delay);
+      return timer;
+    };
 
+    const timer = scheduleProactive();
     return () => clearTimeout(timer);
   }, [location.pathname, isOpen, browsingContext.lastActivity]);
 

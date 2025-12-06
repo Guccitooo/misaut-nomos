@@ -2,13 +2,15 @@ import { useEffect } from 'react';
 
 export default function WebsiteSchema() {
   useEffect(() => {
-    let script = document.getElementById('structured-data-website');
-    if (!script) {
-      script = document.createElement('script');
-      script.setAttribute('type', 'application/ld+json');
-      script.setAttribute('id', 'structured-data-website');
-      document.head.appendChild(script);
-    }
+    // Defer schema injection to avoid blocking critical path
+    const injectSchema = () => {
+      let script = document.getElementById('structured-data-website');
+      if (!script) {
+        script = document.createElement('script');
+        script.setAttribute('type', 'application/ld+json');
+        script.setAttribute('id', 'structured-data-website');
+        document.head.appendChild(script);
+      }
     
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
@@ -35,6 +37,14 @@ export default function WebsiteSchema() {
         }
       }
     });
+    };
+
+    // Use requestIdleCallback to defer non-critical structured data
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(injectSchema);
+    } else {
+      setTimeout(injectSchema, 100);
+    }
 
     return () => {
       const existingScript = document.getElementById('structured-data-website');
