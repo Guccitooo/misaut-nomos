@@ -271,9 +271,7 @@ export default function AutonomoPage() {
 
   const handleStartChat = async () => {
     if (!user) {
-      // Guardar URL actual para regresar después del login
-      const currentUrl = window.location.href;
-      base44.auth.redirectToLogin(currentUrl);
+      base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
       return;
     }
     const conversationId = [user.id, profile.user_id].sort().join('_');
@@ -537,7 +535,7 @@ export default function AutonomoPage() {
               <Button
                 onClick={() => {
                   if (!user) {
-                    window.location.href = '/api/auth/login?next=' + encodeURIComponent(`/RequestQuote?professional=${profile.user_id}`);
+                    base44.auth.redirectToLogin(createPageUrl("RequestQuote") + `?professional=${profile.user_id}`);
                     return;
                   }
                   navigate(createPageUrl("RequestQuote") + `?professional=${profile.user_id}`);
@@ -581,7 +579,14 @@ export default function AutonomoPage() {
                 {showChat && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={handleStartChat} className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm">
+                      <Button onClick={() => {
+                        if (!user) {
+                          base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
+                          return;
+                        }
+                        const conversationId = [user.id, profile.user_id].sort().join('_');
+                        navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
+                      }} className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm">
                         <MessageSquare className="w-4 h-4 mr-1" />
                         {t('chat') || 'Chat'}
                       </Button>
