@@ -1047,7 +1047,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {!user && !loadingUser && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
