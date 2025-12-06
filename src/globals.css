@@ -422,13 +422,19 @@ img {
   height: auto;
 }
 
-/* Reduce CSS size - remove unused animations on initial load */
-@media (prefers-reduced-motion: no-preference) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* Optimize animations to prevent forced reflow */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-down,
+.animate-scale-in {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prevent layout thrashing */
+img, video, iframe {
+  content-visibility: auto;
 }
 
 /* Defer non-critical CSS */

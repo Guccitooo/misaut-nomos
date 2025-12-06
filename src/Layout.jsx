@@ -64,8 +64,18 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       return;
     }
 
-    // Defer Google Analytics loading
+    // Defer Google Analytics loading - use requestIdleCallback
     const loadAnalytics = () => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          initAnalytics();
+        }, { timeout: 2000 });
+      } else {
+        setTimeout(initAnalytics, 2000);
+      }
+    };
+
+    const initAnalytics = () => {
       // Google Analytics (GA4)
       const scriptGA = document.createElement('script');
       scriptGA.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
@@ -108,9 +118,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
     // Load analytics after page is interactive
     if (document.readyState === 'complete') {
-    setTimeout(loadAnalytics, 1000);
+      loadAnalytics();
     } else {
-    window.addEventListener('load', () => setTimeout(loadAnalytics, 1000));
+      window.addEventListener('load', loadAnalytics, { once: true });
     }
     }, []);
 
