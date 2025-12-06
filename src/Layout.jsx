@@ -346,6 +346,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }
 
   navigationItems.push({
+    title: "Presupuestos",
+    url: createPageUrl("QuoteRequests"),
+    icon: FileText,
+  });
+  navigationItems.push({
     title: t('favorites'),
     url: createPageUrl("Favorites"),
     icon: Heart,
