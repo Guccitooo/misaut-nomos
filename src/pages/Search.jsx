@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
+import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
@@ -137,6 +138,10 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  
+  // Traducción automática del perfil
+  const { translatedProfile } = useProfileTranslation(profile);
+  const displayProfile = translatedProfile || profile;
 
   const formatPhoneForCall = (phone) => {
     if (!phone) return null;
@@ -229,8 +234,8 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
             </div>
-            {profile.descripcion_corta && (
-              <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed h-[2.5rem]">{profile.descripcion_corta}</p>
+            {displayProfile.descripcion_corta && (
+              <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed h-[2.5rem]">{displayProfile.descripcion_corta}</p>
             )}
             {profile.average_rating > 0 && (
               <div className="flex items-center gap-1">
