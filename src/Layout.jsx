@@ -30,7 +30,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Footer from "@/components/ui/Footer";
 import CookieBanner from "@/components/ui/CookieBanner";
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
