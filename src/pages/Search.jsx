@@ -33,7 +33,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -200,19 +200,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
       <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
         <CardContent className="p-4 flex flex-col flex-1">
           <div className="flex items-start gap-3 mb-3">
-            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0" onClick={onClick}>
+            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <OptimizedImage
+                  <AvatarImage 
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="w-full h-full rounded-full"
-                    objectFit="cover"
-                    width={48}
-                    height={48}
-                    quality={75}
-                    sizes="48px"
+                    className="object-cover object-center w-full h-full"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
