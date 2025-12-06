@@ -32,7 +32,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -42,6 +42,7 @@ import SEOHead from "../components/seo/SEOHead";
 import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
+import OptimizedImage from "../components/ui/OptimizedImage";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
@@ -202,13 +203,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <AvatarImage 
+                  <OptimizedImage 
                     src={photoUrl} 
                     alt={profile.business_name} 
-                    className="object-cover"
-                    loading="lazy"
+                    className="object-cover w-12 h-12 rounded-full"
                     width={48}
                     height={48}
+                    quality={75}
+                    sizes="48px"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
@@ -395,20 +397,19 @@ export default function SearchPage() {
         }
         return FALLBACK_CATEGORIES;
       } catch (error) {
-        console.log('Usando categorías de fallback');
         return FALLBACK_CATEGORIES;
       }
     },
     initialData: FALLBACK_CATEGORIES,
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
-      // 1. Obtener perfiles visibles con onboarding completado
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       const visibleProfiles = allProfiles.filter(p => 
         p.visible_en_busqueda === true && 
@@ -417,19 +418,16 @@ export default function SearchPage() {
       
       if (visibleProfiles.length === 0) return [];
       
-      // 2. Obtener todas las suscripciones activas
       const allSubscriptions = await base44.entities.Subscription.list();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // 3. Crear set de user_ids con suscripción válida
       const activeUserIds = new Set();
       allSubscriptions.forEach(sub => {
         const estado = sub.estado?.toLowerCase();
         const fechaExp = new Date(sub.fecha_expiracion);
         fechaExp.setHours(0, 0, 0, 0);
         
-        // Suscripción activa: estado válido Y no expirada
         const isActive = (
           estado === 'activo' || 
           estado === 'active' || 
@@ -438,7 +436,6 @@ export default function SearchPage() {
           estado === 'trial_active'
         ) && fechaExp >= today;
         
-        // Cancelada pero no expirada también cuenta
         const isCanceledButValid = (
           estado === 'cancelado' || 
           estado === 'canceled'
@@ -449,11 +446,10 @@ export default function SearchPage() {
         }
       });
       
-      // 4. Filtrar perfiles: solo los que tienen suscripción válida
       return visibleProfiles.filter(p => activeUserIds.has(p.user_id));
     },
-    staleTime: 1000 * 60 * 2, // 2 minutos
-    gcTime: 1000 * 60 * 5, // 5 minutos en cache
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
   });
 
@@ -466,7 +462,8 @@ export default function SearchPage() {
       return allUsers.filter(u => userIds.includes(u.id));
     },
     enabled: profiles.length > 0,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
   });
 
@@ -477,7 +474,8 @@ export default function SearchPage() {
       return await base44.entities.Favorite.filter({ client_id: user.id });
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
   });
 

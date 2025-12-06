@@ -407,9 +407,17 @@ img {
   height: auto;
 }
 
-/* Optimize font loading */
+/* Optimize font loading - inline critical fonts */
 @font-face {
   font-display: swap;
+}
+
+/* Defer non-critical CSS */
+@media print {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* Reduce paint area */

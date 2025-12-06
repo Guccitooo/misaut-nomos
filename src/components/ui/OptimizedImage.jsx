@@ -10,7 +10,8 @@ const OptimizedImage = React.memo(function OptimizedImage({
   objectFit = "cover",
   width,
   height,
-  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  quality = 85
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -37,8 +38,18 @@ const OptimizedImage = React.memo(function OptimizedImage({
       return;
     }
 
-    setActualSrc(src);
-  }, [src]);
+    // Optimize Supabase images with parameters
+    if (src.includes('supabase.co')) {
+      const url = new URL(src);
+      if (width) url.searchParams.set('width', width.toString());
+      if (height) url.searchParams.set('height', height.toString());
+      url.searchParams.set('quality', quality.toString());
+      url.searchParams.set('format', 'webp');
+      setActualSrc(url.toString());
+    } else {
+      setActualSrc(src);
+    }
+  }, [src, width, height, quality]);
 
   useEffect(() => {
     if (priority) {
