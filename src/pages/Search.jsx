@@ -26,7 +26,8 @@ import {
   Copy,
   Check,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -261,6 +262,20 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
           <div className="flex gap-1.5 mt-auto">
             <Button onClick={onClick} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2">
               {t('viewProfile')}
+            </Button>
+
+            <Button
+              onClick={() => {
+                if (!currentUserId) {
+                  window.location.href = '/api/auth/login?next=' + encodeURIComponent('/RequestQuote?professional=' + profile.user_id);
+                  return;
+                }
+                navigate(createPageUrl("RequestQuote") + `?professional=${profile.user_id}`);
+              }}
+              variant="outline" size="icon"
+              className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
+              title="Solicitar presupuesto">
+              <FileText className="w-4 h-4 text-green-600" />
             </Button>
 
             <Button
