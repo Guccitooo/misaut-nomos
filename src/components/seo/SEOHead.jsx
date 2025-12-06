@@ -88,9 +88,11 @@ export default function SEOHead({
       canonical.setAttribute('rel', 'canonical');
       document.head.appendChild(canonical);
     }
-    // Usar URL sin query params como canónica
     const cleanCanonicalUrl = canonicalUrl.split('?')[0];
     canonical.setAttribute('href', cleanCanonicalUrl);
+
+    // Cache control hint (meta tag)
+    updateMetaTag('Cache-Control', 'public, max-age=31536000, immutable', false, true);
 
     // Hreflang for alternate languages
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
@@ -131,26 +133,36 @@ export default function SEOHead({
       }
     });
 
-    // Preload critical images to improve LCP
-    if (image && (location.pathname === '/' || location.pathname.includes('Search'))) {
-      let preloadImage = document.querySelector(`link[rel="preload"][as="image"][href*="${image.split('?')[0].split('/').pop()}"]`);
-      if (!preloadImage && !image.includes('supabase')) {
-        preloadImage = document.createElement('link');
-        preloadImage.setAttribute('rel', 'preload');
-        preloadImage.setAttribute('as', 'image');
-        preloadImage.setAttribute('href', image);
-        preloadImage.setAttribute('fetchpriority', 'high');
-        document.head.appendChild(preloadImage);
-      }
-    }
+    // Preconnect hint for critical resources
+    const criticalPreconnects = [
+      'https://qtrypzzcjebvfcihiynt.supabase.co',
+      'https://fonts.gstatic.com'
+    ];
 
-    // Resource hints
-    const resourceHints = document.createElement('link');
-    resourceHints.setAttribute('rel', 'preconnect');
-    resourceHints.setAttribute('href', 'https://fonts.googleapis.com');
-    if (!document.querySelector('link[rel="preconnect"][href="https://fonts.googleapis.com"]')) {
-      document.head.appendChild(resourceHints);
-    }
+    criticalPreconnects.forEach(url => {
+      if (!document.querySelector(`link[rel="preconnect"][href="${url}"]`)) {
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'preconnect');
+        link.setAttribute('href', url);
+        link.setAttribute('crossorigin', 'anonymous');
+        document.head.appendChild(link);
+      }
+    });
+
+    // DNS prefetch for non-critical
+    const dnsPrefetchUrls = [
+      'https://fonts.googleapis.com',
+      'https://www.googletagmanager.com'
+    ];
+
+    dnsPrefetchUrls.forEach(url => {
+      if (!document.querySelector(`link[rel="dns-prefetch"][href="${url}"]`)) {
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'dns-prefetch');
+        link.setAttribute('href', url);
+        document.head.appendChild(link);
+      }
+    });
 
 
 

@@ -407,9 +407,14 @@ img {
   height: auto;
 }
 
-/* Optimize font loading - inline critical fonts */
+/* Optimize font loading */
 @font-face {
   font-display: swap;
+}
+
+/* Prevent layout shift for images */
+img {
+  height: auto;
 }
 
 /* Defer non-critical CSS */

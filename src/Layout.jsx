@@ -727,16 +727,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
-                    <img
-                      src={LOGO_URL}
-                      alt="Logo MisAutónomos"
-                      className="w-12 h-12 rounded-lg"
-                      loading="eager"
-                      fetchpriority="high"
-                      decoding="sync"
-                      width="48"
-                      height="48"
-                    />
+                  <OptimizedImage
+                    src={LOGO_URL}
+                    alt="Logo MisAutónomos"
+                    className="w-12 h-12 rounded-lg"
+                    priority={true}
+                    width={48}
+                    height={48}
+                    quality={90}
+                    sizes="48px"
+                  />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
                       <p className="text-xs text-gray-500">{t('tagline')}</p>
@@ -1106,14 +1106,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   )}
                   {!shouldShowBottomBar() && user && <div className="w-10"></div>}
                   <div className="flex items-center gap-2">
-                    <img
+                    <OptimizedImage
                       src={LOGO_URL}
                       alt="Logo MisAutónomos"
                       className="w-8 h-8 rounded"
-                      loading="eager"
-                      fetchpriority="high"
-                      width="32"
-                      height="32"
+                      priority={true}
+                      width={32}
+                      height={32}
+                      quality={90}
+                      sizes="32px"
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </div>

@@ -41,9 +41,14 @@ const OptimizedImage = React.memo(function OptimizedImage({
     // Optimize Supabase images with parameters
     if (src.includes('supabase.co')) {
       const url = new URL(src);
-      if (width) url.searchParams.set('width', width.toString());
-      if (height) url.searchParams.set('height', height.toString());
+      // Usa el doble del tamaño solicitado para pantallas retina
+      const optimalWidth = width ? Math.min(width * 2, 800) : 400;
+      const optimalHeight = height ? Math.min(height * 2, 800) : 400;
+      
+      url.searchParams.set('width', optimalWidth.toString());
+      url.searchParams.set('height', optimalHeight.toString());
       url.searchParams.set('quality', quality.toString());
+      url.searchParams.set('resize', 'cover');
       url.searchParams.set('format', 'webp');
       setActualSrc(url.toString());
     } else {

@@ -203,13 +203,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <img
+                  <OptimizedImage
                     src={photoUrl}
                     alt={profile.business_name}
                     className="w-full h-full object-cover rounded-full"
-                    loading="lazy"
-                    width="48"
-                    height="48"
+                    width={48}
+                    height={48}
+                    quality={75}
+                    sizes="48px"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
@@ -242,9 +243,11 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
             </div>
-            {displayProfile.descripcion_corta && (
-              <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed h-[2.5rem]">{displayProfile.descripcion_corta}</p>
-            )}
+            <div className="h-[2.5rem] overflow-hidden">
+              {displayProfile.descripcion_corta && (
+                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{displayProfile.descripcion_corta}</p>
+              )}
+            </div>
             {profile.average_rating > 0 && (
               <div className="flex items-center gap-1">
                 <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
@@ -552,11 +555,12 @@ export default function SearchPage() {
       ]} />
 
       <div className="min-h-screen bg-gray-50">
-        {!loadingUser && !user && (
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8">
-            <div className="max-w-6xl mx-auto px-4 text-center">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
-              <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '280px' }}>
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            {!loadingUser && !user && (
+              <>
+                <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
+                <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
               <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm md:text-base text-blue-100 mb-6">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
@@ -581,12 +585,13 @@ export default function SearchPage() {
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
               </div>
-            </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
+          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white" style={{ minHeight: '200px' }}>
             <CardContent className="p-5">
               <div className="space-y-4">
                 <div className="flex gap-2">
@@ -643,7 +648,7 @@ export default function SearchPage() {
             </CardContent>
           </Card>
 
-          <div className="mb-5">
+          <div className="mb-5" style={{ minHeight: '56px' }}>
             <h2 className="text-xl font-bold text-gray-900">
               {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
             </h2>
@@ -653,22 +658,20 @@ export default function SearchPage() {
           {isInitialLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, idx) => (
-                <Card key={idx} className="border border-gray-100 rounded-xl" style={{ minHeight: '220px' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" style={{ width: '48px', height: '48px' }} />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" style={{ height: '16px' }} />
-                        <Skeleton className="h-3 w-1/2" style={{ height: '12px' }} />
-                      </div>
+                <div key={idx} className="border border-gray-100 rounded-xl bg-white p-4" style={{ height: '220px' }}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full flex-shrink-0 bg-gray-200 animate-pulse" style={{ width: '48px', height: '48px' }} />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" style={{ height: '16px' }} />
+                      <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" style={{ height: '12px' }} />
                     </div>
-                    <div className="space-y-2 mb-3" style={{ height: '48px' }}>
-                      <Skeleton className="h-3 w-full" style={{ height: '12px' }} />
-                      <Skeleton className="h-3 w-full" style={{ height: '12px' }} />
-                    </div>
-                    <Skeleton className="h-9 w-full" style={{ height: '36px' }} />
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="space-y-2 mb-3" style={{ height: '48px' }}>
+                    <div className="h-3 w-full bg-gray-200 rounded animate-pulse" style={{ height: '12px' }} />
+                    <div className="h-3 w-full bg-gray-200 rounded animate-pulse" style={{ height: '12px' }} />
+                  </div>
+                  <div className="h-9 w-full bg-gray-200 rounded animate-pulse" style={{ height: '36px' }} />
+                </div>
               ))}
             </div>
           )}
