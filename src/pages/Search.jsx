@@ -203,14 +203,13 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <OptimizedImage
+                  <img
                     src={photoUrl}
                     alt={profile.business_name}
                     className="w-full h-full object-cover rounded-full"
-                    width={48}
-                    height={48}
-                    quality={75}
-                    sizes="48px"
+                    loading="lazy"
+                    width="48"
+                    height="48"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
@@ -555,12 +554,11 @@ export default function SearchPage() {
       ]} />
 
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '280px' }}>
-          <div className="max-w-6xl mx-auto px-4 text-center">
-            {!loadingUser && !user && (
-              <>
-                <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
-                <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
+        {!loadingUser && !user && (
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8">
+            <div className="max-w-6xl mx-auto px-4 text-center">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
+              <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
               <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm md:text-base text-blue-100 mb-6">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
@@ -585,10 +583,9 @@ export default function SearchPage() {
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
               </div>
-              </>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
           <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white" style={{ minHeight: '200px' }}>
