@@ -144,14 +144,22 @@ export default function SEOHead({
       }
     }
 
-    // DNS prefetch
-    let dnsPrefetch = document.querySelector('link[rel="dns-prefetch"][href="https://qtrypzzcjebvfcihiynt.supabase.co"]');
-    if (!dnsPrefetch) {
-      dnsPrefetch = document.createElement('link');
-      dnsPrefetch.setAttribute('rel', 'dns-prefetch');
-      dnsPrefetch.setAttribute('href', 'https://qtrypzzcjebvfcihiynt.supabase.co');
-      document.head.appendChild(dnsPrefetch);
-    }
+    // DNS prefetch for external domains
+    const dnsPrefetchDomains = [
+      'https://qtrypzzcjebvfcihiynt.supabase.co',
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com'
+    ];
+
+    dnsPrefetchDomains.forEach(domain => {
+      let dnsPrefetch = document.querySelector(`link[rel="dns-prefetch"][href="${domain}"]`);
+      if (!dnsPrefetch) {
+        dnsPrefetch = document.createElement('link');
+        dnsPrefetch.setAttribute('rel', 'dns-prefetch');
+        dnsPrefetch.setAttribute('href', domain);
+        document.head.appendChild(dnsPrefetch);
+      }
+    });
 
     // Structured Data - Organization
     let structuredDataOrg = document.getElementById('structured-data-org');
