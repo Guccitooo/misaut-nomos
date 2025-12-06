@@ -431,9 +431,12 @@ img:not([width]) {
 /* Center small images (avatars, icons, logos) */
 .avatar img, 
 [class*="avatar"] img,
-[class*="logo"] img {
-  object-fit: cover;
-  object-position: center;
+[class*="logo"] img,
+[data-radix-avatar-image] {
+  object-fit: cover !important;
+  object-position: center !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Defer non-critical CSS */
