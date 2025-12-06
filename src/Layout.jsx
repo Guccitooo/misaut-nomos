@@ -778,13 +778,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <div className="flex items-center gap-3 px-2">
                       <Avatar className="w-10 h-10 border-2 border-blue-600">
                         {getProfilePicture() ? (
-                          <img
+                          <OptimizedImage
                             src={getProfilePicture()}
                             alt={`Foto de perfil de ${getDisplayName()}`}
-                            className="w-full h-full object-cover rounded-full"
-                            loading="eager"
-                            width="40"
-                            height="40"
+                            className="w-full h-full rounded-full"
+                            objectFit="cover"
+                            width={40}
+                            height={40}
+                            quality={75}
+                            sizes="40px"
+                            priority={true}
                           />
                         ) : (
                           <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
@@ -868,13 +871,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
                         <Avatar className="w-10 h-10 border-2 border-blue-600">
                           {getProfilePicture() ? (
-                            <img
+                            <OptimizedImage
                               src={getProfilePicture()}
                               alt={`Foto de perfil de ${getDisplayName()}`}
-                              className="w-full h-full object-cover rounded-full"
-                              loading="eager"
-                              width="40"
-                              height="40"
+                              className="w-full h-full rounded-full"
+                              objectFit="cover"
+                              width={40}
+                              height={40}
+                              quality={75}
+                              sizes="40px"
+                              priority={true}
                             />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">

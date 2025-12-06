@@ -41,15 +41,26 @@ const OptimizedImage = React.memo(function OptimizedImage({
     // Optimize Supabase images with parameters
     if (src.includes('supabase.co')) {
       const url = new URL(src);
-      // Usa el doble del tamaño solicitado para pantallas retina
-      const optimalWidth = width ? Math.min(width * 2, 800) : 400;
-      const optimalHeight = height ? Math.min(height * 2, 800) : 400;
+      // Usa 2x para retina, pero nunca más del tamaño necesario
+      const optimalWidth = width ? Math.min(width * 2, 1200) : 400;
+      const optimalHeight = height ? Math.min(height * 2, 1200) : 400;
       
       url.searchParams.set('width', optimalWidth.toString());
       url.searchParams.set('height', optimalHeight.toString());
       url.searchParams.set('quality', quality.toString());
       url.searchParams.set('resize', 'cover');
       url.searchParams.set('format', 'webp');
+      setActualSrc(url.toString());
+    } else if (src.includes('base44.app') && src.includes('/files/public/')) {
+      // Optimize Base44 images similarly
+      const url = new URL(src);
+      const optimalWidth = width ? Math.min(width * 2, 1200) : 400;
+      const optimalHeight = height ? Math.min(height * 2, 1200) : 400;
+      
+      url.searchParams.set('w', optimalWidth.toString());
+      url.searchParams.set('h', optimalHeight.toString());
+      url.searchParams.set('q', quality.toString());
+      url.searchParams.set('fm', 'webp');
       setActualSrc(url.toString());
     } else {
       setActualSrc(src);

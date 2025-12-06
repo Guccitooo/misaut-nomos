@@ -1234,15 +1234,17 @@ export default function MessagesPage() {
                         const photoUrl = cachedUser?.user_type === "professionnel" && cachedUser?.profile?.imagen_principal
                           ? cachedUser.profile.imagen_principal
                           : cachedUser?.profile_picture;
-                        
+
                         return photoUrl ? (
                           <OptimizedImage
                             src={photoUrl}
                             alt="Perfil"
-                            className="w-full h-full"
+                            className="w-full h-full rounded-full"
                             objectFit="cover"
                             width={40}
                             height={40}
+                            quality={75}
+                            sizes="40px"
                           />
                         ) : (
                           <AvatarFallback className="bg-blue-100 text-blue-900">
@@ -1298,15 +1300,17 @@ export default function MessagesPage() {
                       const photoUrl = otherUserData?.user_type === "professionnel" && otherUserData?.profile?.imagen_principal
                         ? otherUserData.profile.imagen_principal
                         : otherUserData?.profile_picture;
-                      
+
                       return photoUrl ? (
                         <OptimizedImage
                           src={photoUrl}
                           alt="Perfil"
-                          className="w-full h-full"
+                          className="w-full h-full rounded-full"
                           objectFit="cover"
                           width={40}
                           height={40}
+                          quality={75}
+                          sizes="40px"
                           priority={true}
                         />
                       ) : (
