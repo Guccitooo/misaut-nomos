@@ -36,6 +36,8 @@ import CRMAutomations from './pages/CRMAutomations';
 import Calendar from './pages/Calendar';
 import RequestQuote from './pages/RequestQuote';
 import QuoteRequests from './pages/QuoteRequests';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +80,8 @@ export const PAGES = {
     "Calendar": Calendar,
     "RequestQuote": RequestQuote,
     "QuoteRequests": QuoteRequests,
+    "Projects": Projects,
+    "ProjectDetail": ProjectDetail,
 }
 
 export const pagesConfig = {

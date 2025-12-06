@@ -15,7 +15,8 @@ import {
   X,
   Calendar,
   Search as SearchIcon,
-  FileText
+  FileText,
+  FolderKanban
 } from "lucide-react";
 import {
   Sidebar,
@@ -340,6 +341,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       title: "Dashboard Pro",
       url: createPageUrl("ProfessionalDashboard"),
       icon: LayoutDashboard,
+    });
+    navigationItems.push({
+      title: "Proyectos",
+      url: createPageUrl("Projects"),
+      icon: FolderKanban,
     });
     navigationItems.push({
       title: t('calendar'),
