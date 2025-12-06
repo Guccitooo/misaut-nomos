@@ -482,7 +482,11 @@ export default function CalendarPage() {
                     <ChevronRight className="w-5 h-5" />
                   </Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={goToToday} className="md:hidden">
+                <Button 
+                  size="sm" 
+                  onClick={goToToday} 
+                  className="md:hidden bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                >
                   Hoy
                 </Button>
               </div>
