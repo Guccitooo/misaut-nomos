@@ -1042,15 +1042,18 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="hover:bg-gray-100"
-                    aria-label="Abrir menú"
-                  >
-                    <Menu className="w-6 h-6" aria-hidden="true" />
-                  </Button>
+                  {shouldShowBottomBar() && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileMenuOpen(true)}
+                      className="hover:bg-gray-100"
+                      aria-label="Abrir menú"
+                    >
+                      <Menu className="w-6 h-6" aria-hidden="true" />
+                    </Button>
+                  )}
+                  {!shouldShowBottomBar() && <div className="w-10"></div>}
                   <div className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
