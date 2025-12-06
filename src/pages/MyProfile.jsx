@@ -836,39 +836,36 @@ export default function MyProfilePage() {
         )}
 
         <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
-          {/* Tabs móvil: scroll horizontal */}
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-6' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
-              <TabsTrigger value="personal" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                <User className="w-4 h-4" />
-                Personal
-              </TabsTrigger>
-              {isProfessional && (
-                <>
-                  <TabsTrigger value="business" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Building2 className="w-4 h-4" />
-                    Perfil
-                  </TabsTrigger>
-                  <TabsTrigger value="skills" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Award className="w-4 h-4" />
-                    Skills
-                  </TabsTrigger>
-                  <TabsTrigger value="portfolio" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Camera className="w-4 h-4" />
-                    Portfolio
-                  </TabsTrigger>
-                  <TabsTrigger value="faq" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <BarChart3 className="w-4 h-4" />
-                    FAQ
-                  </TabsTrigger>
-                  <TabsTrigger value="invoicing" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Euro className="w-4 h-4" />
-                    Fact.
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
-          </div>
+          <TabsList className={`w-full grid ${isProfessional ? 'grid-cols-3 md:grid-cols-6' : 'grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
+            <TabsTrigger value="personal" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('tabPersonal')}</span>
+            </TabsTrigger>
+            {isProfessional && (
+              <>
+                <TabsTrigger value="business" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                  <Building2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabProfile')}</span>
+                </TabsTrigger>
+                <TabsTrigger value="skills" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                  <Award className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabSkills')}</span>
+                </TabsTrigger>
+                <TabsTrigger value="portfolio" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                  <Camera className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabPortfolio')}</span>
+                </TabsTrigger>
+                <TabsTrigger value="faq" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabFAQ')}</span>
+                </TabsTrigger>
+                <TabsTrigger value="invoicing" className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg text-xs md:text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                  <Euro className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabInvoicing')}</span>
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
 
           <TabsContent value="personal">
             <Card className="shadow-sm border-0 bg-white">
@@ -1454,11 +1451,11 @@ export default function MyProfilePage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Camera className="w-5 h-5 text-blue-700" />
-                      Galería de Fotos ({profileData.photos.length}/10)
+                      {t('photoGalleryTitle')} ({profileData.photos.length}/10)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">Fotos adicionales de tus trabajos</p>
+                    <p className="text-sm text-gray-600">{t('additionalWorkPhotos')}</p>
 
                   {isEditing && profileData.photos.length < 10 && (
                     <label className="cursor-pointer block">
