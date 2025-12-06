@@ -739,7 +739,7 @@ export default function CalendarPage() {
               </div>
             )}
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex justify-between sm:justify-between">
             {editingTask && (
               <Button 
                 variant="destructive" 
@@ -751,10 +751,16 @@ export default function CalendarPage() {
                 Eliminar
               </Button>
             )}
-            <Button variant="outline" onClick={closeTaskDialog}>Cancelar</Button>
-            <Button onClick={handleSaveTask} disabled={taskMutation.isPending}>
-              {taskMutation.isPending ? 'Guardando...' : 'Guardar'}
-            </Button>
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={closeTaskDialog}>Cancelar</Button>
+              <Button 
+                onClick={handleSaveTask} 
+                disabled={taskMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {taskMutation.isPending ? 'Guardando...' : editingTask ? 'Guardar' : 'Crear tarea'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
