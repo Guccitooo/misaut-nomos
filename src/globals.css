@@ -422,19 +422,13 @@ img {
   height: auto;
 }
 
-/* Optimize animations to prevent forced reflow */
+/* GPU acceleration for animations */
 .animate-fade-in,
 .animate-slide-up,
 .animate-slide-down,
 .animate-scale-in {
   will-change: transform, opacity;
   transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Prevent layout thrashing */
-img, video, iframe {
-  content-visibility: auto;
 }
 
 /* Defer non-critical CSS */
