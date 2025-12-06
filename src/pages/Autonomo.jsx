@@ -29,7 +29,8 @@ import {
   ChevronRight,
   Sparkles,
   BadgeCheck,
-  Briefcase
+  Briefcase,
+  FileText
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -528,6 +529,23 @@ export default function AutonomoPage() {
                 className={`${isFavorite ? 'text-red-500' : 'text-gray-400'} h-9 w-9`}
               >
                 <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+              </Button>
+            </div>
+
+            {/* BOTÓN SOLICITAR PRESUPUESTO */}
+            <div className="mb-3">
+              <Button
+                onClick={() => {
+                  if (!user) {
+                    window.location.href = '/api/auth/login?next=' + encodeURIComponent(`/RequestQuote?professional=${profile.user_id}`);
+                    return;
+                  }
+                  navigate(createPageUrl("RequestQuote") + `?professional=${profile.user_id}`);
+                }}
+                className="w-full h-12 gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-base shadow-lg"
+              >
+                <FileText className="w-5 h-5" />
+                ¡Solicita tu presupuesto ya!
               </Button>
             </div>
 
