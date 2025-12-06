@@ -211,7 +211,6 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                     height={96}
                     quality={80}
                     sizes="48px"
-                    priority={index < 6}
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
