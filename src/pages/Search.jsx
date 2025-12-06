@@ -267,20 +267,6 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             <Button
               onClick={() => {
                 if (!currentUserId) {
-                  window.location.href = '/api/auth/login?next=' + encodeURIComponent('/RequestQuote?professional=' + profile.user_id);
-                  return;
-                }
-                navigate(createPageUrl("RequestQuote") + `?professional=${profile.user_id}`);
-              }}
-              variant="outline" size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-green-50 hover:border-green-300 rounded-lg flex-shrink-0"
-              title="Solicitar presupuesto">
-              <FileText className="w-4 h-4 text-green-600" />
-            </Button>
-
-            <Button
-              onClick={() => {
-                if (!currentUserId) {
                   window.location.href = '/api/auth/login?next=' + encodeURIComponent('/Messages?professional=' + profile.user_id);
                   return;
                 }
