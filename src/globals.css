@@ -407,6 +407,11 @@ img {
   height: auto;
 }
 
+/* Critical CSS inline hint */
+html {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 /* Optimize font loading */
 @font-face {
   font-display: swap;
@@ -415,6 +420,15 @@ img {
 /* Prevent layout shift for images */
 img {
   height: auto;
+}
+
+/* Reduce CSS size - remove unused animations on initial load */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Defer non-critical CSS */
