@@ -710,7 +710,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
-            {user && (
+            {user && shouldShowBottomBar() && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
