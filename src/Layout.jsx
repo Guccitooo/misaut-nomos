@@ -13,7 +13,8 @@ import {
   LayoutDashboard,
   CreditCard,
   X,
-  Calendar
+  Calendar,
+  Search as SearchIcon
 } from "lucide-react";
 import {
   Sidebar,
@@ -829,7 +830,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </Sidebar>
             )}
 
-            {mobileMenuOpen && shouldShowBottomBar() && (
+            {mobileMenuOpen && (shouldShowBottomBar() || !user) && (
               <>
                 <div 
                   className="mobile-menu-overlay lg:hidden" 
@@ -878,9 +879,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           </p>
                         </div>
                       </div>
-                    )}
-                    
-                    {navigationItems.map((item) => (
+                      )}
+
+                      {user && navigationItems.map((item) => (
                       <Link
                         key={item.title}
                         to={item.url}
@@ -899,9 +900,47 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           </span>
                         )}
                       </Link>
-                    ))}
-                    
-                    <div className="mt-4 mb-4 px-2">
+                      ))}
+
+                      {!user && (
+                      <>
+                        <Link
+                          to={createPageUrl("Search")}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                            location.pathname === createPageUrl("Search")
+                              ? 'bg-blue-600 text-white'
+                              : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <SearchIcon className="w-5 h-5" />
+                          <span className="font-medium flex-1">{t('searchFreelancers')}</span>
+                        </Link>
+                        <Link
+                          to={createPageUrl("PricingPlans")}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                            location.pathname === createPageUrl("PricingPlans")
+                              ? 'bg-blue-600 text-white'
+                              : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <CreditCard className="w-5 h-5" />
+                          <span className="font-medium flex-1">{t('becomeFreelancer')}</span>
+                        </Link>
+                        <Link
+                          to={createPageUrl("FAQ")}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                            location.pathname === createPageUrl("FAQ")
+                              ? 'bg-blue-600 text-white'
+                              : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                          <span className="font-medium flex-1">{t('faq')}</span>
+                        </Link>
+                      </>
+                      )}
+
+                      <div className="mt-4 mb-4 px-2">
                       <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                         <button
                           onClick={() => changeLanguage('es')}
@@ -1042,7 +1081,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
               <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
-                  {shouldShowBottomBar() && (
+                  {(shouldShowBottomBar() || !user) && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1053,7 +1092,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       <Menu className="w-6 h-6" aria-hidden="true" />
                     </Button>
                   )}
-                  {!shouldShowBottomBar() && <div className="w-10"></div>}
+                  {!shouldShowBottomBar() && user && <div className="w-10"></div>}
                   <div className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
