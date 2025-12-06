@@ -202,7 +202,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <AvatarImage src={photoUrl} alt={profile.business_name} className="object-cover" />
+                  <AvatarImage 
+                    src={photoUrl} 
+                    alt={profile.business_name} 
+                    className="object-cover"
+                    loading="lazy"
+                    width={48}
+                    height={48}
+                  />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
                     {profile.business_name?.charAt(0) || "P"}
@@ -648,16 +655,21 @@ export default function SearchPage() {
           {isInitialLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, idx) => (
-                <Card key={idx} className="border border-gray-100 rounded-xl">
+                <Card key={idx} className="border border-gray-100 rounded-xl h-[220px]">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3 mb-3">
-                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-1/2" />
                       </div>
                     </div>
-                    <Skeleton className="h-9 w-full" />
+                    <div className="space-y-2 mb-3">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                    <Skeleton className="h-9 w-full mt-auto" />
                   </CardContent>
                 </Card>
               ))}

@@ -401,3 +401,33 @@ img {
 .safe-area-bottom {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
+
+/* Prevent layout shift for images */
+img {
+  height: auto;
+}
+
+/* Optimize font loading */
+@font-face {
+  font-display: swap;
+}
+
+/* Reduce paint area */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* GPU acceleration for animations */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-down,
+.animate-scale-in {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Content visibility for off-screen content */
+.lazy-load {
+  content-visibility: auto;
+}

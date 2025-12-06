@@ -131,6 +131,19 @@ export default function SEOHead({
       }
     });
 
+    // Preload critical images to improve LCP
+    if (image && location.pathname === '/') {
+      let preloadImage = document.querySelector(`link[rel="preload"][as="image"][href="${image}"]`);
+      if (!preloadImage) {
+        preloadImage = document.createElement('link');
+        preloadImage.setAttribute('rel', 'preload');
+        preloadImage.setAttribute('as', 'image');
+        preloadImage.setAttribute('href', image);
+        preloadImage.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(preloadImage);
+      }
+    }
+
     // DNS prefetch
     let dnsPrefetch = document.querySelector('link[rel="dns-prefetch"][href="https://qtrypzzcjebvfcihiynt.supabase.co"]');
     if (!dnsPrefetch) {
