@@ -426,7 +426,7 @@ export default function SearchPage() {
       allSubscriptions.forEach(sub => {
         const estado = sub.estado?.toLowerCase();
         const fechaExp = new Date(sub.fecha_expiracion);
-        fechaExp.setHours(0, 0, 0, 0);
+        fechaExp.setHours(23, 59, 59, 999);
         
         const isActive = (
           estado === 'activo' || 
