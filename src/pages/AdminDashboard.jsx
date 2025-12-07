@@ -649,7 +649,7 @@ export default function AdminDashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-700" />
-                  Datos Completos de Perfiles
+                  Datos Completos de Todos los Usuarios
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -662,7 +662,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {loadingProfiles || loadingUsers ? (
+                {loadingUsers || loadingProfiles ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
                   </div>
@@ -671,9 +671,11 @@ export default function AdminDashboardPage() {
                     <table className="w-full text-xs">
                       <thead className="bg-gray-50 border-b sticky top-0">
                         <tr>
-                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Nombre Comercial</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Tipo</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-600">Nombre Usuario</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Fecha Registro</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Nombre Comercial</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-600">Teléfono</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-600">NIF/CIF</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-600">Categorías</th>
@@ -687,63 +689,84 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {filteredProfiles.map((profile) => {
-                          const userInfo = users.find(u => u.id === profile.user_id);
-                          const userSub = subscriptions.find(s => s.user_id === profile.user_id);
+                        {users.filter(u => {
+                          if (!searchTerm) return true;
+                          const search = searchTerm.toLowerCase();
+                          const profile = profiles.find(p => p.user_id === u.id);
+                          return (
+                            u.full_name?.toLowerCase().includes(search) ||
+                            u.email?.toLowerCase().includes(search) ||
+                            profile?.business_name?.toLowerCase().includes(search) ||
+                            profile?.telefono_contacto?.includes(search)
+                          );
+                        }).map((userInfo) => {
+                          const profile = profiles.find(p => p.user_id === userInfo.id);
+                          const userSub = subscriptions.find(s => s.user_id === userInfo.id);
                           const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+                          const isProfessional = userInfo.user_type === 'professionnel' || profile;
 
                           return (
-                            <tr key={profile.id} className="hover:bg-gray-50">
+                            <tr key={userInfo.id} className="hover:bg-gray-50">
+                              <td className="px-3 py-2">
+                                <Badge className={isProfessional ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                                  {isProfessional ? 'Pro' : 'Cliente'}
+                                </Badge>
+                              </td>
                               <td className="px-3 py-2 font-medium text-gray-900">
-                                {profile.business_name || '-'}
+                                {userInfo.full_name || '-'}
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {userInfo?.full_name || '-'}
+                                {userInfo.email}
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {profile.email_contacto || userInfo?.email || '-'}
+                                {new Date(userInfo.created_date).toLocaleDateString('es-ES')}
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {profile.telefono_contacto || '-'}
+                                {profile?.business_name || '-'}
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {profile.cif_nif || '-'}
+                                {profile?.telefono_contacto || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile?.cif_nif || '-'}
                               </td>
                               <td className="px-3 py-2">
                                 <div className="max-w-[200px]">
-                                  {profile.categories?.join(', ') || '-'}
+                                  {profile?.categories?.join(', ') || '-'}
                                 </div>
                               </td>
                               <td className="px-3 py-2">
                                 <div className="max-w-[150px]">
-                                  {profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia || '-'}
+                                  {profile?.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile?.provincia || '-'}
                                 </div>
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {profile.years_experience ? `${profile.years_experience} años` : '-'}
+                                {profile?.years_experience ? `${profile.years_experience} años` : '-'}
                               </td>
                               <td className="px-3 py-2 text-gray-700">
-                                {profile.tarifa_base ? `${profile.tarifa_base}€/h` : '-'}
+                                {profile?.tarifa_base ? `${profile.tarifa_base}€/h` : '-'}
                               </td>
                               <td className="px-3 py-2">
                                 <div className="max-w-[150px]">
-                                  {profile.formas_pago?.join(', ') || '-'}
+                                  {profile?.formas_pago?.join(', ') || '-'}
                                 </div>
                               </td>
                               <td className="px-3 py-2">
                                 <div className="flex flex-col gap-1">
-                                  {profile.metodos_contacto?.map(m => (
+                                  {profile?.metodos_contacto?.map(m => (
                                     <Badge key={m} variant="outline" className="text-[10px] py-0">
                                       {m === 'chat_interno' ? 'Chat' : m === 'whatsapp' ? 'WA' : 'Tel'}
                                     </Badge>
-                                  ))}
+                                  )) || '-'}
                                 </div>
                               </td>
                               <td className="px-3 py-2">
-                                {profile.visible_en_busqueda ? (
+                                {profile?.visible_en_busqueda ? (
                                   <CheckCircle className="w-4 h-4 text-green-600" />
-                                ) : (
+                                ) : profile ? (
                                   <XCircle className="w-4 h-4 text-gray-400" />
+                                ) : (
+                                  <span className="text-gray-400">-</span>
                                 )}
                               </td>
                               <td className="px-3 py-2">
