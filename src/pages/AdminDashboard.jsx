@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -514,10 +513,14 @@ export default function AdminDashboardPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="profiles" className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
               Perfiles
+            </TabsTrigger>
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Datos Completos
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -628,6 +631,133 @@ export default function AdminDashboardPage() {
                                       <><Eye className="w-3 h-3 mr-1" />Mostrar</>
                                     )}
                                   </Button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="data">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-700" />
+                  Datos Completos de Perfiles
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Buscar por nombre, email, teléfono..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+
+                {loadingProfiles || loadingUsers ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50 border-b sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Nombre Comercial</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Nombre Usuario</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Teléfono</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">NIF/CIF</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Categorías</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Ubicación</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Experiencia</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Tarifa</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Formas Pago</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Contacto</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Visible</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600">Suscripción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {filteredProfiles.map((profile) => {
+                          const userInfo = users.find(u => u.id === profile.user_id);
+                          const userSub = subscriptions.find(s => s.user_id === profile.user_id);
+                          const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+
+                          return (
+                            <tr key={profile.id} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 font-medium text-gray-900">
+                                {profile.business_name || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {userInfo?.full_name || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile.email_contacto || userInfo?.email || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile.telefono_contacto || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile.cif_nif || '-'}
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="max-w-[200px]">
+                                  {profile.categories?.join(', ') || '-'}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="max-w-[150px]">
+                                  {profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia || '-'}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile.years_experience ? `${profile.years_experience} años` : '-'}
+                              </td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {profile.tarifa_base ? `${profile.tarifa_base}€/h` : '-'}
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="max-w-[150px]">
+                                  {profile.formas_pago?.join(', ') || '-'}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                <div className="flex flex-col gap-1">
+                                  {profile.metodos_contacto?.map(m => (
+                                    <Badge key={m} variant="outline" className="text-[10px] py-0">
+                                      {m === 'chat_interno' ? 'Chat' : m === 'whatsapp' ? 'WA' : 'Tel'}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                {profile.visible_en_busqueda ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-gray-400" />
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                {userSub ? (
+                                  <div className="space-y-1">
+                                    <Badge className={isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                                      {userSub.estado}
+                                    </Badge>
+                                    <div className="text-[10px] text-gray-500">
+                                      {new Date(userSub.fecha_expiracion).toLocaleDateString('es-ES')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-800">Sin sub</Badge>
                                 )}
                               </td>
                             </tr>
