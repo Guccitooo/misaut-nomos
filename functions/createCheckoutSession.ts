@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
 
     // ✅ DETERMINAR SI OFRECER TRIAL
     const offerTrial = !user.has_used_trial && !isReactivation;
-    const trialDays = offerTrial ? 60 : 0;
+    const trialDays = offerTrial ? 7 : 0;
 
     console.log('🎁 Ofrecer trial:', offerTrial, '- Días:', trialDays);
 
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
         price_data: {
           currency: 'eur',
           product_data: {
-            name: offerTrial ? `${plan.nombre} - 2 meses gratis` : plan.nombre,
+            name: offerTrial ? `${plan.nombre} - 7 días gratis` : plan.nombre,
             description: plan.descripcion || `Suscripción ${plan.nombre} MisAutónomos`,
           },
           unit_amount: Math.round(plan.precio * 100), // ✅ Usar precio del plan
