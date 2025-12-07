@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.integrations.Core.SendEmail({
                 to: userEmail,
                 subject: isTrialing 
-                    ? `🎉 ¡Bienvenido a MisAutónomos! Tu prueba de 60 días ha comenzado`
+                    ? `🎉 ¡Bienvenido a MisAutónomos! Tu prueba de 7 días ha comenzado`
                     : `✅ ¡Tu suscripción a MisAutónomos está activa!`,
                 body: `
 <!DOCTYPE html>
@@ -252,9 +252,9 @@ Deno.serve(async (req) => {
     <div class="content">
       <p style="font-size: 18px; color: #1f2937;">¡Hola!</p>
       <div class="highlight">
-        <h3>${isTrialing ? '🎁 60 días GRATIS' : '✅ Pago confirmado'}</h3>
+        <h3>${isTrialing ? '🎁 7 días GRATIS' : '✅ Pago confirmado'}</h3>
         <p style="color: #065f46; margin: 0;">${isTrialing 
-          ? 'Tu cuenta está activa. Tienes 60 días para probar todas las funcionalidades.' 
+          ? 'Tu cuenta está activa. Tienes 7 días para probar todas las funcionalidades.' 
           : 'Tu suscripción está activa y tu perfil es visible para clientes.'}</p>
       </div>
       <p><strong>Plan:</strong> ${plan.nombre}</p>
