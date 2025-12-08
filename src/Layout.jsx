@@ -140,6 +140,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
     if (!user.user_type) return false;
     
+    // Para clientes, mostrar la barra inmediatamente
+    if (user.user_type === "client") return true;
+    
+    // Para profesionales, verificar onboarding
     if (user.user_type === "professionnel") {
       if (professionalProfile === undefined) return false;
       if (professionalProfile && (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda)) {
