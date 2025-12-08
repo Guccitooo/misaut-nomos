@@ -1020,7 +1020,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {!user && (
+              {(!user || (user && user.user_type === "client")) && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
@@ -1041,21 +1041,25 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       </Link>
                     
                     <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={handleLogin}
-                        aria-label={t('login')}
-                      >
-                        <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                        {t('login')}
-                      </Button>
-                      <Link to={createPageUrl("ClientOnboarding")}>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
+                      {!user && (
+                        <Button
+                          variant="ghost"
+                          className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={handleLogin}
+                          aria-label={t('login')}
+                        >
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('becomeClient')}
+                          {t('login')}
                         </Button>
-                      </Link>
+                      )}
+                      {!user && (
+                        <Link to={createPageUrl("ClientOnboarding")}>
+                          <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
+                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                            {t('becomeClient')}
+                          </Button>
+                        </Link>
+                      )}
                       <Link to={createPageUrl("PricingPlans")}>
                         <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -1086,6 +1090,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           EN
                         </button>
                       </div>
+                      {user && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-red-50 hover:text-red-600 transition-colors"
+                          onClick={handleLogout}
+                          aria-label={t('logout')}
+                        >
+                          <LogOut className="w-5 h-5" aria-hidden="true" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </header>
