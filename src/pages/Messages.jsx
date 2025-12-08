@@ -1191,7 +1191,7 @@ export default function MessagesPage() {
         description={t('messagesPageDescription')}
       />
       
-      <div className="flex-1 overflow-hidden flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50">
         <div className={`w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col ${
           selectedConversation ? 'hidden md:flex' : 'flex'
         }`}>
@@ -1441,7 +1441,10 @@ export default function MessagesPage() {
               <div 
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
-                style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}
+                style={{ 
+                  paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+                  maxHeight: 'calc(100vh - 180px)'
+                }}
               >
                 {currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
