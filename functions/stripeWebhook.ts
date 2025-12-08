@@ -291,30 +291,156 @@ Deno.serve(async (req) => {
 
             // ========== NOTIFICACIÓN SLACK (Venta) ==========
             try {
-                await base44.asServiceRole.functions.invoke('notifySlackSale', {
-                    amount: plan.precio || 0,
-                    currency: 'EUR',
-                    customerName: userEmail.split('@')[0],
-                    customerEmail: userEmail,
-                    productName: plan.nombre || 'Suscripción MisAutónomos',
-                    type: 'subscription'
+                const accessToken = await base44.asServiceRole.connectors.getAccessToken("slack");
+                
+                // Mensaje de venta
+                const saleMessage = {
+                    blocks: [
+                        {
+                            type: "header",
+                            text: {
+                                type: "plain_text",
+                                text: "🎉 Nueva suscripción recibida",
+                                emoji: true
+                            }
+                        },
+                        {
+                            type: "section",
+                            fields: [
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Importe:*\n${(plan.precio || 0).toFixed(2)} EUR`
+                                },
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Cliente:*\n${userEmail.split('@')[0]}`
+                                },
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Email:*\n${userEmail}`
+                                },
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Producto:*\n${plan.nombre || 'Suscripción'}`
+                                }
+                            ]
+                        },
+                        {
+                            type: "context",
+                            elements: [
+                                {
+                                    type: "mrkdwn",
+                                    text: `📅 ${new Date().toLocaleString('es-ES')}`
+                                }
+                            ]
+                        }
+                    ]
+                };
+
+                // Obtener canales
+                const channelsResponse = await fetch('https://slack.com/api/conversations.list?types=public_channel&limit=100', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
-                console.log('📱 Notificación Slack venta enviada');
+                const channelsData = await channelsResponse.json();
+                
+                if (channelsData.ok && channelsData.channels) {
+                    const channels = channelsData.channels;
+                    const targetChannel = channels.find(c => c.name === 'ventas') ||
+                                          channels.find(c => c.name === 'sales') ||
+                                          channels.find(c => c.name === 'general') ||
+                                          channels[0];
+
+                    if (targetChannel) {
+                        await fetch('https://slack.com/api/chat.postMessage', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                channel: targetChannel.id, 
+                                ...saleMessage 
+                            })
+                        });
+                        console.log('📱 Notificación Slack venta enviada a', targetChannel.name);
+                    }
+                }
             } catch (slackError) {
-                console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
+                console.error('⚠️ Error Slack venta:', slackError.message);
             }
 
             // ========== NOTIFICACIÓN SLACK (Nuevo profesional) ==========
             try {
-                await base44.asServiceRole.functions.invoke('notifySlackNewClient', {
-                    clientName: userEmail.split('@')[0],
-                    clientEmail: userEmail,
-                    clientType: 'professional',
-                    planName: plan.nombre
+                const accessToken = await base44.asServiceRole.connectors.getAccessToken("slack");
+                
+                const clientMessage = {
+                    blocks: [
+                        {
+                            type: "header",
+                            text: {
+                                type: "plain_text",
+                                text: "👨‍💼 Nuevo Profesional registrado",
+                                emoji: true
+                            }
+                        },
+                        {
+                            type: "section",
+                            fields: [
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Nombre:*\n${userEmail.split('@')[0]}`
+                                },
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Email:*\n${userEmail}`
+                                },
+                                {
+                                    type: "mrkdwn",
+                                    text: `*Plan:*\n${plan.nombre}`
+                                }
+                            ]
+                        },
+                        {
+                            type: "context",
+                            elements: [
+                                {
+                                    type: "mrkdwn",
+                                    text: `📅 ${new Date().toLocaleString('es-ES')}`
+                                }
+                            ]
+                        }
+                    ]
+                };
+
+                const channelsResponse = await fetch('https://slack.com/api/conversations.list?types=public_channel&limit=100', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
-                console.log('📱 Notificación Slack nuevo profesional enviada');
+                const channelsData = await channelsResponse.json();
+                
+                if (channelsData.ok && channelsData.channels) {
+                    const channels = channelsData.channels;
+                    const targetChannel = channels.find(c => c.name === 'clientes') ||
+                                          channels.find(c => c.name === 'ventas') ||
+                                          channels.find(c => c.name === 'general') ||
+                                          channels[0];
+
+                    if (targetChannel) {
+                        await fetch('https://slack.com/api/chat.postMessage', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                channel: targetChannel.id, 
+                                ...clientMessage 
+                            })
+                        });
+                        console.log('📱 Notificación Slack nuevo profesional enviada a', targetChannel.name);
+                    }
+                }
             } catch (slackError) {
-                console.error('⚠️ Error enviando a Slack (no crítico):', slackError.message);
+                console.error('⚠️ Error Slack cliente:', slackError.message);
             }
             
             // ✅ VERIFICACIÓN FINAL: Si el perfil tiene onboarding completo, forzar visibilidad
