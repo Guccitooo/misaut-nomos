@@ -416,7 +416,7 @@ export default function MessagesPage() {
   };
 
   const getDisplayName = (userId, conversationId = null) => {
-    if (!userId) return t("user");
+    if (!userId) return "Usuario";
     
     if (userId === user?.id) {
       if (user.user_type === "professionnel") {
@@ -428,57 +428,43 @@ export default function MessagesPage() {
           }
         }
       }
-      return user.full_name || user.email?.split('@')[0] || t("you");
+      return user.full_name || user.email?.split('@')[0] || "Tú";
     }
     
-    // Priorizar otherUserData si estamos en la conversación actual
+    // PRIORIDAD 1: otherUserData (datos frescos de la conversación actual)
     if (otherUserData && otherUserData.id === userId) {
       if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
         return otherUserData.profile.business_name;
       }
       if (otherUserData.full_name) return otherUserData.full_name;
-      return otherUserData.email?.split('@')[0] || t("user");
+      if (otherUserData.email) return otherUserData.email.split('@')[0];
     }
     
+    // PRIORIDAD 2: conversationUsers (cache de usuarios de conversaciones)
     if (conversationUsers[userId]) {
       const userData = conversationUsers[userId];
       if (userData.user_type === "professionnel" && userData.profile?.business_name) {
         return userData.profile.business_name;
       }
       if (userData.full_name) return userData.full_name;
-      return userData.email?.split('@')[0] || t("user");
+      if (userData.email) return userData.email.split('@')[0];
     }
     
-    if (usersCache[userId]) {
-      const cachedUser = usersCache[userId];
-      if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
-        return cachedUser.profile.business_name;
-      }
-      if (cachedUser.full_name) return cachedUser.full_name;
-      return cachedUser.email?.split('@')[0] || t("user");
-    }
-    
+    // PRIORIDAD 3: Buscar en los mensajes de la conversación
     const conversation = conversations[conversationId || selectedConversation];
-    if (conversation && userId === conversation.otherUserId) {
-      if (conversation.otherUserName && conversation.otherUserName !== "Usuario" && conversation.otherUserName !== "User") {
-        return conversation.otherUserName;
-      }
-      
-      if (conversation.messages?.length > 0) {
-        for (let i = conversation.messages.length - 1; i >= 0; i--) {
-          const msg = conversation.messages[i];
-          if (msg.sender_id === userId) {
-            const name = msg.professional_name || msg.client_name;
-            if (name && name !== "Usuario" && name !== "User") return name;
-          } else if (msg.recipient_id === userId) {
-            const name = msg.professional_name || msg.client_name;
-            if (name && name !== "Usuario" && name !== "User") return name;
+    if (conversation?.messages?.length > 0) {
+      for (let i = conversation.messages.length - 1; i >= 0; i--) {
+        const msg = conversation.messages[i];
+        if (msg.sender_id === userId || msg.recipient_id === userId) {
+          const name = msg.professional_name || msg.client_name;
+          if (name && name !== "Usuario" && name !== "User") {
+            return name;
           }
         }
       }
     }
     
-    return t("user");
+    return "Usuario";
   };
 
   const getUserType = (userId) => {
@@ -1193,10 +1179,10 @@ export default function MessagesPage() {
         description={t('messagesPageDescription')}
       />
       
-      <div className="flex h-screen overflow-hidden bg-white md:bg-gradient-to-br md:from-slate-50 md:to-blue-50">
+      <div className="flex overflow-hidden bg-white md:bg-gradient-to-br md:from-slate-50 md:to-blue-50" style={{ height: '100vh' }}>
         <div className={`w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col ${
           selectedConversation ? 'hidden md:flex' : 'flex'
-        }`}>
+        }`} style={{ height: '100vh' }}>
           <div className="p-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-blue-700" />
@@ -1283,9 +1269,9 @@ export default function MessagesPage() {
 
         <div className={`flex-1 flex flex-col bg-white md:bg-gray-50 ${
           !selectedConversation ? 'hidden md:flex' : 'flex'
-        }`} style={{ height: '100vh', maxHeight: '100vh' }}>
+        }`} style={{ height: '100vh', overflow: 'hidden' }}>
           {selectedConversation ? (
-            <>
+            <div className="flex flex-col h-full">
               <div className="bg-white border-b border-gray-200 px-3 py-2 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Button
@@ -1420,7 +1406,9 @@ export default function MessagesPage() {
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 bg-gray-50"
                 style={{ 
+                  flex: '1 1 auto',
                   minHeight: 0,
+                  maxHeight: 'calc(100vh - 120px)',
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
@@ -1518,12 +1506,12 @@ export default function MessagesPage() {
                 )}
                 </div>
 
-                <div 
-                  className="bg-white border-t border-gray-200 p-2 md:p-4 flex-shrink-0"
-                  style={{ 
-                    paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))'
-                  }}
-                >
+              <div 
+                className="bg-white border-t border-gray-200 p-2 md:p-4 flex-shrink-0"
+                style={{ 
+                  paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))'
+                }}
+              >
                   {attachments.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">
                       {attachments.map((file, idx) => (
@@ -1597,8 +1585,8 @@ export default function MessagesPage() {
                       )}
                     </Button>
                   </form>
-                </div>
-              </>
+              </div>
+            </div>
             ) : (
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 <div className="text-center p-4">
