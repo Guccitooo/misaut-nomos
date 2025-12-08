@@ -1283,10 +1283,10 @@ export default function MessagesPage() {
 
         <div className={`flex-1 flex flex-col bg-white md:bg-gray-50 ${
           !selectedConversation ? 'hidden md:flex' : 'flex'
-        } h-screen`}>
+        }`} style={{ height: '100vh', maxHeight: '100vh' }}>
           {selectedConversation ? (
             <>
-              <div className="bg-white border-b border-gray-200 px-3 py-2">
+              <div className="bg-white border-b border-gray-200 px-3 py-2 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -1328,7 +1328,11 @@ export default function MessagesPage() {
                       onClick={() => handleNavigateToProfile(selectedProfessionalId)}
                       className="font-semibold text-sm text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group text-left"
                     >
-                      <span className="truncate">{getDisplayName(selectedProfessionalId)}</span>
+                      <span className="truncate">
+                        {otherUserData?.user_type === "professionnel" && otherUserData?.profile?.business_name 
+                          ? otherUserData.profile.business_name
+                          : otherUserData?.full_name || getDisplayName(selectedProfessionalId)}
+                      </span>
                       <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </button>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1415,6 +1419,10 @@ export default function MessagesPage() {
               <div 
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 bg-gray-50"
+                style={{ 
+                  minHeight: 0,
+                  WebkitOverflowScrolling: 'touch'
+                }}
               >
                 {currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
@@ -1511,7 +1519,10 @@ export default function MessagesPage() {
                 </div>
 
                 <div 
-                  className="bg-white border-t border-gray-200 p-2 md:p-4"
+                  className="bg-white border-t border-gray-200 p-2 md:p-4 flex-shrink-0"
+                  style={{ 
+                    paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))'
+                  }}
                 >
                   {attachments.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">
