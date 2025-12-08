@@ -147,14 +147,13 @@ export default function ClientOnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && !completeOnboardingMutation.isPending) {
       const savedFormData = localStorage.getItem('client_onboarding_pending');
       if (savedFormData) {
         try {
           const parsedData = JSON.parse(savedFormData);
           console.log('📋 Datos guardados encontrados, procesando...');
           
-          setFormData(parsedData);
           localStorage.removeItem('client_onboarding_pending');
           
           completeOnboardingMutation.mutate(parsedData);
@@ -163,6 +162,7 @@ export default function ClientOnboardingPage() {
         } catch (error) {
           console.error('Error procesando datos guardados:', error);
           localStorage.removeItem('client_onboarding_pending');
+          navigate(createPageUrl("Search"));
         }
       }
     }
@@ -443,7 +443,7 @@ export default function ClientOnboardingPage() {
       localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
       
       try {
-        await base44.auth.redirectToLogin(window.location.href);
+        await base44.auth.redirectToLogin(createPageUrl("Search"));
       } catch (error) {
         setError(language === 'es' ? 'Error en la redirección' : 'Redirection error');
         setIsRedirecting(false);
