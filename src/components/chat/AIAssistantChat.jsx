@@ -30,6 +30,7 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
   const [suggestedProfessionals, setSuggestedProfessionals] = useState([]);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [quickOptions, setQuickOptions] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -100,6 +101,14 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
         content: welcomeMessage,
         isWelcome: true
       }]);
+      
+      // Opciones rápidas iniciales
+      setQuickOptions([
+        { label: '🔍 Buscar profesionales', value: 'Quiero buscar un profesional' },
+        { label: '💬 Comparar servicios', value: 'Ayúdame a comparar profesionales' },
+        { label: '❓ Tengo una duda', value: 'Tengo una pregunta sobre los servicios' },
+        { label: '⭐ Ver recomendados', value: 'Muéstrame los profesionales mejor valorados' }
+      ]);
 
       // Si hay un mensaje proactivo pendiente, añadirlo
       if (initialProactiveMessage) {
@@ -129,11 +138,13 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
     setShowSavePrompt(false);
   };
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading || !conversation) return;
+  const sendMessage = async (messageText = null) => {
+    const textToSend = messageText || inputValue.trim();
+    if (!textToSend || isLoading || !conversation) return;
 
-    const userMessage = inputValue.trim();
+    const userMessage = textToSend;
     setInputValue('');
+    setQuickOptions([]); // Limpiar opciones después de enviar
     
     // Guardar mensajes actuales y añadir el del usuario
     const currentMessages = [...messages, { role: 'user', content: userMessage }];
@@ -176,6 +187,11 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
 
       // Buscar profesionales relevantes basado en la consulta
       await searchRelevantProfessionals(userMessage);
+      
+      // Generar opciones contextuales después de la respuesta
+      setTimeout(() => {
+        generateContextualOptions(userMessage);
+      }, 5500);
 
       // Reducir tiempo de espera y desuscribirse cuando hay contenido
       setTimeout(() => {
@@ -190,6 +206,37 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
         content: 'Lo siento, hubo un error procesando tu mensaje. ¿Puedes intentarlo de nuevo?'
       }]);
       setIsLoading(false);
+    }
+  };
+
+  const generateContextualOptions = (lastQuery) => {
+    const lowerQuery = lastQuery.toLowerCase();
+    
+    // Opciones basadas en contexto
+    if (lowerQuery.includes('precio') || lowerQuery.includes('cuánto') || lowerQuery.includes('coste')) {
+      setQuickOptions([
+        { label: '💰 Ver rango de precios', value: 'Muéstrame el rango de precios típico' },
+        { label: '📋 Solicitar presupuesto', value: 'Quiero solicitar un presupuesto' },
+        { label: '🔍 Ver más profesionales', value: 'Enséñame más opciones' }
+      ]);
+    } else if (lowerQuery.includes('urgente') || lowerQuery.includes('rápido') || lowerQuery.includes('emergencia')) {
+      setQuickOptions([
+        { label: '⚡ Disponibles hoy', value: 'Muéstrame profesionales disponibles hoy' },
+        { label: '📞 Con teléfono', value: 'Quiero contactar por teléfono' },
+        { label: '💬 Enviar mensaje', value: 'Prefiero enviar un mensaje' }
+      ]);
+    } else if (suggestedProfessionals.length > 0) {
+      setQuickOptions([
+        { label: '👀 Ver más detalles', value: 'Dime más sobre estos profesionales' },
+        { label: '📍 Cambiar ubicación', value: 'Buscar en otra zona' },
+        { label: '⭐ Mejor valorados', value: 'Muéstrame solo los mejor valorados' }
+      ]);
+    } else {
+      setQuickOptions([
+        { label: '🔍 Buscar otra cosa', value: 'Buscar otro tipo de servicio' },
+        { label: '❓ Hacer pregunta', value: 'Tengo otra pregunta' },
+        { label: '📞 Soporte', value: 'Necesito ayuda con algo más' }
+      ]);
     }
   };
 
@@ -451,6 +498,24 @@ export default function AIAssistantChat({ isOpen, onClose, initialQuery = '', br
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Opciones rápidas clicables */}
+            {quickOptions.length > 0 && !isLoading && (
+              <div className="space-y-2 pt-2">
+                <p className="text-xs text-gray-500 font-medium">Sugerencias rápidas:</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickOptions.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => sendMessage(option.value)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-full text-xs font-medium text-gray-700 hover:text-blue-700 transition-all shadow-sm hover:shadow"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
