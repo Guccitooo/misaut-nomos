@@ -128,7 +128,19 @@ Deno.serve(async (req) => {
 
             // ✅ OBTENER PLAN
             const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
-            const plan = plans[0] || { nombre: 'Plan Mensual', precio: 33 };
+            const plan = plans[0] || { nombre: 'Plan Mensual', precio: 33, duracion_dias: 30 };
+
+            // ✅ CALCULAR FECHA DE EXPIRACIÓN CORRECTA
+            let fechaExpiracion;
+            if (stripeSubscription.status === 'trialing') {
+                // Durante trial: fecha_expiracion = fin del trial (7 días)
+                fechaExpiracion = new Date(stripeSubscription.current_period_end * 1000).toISOString();
+            } else {
+                // Sin trial o después del trial: calcular según duración del plan
+                const startDate = new Date(stripeSubscription.current_period_start * 1000);
+                const planDuration = plan.duracion_dias || 30;
+                fechaExpiracion = new Date(startDate.getTime() + planDuration * 24 * 60 * 60 * 1000).toISOString();
+            }
 
             // ✅ ACTUALIZAR/CREAR SUSCRIPCIÓN EN BD
             const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: userId });
@@ -139,7 +151,7 @@ Deno.serve(async (req) => {
                 plan_nombre: plan.nombre,
                 plan_precio: plan.precio,
                 fecha_inicio: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                fecha_expiracion: fechaExpiracion,
                 estado: profileStatus.estado,
                 renovacion_automatica: !stripeSubscription.cancel_at_period_end,
                 metodo_pago: 'stripe',
