@@ -82,8 +82,21 @@ Deno.serve(async (req) => {
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
     // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
-    const interval = plan.duracion_dias === 30 ? 'month' : plan.duracion_dias === 90 ? 'month' : 'year';
-    const intervalCount = plan.duracion_dias === 30 ? 1 : plan.duracion_dias === 90 ? 3 : 1;
+    let interval = 'month';
+    let intervalCount = 1;
+    
+    if (planId === 'plan_monthly_trial' || planId === 'plan_monthly') {
+      interval = 'month';
+      intervalCount = 1;
+    } else if (planId === 'plan_quarterly') {
+      interval = 'month';
+      intervalCount = 3;
+    } else if (planId === 'plan_annual') {
+      interval = 'year';
+      intervalCount = 1;
+    }
+    
+    console.log('📅 Intervalo configurado:', interval, 'x', intervalCount);
 
     // ✅ DETERMINAR SI OFRECER TRIAL
     const offerTrial = !user.has_used_trial && !isReactivation;
