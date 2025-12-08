@@ -1032,9 +1032,7 @@ export default function MessagesPage() {
       console.error('❌ Error en handleSendMessage:', error);
       toast.error(t('prepareMessageError') + error.message);
     } finally {
-      setTimeout(() => {
-        setSendingMessage(false);
-      }, 1000);
+      setSendingMessage(false);
     }
   };
 
@@ -1195,7 +1193,7 @@ export default function MessagesPage() {
         description={t('messagesPageDescription')}
       />
       
-      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="flex h-screen overflow-hidden bg-white md:bg-gradient-to-br md:from-slate-50 md:to-blue-50">
         <div className={`w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col ${
           selectedConversation ? 'hidden md:flex' : 'flex'
         }`}>
@@ -1283,9 +1281,9 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <div className={`flex-1 flex flex-col bg-gray-50 ${
+        <div className={`flex-1 flex flex-col bg-white md:bg-gray-50 ${
           !selectedConversation ? 'hidden md:flex' : 'flex'
-        }`}>
+        } h-screen`}>
           {selectedConversation ? (
             <>
               <div className="bg-white border-b border-gray-200 px-3 py-2">
@@ -1416,11 +1414,7 @@ export default function MessagesPage() {
 
               <div 
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3"
-                style={{ 
-                  paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-                  maxHeight: 'calc(100vh - 180px)'
-                }}
+                className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 bg-gray-50"
               >
                 {currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
@@ -1518,7 +1512,6 @@ export default function MessagesPage() {
 
                 <div 
                   className="bg-white border-t border-gray-200 p-2 md:p-4"
-                  style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
                 >
                   {attachments.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">
