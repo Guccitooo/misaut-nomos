@@ -431,19 +431,22 @@ export default function MessagesPage() {
       return user.full_name || user.email?.split('@')[0] || t("you");
     }
     
+    // Priorizar otherUserData si estamos en la conversación actual
+    if (otherUserData && otherUserData.id === userId) {
+      if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
+        return otherUserData.profile.business_name;
+      }
+      if (otherUserData.full_name) return otherUserData.full_name;
+      return otherUserData.email?.split('@')[0] || t("user");
+    }
+    
     if (conversationUsers[userId]) {
       const userData = conversationUsers[userId];
       if (userData.user_type === "professionnel" && userData.profile?.business_name) {
         return userData.profile.business_name;
       }
-      return userData.full_name || userData.email?.split('@')[0] || t("user");
-    }
-    
-    if (otherUserData && otherUserData.id === userId) {
-      if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
-        return otherUserData.profile.business_name;
-      }
-      return otherUserData.full_name || otherUserData.email?.split('@')[0] || t("user");
+      if (userData.full_name) return userData.full_name;
+      return userData.email?.split('@')[0] || t("user");
     }
     
     if (usersCache[userId]) {
@@ -451,7 +454,8 @@ export default function MessagesPage() {
       if (cachedUser.user_type === "professionnel" && cachedUser.profile?.business_name) {
         return cachedUser.profile.business_name;
       }
-      return cachedUser.full_name || cachedUser.email?.split('@')[0] || t("user");
+      if (cachedUser.full_name) return cachedUser.full_name;
+      return cachedUser.email?.split('@')[0] || t("user");
     }
     
     const conversation = conversations[conversationId || selectedConversation];
@@ -1284,18 +1288,18 @@ export default function MessagesPage() {
         }`}>
           {selectedConversation ? (
             <>
-              <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
-                <div className="flex items-center gap-3">
+              <div className="bg-white border-b border-gray-200 px-3 py-2">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden"
+                    className="md:hidden h-8 w-8"
                     onClick={handleBackToConversations}
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
 
-                  <Avatar className="cursor-pointer" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
+                  <Avatar className="cursor-pointer h-9 w-9" onClick={() => handleNavigateToProfile(selectedProfessionalId)}>
                     {(() => {
                       const photoUrl = otherUserData?.user_type === "professionnel" && otherUserData?.profile?.imagen_principal
                         ? otherUserData.profile.imagen_principal
@@ -1307,14 +1311,14 @@ export default function MessagesPage() {
                           alt="Perfil"
                           className="w-full h-full rounded-full"
                           objectFit="cover"
-                          width={40}
-                          height={40}
+                          width={36}
+                          height={36}
                           quality={75}
-                          sizes="40px"
+                          sizes="36px"
                           priority={true}
                         />
                       ) : (
-                        <AvatarFallback className="bg-blue-700 text-white">
+                        <AvatarFallback className="bg-blue-700 text-white text-sm">
                           {getDisplayName(selectedProfessionalId)?.charAt(0) || "?"}
                         </AvatarFallback>
                       );
@@ -1324,54 +1328,55 @@ export default function MessagesPage() {
                   <div className="flex-1 min-w-0">
                     <button
                       onClick={() => handleNavigateToProfile(selectedProfessionalId)}
-                      className="font-semibold text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group text-left"
+                      className="font-semibold text-sm text-gray-900 hover:text-blue-600 transition-colors flex items-center gap-1 group text-left"
                     >
                       <span className="truncate">{getDisplayName(selectedProfessionalId)}</span>
-                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </button>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {otherUserData && (
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs flex items-center gap-1 ${
-                            otherUserData.user_type === "professionnel" 
-                              ? "bg-blue-50 text-blue-700 border-blue-200" 
-                              : "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}
-                        >
-                          {otherUserData.user_type === "professionnel" ? (
-                            <>
-                              <Briefcase className="w-3 h-3" />
-                              <span>{t('professional')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserIcon className="w-3 h-3" />
-                              <span>{t('client')}</span>
-                            </>
-                          )}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        {t('online')}
-                      </span>
-                    </div>
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                      {t('online')}
+                    </span>
                   </div>
+
+                  {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
+                    <>
+                      <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`} className="md:hidden">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="h-8 w-8 hover:bg-blue-50"
+                        >
+                          <Phone className="w-4 h-4" />
+                        </Button>
+                      </a>
+                      <a
+                        href={`https://wa.me/${formatPhoneForWhatsApp(getProfessionalPhone())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="md:hidden"
+                      >
+                        <Button 
+                          size="icon"
+                          className="h-8 w-8 bg-green-600 hover:bg-green-700"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </a>
+                    </>
+                  )}
 
                   <div className="hidden md:flex items-center gap-2">
                     {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
                       <>
-                        <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`}>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="hover:bg-blue-50 hover:border-blue-600"
-                          >
-                            <Phone className="w-4 h-4 mr-1" />
-                            <span className="hidden lg:inline">{t('call')}</span>
-                          </Button>
-                        </a>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="hover:bg-blue-50 hover:border-blue-600"
+                        >
+                          <Phone className="w-4 h-4 mr-1" />
+                          <span className="text-xs">{getProfessionalPhone()}</span>
+                        </Button>
                         <a
                           href={`https://wa.me/${formatPhoneForWhatsApp(getProfessionalPhone())}`}
                           target="_blank"
@@ -1407,42 +1412,13 @@ export default function MessagesPage() {
                     )}
                   </div>
                 </div>
-
-                {otherUserData?.user_type === "professionnel" && getProfessionalPhone() && (
-                  <div className="flex md:hidden gap-2 mt-3">
-                    <a href={`tel:${formatPhoneForCall(getProfessionalPhone())}`} className="flex-1">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="w-full hover:bg-blue-50"
-                      >
-                        <Phone className="w-4 h-4 mr-2" />
-                        {t('call')}
-                      </Button>
-                    </a>
-                    <a
-                      href={`https://wa.me/${formatPhoneForWhatsApp(getProfessionalPhone())}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button 
-                        size="sm"
-                        className="w-full bg-green-600 hover:bg-green-700"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        WhatsApp
-                      </Button>
-                    </a>
-                  </div>
-                )}
               </div>
 
               <div 
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4"
+                className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3"
                 style={{ 
-                  paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+                  paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
                   maxHeight: 'calc(100vh - 180px)'
                 }}
               >
@@ -1541,11 +1517,11 @@ export default function MessagesPage() {
                 </div>
 
                 <div 
-                  className="bg-white border-t border-gray-200 p-3 md:p-4"
-                  style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+                  className="bg-white border-t border-gray-200 p-2 md:p-4"
+                  style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
                 >
                   {attachments.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-2">
+                    <div className="mb-2 flex flex-wrap gap-2">
                       {attachments.map((file, idx) => (
                         <FileAttachment 
                           key={idx} 
@@ -1557,7 +1533,7 @@ export default function MessagesPage() {
                     </div>
                   )}
                   
-                  <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
+                  <form onSubmit={handleSendMessage} className="flex gap-1.5 md:gap-3">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1570,14 +1546,14 @@ export default function MessagesPage() {
                       type="button"
                       size="icon"
                       variant="outline"
-                      className="h-[44px] w-[44px]"
+                      className="h-[42px] w-[42px] md:h-[44px] md:w-[44px]"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingFile}
                     >
                       {uploadingFile ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Paperclip className="w-5 h-5" />
+                        <Paperclip className="w-4 h-4" />
                       )}
                     </Button>
                     
@@ -1586,10 +1562,10 @@ export default function MessagesPage() {
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="h-[44px] w-[44px]"
+                        className="h-[42px] w-[42px] md:h-[44px] md:w-[44px]"
                         onClick={() => setShowQuoteDialog(true)}
                       >
-                        <FileText className="w-5 h-5" />
+                        <FileText className="w-4 h-4" />
                       </Button>
                     )}
                     
@@ -1599,27 +1575,24 @@ export default function MessagesPage() {
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder={t('writeMessage')}
-                      className="flex-1 min-h-[44px] md:min-h-[50px] max-h-[120px] resize-none text-base"
+                      className="flex-1 min-h-[42px] md:min-h-[50px] max-h-[100px] resize-none text-sm md:text-base"
                       disabled={sendingMessage}
                     />
                     <Button
                       type="submit"
                       disabled={(!newMessage.trim() && attachments.length === 0) || sendingMessage}
-                      className="h-[44px] md:h-[50px] w-[44px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
+                      className="h-[42px] md:h-[50px] w-[42px] md:w-auto md:px-6 bg-blue-600 hover:bg-blue-700"
                     >
                       {sendingMessage ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          <Send className="w-5 h-5" />
+                          <Send className="w-4 h-4" />
                           <span className="hidden md:inline ml-2">{t('send')}</span>
                         </>
                       )}
                     </Button>
                   </form>
-                  <p className="text-xs text-gray-500 mt-2 text-center hidden md:block">
-                    {t('enterToSend')}
-                  </p>
                 </div>
               </>
             ) : (
