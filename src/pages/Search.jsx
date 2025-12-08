@@ -552,8 +552,8 @@ export default function SearchPage() {
       ]} />
 
       <div className="min-h-screen bg-gray-50">
-        {/* Hero visible inmediatamente sin esperar a loadUser */}
-        {!user && (
+        {/* Hero visible solo si no hay usuario y ya se terminó de cargar */}
+        {!user && !loadingUser && (
           <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '320px' }}>
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
