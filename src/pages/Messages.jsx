@@ -383,10 +383,33 @@ export default function MessagesPage() {
   }, [allMessages, user?.id, conversationUsers]);
 
   const conversationList = React.useMemo(() => {
-    return Object.values(conversations).sort((a, b) => 
+    const list = Object.values(conversations).map(conv => {
+      // Actualizar nombre con los datos más recientes
+      if (conversationUsers[conv.otherUserId]) {
+        const userData = conversationUsers[conv.otherUserId];
+        if (userData.user_type === "professionnel" && userData.profile?.business_name) {
+          conv.otherUserName = userData.profile.business_name;
+        } else if (userData.full_name && userData.full_name.trim() !== '') {
+          conv.otherUserName = userData.full_name;
+        } else if (userData.email) {
+          const emailName = userData.email.split('@')[0];
+          const cleaned = emailName.replace(/\d+$/g, '');
+          if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
+            conv.otherUserName = cleaned.split(/[-._]/).map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+          } else {
+            conv.otherUserName = cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+          }
+        }
+      }
+      return conv;
+    });
+    
+    return list.sort((a, b) => 
       new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
     );
-  }, [conversations]);
+  }, [conversations, conversationUsers]);
 
   const currentMessages = React.useMemo(() => {
     if (!selectedConversation) return [];
@@ -445,40 +468,88 @@ export default function MessagesPage() {
       return user.full_name || user.email?.split('@')[0] || "Tú";
     }
     
-    // PRIORIDAD 1: otherUserData (datos frescos de la conversación actual)
-    if (otherUserData && otherUserData.id === userId) {
-      if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
-        return otherUserData.profile.business_name;
-      }
-      if (otherUserData.full_name) return otherUserData.full_name;
-      if (otherUserData.email) return otherUserData.email.split('@')[0];
-    }
-    
-    // PRIORIDAD 2: conversationUsers (cache de usuarios de conversaciones)
+    // PRIORIDAD 1: conversationUsers (datos completos con perfiles)
     if (conversationUsers[userId]) {
       const userData = conversationUsers[userId];
       if (userData.user_type === "professionnel" && userData.profile?.business_name) {
         return userData.profile.business_name;
       }
-      if (userData.full_name) return userData.full_name;
-      if (userData.email) return userData.email.split('@')[0];
+      if (userData.full_name && userData.full_name.trim() !== '') {
+        return userData.full_name;
+      }
+      if (userData.email) {
+        const emailName = userData.email.split('@')[0];
+        const cleaned = emailName.replace(/\d+$/g, '');
+        if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
+          return cleaned.split(/[-._]/).map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+        }
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+      }
     }
     
-    // PRIORIDAD 3: Buscar en los mensajes de la conversación
-    const conversation = conversations[conversationId || selectedConversation];
-    if (conversation?.messages?.length > 0) {
-      for (let i = conversation.messages.length - 1; i >= 0; i--) {
-        const msg = conversation.messages[i];
-        if (msg.sender_id === userId || msg.recipient_id === userId) {
+    // PRIORIDAD 2: otherUserData (datos frescos de la conversación actual)
+    if (otherUserData && otherUserData.id === userId) {
+      if (otherUserData.user_type === "professionnel" && otherUserData.profile?.business_name) {
+        return otherUserData.profile.business_name;
+      }
+      if (otherUserData.full_name && otherUserData.full_name.trim() !== '') {
+        return otherUserData.full_name;
+      }
+      if (otherUserData.email) {
+        const emailName = otherUserData.email.split('@')[0];
+        const cleaned = emailName.replace(/\d+$/g, '');
+        if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
+          return cleaned.split(/[-._]/).map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+        }
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+      }
+    }
+    
+    // PRIORIDAD 3: Buscar en TODOS los mensajes de todas las conversaciones
+    for (const conv of Object.values(conversations)) {
+      if (conv.messages && conv.messages.length > 0) {
+        for (let i = conv.messages.length - 1; i >= 0; i--) {
+          const msg = conv.messages[i];
+          if (msg.sender_id === userId) {
+            const name = msg.professional_name || msg.client_name;
+            if (name && name !== "Usuario" && name !== "User" && name.trim() !== '') {
+              return name;
+            }
+          }
+          if (msg.recipient_id === userId) {
+            const name = msg.client_name || msg.professional_name;
+            if (name && name !== "Usuario" && name !== "User" && name.trim() !== '') {
+              return name;
+            }
+          }
+        }
+      }
+    }
+    
+    // ÚLTIMO RECURSO: Buscar en todos los mensajes sin filtrar
+    if (allMessages && allMessages.length > 0) {
+      for (let i = allMessages.length - 1; i >= 0; i--) {
+        const msg = allMessages[i];
+        if (msg.sender_id === userId) {
           const name = msg.professional_name || msg.client_name;
-          if (name && name !== "Usuario" && name !== "User") {
+          if (name && name !== "Usuario" && name !== "User" && name.trim() !== '') {
+            return name;
+          }
+        }
+        if (msg.recipient_id === userId) {
+          const name = msg.client_name || msg.professional_name;
+          if (name && name !== "Usuario" && name !== "User" && name.trim() !== '') {
             return name;
           }
         }
       }
     }
     
-    return "Usuario";
+    return "Contacto";
   };
 
   const getUserType = (userId) => {
