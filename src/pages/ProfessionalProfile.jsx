@@ -507,11 +507,7 @@ export default function ProfessionalProfilePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          trackContactClick();
-                          setShowPhoneModal(true);
-                        }}
+                        onClick={handlePhoneClick}
                         variant="outline"
                         className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
                       >
@@ -529,11 +525,7 @@ export default function ProfessionalProfilePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          trackContactClick();
-                          setShowWhatsAppModal(true);
-                        }}
+                        onClick={handleWhatsAppClick}
                         variant="outline"
                         className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
                       >
@@ -706,50 +698,35 @@ export default function ProfessionalProfilePage() {
       {/* MODAL TELÉFONO */}
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-xl flex items-center justify-center gap-2">
-              <Phone className="w-6 h-6 text-blue-600" />
-              Llamar
-            </DialogTitle>
+          <DialogHeader>
+            <DialogTitle className="text-xl">Número de teléfono</DialogTitle>
+            <DialogDescription>
+              Llama desde tu teléfono a este número
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-6 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
-              <p className="text-3xl font-bold text-blue-900 tracking-wide">
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
+              <p className="text-3xl font-bold text-blue-700 tracking-wide">
                 {profile.telefono_contacto}
               </p>
             </div>
-            <div className="flex gap-2 w-full">
-              <Button
-                onClick={() => copyToClipboard(profile.telefono_contacto)}
-                variant="outline"
-                className="flex-1 h-12"
-              >
-                {copiedPhone ? (
-                  <>
-                    <Check className="w-5 h-5 mr-2 text-green-600" />
-                    Copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-5 h-5 mr-2" />
-                    Copiar
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  let cleaned = profile.telefono_contacto.replace(/[^\d+]/g, '');
-                  if (!cleaned.startsWith('+')) {
-                    cleaned = '+34' + cleaned;
-                  }
-                  window.location.href = `tel:${cleaned}`;
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 h-12"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                Llamar
-              </Button>
-            </div>
+            <Button
+              onClick={() => copyToClipboard(profile.telefono_contacto)}
+              variant="outline"
+              className="w-full"
+            >
+              {copiedPhone ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-600" />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar número
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -757,47 +734,31 @@ export default function ProfessionalProfilePage() {
       {/* MODAL WHATSAPP */}
       <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-xl flex items-center justify-center gap-2">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
               <MessageCircle className="w-6 h-6 text-green-600" />
               WhatsApp
             </DialogTitle>
+            <DialogDescription>
+              Contacta por WhatsApp con este profesional
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-6 bg-green-50 rounded-xl border border-green-200 w-full text-center">
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200 w-full text-center">
               <p className="text-3xl font-bold text-green-700 tracking-wide">
                 {profile.telefono_contacto}
               </p>
             </div>
-            <div className="flex gap-2 w-full">
-              <Button
-                onClick={() => copyToClipboard(profile.telefono_contacto)}
-                variant="outline"
-                className="flex-1 h-12"
-              >
-                {copiedPhone ? (
-                  <>
-                    <Check className="w-5 h-5 mr-2 text-green-600" />
-                    Copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-5 h-5 mr-2" />
-                    Copiar
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
-                  setShowWhatsAppModal(false);
-                }}
-                className="flex-1 bg-green-600 hover:bg-green-700 h-12"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                WhatsApp
-              </Button>
-            </div>
+            <Button
+              onClick={() => {
+                window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+                setShowWhatsAppModal(false);
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 h-12"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Abrir WhatsApp
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
