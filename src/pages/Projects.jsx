@@ -113,15 +113,13 @@ export default function ProjectsPage() {
               <FolderKanban className="w-8 h-8 text-blue-600" />
               <h1 className="text-3xl font-bold text-gray-900">Proyectos</h1>
             </div>
-            {isProfessional && (
-              <Button 
-                onClick={() => navigate(createPageUrl("ProjectDetail") + "?new=true")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Proyecto
-              </Button>
-            )}
+            <Button 
+              onClick={() => navigate(createPageUrl("ProjectDetail") + "?new=true")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Proyecto
+            </Button>
           </div>
 
           <Tabs defaultValue={isProfessional ? "my-projects" : "client-view"} className="space-y-6">
