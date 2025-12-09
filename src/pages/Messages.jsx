@@ -332,66 +332,40 @@ export default function MessagesPage() {
       if (!acc[convId]) {
         const isUserSender = msg.sender_id === user?.id;
         const otherUserId = isUserSender ? msg.recipient_id : msg.sender_id;
-        
-        let otherUserName = msg.professional_name || msg.client_name || "Usuario";
-        
-        // Buscar el nombre real del usuario en conversationUsers
-        if (conversationUsers[otherUserId]) {
-          const userData = conversationUsers[otherUserId];
-          if (userData.user_type === "professionnel" && userData.profile?.business_name) {
-            otherUserName = userData.profile.business_name;
-          } else if (userData.full_name) {
-            otherUserName = userData.full_name;
-          } else if (userData.email) {
-            otherUserName = userData.email.split('@')[0];
-          }
-        }
-        
+
         acc[convId] = {
           conversationId: convId,
           messages: [],
           otherUserId: otherUserId,
-          otherUserName: otherUserName,
+          otherUserName: "Contacto", // Default temporal
           lastMessage: msg,
           unreadCount: 0
         };
       }
       acc[convId].messages.push(msg);
-      
+
       if (msg.recipient_id === user?.id && !msg.is_read) {
         acc[convId].unreadCount++;
       }
-      
+
       return acc;
     }, {});
-    
-    // Actualizar nombres con conversationUsers
-    Object.values(convs).forEach(conv => {
-      if (conversationUsers[conv.otherUserId]) {
-        const userData = conversationUsers[conv.otherUserId];
-        if (userData.user_type === "professionnel" && userData.profile?.business_name) {
-          conv.otherUserName = userData.profile.business_name;
-        } else if (userData.full_name) {
-          conv.otherUserName = userData.full_name;
-        } else if (userData.email) {
-          conv.otherUserName = userData.email.split('@')[0];
-        }
-      }
-    });
-    
-    return convs;
-  }, [allMessages, user?.id, conversationUsers]);
 
-  const conversationList = React.useMemo(() => {
-    const list = Object.values(conversations).map(conv => {
-      // Actualizar nombre con los datos más recientes
-      if (conversationUsers[conv.otherUserId]) {
-        const userData = conversationUsers[conv.otherUserId];
+    // SIEMPRE actualizar nombres con conversationUsers si están disponibles
+    Object.values(convs).forEach(conv => {
+      const userData = conversationUsers[conv.otherUserId];
+
+      if (userData) {
+        // PRIORIDAD 1: business_name del perfil profesional
         if (userData.user_type === "professionnel" && userData.profile?.business_name) {
           conv.otherUserName = userData.profile.business_name;
-        } else if (userData.full_name && userData.full_name.trim() !== '') {
+        }
+        // PRIORIDAD 2: full_name del usuario
+        else if (userData.full_name && userData.full_name.trim() !== '') {
           conv.otherUserName = userData.full_name;
-        } else if (userData.email) {
+        }
+        // PRIORIDAD 3: email limpio
+        else if (userData.email) {
           const emailName = userData.email.split('@')[0];
           const cleaned = emailName.replace(/\d+$/g, '');
           if (cleaned.includes('-') || cleaned.includes('.') || cleaned.includes('_')) {
@@ -402,14 +376,29 @@ export default function MessagesPage() {
             conv.otherUserName = cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
           }
         }
+      } else {
+        // Si no hay userData aún, buscar en los mensajes
+        const lastMsg = conv.messages[conv.messages.length - 1];
+        if (lastMsg) {
+          const nameFromMsg = conv.otherUserId === lastMsg.sender_id 
+            ? (lastMsg.professional_name || lastMsg.client_name)
+            : (lastMsg.client_name || lastMsg.professional_name);
+
+          if (nameFromMsg && nameFromMsg !== "Usuario" && nameFromMsg !== "User" && nameFromMsg.trim() !== '') {
+            conv.otherUserName = nameFromMsg;
+          }
+        }
       }
-      return conv;
     });
-    
-    return list.sort((a, b) => 
+
+    return convs;
+  }, [allMessages, user?.id, conversationUsers]);
+
+  const conversationList = React.useMemo(() => {
+    return Object.values(conversations).sort((a, b) => 
       new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
     );
-  }, [conversations, conversationUsers]);
+  }, [conversations]);
 
   const currentMessages = React.useMemo(() => {
     if (!selectedConversation) return [];
@@ -1329,9 +1318,9 @@ export default function MessagesPage() {
                     
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">
-                        {conv.otherUserName && conv.otherUserName !== "Usuario" && conv.otherUserName !== "User" 
+                        {conv.otherUserName !== "Contacto" && conv.otherUserName !== "Usuario" && conv.otherUserName !== "User" 
                           ? conv.otherUserName 
-                          : getDisplayName(conv.otherUserId, conv.conversationId)}
+                          : "Contacto"}
                       </p>
                       <p className="text-sm text-gray-500 truncate">
                         {conv.lastMessage.content}
