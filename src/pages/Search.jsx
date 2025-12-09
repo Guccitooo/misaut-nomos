@@ -480,7 +480,7 @@ export default function SearchPage() {
   });
 
   const filteredProfiles = React.useMemo(() => {
-    return profiles.filter(profile => {
+    const filtered = profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -490,6 +490,9 @@ export default function SearchPage() {
       const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
       return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
     });
+    
+    // Orden aleatorio
+    return filtered.sort(() => Math.random() - 0.5);
   }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const availableCities = React.useMemo(() => {
