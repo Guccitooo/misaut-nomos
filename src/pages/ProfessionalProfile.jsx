@@ -757,31 +757,47 @@ export default function ProfessionalProfilePage() {
       {/* MODAL WHATSAPP */}
       <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-xl flex items-center justify-center gap-2">
               <MessageCircle className="w-6 h-6 text-green-600" />
               WhatsApp
             </DialogTitle>
-            <DialogDescription>
-              Contacta por WhatsApp con este profesional
-            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200 w-full text-center">
+            <div className="p-6 bg-green-50 rounded-xl border border-green-200 w-full text-center">
               <p className="text-3xl font-bold text-green-700 tracking-wide">
                 {profile.telefono_contacto}
               </p>
             </div>
-            <Button
-              onClick={() => {
-                window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
-                setShowWhatsAppModal(false);
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 h-12"
-            >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Abrir WhatsApp
-            </Button>
+            <div className="flex gap-2 w-full">
+              <Button
+                onClick={() => copyToClipboard(profile.telefono_contacto)}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                {copiedPhone ? (
+                  <>
+                    <Check className="w-5 h-5 mr-2 text-green-600" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-5 h-5 mr-2" />
+                    Copiar
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+                  setShowWhatsAppModal(false);
+                }}
+                className="flex-1 bg-green-600 hover:bg-green-700 h-12"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                WhatsApp
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
