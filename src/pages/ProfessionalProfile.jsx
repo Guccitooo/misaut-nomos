@@ -529,7 +529,11 @@ export default function ProfessionalProfilePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        onClick={handleWhatsAppClick}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          trackContactClick();
+                          setShowWhatsAppModal(true);
+                        }}
                         variant="outline"
                         className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
                       >
