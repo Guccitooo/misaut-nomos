@@ -213,12 +213,28 @@ export default function ProfessionalProfilePage() {
 
   const handlePhoneClick = () => {
     trackContactClick();
-    setShowPhoneModal(true);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      let cleaned = profile.telefono_contacto.replace(/[^\d+]/g, '');
+      if (!cleaned.startsWith('+')) {
+        cleaned = '+34' + cleaned;
+      }
+      window.location.href = `tel:${cleaned}`;
+    } else {
+      setShowPhoneModal(true);
+    }
   };
 
   const handleWhatsAppClick = () => {
     trackContactClick();
-    setShowWhatsAppModal(true);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+    } else {
+      setShowWhatsAppModal(true);
+    }
   };
 
   const copyToClipboard = (text) => {
