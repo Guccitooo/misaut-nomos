@@ -507,7 +507,11 @@ export default function ProfessionalProfilePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
-                        onClick={handlePhoneClick}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          trackContactClick();
+                          setShowPhoneModal(true);
+                        }}
                         variant="outline"
                         className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
                       >
