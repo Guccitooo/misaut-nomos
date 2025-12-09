@@ -718,13 +718,38 @@ export default function ProfessionalProfilePage() {
                 {profile.telefono_contacto}
               </p>
             </div>
-            <Button
-              onClick={() => copyToClipboard(profile.telefono_contacto)}
-              className="w-full bg-blue-600 hover:bg-blue-700 h-12"
-            >
-              <Copy className="w-5 h-5 mr-2" />
-              Copiar número
-            </Button>
+            <div className="flex gap-2 w-full">
+              <Button
+                onClick={() => copyToClipboard(profile.telefono_contacto)}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                {copiedPhone ? (
+                  <>
+                    <Check className="w-5 h-5 mr-2 text-green-600" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-5 h-5 mr-2" />
+                    Copiar
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  let cleaned = profile.telefono_contacto.replace(/[^\d+]/g, '');
+                  if (!cleaned.startsWith('+')) {
+                    cleaned = '+34' + cleaned;
+                  }
+                  window.location.href = `tel:${cleaned}`;
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 h-12"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                Llamar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
