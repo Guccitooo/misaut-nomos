@@ -218,7 +218,7 @@ export default function ProfessionalProfilePage() {
 
   const handleWhatsAppClick = () => {
     trackContactClick();
-    window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
+    setShowWhatsAppModal(true);
   };
 
   const copyToClipboard = (text) => {
