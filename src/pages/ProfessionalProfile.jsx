@@ -689,8 +689,8 @@ export default function ProfessionalProfilePage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
-              <p className="text-3xl font-bold text-blue-700 tracking-wide">
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 w-full text-center select-text">
+              <p className="text-3xl font-bold text-blue-700 tracking-wide select-text" style={{ pointerEvents: 'none', userSelect: 'text' }}>
                 {profile.telefono_contacto}
               </p>
             </div>
