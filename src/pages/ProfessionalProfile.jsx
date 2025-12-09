@@ -682,34 +682,24 @@ export default function ProfessionalProfilePage() {
       {/* MODAL TELÉFONO */}
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Número de teléfono</DialogTitle>
-            <DialogDescription>
-              Llama desde tu teléfono a este número
-            </DialogDescription>
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-xl flex items-center justify-center gap-2">
+              <Phone className="w-6 h-6 text-blue-600" />
+              Llamar
+            </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 w-full text-center select-text">
-              <p className="text-3xl font-bold text-blue-700 tracking-wide select-text" style={{ pointerEvents: 'none', userSelect: 'text' }}>
+            <div className="p-6 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
+              <p className="text-3xl font-bold text-blue-900 tracking-wide">
                 {profile.telefono_contacto}
               </p>
             </div>
             <Button
               onClick={() => copyToClipboard(profile.telefono_contacto)}
-              variant="outline"
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700 h-12"
             >
-              {copiedPhone ? (
-                <>
-                  <Check className="w-4 h-4 mr-2 text-green-600" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copiar número
-                </>
-              )}
+              <Copy className="w-5 h-5 mr-2" />
+              Copiar número
             </Button>
           </div>
         </DialogContent>
