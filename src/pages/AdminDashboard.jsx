@@ -17,7 +17,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Calendar
+  Calendar,
+  MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -513,7 +514,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="profiles" className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
               Perfiles
@@ -529,6 +530,10 @@ export default function AdminDashboardPage() {
             <TabsTrigger value="subscriptions" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
               Suscripciones
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2" onClick={() => window.location.href = '/AdminMessagesStats'}>
+              <MessageSquare className="w-4 h-4" />
+              Mensajes
             </TabsTrigger>
           </TabsList>
 
