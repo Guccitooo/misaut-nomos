@@ -1031,30 +1031,31 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
             <main className="flex-1 flex flex-col overflow-hidden">
               {(!user || (user && user.user_type === "client")) && (
-                <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
+                <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
+                    <Link to={createPageUrl("Search")} className="flex items-center gap-2 md:gap-3" aria-label="Ir a búsqueda">
                       <img
                         src={LOGO_URL}
                         alt="Logo MisAutónomos"
-                        className="w-12 h-12 rounded-lg"
+                        className="w-8 h-8 md:w-12 md:h-12 rounded-lg"
                         width="48"
                         height="48"
                         loading="eager"
                         fetchpriority="high"
                         decoding="async"
                       />
-                      <div style={{ minWidth: '150px' }}>
+                      <div className="hidden md:block" style={{ minWidth: '150px' }}>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
                         <p className="text-xs text-gray-500">{t('tagline')}</p>
                       </div>
+                      <h1 className="md:hidden font-bold text-base text-gray-900">MisAutónomos</h1>
                       </Link>
-                    
-                    <div className="flex items-center gap-3">
+
+                    <div className="flex items-center gap-1.5 md:gap-3">
                       {!user && (
                         <Button
                           variant="ghost"
-                          className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                          className="hidden md:flex text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                           onClick={handleLogin}
                           aria-label={t('login')}
                         >
@@ -1063,7 +1064,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                       )}
                       {!user && (
-                        <Link to={createPageUrl("ClientOnboarding")}>
+                        <Link to={createPageUrl("ClientOnboarding")} className="hidden md:block">
                           <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeClient')}
@@ -1071,15 +1072,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Link>
                       )}
                       <Link to={createPageUrl("PricingPlans")}>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('becomeFreelancer')}
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md text-xs md:text-sm px-2 md:px-4 h-9 md:h-10">
+                          <Briefcase className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" aria-hidden="true" />
+                          <span className="hidden sm:inline">{t('becomeFreelancer')}</span>
+                          <span className="sm:hidden">Pro</span>
                         </Button>
                       </Link>
-                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                      <div className="flex gap-0.5 md:gap-1 bg-gray-100 rounded-lg p-0.5 md:p-1">
                         <button
                           onClick={() => changeLanguage('es')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs md:text-sm font-medium transition-all ${
                             language === 'es'
                               ? 'bg-blue-600 text-white shadow-sm'
                               : 'text-gray-600 hover:bg-gray-200'
@@ -1090,7 +1092,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </button>
                         <button
                           onClick={() => changeLanguage('en')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs md:text-sm font-medium transition-all ${
                             language === 'en'
                               ? 'bg-blue-600 text-white shadow-sm'
                               : 'text-gray-600 hover:bg-gray-200'
@@ -1104,11 +1106,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="hover:bg-red-50 hover:text-red-600 transition-colors h-9 w-9 md:h-10 md:w-10"
                           onClick={handleLogout}
                           aria-label={t('logout')}
                         >
-                          <LogOut className="w-5 h-5" aria-hidden="true" />
+                          <LogOut className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
                         </Button>
                       )}
                     </div>
@@ -1116,7 +1118,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
+              {user && user.user_type !== "client" && (
+                <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
                 <div className="flex items-center justify-between">
                   <Button
                     variant="ghost"
