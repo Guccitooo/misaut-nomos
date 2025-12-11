@@ -123,6 +123,7 @@ export default function ProfileOnboardingPage() {
   });
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -197,28 +198,34 @@ export default function ProfileOnboardingPage() {
   };
 
   const validateStep1 = () => {
+    const errors = {};
+    
     if (!formData.business_name || formData.business_name.trim().length < 2) {
-      toast.error("El nombre profesional debe tener al menos 2 caracteres");
-      return false;
+      errors.business_name = "El nombre profesional debe tener al menos 2 caracteres";
     }
 
     if (!formData.cif_nif || formData.cif_nif.length !== 9) {
-      toast.error("El NIF/CIF debe tener exactamente 9 caracteres");
-      return false;
+      errors.cif_nif = "El NIF/CIF debe tener exactamente 9 caracteres";
     }
 
     if (!formData.email_contacto || !formData.email_contacto.includes("@")) {
-      toast.error("El email no es válido");
-      return false;
+      errors.email_contacto = "El email no es válido";
     }
 
     if (!formData.telefono_contacto || formData.telefono_contacto.replace(/\D/g, '').length < 9) {
-      toast.error("El teléfono debe tener al menos 9 dígitos");
-      return false;
+      errors.telefono_contacto = "El teléfono debe tener al menos 9 dígitos";
     }
 
     if (formData.metodos_contacto.length === 0) {
-      toast.error("Selecciona al menos un método de contacto");
+      errors.metodos_contacto = "Selecciona al menos un método de contacto";
+    }
+
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0];
+      document.getElementById(firstErrorField)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast.error(errors[firstErrorField]);
       return false;
     }
 
@@ -226,23 +233,30 @@ export default function ProfileOnboardingPage() {
   };
 
   const validateStep2 = () => {
+    const errors = {};
+    
     if (formData.categories.length === 0) {
-      toast.error("Selecciona una categoría de servicio");
-      return false;
+      errors.categories = "Selecciona una categoría de servicio";
     }
 
     if (formData.categories.includes("Otro tipo de servicio profesional") && !formData.activity_other) {
-      toast.error("Especifica tu servicio cuando seleccionas 'Otro tipo de servicio'");
-      return false;
+      errors.activity_other = "Especifica tu servicio cuando seleccionas 'Otro tipo de servicio'";
     }
 
     if (!formData.descripcion_corta || formData.descripcion_corta.trim().length < 20) {
-      toast.error("La descripción debe tener al menos 20 caracteres");
-      return false;
+      errors.descripcion_corta = "La descripción debe tener al menos 20 caracteres";
     }
 
     if (!formData.years_experience || formData.years_experience === "" || parseInt(formData.years_experience) < 0) {
-      toast.error("Indica tus años de experiencia (mínimo 0)");
+      errors.years_experience = "Indica tus años de experiencia (mínimo 0)";
+    }
+
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0];
+      document.getElementById(firstErrorField)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast.error(errors[firstErrorField]);
       return false;
     }
 
@@ -250,28 +264,34 @@ export default function ProfileOnboardingPage() {
   };
 
   const validateStep3 = () => {
+    const errors = {};
+    
     if (!formData.provincia) {
-      toast.error("Selecciona una provincia");
-      return false;
+      errors.provincia = "Selecciona una provincia";
     }
 
     if (formData.formas_pago.length === 0) {
-      toast.error("Selecciona al menos una forma de pago");
-      return false;
+      errors.formas_pago = "Selecciona al menos una forma de pago";
     }
 
     if (!formData.acepta_terminos) {
-      toast.error("Debes aceptar los Términos y Condiciones");
-      return false;
+      errors.acepta_terminos = "Debes aceptar los Términos y Condiciones";
     }
 
     if (!formData.acepta_politica_privacidad) {
-      toast.error("Debes aceptar la Política de Privacidad");
-      return false;
+      errors.acepta_politica_privacidad = "Debes aceptar la Política de Privacidad";
     }
 
     if (!formData.consiente_contacto_clientes) {
-      toast.error("Debes consentir ser contactado por clientes");
+      errors.consiente_contacto_clientes = "Debes consentir ser contactado por clientes";
+    }
+
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0];
+      document.getElementById(firstErrorField)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast.error(errors[firstErrorField]);
       return false;
     }
 
@@ -548,16 +568,22 @@ export default function ProfileOnboardingPage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Identidad profesional</h2>
                 </div>
 
-                <div>
+                <div id="business_name">
                   <Label>Nombre profesional *</Label>
                   <p className="text-xs text-gray-500 mb-2">Se mostrará así a los clientes</p>
                   <Input
                     value={formData.business_name}
-                    onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, business_name: e.target.value });
+                      setFieldErrors({ ...fieldErrors, business_name: null });
+                    }}
                     placeholder="Ej: Juan Pérez - Electricista"
-                    className={`h-12 ${formData.business_name.length >= 2 ? 'border-green-500' : ''}`}
+                    className={`h-12 ${fieldErrors.business_name ? 'border-red-500' : formData.business_name.length >= 2 ? 'border-green-500' : ''}`}
                   />
-                  {formData.business_name.length > 0 && formData.business_name.length < 2 && (
+                  {fieldErrors.business_name && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.business_name}</p>
+                  )}
+                  {!fieldErrors.business_name && formData.business_name.length > 0 && formData.business_name.length < 2 && (
                     <p className="text-xs text-red-500 mt-1">Mínimo 2 caracteres</p>
                   )}
                   {formData.business_name.length >= 2 && (
@@ -567,17 +593,23 @@ export default function ProfileOnboardingPage() {
                   )}
                 </div>
 
-                <div>
+                <div id="cif_nif">
                   <Label>NIF/CIF *</Label>
                   <p className="text-xs text-gray-500 mb-2">(Este dato NO se mostrará públicamente)</p>
                   <Input
                     value={formData.cif_nif}
-                    onChange={(e) => setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() });
+                      setFieldErrors({ ...fieldErrors, cif_nif: null });
+                    }}
                     placeholder="12345678A"
                     maxLength={9}
-                    className={`h-12 ${formData.cif_nif.length === 9 ? 'border-green-500' : ''}`}
+                    className={`h-12 ${fieldErrors.cif_nif ? 'border-red-500' : formData.cif_nif.length === 9 ? 'border-green-500' : ''}`}
                   />
-                  {formData.cif_nif.length > 0 && formData.cif_nif.length !== 9 && (
+                  {fieldErrors.cif_nif && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.cif_nif}</p>
+                  )}
+                  {!fieldErrors.cif_nif && formData.cif_nif.length > 0 && formData.cif_nif.length !== 9 && (
                     <p className="text-xs text-red-500 mt-1">Debe tener exactamente 9 caracteres</p>
                   )}
                   {formData.cif_nif.length === 9 && (
@@ -587,16 +619,22 @@ export default function ProfileOnboardingPage() {
                   )}
                 </div>
 
-                <div>
+                <div id="email_contacto">
                   <Label>Email profesional *</Label>
                   <Input
                     type="email"
                     value={formData.email_contacto}
-                    onChange={(e) => setFormData({ ...formData, email_contacto: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email_contacto: e.target.value });
+                      setFieldErrors({ ...fieldErrors, email_contacto: null });
+                    }}
                     placeholder="tu@email.com"
-                    className={`h-12 ${formData.email_contacto.includes('@') && formData.email_contacto.includes('.') ? 'border-green-500' : ''}`}
+                    className={`h-12 ${fieldErrors.email_contacto ? 'border-red-500' : formData.email_contacto.includes('@') && formData.email_contacto.includes('.') ? 'border-green-500' : ''}`}
                   />
-                  {formData.email_contacto.length > 0 && !formData.email_contacto.includes('@') && (
+                  {fieldErrors.email_contacto && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.email_contacto}</p>
+                  )}
+                  {!fieldErrors.email_contacto && formData.email_contacto.length > 0 && !formData.email_contacto.includes('@') && (
                     <p className="text-xs text-red-500 mt-1">Email no válido</p>
                   )}
                   {formData.email_contacto.includes('@') && formData.email_contacto.includes('.') && (
@@ -606,15 +644,21 @@ export default function ProfileOnboardingPage() {
                   )}
                 </div>
 
-                <div>
+                <div id="telefono_contacto">
                   <Label>Teléfono *</Label>
                   <Input
                     value={formData.telefono_contacto}
-                    onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, telefono_contacto: e.target.value });
+                      setFieldErrors({ ...fieldErrors, telefono_contacto: null });
+                    }}
                     placeholder="+34 612 345 678"
-                    className={`h-12 ${formData.telefono_contacto.replace(/\D/g, '').length >= 9 ? 'border-green-500' : ''}`}
+                    className={`h-12 ${fieldErrors.telefono_contacto ? 'border-red-500' : formData.telefono_contacto.replace(/\D/g, '').length >= 9 ? 'border-green-500' : ''}`}
                   />
-                  {formData.telefono_contacto.length > 0 && formData.telefono_contacto.replace(/\D/g, '').length < 9 && (
+                  {fieldErrors.telefono_contacto && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.telefono_contacto}</p>
+                  )}
+                  {!fieldErrors.telefono_contacto && formData.telefono_contacto.length > 0 && formData.telefono_contacto.replace(/\D/g, '').length < 9 && (
                     <p className="text-xs text-red-500 mt-1">Mínimo 9 dígitos</p>
                   )}
                   {formData.telefono_contacto.replace(/\D/g, '').length >= 9 && (
@@ -689,8 +733,11 @@ export default function ProfileOnboardingPage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Actividad y servicios</h2>
                 </div>
 
-                <div>
+                <div id="categories">
                   <Label className="mb-3 block">Categoría de servicio * (elige solo una)</Label>
+                  {fieldErrors.categories && (
+                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.categories}</p>
+                  )}
                   {categories.length === 0 ? (
                     <div className="text-center py-4">
                       <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
@@ -721,29 +768,41 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 {formData.categories.includes("Otro tipo de servicio profesional") && (
-                  <div>
+                  <div id="activity_other">
                     <Label>Especifica tu servicio *</Label>
                     <Input
                       value={formData.activity_other}
-                      onChange={(e) => setFormData({ ...formData, activity_other: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, activity_other: e.target.value });
+                        setFieldErrors({ ...fieldErrors, activity_other: null });
+                      }}
                       placeholder="Ej: Instalador de paneles solares..."
-                      className="h-12"
+                      className={`h-12 ${fieldErrors.activity_other ? 'border-red-500' : ''}`}
                     />
+                    {fieldErrors.activity_other && (
+                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.activity_other}</p>
+                    )}
                   </div>
                 )}
 
-                <div>
+                <div id="years_experience">
                   <Label>Años de experiencia *</Label>
                   <Input
                     type="number"
                     value={formData.years_experience}
-                    onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, years_experience: e.target.value });
+                      setFieldErrors({ ...fieldErrors, years_experience: null });
+                    }}
                     placeholder="5"
                     min="0"
                     max="50"
-                    className={`h-12 ${formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 ? 'border-green-500' : ''}`}
+                    className={`h-12 ${fieldErrors.years_experience ? 'border-red-500' : formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 ? 'border-green-500' : ''}`}
                   />
-                  {formData.years_experience === '' && (
+                  {fieldErrors.years_experience && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.years_experience}</p>
+                  )}
+                  {!fieldErrors.years_experience && formData.years_experience === '' && (
                     <p className="text-xs text-red-500 mt-1">Campo obligatorio</p>
                   )}
                   {formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 && (
@@ -753,15 +812,21 @@ export default function ProfileOnboardingPage() {
                   )}
                 </div>
 
-                <div>
+                <div id="descripcion_corta">
                   <Label>Descripción corta *</Label>
                   <p className="text-xs text-gray-500 mb-2">Describe brevemente tus servicios (mínimo 20 caracteres)</p>
                   <Textarea
                     value={formData.descripcion_corta}
-                    onChange={(e) => setFormData({ ...formData, descripcion_corta: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, descripcion_corta: e.target.value });
+                      setFieldErrors({ ...fieldErrors, descripcion_corta: null });
+                    }}
                     placeholder="Describe brevemente tus servicios..."
-                    className="h-32 resize-none"
+                    className={`h-32 resize-none ${fieldErrors.descripcion_corta ? 'border-red-500' : ''}`}
                   />
+                  {fieldErrors.descripcion_corta && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.descripcion_corta}</p>
+                  )}
                   <div className="flex justify-between items-center mt-1">
                     <p className={`text-xs ${formData.descripcion_corta.length < 20 ? 'text-red-500' : 'text-green-600'}`}>
                       {formData.descripcion_corta.length}/20 caracteres mínimos
@@ -781,13 +846,16 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div id="provincia">
                     <Label>Provincia *</Label>
                     <Select
                       value={formData.provincia}
-                      onValueChange={(value) => setFormData({ ...formData, provincia: value, ciudad: "" })}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, provincia: value, ciudad: "" });
+                        setFieldErrors({ ...fieldErrors, provincia: null });
+                      }}
                     >
-                      <SelectTrigger className="h-12">
+                      <SelectTrigger className={`h-12 ${fieldErrors.provincia ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Selecciona provincia" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -796,6 +864,9 @@ export default function ProfileOnboardingPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {fieldErrors.provincia && (
+                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.provincia}</p>
+                    )}
                   </div>
 
                   <div>
@@ -829,8 +900,11 @@ export default function ProfileOnboardingPage() {
                   />
                 </div>
 
-                <div>
+                <div id="formas_pago">
                   <Label className="mb-3 block">Formas de pago aceptadas * (mínimo una)</Label>
+                  {fieldErrors.formas_pago && (
+                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.formas_pago}</p>
+                  )}
                   <div className="grid grid-cols-2 gap-3">
                     {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
                       <div
@@ -958,7 +1032,7 @@ export default function ProfileOnboardingPage() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3" id="acepta_terminos">
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-semibold text-gray-900">Consentimientos legales</h3>
                     <Button
@@ -979,9 +1053,12 @@ export default function ProfileOnboardingPage() {
                   
                   <div 
                     className="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer hover:bg-blue-50 transition-colors"
-                    onClick={() => setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos })}
+                    onClick={() => {
+                      setFormData({ ...formData, acepta_terminos: !formData.acepta_terminos });
+                      setFieldErrors({ ...fieldErrors, acepta_terminos: null });
+                    }}
                     style={{
-                      borderColor: formData.acepta_terminos ? '#10B981' : '#E5E7EB',
+                      borderColor: fieldErrors.acepta_terminos ? '#EF4444' : formData.acepta_terminos ? '#10B981' : '#E5E7EB',
                       backgroundColor: formData.acepta_terminos ? '#F0FDF4' : 'white'
                     }}
                   >
@@ -993,6 +1070,9 @@ export default function ProfileOnboardingPage() {
                     />
                     <span className="text-sm text-gray-700 flex-1">
                       Acepto los <a href="/terms" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> de uso de la plataforma
+                      {fieldErrors.acepta_terminos && (
+                        <span className="block text-red-500 font-semibold mt-1">{fieldErrors.acepta_terminos}</span>
+                      )}
                     </span>
                   </div>
 
