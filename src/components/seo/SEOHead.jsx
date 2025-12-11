@@ -79,6 +79,12 @@ export default function SEOHead({
     if (rating && reviewCount) {
       updateMetaTag('rating', rating.toString());
       updateMetaTag('reviewCount', reviewCount.toString());
+    } else {
+      // Limpiar ratings previos si ya no aplican
+      const ratingMeta = document.querySelector('meta[name="rating"]');
+      const reviewMeta = document.querySelector('meta[name="reviewCount"]');
+      if (ratingMeta) ratingMeta.remove();
+      if (reviewMeta) reviewMeta.remove();
     }
     
     // Canonical URL - limpiar parámetros de query para evitar duplicados
@@ -91,55 +97,39 @@ export default function SEOHead({
     const cleanCanonicalUrl = canonicalUrl.split('?')[0];
     canonical.setAttribute('href', cleanCanonicalUrl);
 
-    // Cache control hint (meta tag)
-    updateMetaTag('Cache-Control', 'public, max-age=31536000, immutable', false, true);
+    // No usar Cache-Control en meta tag (no es estándar y puede confundir a bots)
 
-    // Hreflang for alternate languages
+    // Hreflang for alternate languages - limpiar todos antes de crear nuevos
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
     existingHreflangs.forEach(link => link.remove());
+
+    const cleanUrl = canonicalUrl.split('?')[0]; // URL limpia sin parámetros
 
     const hreflangEs = document.createElement('link');
     hreflangEs.setAttribute('rel', 'alternate');
     hreflangEs.setAttribute('hreflang', 'es');
-    hreflangEs.setAttribute('href', canonicalUrl);
+    hreflangEs.setAttribute('href', cleanUrl);
     document.head.appendChild(hreflangEs);
 
     const hreflangEn = document.createElement('link');
     hreflangEn.setAttribute('rel', 'alternate');
     hreflangEn.setAttribute('hreflang', 'en');
-    hreflangEn.setAttribute('href', canonicalUrl);
+    hreflangEn.setAttribute('href', cleanUrl);
     document.head.appendChild(hreflangEn);
 
     const hreflangXDefault = document.createElement('link');
     hreflangXDefault.setAttribute('rel', 'alternate');
     hreflangXDefault.setAttribute('hreflang', 'x-default');
-    hreflangXDefault.setAttribute('href', canonicalUrl);
+    hreflangXDefault.setAttribute('href', cleanUrl);
     document.head.appendChild(hreflangXDefault);
 
-    // Preconnect to external domains for performance
-    const preconnectDomains = [
-      'https://qtrypzzcjebvfcihiynt.supabase.co',
-      'https://www.googletagmanager.com'
-    ];
-
-    preconnectDomains.forEach(domain => {
-      let preconnect = document.querySelector(`link[rel="preconnect"][href="${domain}"]`);
-      if (!preconnect) {
-        preconnect = document.createElement('link');
-        preconnect.setAttribute('rel', 'preconnect');
-        preconnect.setAttribute('href', domain);
-        preconnect.setAttribute('crossorigin', 'anonymous');
-        document.head.appendChild(preconnect);
-      }
-    });
-
-    // Preconnect hint for critical resources
-    const criticalPreconnects = [
+    // Preconnect y DNS prefetch - crear solo una vez
+    const preconnectUrls = [
       'https://qtrypzzcjebvfcihiynt.supabase.co',
       'https://fonts.gstatic.com'
     ];
 
-    criticalPreconnects.forEach(url => {
+    preconnectUrls.forEach(url => {
       if (!document.querySelector(`link[rel="preconnect"][href="${url}"]`)) {
         const link = document.createElement('link');
         link.setAttribute('rel', 'preconnect');
@@ -149,7 +139,6 @@ export default function SEOHead({
       }
     });
 
-    // DNS prefetch for non-critical
     const dnsPrefetchUrls = [
       'https://fonts.googleapis.com',
       'https://www.googletagmanager.com'
@@ -206,8 +195,8 @@ export default function SEOHead({
     });
 
     // Custom structured data if provided
+    let customScript = document.getElementById('structured-data-custom');
     if (structuredData) {
-      let customScript = document.getElementById('structured-data-custom');
       if (!customScript) {
         customScript = document.createElement('script');
         customScript.setAttribute('type', 'application/ld+json');
@@ -215,6 +204,9 @@ export default function SEOHead({
         document.head.appendChild(customScript);
       }
       customScript.textContent = JSON.stringify(structuredData);
+    } else if (customScript) {
+      // Limpiar structured data previo si ya no se proporciona
+      customScript.remove();
     }
     
   }, [title, description, image, canonicalUrl, keywords, type, author, language, publishedTime, modifiedTime, noindex, structuredData]);

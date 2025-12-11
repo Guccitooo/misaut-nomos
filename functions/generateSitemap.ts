@@ -1,203 +1,88 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-const BASE_URL = 'https://misautonomos.es';
-
-// Genera slug limpio: sin acentos, sin IDs aleatorios
-function slugify(text) {
-  if (!text) return '';
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
-    .replace(/ñ/g, 'n')
-    .replace(/ç/g, 'c')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-');
-}
-
-const CATEGORY_SLUGS = {
-  'Electricista': 'electricistas',
-  'Fontanero': 'fontaneros',
-  'Carpintero': 'carpinteros',
-  'Pintor': 'pintores',
-  'Jardinero': 'jardineros',
-  'Transportista': 'transportistas',
-  'Cerrajero': 'cerrajeros',
-  'Albañil / Reformas': 'albanil-reformas',
-  'Autónomo de limpieza': 'autonomo-de-limpieza',
-  'Instalador de aire acondicionado': 'instalador-de-aire-acondicionado',
-  'Mantenimiento general': 'mantenimiento-general',
-  'Mantenimiento de piscinas': 'mantenimiento-de-piscinas',
-  'Asesoría o gestoría': 'asesoria-o-gestoria',
-  'Empresa multiservicios': 'empresa-multiservicios',
-};
-
-const MAIN_CITIES = [
-  'Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Málaga', 'Zaragoza', 'Bilbao',
-  'Murcia', 'Palma de Mallorca', 'Alicante', 'Córdoba', 'Valladolid', 'Vigo',
-  'Granada', 'A Coruña', 'Vitoria-Gasteiz'
-];
-
 Deno.serve(async (req) => {
-  // Permitir acceso público al sitemap
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-  }
-
   try {
     const base44 = createClientFromRequest(req);
     
-    // Obtener datos
-    const [categories, profiles] = await Promise.all([
-      base44.entities.ServiceCategory.list(),
-      base44.entities.ProfessionalProfile.list()
-    ]);
-    
-    const visibleProfiles = profiles.filter(p => 
-      p.visible_en_busqueda === true && p.onboarding_completed === true
-    );
-    
+    const baseUrl = 'https://misautonomos.es';
     const today = new Date().toISOString().split('T')[0];
-    
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Páginas principales -->
-  <url>
-    <loc>${BASE_URL}/</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/Search</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/PricingPlans</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/HelpCenter</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/TermsConditions</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/PrivacyPolicy</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/CookiePolicy</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  
-  <!-- Categorías -->`;
 
-    // Añadir categorías con URLs limpias usando query params
-    for (const cat of categories) {
-      const slug = CATEGORY_SLUGS[cat.name] || slugify(cat.name);
-      xml += `
-  <url>
-    <loc>${BASE_URL}/Categoria?name=${slug}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>`;
-      
-      // Añadir categoría + ciudad
-      for (const city of MAIN_CITIES) {
-        xml += `
-  <url>
-    <loc>${BASE_URL}/Categoria?name=${slug}&amp;ciudad=${slugify(city)}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>`;
+    // Páginas estáticas públicas
+    const staticPages = [
+      { url: '/', priority: '1.0', changefreq: 'daily' },
+      { url: '/Search', priority: '1.0', changefreq: 'daily' },
+      { url: '/PricingPlans', priority: '0.9', changefreq: 'weekly' },
+      { url: '/FAQ', priority: '0.8', changefreq: 'monthly' },
+      { url: '/HelpCenter', priority: '0.8', changefreq: 'monthly' },
+      { url: '/PrivacyPolicy', priority: '0.5', changefreq: 'yearly' },
+      { url: '/TermsConditions', priority: '0.5', changefreq: 'yearly' },
+      { url: '/CookiePolicy', priority: '0.5', changefreq: 'yearly' },
+      { url: '/LegalNotice', priority: '0.5', changefreq: 'yearly' }
+    ];
+
+    // Obtener perfiles profesionales activos
+    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+      visible_en_busqueda: true,
+      onboarding_completed: true
+    });
+
+    // Obtener categorías
+    const categories = await base44.asServiceRole.entities.ServiceCategory.list();
+
+    // Construir XML del sitemap
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    // Añadir páginas estáticas
+    staticPages.forEach(page => {
+      xml += '  <url>\n';
+      xml += `    <loc>${baseUrl}${page.url}</loc>\n`;
+      xml += `    <lastmod>${today}</lastmod>\n`;
+      xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
+      xml += `    <priority>${page.priority}</priority>\n`;
+      xml += '  </url>\n';
+    });
+
+    // Añadir perfiles profesionales
+    profiles.forEach(profile => {
+      if (profile.slug_publico) {
+        xml += '  <url>\n';
+        xml += `    <loc>${baseUrl}/Autonomo?slug=${profile.slug_publico}</loc>\n`;
+        xml += `    <lastmod>${profile.updated_date?.split('T')[0] || today}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.9</priority>\n`;
+        xml += '  </url>\n';
       }
-    }
+    });
 
-    xml += `
-  
-  <!-- Perfiles de profesionales -->`;
-
-    // Añadir perfiles con URLs limpias usando query params
-    for (const profile of visibleProfiles) {
-      const slug = profile.slug_publico || slugify(profile.business_name);
-      const lastMod = profile.updated_date ? profile.updated_date.split('T')[0] : today;
+    // Añadir páginas de categorías
+    categories.forEach(category => {
+      const slug = category.name.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/ñ/g, 'n')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
       
-      // Prioridad más alta para perfiles con más reseñas
-      const priority = profile.total_reviews >= 10 ? 0.8 : profile.total_reviews >= 5 ? 0.7 : 0.6;
-      
-      xml += `
-  <url>
-    <loc>${BASE_URL}/Autonomo?slug=${slug}</loc>
-    <lastmod>${lastMod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>${priority}</priority>
-  </url>`;
-    }
-    
-    // Añadir páginas adicionales importantes
-    xml += `
-  
-  <!-- Páginas informativas -->
-  <url>
-    <loc>${BASE_URL}/FAQ</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/DashboardProInfo</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>${BASE_URL}/LegalNotice</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>`;
+      xml += '  <url>\n';
+      xml += `    <loc>${baseUrl}/Categoria?name=${encodeURIComponent(category.name)}</loc>\n`;
+      xml += `    <lastmod>${today}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>0.8</priority>\n`;
+      xml += '  </url>\n';
+    });
 
-    xml += `
-</urlset>`;
+    xml += '</urlset>';
 
     return new Response(xml, {
       status: 200,
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-        'X-Robots-Tag': 'noindex',
-        'Access-Control-Allow-Origin': '*'
+        'Cache-Control': 'public, max-age=3600' // Cache de 1 hora
       }
     });
-    
   } catch (error) {
+    console.error('Error generating sitemap:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
