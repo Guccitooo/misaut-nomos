@@ -123,24 +123,9 @@ export default function SEOHead({
     hreflangXDefault.setAttribute('href', cleanUrl);
     document.head.appendChild(hreflangXDefault);
 
-    // Preconnect y DNS prefetch - crear solo una vez
-    const preconnectUrls = [
-      'https://qtrypzzcjebvfcihiynt.supabase.co',
-      'https://fonts.gstatic.com'
-    ];
-
-    preconnectUrls.forEach(url => {
-      if (!document.querySelector(`link[rel="preconnect"][href="${url}"]`)) {
-        const link = document.createElement('link');
-        link.setAttribute('rel', 'preconnect');
-        link.setAttribute('href', url);
-        link.setAttribute('crossorigin', 'anonymous');
-        document.head.appendChild(link);
-      }
-    });
-
+    // DNS prefetch solo para recursos críticos (sin Google Fonts)
     const dnsPrefetchUrls = [
-      'https://fonts.googleapis.com',
+      'https://qtrypzzcjebvfcihiynt.supabase.co',
       'https://www.googletagmanager.com'
     ];
 
