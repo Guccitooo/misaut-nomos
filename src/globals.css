@@ -1,4 +1,3 @@
-css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,10 +8,9 @@ css
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-display: swap; /* Swap font immediately to prevent invisible text */
+    font-display: swap;
   }
   
-  /* Prevenir layout shift con font fallbacks */
   * {
     font-family: inherit;
   }
@@ -40,12 +38,10 @@ css
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
-    --animation-speed: 200ms;
-    --animation-speed-slow: 300ms;
+    --animation-speed: 150ms;
+    --animation-speed-slow: 200ms;
   }
-}
-
-@layer base {
+  
   * {
     @apply border-border;
   }
@@ -54,7 +50,7 @@ css
   }
 }
 
-/* ✨ ANIMACIONES SIMPLIFICADAS - Solo opacity (mejor rendimiento) */
+/* ✨ ANIMACIONES SIMPLIFICADAS - Solo fade */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -65,16 +61,22 @@ css
   100% { background-position: 1000px 0; }
 }
 
-/* ✅ APLICACIÓN DE ANIMACIONES - Solo fade-in */
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ✅ APLICACIÓN DE ANIMACIONES */
 .animate-fade-in {
-  animation: fadeIn 200ms ease-out;
+  animation: fadeIn 150ms ease-out;
 }
 
-/* ✨ TRANSICIONES OPTIMIZADAS - Solo propiedades específicas */
-* {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* ✨ TRANSICIONES OPTIMIZADAS */
 button, a, [role="button"], [role="link"] {
   transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
 }
@@ -83,7 +85,7 @@ button:active, a:active, [role="button"]:active {
   opacity: 0.9;
 }
 
-/* ✨ INPUTS Y FORMS - Solo border y shadow */
+/* ✨ INPUTS Y FORMS */
 input, select, textarea {
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
@@ -92,18 +94,12 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* ✅ MODAL Y OVERLAY STYLING */
+/* ✅ MODAL Y OVERLAY */
 [data-radix-dialog-overlay],
 [data-radix-alert-dialog-overlay] {
   background-color: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: blur(6px) !important;
-  animation: fadeIn 200ms ease-out !important;
-}
-
-/* Modal sin animación de transform - solo fade */
-@keyframes fadeInModal {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  animation: fadeIn 150ms ease-out !important;
 }
 
 [role="dialog"],
@@ -120,7 +116,6 @@ input:focus, select:focus, textarea:focus {
   overflow-y: auto !important;
 }
 
-/* Modal Headers */
 [role="dialog"] h2,
 [role="alertdialog"] h2,
 [data-dialog-title] {
@@ -132,7 +127,6 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0.75rem !important;
 }
 
-/* Modal Descriptions */
 [role="dialog"] p,
 [role="alertdialog"] p,
 [data-dialog-description] {
@@ -141,7 +135,6 @@ input:focus, select:focus, textarea:focus {
   font-size: 1rem !important;
 }
 
-/* Form Inputs in Modals */
 [role="dialog"] input,
 [role="dialog"] select,
 [role="dialog"] textarea,
@@ -154,7 +147,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 10px !important;
   padding: 14px !important;
   font-size: 16px !important;
-  transition: all 150ms ease !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
 }
 
 [role="dialog"] input:focus,
@@ -174,7 +167,6 @@ input:focus, select:focus, textarea:focus {
   border-color: #E5E7EB !important;
 }
 
-/* Labels in Modals */
 [role="dialog"] label,
 [role="alertdialog"] label {
   color: #374151 !important;
@@ -184,16 +176,14 @@ input:focus, select:focus, textarea:focus {
   display: block !important;
 }
 
-/* Buttons in Modals */
 [role="dialog"] button,
 [role="alertdialog"] button {
   font-weight: 600 !important;
   border-radius: 12px !important;
-  transition: all 150ms ease !important;
+  transition: background-color 150ms ease, opacity 150ms ease !important;
   padding: 12px 24px !important;
 }
 
-/* Select Dropdowns and Popovers */
 [data-radix-popper-content-wrapper],
 [data-radix-select-content],
 [data-radix-dropdown-menu-content] {
@@ -202,7 +192,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 14px !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
   z-index: 100 !important;
-  animation: fadeIn 200ms ease-out !important; /* Changed from slideDown as per new animation strategy */
+  animation: fadeIn 150ms ease-out !important;
 }
 
 [data-radix-select-item] {
@@ -225,7 +215,6 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600 !important;
 }
 
-/* Scrollbar Styling */
 [role="dialog"]::-webkit-scrollbar,
 [role="alertdialog"]::-webkit-scrollbar {
   width: 10px;
@@ -248,7 +237,6 @@ input:focus, select:focus, textarea:focus {
   background: #9CA3AF;
 }
 
-/* Focus Visible States */
 button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible {
@@ -257,9 +245,18 @@ a:focus-visible,
   border-radius: 8px;
 }
 
-/* ✨ HOVER EFFECTS - Solo opacity */
+/* ✨ HOVER EFFECTS */
 .hover-lift:hover {
   opacity: 0.95;
+}
+
+/* ✨ LINKS */
+a {
+  transition: opacity 150ms ease;
+}
+
+a:hover {
+  opacity: 0.9;
 }
 
 /* ✨ SKELETON SHIMMER */
@@ -274,17 +271,22 @@ a:focus-visible,
   animation: shimmer 2s infinite;
 }
 
-/* ✨ LINKS - Solo opacity */
-html {
-  scroll-behavior: smooth;
+/* Font rendering optimizado */
+* {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
-a {
-  transition: opacity 150ms ease;
+/* Content visibility para off-screen */
+.lazy-load {
+  content-visibility: auto;
 }
 
-a:hover {
-  opacity: 0.9;
+/* Reduce repaints */
+.profile-card,
+.professional-card {
+  contain: layout style paint;
 }
 
 /* ✨ MOBILE OPTIMIZATIONS */
@@ -301,66 +303,9 @@ a:hover {
   }
 }
 
-/* Safe area para móviles con notch */
+/* Safe area para móviles */
 .safe-area-bottom {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
-}
-
-/* Prevent layout shift for images */
-img {
-  height: auto;
-}
-
-/* Font rendering optimizado */
-* {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-text-size-adjust: 100%; /* Prevenir auto-zoom en iOS */
-}
-
-/* Optimize all images by default */
-img:not([width]) {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Center small images (avatars, icons, logos) */
-.avatar img, 
-[class*="avatar"] img,
-[class*="logo"] img {
-  object-fit: cover;
-  object-position: center;
-}
-
-/* Defer non-critical CSS */
-@media print {
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
-/* Reduce paint area */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* GPU acceleration for animations */
-.animate-fade-in {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-}
-
-/* Content visibility for off-screen content */
-.lazy-load {
-  content-visibility: auto;
-}
-
-/* Reduce repaints */
-.profile-card,
-.professional-card {
-  contain: layout style paint;
 }
 
 /* Respetar preferencias de movimiento reducido */
@@ -372,4 +317,98 @@ img:not([width]) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ✨ MOBILE MENU */
+@media (max-width: 1023px) {
+  .mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(4px);
+    z-index: 40;
+    animation: fadeIn 150ms ease;
+  }
+  
+  .mobile-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 80%;
+    max-width: 320px;
+    background: #FFFFFF !important;
+    z-index: 50;
+    animation: slideInLeft 150ms ease;
+    overflow-y: auto;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mobile-bottom-nav {
+    display: grid !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #FFFFFF !important;
+    border-top: 2px solid #E5E7EB !important;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 8px 0;
+    z-index: 30;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .main-content-with-bottom-nav {
+    padding-bottom: 80px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main-content-with-bottom-nav {
+    padding-bottom: 0 !important;
+  }
+}
+
+.mobile-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  color: #6B7280;
+  text-decoration: none;
+  transition: color 150ms ease;
+  position: relative;
+}
+
+.mobile-bottom-nav-item.active {
+  color: #1D4ED8;
+}
+
+.mobile-bottom-nav-item span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mobile-bottom-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 20%;
+  background: #EF4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
 }
