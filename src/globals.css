@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,101 +48,42 @@
   }
 }
 
-/* ✨ ANIMACIONES GLOBALES */
+/* ✨ ANIMACIONES SIMPLIFICADAS - Solo opacity (mejor rendimiento) */
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
-  }
-  to { 
-    opacity: 1; 
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
 }
 
-/* ✅ APLICACIÓN DE ANIMACIONES */
+/* ✅ APLICACIÓN DE ANIMACIONES - Solo fade-in */
 .animate-fade-in {
-  animation: fadeIn var(--animation-speed) ease-out;
+  animation: fadeIn 200ms ease-out;
 }
 
-.animate-slide-up {
-  animation: slideUp var(--animation-speed) ease-out;
-}
-
-.animate-slide-down {
-  animation: slideDown var(--animation-speed) ease-out;
-}
-
-.animate-scale-in {
-  animation: scaleIn var(--animation-speed) ease-out;
-}
-
-/* ✨ TRANSICIONES SUAVES GLOBALES */
+/* ✨ TRANSICIONES OPTIMIZADAS - Solo propiedades específicas */
 * {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button, a, [role="button"], [role="link"] {
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
 }
 
 button:active, a:active, [role="button"]:active {
-  transform: scale(0.98);
+  opacity: 0.9;
 }
 
-/* ✨ CARDS CON ANIMACIÓN */
-[class*="Card"], .card {
-  animation: fadeIn 300ms ease-out;
-}
-
-/* ✨ INPUTS Y FORMS */
+/* ✨ INPUTS Y FORMS - Solo border y shadow */
 input, select, textarea {
-  transition: all 200ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* ✅ MODAL Y OVERLAY STYLING */
@@ -152,15 +94,10 @@ input:focus, select:focus, textarea:focus {
   animation: fadeIn 200ms ease-out !important;
 }
 
-@keyframes slideInModal {
-  from { 
-    opacity: 0;
-    transform: translate(-50%, -48%) scale(0.96);
-  }
-  to { 
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+/* Modal sin animación de transform - solo fade */
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 [role="dialog"],
@@ -172,7 +109,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
   border: 2px solid #E5E7EB !important;
   border-radius: 20px !important;
-  animation: slideInModal 250ms ease-out !important;
+  animation: fadeInModal 150ms ease-out !important;
   max-height: 90vh !important;
   overflow-y: auto !important;
 }
@@ -259,7 +196,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 14px !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
   z-index: 100 !important;
-  animation: slideDown 200ms ease-out !important;
+  animation: fadeIn 200ms ease-out !important; /* Changed from slideDown as per new animation strategy */
 }
 
 [data-radix-select-item] {
@@ -314,21 +251,9 @@ a:focus-visible,
   border-radius: 8px;
 }
 
-/* ✨ BADGES CON ANIMACIÓN */
-[class*="Badge"], .badge {
-  animation: scaleIn 200ms ease-out;
-  transition: all 200ms ease;
-}
-
-/* ✨ HOVER EFFECTS */
+/* ✨ HOVER EFFECTS - Solo opacity */
 .hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* ✨ PAGE TRANSITIONS */
-main > div {
-  animation: fadeIn 300ms ease-out;
+  opacity: 0.95;
 }
 
 /* ✨ SKELETON SHIMMER */
@@ -343,53 +268,17 @@ main > div {
   animation: shimmer 2s infinite;
 }
 
-/* ✨ TOAST ANIMATIONS */
-[data-sonner-toast] {
-  animation: slideUp 300ms ease-out !important;
-}
-
-/* ✨ LOADING STATES */
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.animate-shake {
-  animation: shake 0.3s ease-in-out;
-}
-
-/* ✨ SMOOTH SCROLL */
+/* ✨ LINKS - Solo opacity */
 html {
   scroll-behavior: smooth;
 }
 
-/* ✨ LINKS CON TRANSICIÓN */
 a {
-  transition: color 200ms ease, opacity 200ms ease;
+  transition: opacity 150ms ease;
 }
 
 a:hover {
   opacity: 0.9;
-}
-
-/* ✨ IMÁGENES CON FADE */
-img {
-  animation: fadeIn 400ms ease-out;
-}
-
-/* ✨ PROGRESS BARS */
-[role="progressbar"] {
-  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ✨ MOBILE OPTIMIZATIONS */
@@ -422,11 +311,6 @@ img {
   text-rendering: optimizeLegibility;
 }
 
-/* Prevent layout shift for images */
-img {
-  height: auto;
-}
-
 /* Optimize all images by default */
 img:not([width]) {
   max-width: 100%;
@@ -456,10 +340,7 @@ img:not([width]) {
 }
 
 /* GPU acceleration for animations */
-.animate-fade-in,
-.animate-slide-up,
-.animate-slide-down,
-.animate-scale-in {
+.animate-fade-in {
   will-change: transform, opacity;
   transform: translateZ(0);
 }
@@ -475,36 +356,13 @@ img:not([width]) {
   contain: layout style paint;
 }
 
-/* GPU acceleration for animations */
-.animate-fade-in,
-.animate-slide-up,
-.animate-slide-down,
-.animate-scale-in {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-}
-
-/* Content visibility for off-screen content */
-.lazy-load {
-  content-visibility: auto;
-}
-
-/* Reduce repaints */
-.profile-card,
-.professional-card {
-  contain: layout style paint;
-}
-
-/* Optimize scrolling */
-* {
-  scroll-behavior: smooth;
-}
-
+/* Respetar preferencias de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

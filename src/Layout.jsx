@@ -66,8 +66,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       return;
     }
 
-    // Defer Google Analytics loading - wait until page is idle
+    let analyticsLoaded = false;
+
     const loadAnalytics = () => {
+      if (analyticsLoaded) return;
+      analyticsLoaded = true;
+
       // Google Analytics (GA4)
       const scriptGA = document.createElement('script');
       scriptGA.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
@@ -82,41 +86,43 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       scriptAds.defer = true;
       document.head.appendChild(scriptAds);
 
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-      window.dataLayer.push(arguments);
-    }
-    window.gtag = gtag;
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
 
-    gtag('consent', 'default', {
-      'analytics_storage': 'denied',
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied',
-      'functionality_storage': 'granted',
-      'security_storage': 'granted'
-    });
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'functionality_storage': 'granted',
+        'security_storage': 'granted'
+      });
 
-    gtag('js', new Date());
-
-    // Configurar Google Analytics
-    gtag('config', 'G-P9DN7YN239', {
-      'send_page_view': false
-    });
-
-    // Configurar Google Ads
-    gtag('config', 'AW-17763802205');
+      gtag('js', new Date());
+      gtag('config', 'G-P9DN7YN239', { 'send_page_view': false });
+      gtag('config', 'AW-17763802205');
     };
 
-    // Load analytics after page is fully interactive (requestIdleCallback or fallback)
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => setTimeout(loadAnalytics, 2000));
-    } else if (document.readyState === 'complete') {
-      setTimeout(loadAnalytics, 2000);
-    } else {
-      window.addEventListener('load', () => setTimeout(loadAnalytics, 2000));
-    }
-    }, []);
+    // Cargar después de primera interacción del usuario
+    const events = ['mousedown', 'touchstart', 'keydown', 'scroll'];
+    const onFirstInteraction = () => {
+      loadAnalytics();
+      events.forEach(event => window.removeEventListener(event, onFirstInteraction));
+    };
+
+    events.forEach(event => window.addEventListener(event, onFirstInteraction, { passive: true, once: true }));
+
+    // Fallback: cargar después de 5 segundos si no hay interacción
+    const fallbackTimer = setTimeout(loadAnalytics, 5000);
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      events.forEach(event => window.removeEventListener(event, onFirstInteraction));
+    };
+  }, []);
 
   useEffect(() => {
     if (window.gtag) {
