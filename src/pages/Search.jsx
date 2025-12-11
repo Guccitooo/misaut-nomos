@@ -204,10 +204,14 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
-                  <AvatarImage 
+                  <img
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="object-cover object-center w-full h-full"
+                    className="object-cover object-center w-full h-full rounded-full"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">

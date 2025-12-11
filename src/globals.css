@@ -281,12 +281,19 @@ a:hover {
 /* Content visibility para off-screen */
 .lazy-load {
   content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
 }
 
-/* Reduce repaints */
+/* Reduce repaints y layout shifts */
 .profile-card,
 .professional-card {
   contain: layout style paint;
+  min-height: 220px;
+}
+
+/* Skeleton con altura mínima */
+.skeleton {
+  min-height: 48px;
 }
 
 /* ✨ MOBILE OPTIMIZATIONS */

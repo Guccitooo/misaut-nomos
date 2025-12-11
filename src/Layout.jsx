@@ -751,15 +751,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
-                  <OptimizedImage
+                  <img
                     src={LOGO_URL}
                     alt="Logo MisAutónomos"
                     className="w-12 h-12 rounded-lg"
-                    priority={true}
-                    width={48}
-                    height={48}
-                    quality={80}
-                    sizes="48px"
+                    width="48"
+                    height="48"
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
                   />
                     <div>
                       <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
@@ -1034,15 +1034,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
-                      <OptimizedImage
+                      <img
                         src={LOGO_URL}
                         alt="Logo MisAutónomos"
                         className="w-12 h-12 rounded-lg"
-                        priority={true}
-                        width={48}
-                        height={48}
-                        quality={80}
-                        sizes="48px"
+                        width="48"
+                        height="48"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
                       />
                       <div style={{ minWidth: '150px' }}>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
@@ -1128,15 +1128,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <Menu className="w-6 h-6" aria-hidden="true" />
                   </Button>
                   <Link to={createPageUrl("Search")} className="flex items-center gap-2">
-                    <OptimizedImage
+                    <img
                       src={LOGO_URL}
                       alt="Logo MisAutónomos"
                       className="w-8 h-8 rounded"
-                      priority={true}
-                      width={32}
-                      height={32}
-                      quality={90}
-                      sizes="32px"
+                      width="32"
+                      height="32"
+                      loading="eager"
+                      fetchpriority="high"
+                      decoding="async"
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </Link>
