@@ -1118,60 +1118,63 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
+
+
               {user && user.user_type !== "client" && (
                 <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="hover:bg-gray-100"
-                    aria-label="Abrir menú"
-                  >
-                    <Menu className="w-6 h-6" aria-hidden="true" />
-                  </Button>
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-2">
-                    <img
-                      src={LOGO_URL}
-                      alt="Logo MisAutónomos"
-                      className="w-8 h-8 rounded"
-                      width="32"
-                      height="32"
-                      loading="eager"
-                      fetchpriority="high"
-                      decoding="async"
-                    />
-                    <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    {user && <NotificationCenter user={user} />}
-                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => changeLanguage('es')}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                          language === 'es'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        aria-label="Español"
-                      >
-                        ES
-                      </button>
-                      <button
-                        onClick={() => changeLanguage('en')}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                          language === 'en'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        aria-label="English"
-                      >
-                        EN
-                      </button>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileMenuOpen(true)}
+                      className="hover:bg-gray-100"
+                      aria-label="Abrir menú"
+                    >
+                      <Menu className="w-6 h-6" aria-hidden="true" />
+                    </Button>
+                    <Link to={createPageUrl("Search")} className="flex items-center gap-2">
+                      <img
+                        src={LOGO_URL}
+                        alt="Logo MisAutónomos"
+                        className="w-8 h-8 rounded"
+                        width="32"
+                        height="32"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
+                      />
+                      <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      {user && <NotificationCenter user={user} />}
+                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => changeLanguage('es')}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                            language === 'es'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="Español"
+                        >
+                          ES
+                        </button>
+                        <button
+                          onClick={() => changeLanguage('en')}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                            language === 'en'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                          aria-label="English"
+                        >
+                          EN
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </header>
+                </header>
+              )}
 
               <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
                 <Suspense fallback={
