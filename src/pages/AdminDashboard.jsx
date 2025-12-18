@@ -934,6 +934,28 @@ export default function AdminDashboardPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  💰 Pagos Recibidos
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl("AdminPayments"))}
+                  >
+                    Ver página completa
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Gestiona todos los pagos recibidos desde la página dedicada.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="subscriptions">
             <Card className="shadow-lg border-0">
               <CardHeader>

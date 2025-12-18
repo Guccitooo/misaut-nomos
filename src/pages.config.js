@@ -39,6 +39,7 @@ import QuoteRequests from './pages/QuoteRequests';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import AdminMessagesStats from './pages/AdminMessagesStats';
+import AdminPayments from './pages/AdminPayments';
 import __Layout from './Layout.jsx';
 
 
@@ -84,6 +85,7 @@ export const PAGES = {
     "Projects": Projects,
     "ProjectDetail": ProjectDetail,
     "AdminMessagesStats": AdminMessagesStats,
+    "AdminPayments": AdminPayments,
 }
 
 export const pagesConfig = {

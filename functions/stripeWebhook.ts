@@ -435,6 +435,30 @@ Deno.serve(async (req) => {
                 console.error('⚠️ Error Slack cliente:', slackError.message);
             }
             
+            // 🔥 REGISTRAR PAGO INICIAL (checkout completado)
+            const paymentAmount = session.amount_total ? session.amount_total / 100 : plan.precio;
+            await base44.asServiceRole.entities.PaymentRecord.create({
+                user_id: userId,
+                user_email: userEmail,
+                stripe_invoice_id: session.invoice || 'checkout-' + session.id,
+                stripe_subscription_id: session.subscription,
+                stripe_payment_intent_id: session.payment_intent,
+                amount: paymentAmount,
+                currency: session.currency?.toUpperCase() || 'EUR',
+                plan_id: planId,
+                plan_nombre: plan.nombre,
+                payment_date: new Date(session.created * 1000).toISOString(),
+                period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+                period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                status: 'succeeded',
+                is_trial: stripeSubscription.status === 'trialing',
+                metadata: {
+                    session_id: session.id,
+                    mode: session.mode
+                }
+            });
+            console.log('💾 Pago inicial registrado en PaymentRecord');
+            
             // ✅ VERIFICACIÓN FINAL CRÍTICA: Forzar visibilidad si onboarding completo
             setTimeout(async () => {
                 try {
@@ -552,6 +576,31 @@ Deno.serve(async (req) => {
                     
                     // Obtener suscripción de Stripe para fechas actualizadas
                     const stripeSubscription = await stripe.subscriptions.retrieve(invoice.subscription);
+                    const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: dbSub.plan_id });
+                    const plan = plans[0] || { nombre: 'Plan', precio: invoice.amount_paid / 100 };
+                    
+                    // 🔥 REGISTRAR PAGO EN PaymentRecord
+                    await base44.asServiceRole.entities.PaymentRecord.create({
+                        user_id: dbSub.user_id,
+                        user_email: invoice.customer_email || dbSub.user_id,
+                        stripe_invoice_id: invoice.id,
+                        stripe_subscription_id: invoice.subscription,
+                        stripe_payment_intent_id: invoice.payment_intent,
+                        amount: invoice.amount_paid / 100,
+                        currency: invoice.currency.toUpperCase(),
+                        plan_id: dbSub.plan_id,
+                        plan_nombre: plan.nombre,
+                        payment_date: new Date(invoice.created * 1000).toISOString(),
+                        period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+                        period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                        status: 'succeeded',
+                        is_trial: stripeSubscription.status === 'trialing',
+                        metadata: {
+                            invoice_number: invoice.number,
+                            attempt_count: invoice.attempt_count
+                        }
+                    });
+                    console.log('💾 Pago registrado en PaymentRecord');
                     
                     // Actualizar suscripción con nuevo periodo
                     await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
@@ -561,7 +610,7 @@ Deno.serve(async (req) => {
                         renovacion_automatica: !stripeSubscription.cancel_at_period_end
                     });
 
-                    // Activar perfil inmediatamente tras pago exitoso
+                    // 🔥 ACTIVAR PERFIL INMEDIATAMENTE tras pago exitoso
                     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
                     if (profiles.length > 0) {
                         const profile = profiles[0];
@@ -582,7 +631,7 @@ Deno.serve(async (req) => {
                         subscription_status: 'activo'
                     });
 
-                    console.log('✅ Suscripción renovada exitosamente');
+                    console.log('✅ Suscripción renovada y pago registrado');
                 }
             }
 

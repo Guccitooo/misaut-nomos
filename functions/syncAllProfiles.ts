@@ -28,6 +28,23 @@ Deno.serve(async (req) => {
         const allSubscriptions = await base44.asServiceRole.entities.Subscription.list();
         console.log(`📋 Total suscripciones: ${allSubscriptions.length}`);
 
+        // 🔥 NUEVO: Verificar pagos recientes (últimos 35 días)
+        const allPayments = await base44.asServiceRole.entities.PaymentRecord.list();
+        const recentPayments = new Map();
+        const thirtyFiveDaysAgo = new Date(today);
+        thirtyFiveDaysAgo.setDate(thirtyFiveDaysAgo.getDate() - 35);
+
+        allPayments.forEach(payment => {
+            const paymentDate = new Date(payment.payment_date);
+            const periodEnd = new Date(payment.period_end);
+            
+            // Si el pago fue exitoso Y el período aún no ha expirado
+            if (payment.status === 'succeeded' && periodEnd >= today) {
+                recentPayments.set(payment.user_id, payment);
+            }
+        });
+        console.log(`💰 Usuarios con pagos válidos: ${recentPayments.size}`);
+
         // Crear mapa de suscripciones activas por user_id
         const activeSubscriptions = new Map();
         allSubscriptions.forEach(sub => {
@@ -67,11 +84,14 @@ Deno.serve(async (req) => {
             errors: []
         };
 
-        // 3. Sincronizar cada perfil
+        // 3. Sincronizar cada perfil (basado en PAGOS, no solo suscripciones)
         for (const profile of allProfiles) {
             try {
                 const hasActiveSubscription = activeSubscriptions.has(profile.user_id);
-                const shouldBeVisible = hasActiveSubscription && profile.onboarding_completed === true;
+                const hasRecentPayment = recentPayments.has(profile.user_id);
+                
+                // 🔥 NUEVA LÓGICA: Visible si tiene pago válido O suscripción activa
+                const shouldBeVisible = (hasRecentPayment || hasActiveSubscription) && profile.onboarding_completed === true;
                 
                 // Solo actualizar si hay cambio
                 if (profile.visible_en_busqueda !== shouldBeVisible) {
@@ -82,10 +102,10 @@ Deno.serve(async (req) => {
                     
                     if (shouldBeVisible) {
                         results.activated++;
-                        console.log(`✅ ACTIVADO: ${profile.business_name} (${profile.user_id})`);
+                        console.log(`✅ ACTIVADO: ${profile.business_name} (${profile.user_id}) - Pago: ${hasRecentPayment}, Sub: ${hasActiveSubscription}`);
                     } else {
                         results.deactivated++;
-                        console.log(`❌ DESACTIVADO: ${profile.business_name} (${profile.user_id}) - Sin suscripción activa`);
+                        console.log(`❌ DESACTIVADO: ${profile.business_name} (${profile.user_id}) - Sin pago/suscripción válidos`);
                     }
                 } else {
                     results.unchanged++;
