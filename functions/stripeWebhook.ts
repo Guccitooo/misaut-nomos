@@ -189,24 +189,16 @@ Deno.serve(async (req) => {
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
             if (profiles.length > 0) {
                 const existingProfile = profiles[0];
-                // Si onboarding completado -> visible inmediatamente (suscripción ya verificada)
+                
+                // SIEMPRE visible si onboarding completado Y pago confirmado
                 const shouldBeVisible = existingProfile.onboarding_completed === true;
                 
-                const profileUpdateData = {
+                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
                     visible_en_busqueda: shouldBeVisible,
                     estado_perfil: 'activo'
-                };
+                });
                 
-                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, profileUpdateData);
-                console.log(`✅ Perfil actualizado - Visible: ${shouldBeVisible} (onboarding: ${existingProfile.onboarding_completed})`);
-                
-                // Si ya tiene onboarding completo, forzar visibilidad
-                if (existingProfile.onboarding_completed && !shouldBeVisible) {
-                    console.log('⚠️ Forzando visibilidad porque onboarding está completo');
-                    await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
-                        visible_en_busqueda: true
-                    });
-                }
+                console.log(`✅ Perfil ${shouldBeVisible ? 'VISIBLE' : 'OCULTO'} - onboarding: ${existingProfile.onboarding_completed}`);
             } else {
                 // Crear perfil básico para el nuevo profesional
                 await base44.asServiceRole.entities.ProfessionalProfile.create({
@@ -443,15 +435,24 @@ Deno.serve(async (req) => {
                 console.error('⚠️ Error Slack cliente:', slackError.message);
             }
             
-            // ✅ VERIFICACIÓN FINAL: Si el perfil tiene onboarding completo, forzar visibilidad
-            const finalProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
-            if (finalProfiles.length > 0 && finalProfiles[0].onboarding_completed === true) {
-                await base44.asServiceRole.entities.ProfessionalProfile.update(finalProfiles[0].id, {
-                    visible_en_busqueda: true,
-                    estado_perfil: 'activo'
-                });
-                console.log('✅ FORZADO: Perfil visible porque onboarding completo + pago confirmado');
-            }
+            // ✅ VERIFICACIÓN FINAL CRÍTICA: Forzar visibilidad si onboarding completo
+            setTimeout(async () => {
+                try {
+                    const finalProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
+                    if (finalProfiles.length > 0) {
+                        const profile = finalProfiles[0];
+                        if (profile.onboarding_completed === true && profile.visible_en_busqueda !== true) {
+                            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                                visible_en_busqueda: true,
+                                estado_perfil: 'activo'
+                            });
+                            console.log('🔥 FORZADO FINAL: Perfil visible (onboarding completo + pago OK)');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error en verificación final:', err.message);
+                }
+            }, 2000); // Esperar 2 segundos para asegurar que todo se procesó
             
             console.log('✅ ========== CHECKOUT PROCESADO ==========');
             return Response.json({ received: true, processed: true });
@@ -560,14 +561,20 @@ Deno.serve(async (req) => {
                         renovacion_automatica: !stripeSubscription.cancel_at_period_end
                     });
 
-                    // Activar perfil inmediatamente
+                    // Activar perfil inmediatamente tras pago exitoso
                     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
-                    if (profiles.length > 0 && profiles[0].onboarding_completed) {
-                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                            visible_en_busqueda: true,
-                            estado_perfil: 'activo'
-                        });
-                        console.log('✅ Perfil activado tras pago exitoso');
+                    if (profiles.length > 0) {
+                        const profile = profiles[0];
+                        // Si onboarding completo, FORZAR visibilidad
+                        if (profile.onboarding_completed === true) {
+                            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
+                                visible_en_busqueda: true,
+                                estado_perfil: 'activo'
+                            });
+                            console.log('🔥 Perfil ACTIVADO tras pago exitoso (onboarding completo)');
+                        } else {
+                            console.log('⏳ Esperando onboarding para activar perfil');
+                        }
                     }
 
                     // Actualizar usuario
