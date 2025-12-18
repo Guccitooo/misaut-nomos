@@ -66,18 +66,16 @@ export default function AdminPaymentsPage() {
   });
 
   const activateProfileMutation = useMutation({
-    mutationFn: async (userId) => {
-      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: userId });
-      if (profiles.length > 0) {
-        await base44.entities.ProfessionalProfile.update(profiles[0].id, {
-          visible_en_busqueda: true,
-          estado_perfil: 'activo'
-        });
-      }
+    mutationFn: async (userEmail) => {
+      const response = await base44.functions.invoke('forceActivateProfile', { user_email: userEmail });
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['allProfiles'] });
-      toast.success("✅ Perfil activado manualmente");
+      toast.success(`🔥 Perfil activado: ${data.payments_count} pagos confirmados (${data.total_paid.toFixed(2)}€)`);
+    },
+    onError: (error) => {
+      toast.error("Error: " + (error.response?.data?.error || error.message));
     }
   });
 
@@ -280,19 +278,22 @@ export default function AdminPaymentsPage() {
                             )}
                           </td>
                           <td className="p-3">
-                            {profile && !profile.visible_en_busqueda && profile.onboarding_completed && (
+                            {profile && !profile.visible_en_busqueda && payment.status === 'succeeded' && (
                               <Button
                                 size="sm"
-                                onClick={() => activateProfileMutation.mutate(payment.user_id)}
+                                onClick={() => activateProfileMutation.mutate(payment.user_email)}
                                 disabled={activateProfileMutation.isPending}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 text-xs"
                               >
                                 {activateProfileMutation.isPending ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
-                                  <>Activar</>
+                                  <>🔥 Activar</>
                                 )}
                               </Button>
+                            )}
+                            {!profile && payment.status === 'succeeded' && (
+                              <span className="text-xs text-orange-600">⚠️ Sin perfil</span>
                             )}
                           </td>
                         </tr>
