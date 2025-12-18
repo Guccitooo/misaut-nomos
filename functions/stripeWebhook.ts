@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
             if (profiles.length > 0) {
                 const existingProfile = profiles[0];
                 
-                // SIEMPRE visible si onboarding completado Y pago confirmado
+                // 🔥 REGLA CRÍTICA: Si onboarding completo + pago OK = VISIBLE
                 const shouldBeVisible = existingProfile.onboarding_completed === true;
                 
                 await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
@@ -198,22 +198,22 @@ Deno.serve(async (req) => {
                     estado_perfil: 'activo'
                 });
                 
-                console.log(`✅ Perfil ${shouldBeVisible ? 'VISIBLE' : 'OCULTO'} - onboarding: ${existingProfile.onboarding_completed}`);
+                console.log(`🔥 PERFIL ${shouldBeVisible ? 'VISIBLE ✅' : 'OCULTO ⏳'} | onboarding=${existingProfile.onboarding_completed} | pago=OK`);
             } else {
-                // Crear perfil básico para el nuevo profesional
+                // Crear perfil básico (oculto hasta completar onboarding)
                 await base44.asServiceRole.entities.ProfessionalProfile.create({
                     user_id: userId,
                     business_name: userEmail.split('@')[0],
                     email_contacto: userEmail,
                     visible_en_busqueda: false,
-                    estado_perfil: 'activo',
+                    estado_perfil: 'pendiente',
                     onboarding_completed: false,
                     categories: [],
                     photos: [],
                     formas_pago: [],
                     metodos_contacto: ['chat_interno']
                 });
-                console.log('✅ Perfil nuevo creado - Esperando onboarding');
+                console.log('⏳ Perfil creado OCULTO - Esperando onboarding');
             }
 
             // ✅ ENVIAR EMAIL DE BIENVENIDA
@@ -507,11 +507,11 @@ Deno.serve(async (req) => {
                 renovacion_automatica: !subscription.cancel_at_period_end
             });
 
-            // Actualizar perfil
+            // 🔥 NO tocar visibilidad en actualizaciones - se controla solo por PAGOS
             const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
-            if (profiles.length > 0) {
+            if (profiles.length > 0 && !profiles[0].onboarding_completed) {
+                // Solo actualizar si no completó onboarding (mantener oculto)
                 await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    visible_en_busqueda: profileStatus.visible_en_busqueda,
                     estado_perfil: profileStatus.estado_perfil
                 });
             }
@@ -544,9 +544,10 @@ Deno.serve(async (req) => {
 
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
                 if (profiles.length > 0) {
+                    // 🔥 OCULTAR solo si suscripción eliminada completamente
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
                         visible_en_busqueda: false,
-                        estado_perfil: 'inactivo'
+                        estado_perfil: 'suspendido'
                     });
                 }
 

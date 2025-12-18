@@ -414,43 +414,12 @@ export default function SearchPage() {
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
     queryFn: async () => {
+      // 🔥 REGLA SIMPLE: Si visible_en_busqueda=true Y onboarding completo → MOSTRAR
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const visibleProfiles = allProfiles.filter(p => 
+      return allProfiles.filter(p => 
         p.visible_en_busqueda === true && 
         p.onboarding_completed === true
       );
-      
-      if (visibleProfiles.length === 0) return [];
-      
-      const allSubscriptions = await base44.entities.Subscription.list();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const activeUserIds = new Set();
-      allSubscriptions.forEach(sub => {
-        const estado = sub.estado?.toLowerCase();
-        const fechaExp = new Date(sub.fecha_expiracion);
-        fechaExp.setHours(23, 59, 59, 999);
-        
-        const isActive = (
-          estado === 'activo' || 
-          estado === 'active' || 
-          estado === 'en_prueba' || 
-          estado === 'trialing' || 
-          estado === 'trial_active'
-        ) && fechaExp >= today;
-        
-        const isCanceledButValid = (
-          estado === 'cancelado' || 
-          estado === 'canceled'
-        ) && fechaExp >= today;
-        
-        if (isActive || isCanceledButValid) {
-          activeUserIds.add(sub.user_id);
-        }
-      });
-      
-      return visibleProfiles.filter(p => activeUserIds.has(p.user_id));
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 15,
