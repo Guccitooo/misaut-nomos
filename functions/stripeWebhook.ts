@@ -535,10 +535,11 @@ Deno.serve(async (req) => {
             return Response.json({ received: true, processed: true });
         }
 
-        // ✅ PAGO FALLIDO
-        if (event.type === 'invoice.payment_failed') {
+        // ✅ PAGO EXITOSO - Activar perfil cuando el pago se confirma
+        if (event.type === 'invoice.payment_succeeded') {
             const invoice = event.data.object;
-            console.log('\n❌ ========== PAGO FALLIDO ==========');
+            console.log('\n✅ ========== PAGO EXITOSO ==========');
+            console.log('💰 Importe:', invoice.amount_paid / 100, invoice.currency.toUpperCase());
 
             if (invoice.subscription) {
                 const subs = await base44.asServiceRole.entities.Subscription.filter({
@@ -547,8 +548,69 @@ Deno.serve(async (req) => {
 
                 if (subs.length > 0) {
                     const dbSub = subs[0];
-                    const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
                     
+                    // Obtener suscripción de Stripe para fechas actualizadas
+                    const stripeSubscription = await stripe.subscriptions.retrieve(invoice.subscription);
+                    
+                    // Actualizar suscripción con nuevo periodo
+                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                        estado: 'activo',
+                        fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                        fecha_ultima_renovacion: new Date().toISOString(),
+                        renovacion_automatica: !stripeSubscription.cancel_at_period_end
+                    });
+
+                    // Activar perfil inmediatamente
+                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
+                    if (profiles.length > 0 && profiles[0].onboarding_completed) {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                            visible_en_busqueda: true,
+                            estado_perfil: 'activo'
+                        });
+                        console.log('✅ Perfil activado tras pago exitoso');
+                    }
+
+                    // Actualizar usuario
+                    await base44.asServiceRole.entities.User.update(dbSub.user_id, {
+                        subscription_status: 'activo'
+                    });
+
+                    console.log('✅ Suscripción renovada exitosamente');
+                }
+            }
+
+            return Response.json({ received: true, processed: true });
+        }
+
+        // ⚠️ PAGO FALLIDO - Marcar pero dar 5 días de gracia
+        if (event.type === 'invoice.payment_failed') {
+            const invoice = event.data.object;
+            console.log('\n❌ ========== PAGO FALLIDO ==========');
+            console.log('💳 Intento:', invoice.attempt_count);
+
+            if (invoice.subscription) {
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: invoice.subscription
+                });
+
+                if (subs.length > 0) {
+                    const dbSub = subs[0];
+                    
+                    // Calcular fecha de gracia (5 días desde ahora)
+                    const gracePeriodEnd = new Date();
+                    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 5);
+                    
+                    // Actualizar suscripción con fecha de gracia
+                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                        estado: 'activo', // Mantener activo durante gracia
+                        fecha_expiracion: gracePeriodEnd.toISOString(),
+                        renovacion_automatica: true // Stripe seguirá intentando
+                    });
+
+                    console.log(`⏳ Período de gracia activado hasta ${gracePeriodEnd.toISOString()}`);
+
+                    // Enviar email de aviso
+                    const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
                     if (users.length > 0) {
                         const user = users[0];
                         const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
@@ -559,14 +621,21 @@ Deno.serve(async (req) => {
                             body: `
 <!DOCTYPE html>
 <html>
-<head><style>body{font-family:Arial;background:#f8fafc}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px}.header{background:#ef4444;padding:30px;text-align:center;border-radius:16px 16px 0 0}.header h1{color:#fff;margin:0}.content{padding:30px}.error{background:#fef2f2;border-left:4px solid #ef4444;padding:16px;margin:20px 0}.button{display:inline-block;background:#ef4444;color:#fff;padding:14px 30px;text-decoration:none;border-radius:8px;font-weight:bold}</style></head>
+<head><style>body{font-family:Arial;background:#f8fafc}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px}.header{background:#ef4444;padding:30px;text-align:center;border-radius:16px 16px 0 0}.header h1{color:#fff;margin:0}.content{padding:30px}.error{background:#fef2f2;border-left:4px solid #ef4444;padding:16px;margin:20px 0}.grace{background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0}.button{display:inline-block;background:#ef4444;color:#fff;padding:14px 30px;text-decoration:none;border-radius:8px;font-weight:bold}</style></head>
 <body>
 <div class="container">
   <div class="header"><img src="${LOGO_URL}" style="width:50px;height:50px;border-radius:10px;margin-bottom:10px"/><h1>⚠️ Problema con tu pago</h1></div>
   <div class="content">
-    <div class="error"><p><strong>No hemos podido cobrar tu suscripción.</strong></p><p>Tu perfil puede dejar de ser visible si no actualizas tu método de pago.</p></div>
-    <p>Posibles causas: tarjeta caducada, fondos insuficientes o bloqueo del banco.</p>
-    <p style="text-align:center;margin:30px 0"><a href="https://misautonomos.es/SubscriptionManagement" class="button">Actualizar pago →</a></p>
+    <div class="error"><p><strong>No hemos podido cobrar tu suscripción.</strong></p></div>
+    <div class="grace"><p><strong>⏳ Tu perfil seguirá visible durante 5 días</strong></p><p>Tienes tiempo para actualizar tu método de pago. Después de 5 días, tu perfil se ocultará automáticamente.</p></div>
+    <p><strong>Posibles causas:</strong></p>
+    <ul>
+      <li>Tarjeta caducada</li>
+      <li>Fondos insuficientes</li>
+      <li>Bloqueo del banco</li>
+    </ul>
+    <p style="text-align:center;margin:30px 0"><a href="https://misautonomos.es/SubscriptionManagement" class="button">Actualizar método de pago →</a></p>
+    <p style="font-size:13px;color:#666;text-align:center">Fecha límite: <strong>${gracePeriodEnd.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>
     <p style="font-size:13px;color:#666;text-align:center">¿Problemas? <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a></p>
   </div>
 </div>
@@ -574,7 +643,7 @@ Deno.serve(async (req) => {
 </html>`,
                             from_name: "MisAutónomos"
                         });
-                        console.log('📧 Email de pago fallido enviado');
+                        console.log('📧 Email de pago fallido enviado (5 días de gracia)');
                     }
                 }
             }
