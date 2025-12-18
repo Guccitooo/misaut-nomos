@@ -79,6 +79,20 @@ export default function AdminPaymentsPage() {
     }
   });
 
+  const syncPaymentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('syncStripePayments');
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['adminPayments'] });
+      toast.success(`✅ ${data.results.registered} pagos sincronizados desde Stripe`);
+    },
+    onError: (error) => {
+      toast.error("Error sincronizando: " + error.message);
+    }
+  });
+
   const filteredPayments = payments.filter(payment => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
@@ -119,14 +133,33 @@ export default function AdminPaymentsPage() {
             <h1 className="text-3xl font-bold text-gray-900">💰 Pagos Recibidos</h1>
             <p className="text-gray-600">Registro completo de todos los pagos de Stripe</p>
           </div>
-          <Button
-            onClick={() => refetch()}
-            variant="outline"
-            className="gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => syncPaymentsMutation.mutate()}
+              disabled={syncPaymentsMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 gap-2"
+            >
+              {syncPaymentsMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Sincronizar con Stripe
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => refetch()}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
