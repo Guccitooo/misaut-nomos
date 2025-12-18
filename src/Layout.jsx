@@ -407,6 +407,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       icon: LayoutDashboard,
     });
     navigationItems.push({
+      title: "💰 Pagos",
+      url: createPageUrl("AdminPayments"),
+      icon: CreditCard,
+    });
+    navigationItems.push({
       title: "Admin Tickets",
       url: createPageUrl("AdminTickets"),
       icon: MessageSquare,
