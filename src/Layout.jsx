@@ -137,22 +137,20 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     createPageUrl("UserTypeSelection"),
     createPageUrl("ProfileOnboarding"),
     createPageUrl("ClientOnboarding"),
-    createPageUrl("PricingPlans"),
     createPageUrl("Onboarding")
   ];
 
-  const shouldShowBottomBar = () => {
+  const shouldShowSidebar = () => {
     if (!user || loadingUser) return false;
     if (hideBottomBarRoutes.includes(location.pathname)) return false;
-    if (!user.user_type) return false;
     
-    // Para clientes, mostrar la barra inmediatamente
+    // 🔥 CLIENTES: SIEMPRE mostrar sidebar
     if (user.user_type === "client") return true;
     
-    // Para profesionales, verificar onboarding
+    // PROFESIONALES: verificar onboarding
     if (user.user_type === "professionnel") {
       if (professionalProfile === undefined) return false;
-      if (professionalProfile && (!professionalProfile.onboarding_completed || !professionalProfile.visible_en_busqueda)) {
+      if (professionalProfile && (!professionalProfile.onboarding_completed)) {
         return false;
       }
     }
@@ -789,7 +787,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
-            {user && shouldShowBottomBar() && (
+            {user && shouldShowSidebar() && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
                   <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
@@ -1212,7 +1210,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </div>
               </header>
 
-              <div className={`flex-1 overflow-auto ${shouldShowBottomBar() ? 'main-content-with-bottom-nav' : ''}`}>
+              <div className={`flex-1 overflow-auto ${shouldShowSidebar() ? 'main-content-with-bottom-nav' : ''}`}>
                 <Suspense fallback={
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -1224,7 +1222,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
               <Footer />
 
-              {shouldShowBottomBar() && (
+              {shouldShowSidebar() && (
                 <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
