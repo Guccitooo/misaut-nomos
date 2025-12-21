@@ -332,73 +332,110 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return user?.profile_picture || null;
   };
 
-  const navigationItems = [
-    {
-      title: t('searchFreelancers'),
-      url: createPageUrl("Search"),
-      icon: Search,
-    },
-    {
-      title: t('messages'),
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      badge: unreadCount > 0 ? unreadCount : null
-    },
-  ];
+  // Menú específico según rol
+  const navigationItems = [];
 
   if (isProfessional) {
-    navigationItems.push({
-      title: "Dashboard Pro",
-      url: createPageUrl("ProfessionalDashboard"),
-      icon: LayoutDashboard,
-    });
-    navigationItems.push({
-      title: "Proyectos",
-      url: createPageUrl("Projects"),
-      icon: FolderKanban,
-    });
-    navigationItems.push({
-      title: t('calendar'),
-      url: createPageUrl("Calendar"),
-      icon: Calendar,
-    });
-  }
-
-  navigationItems.push({
-    title: "Presupuestos",
-    url: createPageUrl("QuoteRequests"),
-    icon: FileText,
-  });
-  navigationItems.push({
-    title: t('favorites'),
-    url: createPageUrl("Favorites"),
-    icon: Heart,
-  });
-  navigationItems.push({
-    title: t('myProfile'),
-    url: createPageUrl("MyProfile"),
-    icon: User,
-  });
-
-  if (isProfessional) {
-    navigationItems.push({
-      title: t('mySubscription'),
-      url: createPageUrl("SubscriptionManagement"),
-      icon: Briefcase,
-    });
+    // MENÚ PARA AUTÓNOMOS
+    navigationItems.push(
+      {
+        title: t('searchFreelancers'),
+        url: createPageUrl("Search"),
+        icon: Search,
+      },
+      {
+        title: t('messages'),
+        url: createPageUrl("Messages"),
+        icon: MessageSquare,
+        badge: unreadCount > 0 ? unreadCount : null
+      },
+      {
+        title: "Dashboard Pro",
+        url: createPageUrl("ProfessionalDashboard"),
+        icon: LayoutDashboard,
+      },
+      {
+        title: "Proyectos",
+        url: createPageUrl("Projects"),
+        icon: FolderKanban,
+      },
+      {
+        title: t('calendar'),
+        url: createPageUrl("Calendar"),
+        icon: Calendar,
+      },
+      {
+        title: "Presupuestos",
+        url: createPageUrl("QuoteRequests"),
+        icon: FileText,
+      },
+      {
+        title: t('favorites'),
+        url: createPageUrl("Favorites"),
+        icon: Heart,
+      },
+      {
+        title: t('myProfile'),
+        url: createPageUrl("MyProfile"),
+        icon: User,
+      },
+      {
+        title: t('mySubscription'),
+        url: createPageUrl("SubscriptionManagement"),
+        icon: Briefcase,
+      },
+      {
+        title: t('supportTickets'),
+        url: createPageUrl("Tickets"),
+        icon: MessageSquare,
+      }
+    );
   } else {
-    navigationItems.push({
-      title: t('viewPlans'),
-      url: createPageUrl("PricingPlans"),
-      icon: CreditCard,
-    });
+    // MENÚ PARA CLIENTES
+    navigationItems.push(
+      {
+        title: t('searchFreelancers'),
+        url: createPageUrl("Search"),
+        icon: Search,
+      },
+      {
+        title: t('messages'),
+        url: createPageUrl("Messages"),
+        icon: MessageSquare,
+        badge: unreadCount > 0 ? unreadCount : null
+      },
+      {
+        title: "Presupuestos",
+        url: createPageUrl("QuoteRequests"),
+        icon: FileText,
+      },
+      {
+        title: t('favorites'),
+        url: createPageUrl("Favorites"),
+        icon: Heart,
+      },
+      {
+        title: t('myProfile'),
+        url: createPageUrl("MyProfile"),
+        icon: User,
+      },
+      {
+        title: t('viewPlans'),
+        url: createPageUrl("PricingPlans"),
+        icon: CreditCard,
+      },
+      {
+        title: t('faq'),
+        url: createPageUrl("FAQ"),
+        icon: MessageSquare,
+      },
+      {
+        title: t('supportTickets'),
+        url: createPageUrl("Tickets"),
+        icon: MessageSquare,
+      }
+    );
   }
-
-  navigationItems.push({
-    title: t('supportTickets'),
-    url: createPageUrl("Tickets"),
-    icon: MessageSquare,
-  });
 
   if (user?.role === "admin") {
     navigationItems.push({
@@ -1035,7 +1072,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
-              {(!user || (user && user.user_type === "client")) && (
+              {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">

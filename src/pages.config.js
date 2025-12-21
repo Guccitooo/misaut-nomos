@@ -1,91 +1,93 @@
-import Search from './pages/Search';
-import ProfessionalProfile from './pages/ProfessionalProfile';
-import Messages from './pages/Messages';
-import Favorites from './pages/Favorites';
-import MyProfile from './pages/MyProfile';
 import AdminDashboard from './pages/AdminDashboard';
-import Onboarding from './pages/Onboarding';
-import PricingPlans from './pages/PricingPlans';
-import ProfileOnboarding from './pages/ProfileOnboarding';
-import SubscriptionManagement from './pages/SubscriptionManagement';
-import UserTypeSelection from './pages/UserTypeSelection';
-import ClientOnboarding from './pages/ClientOnboarding';
-import HelpCenter from './pages/HelpCenter';
-import FAQ from './pages/FAQ';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsConditions from './pages/TermsConditions';
-import CookiePolicy from './pages/CookiePolicy';
-import LegalNotice from './pages/LegalNotice';
-import Notifications from './pages/Notifications';
-import FAQDetail from './pages/FAQDetail';
 import AdminFAQ from './pages/AdminFAQ';
-import Tickets from './pages/Tickets';
-import TicketDetail from './pages/TicketDetail';
-import AdminTickets from './pages/AdminTickets';
-import ProfessionalDashboard from './pages/ProfessionalDashboard';
-import CRM from './pages/CRM';
-import Invoices from './pages/Invoices';
-import Jobs from './pages/Jobs';
-import PayInvoice from './pages/PayInvoice';
-import Autonomo from './pages/Autonomo';
-import Categoria from './pages/Categoria';
-import PaymentSuccess from './pages/PaymentSuccess';
-import DashboardProInfo from './pages/DashboardProInfo';
-import ClientDetail from './pages/ClientDetail';
-import CRMAutomations from './pages/CRMAutomations';
-import Calendar from './pages/Calendar';
-import RequestQuote from './pages/RequestQuote';
-import QuoteRequests from './pages/QuoteRequests';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
 import AdminMessagesStats from './pages/AdminMessagesStats';
 import AdminPayments from './pages/AdminPayments';
+import AdminTickets from './pages/AdminTickets';
+import Autonomo from './pages/Autonomo';
+import CRM from './pages/CRM';
+import CRMAutomations from './pages/CRMAutomations';
+import Calendar from './pages/Calendar';
+import Categoria from './pages/Categoria';
+import ClientDetail from './pages/ClientDetail';
+import ClientOnboarding from './pages/ClientOnboarding';
+import CookiePolicy from './pages/CookiePolicy';
+import DashboardProInfo from './pages/DashboardProInfo';
+import FAQ from './pages/FAQ';
+import FAQDetail from './pages/FAQDetail';
+import Favorites from './pages/Favorites';
+import HelpCenter from './pages/HelpCenter';
+import Home from './pages/Home';
+import Invoices from './pages/Invoices';
+import Jobs from './pages/Jobs';
+import LegalNotice from './pages/LegalNotice';
+import Messages from './pages/Messages';
+import MyProfile from './pages/MyProfile';
+import Notifications from './pages/Notifications';
+import Onboarding from './pages/Onboarding';
+import PayInvoice from './pages/PayInvoice';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PricingPlans from './pages/PricingPlans';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import ProfessionalDashboard from './pages/ProfessionalDashboard';
+import ProfessionalProfile from './pages/ProfessionalProfile';
+import ProfileOnboarding from './pages/ProfileOnboarding';
+import ProjectDetail from './pages/ProjectDetail';
+import Projects from './pages/Projects';
+import QuoteRequests from './pages/QuoteRequests';
+import RequestQuote from './pages/RequestQuote';
+import Search from './pages/Search';
+import SubscriptionManagement from './pages/SubscriptionManagement';
+import TermsConditions from './pages/TermsConditions';
+import TicketDetail from './pages/TicketDetail';
+import Tickets from './pages/Tickets';
+import UserTypeSelection from './pages/UserTypeSelection';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Search": Search,
-    "ProfessionalProfile": ProfessionalProfile,
-    "Messages": Messages,
-    "Favorites": Favorites,
-    "MyProfile": MyProfile,
     "AdminDashboard": AdminDashboard,
-    "Onboarding": Onboarding,
-    "PricingPlans": PricingPlans,
-    "ProfileOnboarding": ProfileOnboarding,
-    "SubscriptionManagement": SubscriptionManagement,
-    "UserTypeSelection": UserTypeSelection,
-    "ClientOnboarding": ClientOnboarding,
-    "HelpCenter": HelpCenter,
-    "FAQ": FAQ,
-    "PrivacyPolicy": PrivacyPolicy,
-    "TermsConditions": TermsConditions,
-    "CookiePolicy": CookiePolicy,
-    "LegalNotice": LegalNotice,
-    "Notifications": Notifications,
-    "FAQDetail": FAQDetail,
     "AdminFAQ": AdminFAQ,
-    "Tickets": Tickets,
-    "TicketDetail": TicketDetail,
-    "AdminTickets": AdminTickets,
-    "ProfessionalDashboard": ProfessionalDashboard,
-    "CRM": CRM,
-    "Invoices": Invoices,
-    "Jobs": Jobs,
-    "PayInvoice": PayInvoice,
-    "Autonomo": Autonomo,
-    "Categoria": Categoria,
-    "PaymentSuccess": PaymentSuccess,
-    "DashboardProInfo": DashboardProInfo,
-    "ClientDetail": ClientDetail,
-    "CRMAutomations": CRMAutomations,
-    "Calendar": Calendar,
-    "RequestQuote": RequestQuote,
-    "QuoteRequests": QuoteRequests,
-    "Projects": Projects,
-    "ProjectDetail": ProjectDetail,
     "AdminMessagesStats": AdminMessagesStats,
     "AdminPayments": AdminPayments,
+    "AdminTickets": AdminTickets,
+    "Autonomo": Autonomo,
+    "CRM": CRM,
+    "CRMAutomations": CRMAutomations,
+    "Calendar": Calendar,
+    "Categoria": Categoria,
+    "ClientDetail": ClientDetail,
+    "ClientOnboarding": ClientOnboarding,
+    "CookiePolicy": CookiePolicy,
+    "DashboardProInfo": DashboardProInfo,
+    "FAQ": FAQ,
+    "FAQDetail": FAQDetail,
+    "Favorites": Favorites,
+    "HelpCenter": HelpCenter,
+    "Home": Home,
+    "Invoices": Invoices,
+    "Jobs": Jobs,
+    "LegalNotice": LegalNotice,
+    "Messages": Messages,
+    "MyProfile": MyProfile,
+    "Notifications": Notifications,
+    "Onboarding": Onboarding,
+    "PayInvoice": PayInvoice,
+    "PaymentSuccess": PaymentSuccess,
+    "PricingPlans": PricingPlans,
+    "PrivacyPolicy": PrivacyPolicy,
+    "ProfessionalDashboard": ProfessionalDashboard,
+    "ProfessionalProfile": ProfessionalProfile,
+    "ProfileOnboarding": ProfileOnboarding,
+    "ProjectDetail": ProjectDetail,
+    "Projects": Projects,
+    "QuoteRequests": QuoteRequests,
+    "RequestQuote": RequestQuote,
+    "Search": Search,
+    "SubscriptionManagement": SubscriptionManagement,
+    "TermsConditions": TermsConditions,
+    "TicketDetail": TicketDetail,
+    "Tickets": Tickets,
+    "UserTypeSelection": UserTypeSelection,
 }
 
 export const pagesConfig = {
