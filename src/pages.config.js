@@ -41,6 +41,7 @@ import TermsConditions from './pages/TermsConditions';
 import TicketDetail from './pages/TicketDetail';
 import Tickets from './pages/Tickets';
 import UserTypeSelection from './pages/UserTypeSelection';
+import Presupuestos from './pages/Presupuestos';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "TicketDetail": TicketDetail,
     "Tickets": Tickets,
     "UserTypeSelection": UserTypeSelection,
+    "Presupuestos": Presupuestos,
 }
 
 export const pagesConfig = {

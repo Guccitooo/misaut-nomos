@@ -404,7 +404,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       },
       {
         title: "Presupuestos",
-        url: createPageUrl("QuoteRequests"),
+        url: createPageUrl("Presupuestos"),
         icon: FileText,
       },
       {
