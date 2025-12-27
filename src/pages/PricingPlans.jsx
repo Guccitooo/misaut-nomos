@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight, Briefcase } from "lucide-react";
+import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight, Briefcase, Award, Target, TrendingDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
@@ -406,6 +406,12 @@ export default function PricingPlansPage() {
                     <p className="text-xs text-center text-gray-500 mt-3">
                       Pago 100% seguro con Stripe
                     </p>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-xs text-center text-amber-700 bg-amber-50 py-2 px-3 rounded-md font-medium">
+                        ⚡ Plazas limitadas por zona. Máx. 10 profesionales por categoría y ciudad
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -415,6 +421,90 @@ export default function PricingPlansPage() {
           {/* Pro Features Section */}
           <div className="mb-12">
             <ProFeaturesSection />
+          </div>
+
+          {/* Reglas de Oro - Garantía de Calidad */}
+          <div className="max-w-5xl mx-auto mb-16">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-900 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <Shield className="w-4 h-4" />
+                Garantía de Calidad
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Nuestras Reglas de Oro</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Un ecosistema exclusivo que protege tu inversión y maximiza tus oportunidades
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Regla 1: Exclusividad */}
+              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                    <Award className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Exclusividad Territorial
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    Máximo <strong className="text-gray-900">10 profesionales por categoría y ciudad</strong>. Esto garantiza que no compites con decenas de perfiles similares.
+                  </p>
+                  <p className="text-xs text-gray-500 italic">
+                    Si tu zona está completa, entrarás en lista de espera hasta que haya una plaza disponible.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Regla 2: Autorregulación */}
+              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4">
+                    <Target className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Ecosistema Autorregulado
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    Los perfiles con <strong className="text-gray-900">malas valoraciones verificadas o incumplimientos</strong> son expulsados automáticamente.
+                  </p>
+                  <p className="text-xs text-gray-500 italic">
+                    Tu plaza es un activo valioso: cuídala ofreciendo un servicio excelente.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Regla 3: Beneficio Real */}
+              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-4">
+                    <TrendingUp className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Flujo Constante de Clientes
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    Al limitar la competencia, <strong className="text-gray-900">los 10 elegidos reciben más visibilidad</strong> y un flujo constante de solicitudes reales.
+                  </p>
+                  <p className="text-xs text-gray-500 italic">
+                    Sin canibalización de precios. Tu experiencia y calidad son las que destacan.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Call to Action de Exclusividad */}
+            <div className="mt-8 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Info className="w-5 h-5 text-amber-700" />
+                <h4 className="text-lg font-semibold text-amber-900">
+                  Tu plaza es un privilegio, no un derecho
+                </h4>
+              </div>
+              <p className="text-sm text-amber-800 max-w-2xl mx-auto">
+                Mantén tus valoraciones altas, responde rápido a los clientes y ofrece un servicio impecable. 
+                Así tu plaza seguirá activa y recibirás un flujo continuo de oportunidades de negocio.
+              </p>
+            </div>
           </div>
 
           {/* Comparación de planes */}
