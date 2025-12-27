@@ -30,7 +30,7 @@ export default function PricingPlansPage() {
       const allPlans = await base44.entities.SubscriptionPlan.list();
       const planMap = new Map();
       
-      const validPlanIds = ['plan_monthly_trial', 'plan_quarterly', 'plan_annual'];
+      const validPlanIds = ['plan_profesional', 'plan_growth'];
       
       allPlans.forEach(plan => {
         if (validPlanIds.includes(plan.plan_id)) {
@@ -120,7 +120,12 @@ export default function PricingPlansPage() {
 
       if (response.data?.url) {
         console.log('✅ Redirigiendo a Stripe:', response.data.url);
+        // Redirección inmediata sin timeout
         window.location.href = response.data.url;
+      } else if (response.data?.sessionId) {
+        console.log('✅ Session ID recibido, redirigiendo...');
+        // Fallback: usar sessionId si no hay URL directa
+        window.location.href = `https://checkout.stripe.com/pay/${response.data.sessionId}`;
       } else {
         console.error('❌ Sin URL en respuesta:', response);
         throw new Error('No se pudo crear la sesión de pago');
@@ -139,21 +144,18 @@ export default function PricingPlansPage() {
 
   const getPlanIcon = (planId) => {
     switch (planId) {
-      case "plan_monthly_trial": return <Zap className="w-10 h-10" />;
-      case "plan_quarterly": return <TrendingUp className="w-10 h-10" />;
-      case "plan_annual": return <Crown className="w-10 h-10" />;
+      case "plan_profesional": return <Briefcase className="w-10 h-10" />;
+      case "plan_growth": return <TrendingUp className="w-10 h-10" />;
       default: return <CheckCircle className="w-10 h-10" />;
     }
   };
 
   const getPlanBadge = (planId) => {
     switch (planId) {
-      case "plan_monthly_trial": 
-        return { text: t('sevenDaysTrial'), color: "bg-blue-500" };
-      case "plan_quarterly": 
-        return { text: t('mostPopular'), color: "bg-green-500" };
-      case "plan_annual": 
-        return { text: t('bestValue'), color: "bg-orange-500" };
+      case "plan_profesional": 
+        return { text: "Más popular", color: "bg-green-500" };
+      case "plan_growth": 
+        return { text: "Crecimiento", color: "bg-purple-500" };
       default: 
         return null;
     }
@@ -257,11 +259,11 @@ export default function PricingPlansPage() {
           )}
 
           {/* Plan cards con diseño mejorado */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
-              const isPopular = plan.plan_id === "plan_quarterly";
-              
+              const isPopular = plan.plan_id === "plan_profesional";
+
               return (
                 <Card 
                   key={plan.plan_id}
@@ -280,17 +282,14 @@ export default function PricingPlansPage() {
                   <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
                     <div className="text-center mb-6">
                       <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
-                        plan.plan_id === "plan_monthly_trial" ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white" :
-                        plan.plan_id === "plan_quarterly" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
-                        "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
+                        plan.plan_id === "plan_profesional" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
+                        "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
                       }`}>
                         {getPlanIcon(plan.plan_id)}
                       </div>
 
                       <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                        {plan.plan_id === "plan_monthly_trial" ? t('monthly') : 
-                         plan.plan_id === "plan_quarterly" ? t('quarterly') : 
-                         t('annual')}
+                        {plan.nombre}
                       </h3>
 
                       <div className="mb-3">
@@ -301,36 +300,74 @@ export default function PricingPlansPage() {
                           {t('firstSevenDays')}
                         </p>
                         <p className="text-sm text-gray-500 mt-3">
-                          {t('then')} {Math.round(plan.precio)}€
-                          {plan.plan_id === "plan_monthly_trial" ? t('perMonth') : 
-                           plan.plan_id === "plan_quarterly" ? ` ${t('every3Months')}` : 
-                           t('perYear')}
+                          {t('then')} {Math.round(plan.precio)}€{t('perMonth')}
                         </p>
                       </div>
-
-                      {plan.plan_id !== "plan_monthly_trial" && (
-                        <div className="mt-3 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                          <p className="text-sm font-bold text-green-700">
-                            {plan.plan_id === "plan_quarterly" && t('save10')}
-                            {plan.plan_id === "plan_annual" && t('save20')}
-                          </p>
-                        </div>
-                      )}
                     </div>
 
                     <ul className="space-y-2 mb-6">
-                      {getPlanFeatures().map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs">
-                          <span className="text-gray-700">{feature}</span>
-                        </li>
-                      ))}
+                      {plan.plan_id === "plan_profesional" ? (
+                        <>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">✅ {t('appearInSearches')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💬 {t('directChatWithClients')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📋 {t('completeCRM')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📄 {t('invoicingSystem')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💳 {t('integratedPaymentGateway')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🎫 {t('support247')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">⭐ {t('ratingsSystem')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📸 {t('unlimitedPhotoGallery')}</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          </li>
+                        </>
+                      ) : (
+                        <>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">✅ Todo lo del Plan Profesional</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🚀 20€/mes en anuncios de Meta Ads gestionados</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📊 Análisis y optimización de campañas</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🎯 Segmentación avanzada de audiencias</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📈 Mayor visibilidad y más clientes</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💼 Gestor de anuncios dedicado</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          </li>
+                        </>
+                      )}
                     </ul>
 
                     <Button
                       className={`w-full h-12 text-base font-bold transition-all ${
                         isPopular 
                           ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
-                          : "bg-blue-600 hover:bg-blue-700"
+                          : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
                       }`}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}

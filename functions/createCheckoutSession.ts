@@ -81,20 +81,9 @@ Deno.serve(async (req) => {
     const successUrl = `${baseUrl}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
-    // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
-    let interval = 'month';
-    let intervalCount = 1;
-    
-    if (planId === 'plan_monthly_trial' || planId === 'plan_monthly') {
-      interval = 'month';
-      intervalCount = 1;
-    } else if (planId === 'plan_quarterly') {
-      interval = 'month';
-      intervalCount = 3;
-    } else if (planId === 'plan_annual') {
-      interval = 'year';
-      intervalCount = 1;
-    }
+    // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN - SIEMPRE MENSUAL
+    const interval = 'month';
+    const intervalCount = 1;
     
     console.log('📅 Intervalo configurado:', interval, 'x', intervalCount);
 
