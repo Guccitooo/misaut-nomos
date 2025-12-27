@@ -108,33 +108,66 @@ export default function PricingPlansPage() {
   const handleSelectPlan = async (planKey) => {
     const plan = PLANS_CONFIG[planKey];
     
+    console.log('═══════════════════════════════════════════');
+    console.log('🛒 INICIO PROCESO DE PAGO');
+    console.log('Plan seleccionado:', planKey);
+    console.log('Nombre del plan:', plan.name);
+    console.log('Price ID:', plan.stripePriceId);
+    console.log('Precio:', plan.price, '€');
+    console.log('═══════════════════════════════════════════');
+    
     if (!user) {
+      console.log('❌ Usuario no autenticado - redirigiendo a login');
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_key: planKey,
         precio: plan.price,
         timestamp: Date.now()
       }));
-      
       base44.auth.redirectToLogin(window.location.href);
+      return;
+    }
+
+    console.log('✅ Usuario autenticado:', user.email, '(ID:', user.id, ')');
+    
+    // Validar Price ID antes de enviar
+    if (!plan.stripePriceId || plan.stripePriceId.includes('_xxxxx') || !plan.stripePriceId.startsWith('price_')) {
+      console.error('❌ CRITICAL: Price ID inválido:', plan.stripePriceId);
+      toast.error('❌ Configuración incorrecta: Los Price IDs no están configurados. Contacta con soporte.', {
+        duration: 10000
+      });
       return;
     }
 
     setSelectedPlan(planKey);
     setIsProcessing(true);
-
+    
+    console.log('⏰ Configurando timeout de 15 segundos...');
     const timeoutId = setTimeout(() => {
-      console.error('⏱️ Timeout: La solicitud tardó más de 15 segundos');
-      toast.error('⏱️ La solicitud está tardando demasiado. Verifica tu conexión o los Price IDs de Stripe.', {
-        duration: 8000
+      console.error('❌ TIMEOUT: La solicitud superó los 15 segundos');
+      console.error('Posibles causas:');
+      console.error('1. Servidor no responde');
+      console.error('2. Price ID no existe en Stripe');
+      console.error('3. Claves de Stripe incorrectas');
+      console.error('4. Problemas de red');
+      
+      toast.error('⏱️ Timeout: El servidor no responde. Verifica la configuración de Stripe.', {
+        duration: 10000
       });
       setIsProcessing(false);
       setSelectedPlan(null);
     }, 15000);
 
     try {
-      console.log('🛒 Iniciando checkout para:', plan.name);
-      console.log('💳 Price ID:', plan.stripePriceId);
-      console.log('👤 Usuario:', user.email);
+      console.log('\n📤 Enviando solicitud al backend...');
+      console.log('Función: createCheckoutSession');
+      console.log('Parámetros:', {
+        stripePriceId: plan.stripePriceId,
+        planName: plan.name,
+        planPrice: plan.price,
+        isReactivation: false
+      });
+      
+      const startTime = Date.now();
       
       const response = await base44.functions.invoke('createCheckoutSession', {
         stripePriceId: plan.stripePriceId,
@@ -142,55 +175,104 @@ export default function PricingPlansPage() {
         planPrice: plan.price,
         isReactivation: false
       });
+      
+      const elapsed = Date.now() - startTime;
+      console.log(`\n✅ Respuesta recibida en ${elapsed}ms`);
 
       clearTimeout(timeoutId);
 
-      console.log('📦 Respuesta completa:', JSON.stringify(response, null, 2));
+      console.log('\n📦 RESPUESTA DEL SERVIDOR:');
+      console.log('Status:', response.status);
+      console.log('Data:', JSON.stringify(response.data, null, 2));
 
-      if (!response || !response.data) {
-        throw new Error('No se recibió respuesta del servidor');
+      // Validar estructura de respuesta
+      if (!response) {
+        throw new Error('❌ No se recibió respuesta del servidor (response is null/undefined)');
       }
 
+      if (!response.data) {
+        throw new Error('❌ Respuesta sin data: ' + JSON.stringify(response));
+      }
+
+      // Verificar errores del servidor
       if (response.data.error) {
-        console.error('❌ Error del servidor:', response.data.error);
+        console.error('❌ ERROR DEL SERVIDOR:', response.data.error);
         if (response.data.detailedError) {
-          console.error('📋 Detalle:', response.data.detailedError);
+          console.error('📋 Detalle técnico:', response.data.detailedError);
         }
         throw new Error(response.data.error);
       }
 
-      if (response.data.url) {
-        console.log('✅ URL de Stripe obtenida:', response.data.url);
-        console.log('🔄 Redirigiendo...');
-        window.location.href = response.data.url;
-        return;
+      // Verificar URL de redirección
+      if (!response.data.url) {
+        console.error('❌ CRITICAL: No hay URL en la respuesta');
+        console.error('Respuesta completa:', JSON.stringify(response.data));
+        throw new Error('El servidor no devolvió una URL de pago válida');
       }
 
-      throw new Error('No se recibió URL de pago. Respuesta: ' + JSON.stringify(response.data));
+      // Validar formato de URL
+      if (!response.data.url.startsWith('https://checkout.stripe.com/')) {
+        console.error('❌ URL inválida:', response.data.url);
+        throw new Error('URL de Stripe no válida');
+      }
+
+      console.log('\n✅ URL DE STRIPE OBTENIDA:');
+      console.log('URL:', response.data.url);
+      console.log('Session ID:', response.data.sessionId);
+      console.log('Customer ID:', response.data.customerId);
+      
+      console.log('\n🔄 REDIRIGIENDO A STRIPE EN 500ms...');
+      
+      // Pequeño delay para asegurar que los logs se muestren
+      setTimeout(() => {
+        console.log('🚀 Ejecutando redirección ahora...');
+        window.location.href = response.data.url;
+      }, 500);
+      
+      return;
       
     } catch (err) {
       clearTimeout(timeoutId);
-      console.error('❌ Error completo:', err);
+      
+      console.error('\n═══════════════════════════════════════════');
+      console.error('❌ ERROR EN PROCESO DE PAGO');
+      console.error('Tipo de error:', err.constructor.name);
+      console.error('Mensaje:', err.message);
+      console.error('Stack:', err.stack);
+      console.error('═══════════════════════════════════════════\n');
       
       const errorMessage = err.message || "Error desconocido al procesar el pago";
       
-      if (errorMessage.includes('Price ID inválido') || errorMessage.includes('No such price')) {
-        toast.error('❌ Price IDs no configurados correctamente en Stripe', {
+      // Análisis específico de errores
+      if (errorMessage.includes('Price ID') || errorMessage.includes('No such price')) {
+        console.error('💡 DIAGNÓSTICO: Price ID no existe en Stripe Dashboard');
+        toast.error('❌ Los Price IDs no existen en tu cuenta de Stripe', {
           duration: 10000
         });
-        
         setTimeout(() => {
-          toast.info('📝 ACCIÓN REQUERIDA: Crea los productos en https://dashboard.stripe.com/products (30€ y 50€/mes) y actualiza los Price IDs en el código.', {
+          toast.info('📝 SOLUCIÓN: Ve a https://dashboard.stripe.com/products y crea los productos con precios 30€ y 50€/mes. Luego actualiza los Price IDs en PricingPlans.js líneas 26 y 39.', {
             duration: 15000
           });
         }, 1500);
-      } else if (errorMessage.includes('STRIPE_SECRET_KEY')) {
-        toast.error('❌ Claves de Stripe no configuradas. Contacta con soporte.', {
+      } else if (errorMessage.includes('STRIPE_SECRET_KEY') || errorMessage.includes('API Key')) {
+        console.error('💡 DIAGNÓSTICO: Problema con las API Keys de Stripe');
+        toast.error('❌ Claves de Stripe no configuradas o inválidas', {
+          duration: 8000
+        });
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        console.error('💡 DIAGNÓSTICO: Problema de conectividad');
+        toast.error('❌ Error de red. Verifica tu conexión a internet.', {
+          duration: 8000
+        });
+      } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
+        console.error('💡 DIAGNÓSTICO: Problema de autenticación');
+        toast.error('❌ Sesión expirada. Recarga la página e intenta de nuevo.', {
           duration: 8000
         });
       } else {
+        console.error('💡 DIAGNÓSTICO: Error desconocido');
         toast.error(`❌ ${errorMessage}`, {
-          duration: 8000
+          duration: 10000
         });
       }
       
