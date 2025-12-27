@@ -98,13 +98,32 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log('📋 Creando sesión de checkout...');
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    console.log('📋 Creando sesión de checkout con Price ID:', stripePriceId);
+    
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(sessionParams);
+    } catch (stripeCheckoutError) {
+      console.error('❌ Error de Stripe Checkout:', stripeCheckoutError.message);
+      
+      if (stripeCheckoutError.message.includes('No such price')) {
+        return Response.json({ 
+          error: `⚠️ Price ID inválido: "${stripePriceId}". Debes crear los productos en Stripe Dashboard y actualizar los Price IDs en el código.`,
+          detailedError: stripeCheckoutError.message
+        }, { status: 400 });
+      }
+      
+      return Response.json({ 
+        error: `Error de Stripe: ${stripeCheckoutError.message}`,
+        detailedError: stripeCheckoutError.message
+      }, { status: 400 });
+    }
 
     console.log('✅ Sesión creada:', session.id);
     console.log('🔗 URL:', session.url);
 
     return Response.json({
+      ok: true,
       sessionId: session.id,
       url: session.url,
       customerId: stripeCustomerId
@@ -114,7 +133,8 @@ Deno.serve(async (req) => {
     console.error('❌ Error general:', error.message);
     console.error('❌ Stack:', error.stack);
     return Response.json({ 
-      error: error.message || 'Error al crear la sesión de pago' 
+      error: error.message || 'Error al crear la sesión de pago',
+      detailedError: error.stack
     }, { status: 500 });
   }
 });

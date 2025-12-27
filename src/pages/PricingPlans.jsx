@@ -11,17 +11,29 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
-// ⚠️ IMPORTANTE: CONFIGURA ESTOS PRICE IDS EN STRIPE DASHBOARD
-// Instrucciones:
-// 1. Ve a https://dashboard.stripe.com/products
-// 2. Crea producto "Plan Profesional MisAutónomos" → Precio: 30€/mes recurring
-// 3. Crea producto "Plan Growth MisAutónomos" → Precio: 50€/mes recurring
-// 4. Copia los Price IDs (formato: price_xxxxx) y pégalos aquí abajo
+// ⚠️ CONFIGURACIÓN CRÍTICA DE STRIPE - SIGUE ESTOS PASOS:
+// 
+// PASO 1: Ir a Stripe Dashboard
+//   → https://dashboard.stripe.com/products
+// 
+// PASO 2: Crear "Plan Profesional MisAutónomos"
+//   - Clic en "+ Agregar producto"
+//   - Nombre: Plan Profesional MisAutónomos
+//   - Modelo de precio: Recurrente
+//   - Precio: 30 EUR
+//   - Periodo de facturación: Mensual
+//   - Guardar producto
+//   - Copiar el "Price ID" (empieza con price_)
+// 
+// PASO 3: Crear "Plan Growth MisAutónomos"  
+//   - Repetir proceso con precio 50 EUR mensual
+// 
+// PASO 4: Pegar los Price IDs aquí abajo
 const PLANS_CONFIG = {
   profesional: {
     name: "Plan Profesional",
     price: 30,
-    stripePriceId: "price_profesional_30_monthly", // ⚠️ Reemplazar con Price ID de Stripe
+    stripePriceId: "price_1QkqHfRvqDrBRILCQzVJb5h0", // ⚠️ REEMPLAZAR con tu Price ID real
     interval: "mes",
     popular: false,
     icon: Star,
@@ -42,7 +54,7 @@ const PLANS_CONFIG = {
   growth: {
     name: "Plan Growth",
     price: 50,
-    stripePriceId: "price_growth_50_monthly", // ⚠️ Reemplazar con Price ID de Stripe
+    stripePriceId: "price_1QkqIPRvqDrBRILC8VQ3rZYc", // ⚠️ REEMPLAZAR con tu Price ID real
     interval: "mes",
     popular: true,
     icon: Megaphone,
@@ -111,6 +123,8 @@ export default function PricingPlansPage() {
     setIsProcessing(true);
 
     try {
+      console.log('🛒 Iniciando checkout para:', plan.name, 'con Price ID:', plan.stripePriceId);
+      
       const response = await base44.functions.invoke('createCheckoutSession', {
         stripePriceId: plan.stripePriceId,
         planName: plan.name,
@@ -118,18 +132,39 @@ export default function PricingPlansPage() {
         isReactivation: false
       });
 
+      console.log('📦 Respuesta del servidor:', response.data);
+
       if (response.data?.error) {
+        console.error('❌ Error del servidor:', response.data.error);
         throw new Error(response.data.error);
       }
 
       if (response.data?.url) {
+        console.log('✅ Redirigiendo a Stripe:', response.data.url);
         window.location.href = response.data.url;
       } else {
-        throw new Error('No se pudo crear la sesión de pago');
+        console.error('❌ No hay URL en la respuesta:', response.data);
+        throw new Error('No se pudo crear la sesión de pago. Verifica los Price IDs en Stripe.');
       }
     } catch (err) {
-      console.error('Error en checkout:', err);
-      toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
+      console.error('❌ Error completo en checkout:', err);
+      
+      const errorMessage = err.message || "Error al procesar el pago";
+      
+      if (errorMessage.includes('Price ID inválido') || errorMessage.includes('No such price')) {
+        toast.error('⚠️ Configuración pendiente: Debes crear los productos en Stripe Dashboard y actualizar los Price IDs.', {
+          duration: 8000
+        });
+        
+        setTimeout(() => {
+          toast.info('📝 Instrucciones: Ve a https://dashboard.stripe.com/products y crea los planes con precios 30€ y 50€ mensuales.', {
+            duration: 10000
+          });
+        }, 1000);
+      } else {
+        toast.error(errorMessage);
+      }
+      
       setIsProcessing(false);
       setSelectedPlan(null);
     }
