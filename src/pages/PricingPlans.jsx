@@ -11,13 +11,17 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
-// CONFIGURACIÓN DE PLANES
-// TODO: Configurar estos Price IDs en tu Dashboard de Stripe
+// ⚠️ IMPORTANTE: CONFIGURA ESTOS PRICE IDS EN STRIPE DASHBOARD
+// Instrucciones:
+// 1. Ve a https://dashboard.stripe.com/products
+// 2. Crea producto "Plan Profesional MisAutónomos" → Precio: 30€/mes recurring
+// 3. Crea producto "Plan Growth MisAutónomos" → Precio: 50€/mes recurring
+// 4. Copia los Price IDs (formato: price_xxxxx) y pégalos aquí abajo
 const PLANS_CONFIG = {
   profesional: {
     name: "Plan Profesional",
     price: 30,
-    stripePriceId: "price_profesional_30", // ⚠️ Reemplazar con tu Price ID real de Stripe
+    stripePriceId: "price_profesional_30_monthly", // ⚠️ Reemplazar con Price ID de Stripe
     interval: "mes",
     popular: false,
     icon: Star,
@@ -38,7 +42,7 @@ const PLANS_CONFIG = {
   growth: {
     name: "Plan Growth",
     price: 50,
-    stripePriceId: "price_growth_50", // ⚠️ Reemplazar con tu Price ID real de Stripe
+    stripePriceId: "price_growth_50_monthly", // ⚠️ Reemplazar con Price ID de Stripe
     interval: "mes",
     popular: true,
     icon: Megaphone,
@@ -274,12 +278,15 @@ export default function PricingPlansPage() {
                       ) : (
                         <>
                           {plan.popular && <Crown className="w-5 h-5 mr-2" />}
-                          Empezar ahora
+                          Empieza 7 días gratis
                         </>
                       )}
                     </Button>
 
-                    <p className="text-xs text-center text-gray-500 mt-3">
+                    <p className="text-xs text-center text-gray-600 mt-2 leading-relaxed">
+                      🎁 <strong>Prueba 7 días gratis.</strong> No se te cobrará nada hasta el día 7 y puedes cancelar cuando quieras.
+                    </p>
+                    <p className="text-xs text-center text-gray-500 mt-1">
                       Pago seguro con Stripe • Sin permanencia
                     </p>
                   </CardContent>
@@ -440,6 +447,31 @@ export default function PricingPlansPage() {
                     Tu perfil verificado aparece en el directorio de MisAutónomos, donde más de 5.000 personas buscan profesionales cada día. 
                     Incluye herramientas de facturación electrónica, gestión de presupuestos, CRM para clientes, chat directo y sistema de valoraciones. 
                     Todo lo que necesitas para digitalizar tu negocio como autónomo.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-200">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    🎁 ¿Cómo funciona el periodo de prueba de 7 días?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 mb-3">
+                    <strong className="text-blue-700">Acceso completo desde el día 1:</strong> Activa tu perfil profesional y accede a todas las funcionalidades del plan elegido (Profesional o Growth) de forma inmediata.
+                  </p>
+                  <p className="text-gray-700 mb-3">
+                    <strong className="text-blue-700">Tarjeta requerida (sin cargo):</strong> Necesitamos tu método de pago para iniciar el trial, pero NO se realizará ningún cobro durante los primeros 7 días.
+                  </p>
+                  <p className="text-gray-700 mb-3">
+                    <strong className="text-blue-700">Primer cobro al día 8:</strong> Si decides continuar, el primer cargo se realizará automáticamente el día 8. A partir de ahí, la renovación será mensual.
+                  </p>
+                  <p className="text-gray-700 mb-3">
+                    <strong className="text-blue-700">Cancela sin coste:</strong> Puedes cancelar tu suscripción en cualquier momento durante el trial desde tu panel de control. Si cancelas antes del día 8, no se te cobrará nada.
+                  </p>
+                  <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-3">
+                    💡 <strong>Consejo:</strong> Aprovecha los 7 días para configurar tu perfil, subir fotos de tus trabajos y empezar a recibir contactos de clientes potenciales.
                   </p>
                 </CardContent>
               </Card>
@@ -657,7 +689,7 @@ export default function PricingPlansPage() {
                     className="bg-white hover:bg-gray-100 text-blue-700 h-12 px-8 font-bold"
                     disabled={isProcessing}
                   >
-                    Empezar con 30€/mes
+                    Probar 7 días gratis (30€/mes)
                   </Button>
                   <Button
                     onClick={() => handleSelectPlan('growth')}
@@ -665,10 +697,13 @@ export default function PricingPlansPage() {
                     disabled={isProcessing}
                   >
                     <Crown className="w-5 h-5 mr-2" />
-                    Empezar con Growth 50€/mes
+                    Probar 7 días gratis (50€/mes)
                   </Button>
                 </div>
-                <p className="text-xs text-blue-200 mt-4">
+                <p className="text-xs text-blue-100 mt-3">
+                  🎁 7 días gratis • Primer cobro después del trial
+                </p>
+                <p className="text-xs text-blue-200 mt-1">
                   Sin permanencia • Cancela cuando quieras • Factura deducible
                 </p>
               </CardContent>

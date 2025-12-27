@@ -17,14 +17,9 @@ Deno.serve(async (req) => {
     console.log('👤 Usuario:', user.email, '- ID:', user.id);
 
     const body = await req.json();
-    const { planId, planPrice, isReactivation = false } = body;
+    const { stripePriceId, planName, planPrice, isReactivation = false } = body;
 
-    console.log('📦 Plan solicitado:', planId, '- Precio:', planPrice, '- Reactivación:', isReactivation);
-
-    // ✅ VERIFICAR SI YA USÓ TRIAL
-    if (user.has_used_trial === true && !isReactivation) {
-      console.log('⚠️ Usuario ya usó prueba gratuita');
-    }
+    console.log('📦 Plan solicitado:', planName, '- Precio ID:', stripePriceId, '- Reactivación:', isReactivation);
 
     // ✅ BUSCAR/CREAR CLIENTE EN STRIPE
     let stripeCustomerId = null;
@@ -64,91 +59,44 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // ✅ OBTENER PLAN
-    const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
-    const plan = plans[0];
+    console.log('💼 Plan:', planName, '- Precio:', planPrice, '€');
 
-    if (!plan) {
-      console.error('❌ Plan no encontrado:', planId);
-      return Response.json({ error: 'Plan no encontrado' }, { status: 404 });
-    }
-
-    console.log('💼 Plan encontrado:', plan.nombre, '- Precio:', plan.precio);
-
-    // ✅ CONFIGURAR URLs - SIEMPRE ir a PaymentSuccess para verificar pago
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
-    
     const successUrl = `${baseUrl}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
 
-    // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN
-    let interval = 'month';
-    let intervalCount = 1;
-    
-    if (planId === 'plan_monthly_trial' || planId === 'plan_monthly') {
-      interval = 'month';
-      intervalCount = 1;
-    } else if (planId === 'plan_quarterly') {
-      interval = 'month';
-      intervalCount = 3;
-    } else if (planId === 'plan_annual') {
-      interval = 'year';
-      intervalCount = 1;
-    }
-    
-    console.log('📅 Intervalo configurado:', interval, 'x', intervalCount);
+    console.log('🎁 Aplicando trial de 7 días para todos los planes');
 
-    // ✅ DETERMINAR SI OFRECER TRIAL
-    const offerTrial = !user.has_used_trial && !isReactivation;
-    const trialDays = offerTrial ? 7 : 0;
-
-    console.log('🎁 Ofrecer trial:', offerTrial, '- Días:', trialDays);
-
-    // ✅ CREAR SESIÓN DE CHECKOUT
     const sessionParams = {
       mode: 'subscription',
-      customer: stripeCustomerId, // ✅ SIEMPRE usar customer ID
+      customer: stripeCustomerId,
       allow_promotion_codes: false,
       billing_address_collection: 'required',
       success_url: successUrl,
       cancel_url: cancelUrl,
+      payment_method_collection: 'always',
       metadata: {
         user_id: user.id,
         user_email: user.email,
-        plan_id: planId,
-        is_reactivation: isReactivation.toString(),
-        trial_offered: offerTrial.toString()
+        plan_name: planName,
+        plan_price: planPrice.toString(),
+        platform: 'misautonomos'
       },
       line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: offerTrial ? `${plan.nombre} - 7 días gratis` : plan.nombre,
-            description: plan.descripcion || `Suscripción ${plan.nombre} MisAutónomos`,
-          },
-          unit_amount: Math.round(plan.precio * 100), // ✅ Usar precio del plan
-          recurring: {
-            interval: interval,
-            interval_count: intervalCount
-          }
-        },
+        price: stripePriceId,
         quantity: 1
       }],
       subscription_data: {
+        trial_period_days: 7,
         metadata: {
           user_id: user.id,
           user_email: user.email,
-          plan_id: planId,
+          plan_name: planName,
+          plan_price: planPrice.toString(),
           platform: 'misautonomos'
         }
-      },
-      payment_method_collection: 'always'
+      }
     };
-
-    // ✅ AÑADIR TRIAL SI CORRESPONDE
-    if (offerTrial) {
-      sessionParams.subscription_data.trial_period_days = trialDays;
-    }
 
     console.log('📋 Creando sesión de checkout...');
     const session = await stripe.checkout.sessions.create(sessionParams);
