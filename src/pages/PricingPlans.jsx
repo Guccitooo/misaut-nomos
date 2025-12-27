@@ -258,8 +258,8 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* Plan cards con diseño mejorado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
+          {/* Plan cards - Diseño minimalista profesional */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-16">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isGrowth = plan.plan_id === "plan_growth";
@@ -268,115 +268,127 @@ export default function PricingPlansPage() {
               return (
                 <Card 
                   key={plan.plan_id}
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
-                    isGrowth ? "border-purple-500 shadow-2xl shadow-purple-200 scale-105 z-10" : 
-                    isProfesional ? "border-green-500 shadow-xl" : "border-gray-200"
+                  className={`relative overflow-hidden bg-white transition-all duration-200 hover:shadow-xl ${
+                    isGrowth ? "border border-purple-200 shadow-lg scale-[1.02]" : 
+                    "border border-gray-200 shadow-sm"
                   }`}
+                  style={{ borderRadius: '16px' }}
                 >
                   {badge && (
                     <div className="absolute top-0 left-0 right-0">
-                      <div className={`${badge.color} text-white text-center py-2 text-sm font-bold`}>
+                      <div className={`${badge.color} text-white text-center py-2.5 text-xs font-semibold tracking-wide uppercase`}>
                         {badge.text}
                       </div>
                     </div>
                   )}
 
-                  <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
-                    <div className="text-center mb-6">
-                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
-                        plan.plan_id === "plan_profesional" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
-                        "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
-                      }`}>
-                        {getPlanIcon(plan.plan_id)}
-                      </div>
-
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <CardContent className={`p-8 ${badge ? 'pt-16' : 'pt-8'}`}>
+                    {/* Header del plan */}
+                    <div className="mb-8">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4">
                         {plan.nombre}
                       </h3>
 
-                      <div className="mb-3">
-                        <p className="text-6xl font-black text-gray-900">
-                          0€
-                        </p>
-                        <p className="text-lg text-gray-600 font-semibold mt-2">
+                      <div className="mb-6">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-5xl font-bold text-gray-900">0€</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
                           {t('firstSevenDays')}
                         </p>
-                        <p className="text-sm text-gray-500 mt-3">
-                          {t('then')} {Math.round(plan.precio)}€{t('perMonth')}
+                        <p className="text-sm text-gray-500 mt-1">
+                          Luego {Math.round(plan.precio)}€/mes
                         </p>
                       </div>
                     </div>
 
-                    <ul className="space-y-3 mb-6">
+                    {/* Lista de beneficios limpia */}
+                    <ul className="space-y-3.5 mb-8">
                       {plan.plan_id === "plan_profesional" ? (
                         <>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">✅ {t('appearInSearches')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('appearInSearches')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">💬 {t('directChatWithClients')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('directChatWithClients')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">📋 {t('completeCRM')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('completeCRM')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">📄 {t('invoicingSystem')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('invoicingSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">💳 {t('integratedPaymentGateway')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('integratedPaymentGateway')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">🎫 {t('support247')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('support247')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">⭐ {t('ratingsSystem')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('ratingsSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">📸 {t('unlimitedPhotoGallery')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('unlimitedPhotoGallery')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('cancelAnytime')}</span>
                           </li>
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-3 text-sm bg-purple-50 p-3 rounded-lg">
-                            <span className="text-purple-900 font-semibold">
-                              <strong>🚀 Inversión Directa en Clientes:</strong><br/>
-                              Incluye 20€/mes de inversión real en Meta Ads (Facebook e Instagram). Nosotros configuramos y optimizamos tu publicidad para que te lleguen contactos.
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">
+                              <strong className="text-gray-900">Inversión en Meta Ads:</strong> 20€/mes de inversión real gestionada por nosotros
                             </span>
                           </li>
-                          <li className="flex items-start gap-3 text-sm bg-yellow-50 p-3 rounded-lg">
-                            <span className="text-yellow-900 font-semibold">
-                              <strong>⭐ Sello de Profesional Destacado:</strong><br/>
-                              Tu perfil aparecerá con una insignia dorada de "Recomendado" y se mostrará siempre en las primeras posiciones de tu ciudad.
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">
+                              <strong className="text-gray-900">Sello de Destacado:</strong> Insignia dorada y primeras posiciones en tu ciudad
                             </span>
                           </li>
-                          <li className="flex items-start gap-3 text-sm bg-blue-50 p-3 rounded-lg">
-                            <span className="text-blue-900 font-semibold">
-                              <strong>💼 Gestión VIP:</strong><br/>
-                              Soporte técnico prioritario y asistencia en la creación de tu portfolio para maximizar tus ventas.
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">
+                              <strong className="text-gray-900">Gestión VIP:</strong> Soporte prioritario y asistencia en portfolio
                             </span>
                           </li>
-                          <li className="flex items-start gap-3 text-sm bg-green-50 p-3 rounded-lg">
-                            <span className="text-green-900 font-semibold">
-                              <strong>📊 Analítica de Rendimiento:</strong><br/>
-                              Recibe un informe mensual de cuántas personas han visto tu perfil y cuántas han hecho clic para contactarte.
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">
+                              <strong className="text-gray-900">Analítica:</strong> Informe mensual de vistas y contactos
                             </span>
                           </li>
-                          <li className="flex items-start gap-2 text-sm">
-                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">Todo lo del Plan Profesional incluido</span>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{t('cancelAnytime')}</span>
                           </li>
                         </>
                       )}
                     </ul>
 
+                    {/* Botón CTA limpio */}
                     <Button
-                      className={`w-full h-12 text-base font-bold transition-all ${
+                      className={`w-full h-12 text-base font-semibold transition-all ${
                         isProfesional 
-                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
-                          : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                          ? "bg-green-600 hover:bg-green-700 text-white" 
+                          : "bg-purple-600 hover:bg-purple-700 text-white"
                       }`}
+                      style={{ borderRadius: '8px' }}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}
                       aria-label={`Seleccionar plan ${plan.nombre}`}
@@ -392,7 +404,7 @@ export default function PricingPlansPage() {
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 mt-3">
-                      {t('clickGoToCheckout')}
+                      Pago 100% seguro con Stripe
                     </p>
                   </CardContent>
                 </Card>
