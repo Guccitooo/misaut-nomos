@@ -155,7 +155,7 @@ export default function PricingPlansPage() {
       case "plan_profesional": 
         return { text: "Más popular", color: "bg-green-500" };
       case "plan_growth": 
-        return { text: "Crecimiento", color: "bg-purple-500" };
+        return { text: "EL PLAN QUE MÁS CLIENTES GENERA", color: "bg-gradient-to-r from-purple-600 to-pink-600" };
       default: 
         return null;
     }
@@ -262,13 +262,15 @@ export default function PricingPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
-              const isPopular = plan.plan_id === "plan_profesional";
+              const isGrowth = plan.plan_id === "plan_growth";
+              const isProfesional = plan.plan_id === "plan_profesional";
 
               return (
                 <Card 
                   key={plan.plan_id}
                   className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
-                    isPopular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
+                    isGrowth ? "border-purple-500 shadow-2xl shadow-purple-200 scale-105 z-10" : 
+                    isProfesional ? "border-green-500 shadow-xl" : "border-gray-200"
                   }`}
                 >
                   {badge && (
@@ -305,58 +307,64 @@ export default function PricingPlansPage() {
                       </div>
                     </div>
 
-                    <ul className="space-y-2 mb-6">
+                    <ul className="space-y-3 mb-6">
                       {plan.plan_id === "plan_profesional" ? (
                         <>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">✅ {t('appearInSearches')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">💬 {t('directChatWithClients')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">📋 {t('completeCRM')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">📄 {t('invoicingSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">💳 {t('integratedPaymentGateway')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">🎫 {t('support247')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">⭐ {t('ratingsSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">📸 {t('unlimitedPhotoGallery')}</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
                           </li>
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">✅ Todo lo del Plan Profesional</span>
+                          <li className="flex items-start gap-3 text-sm bg-purple-50 p-3 rounded-lg">
+                            <span className="text-purple-900 font-semibold">
+                              <strong>🚀 Inversión Directa en Clientes:</strong><br/>
+                              Incluye 20€/mes de inversión real en Meta Ads (Facebook e Instagram). Nosotros configuramos y optimizamos tu publicidad para que te lleguen contactos.
+                            </span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">🚀 20€/mes en anuncios de Meta Ads gestionados</span>
+                          <li className="flex items-start gap-3 text-sm bg-yellow-50 p-3 rounded-lg">
+                            <span className="text-yellow-900 font-semibold">
+                              <strong>⭐ Sello de Profesional Destacado:</strong><br/>
+                              Tu perfil aparecerá con una insignia dorada de "Recomendado" y se mostrará siempre en las primeras posiciones de tu ciudad.
+                            </span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📊 Análisis y optimización de campañas</span>
+                          <li className="flex items-start gap-3 text-sm bg-blue-50 p-3 rounded-lg">
+                            <span className="text-blue-900 font-semibold">
+                              <strong>💼 Gestión VIP:</strong><br/>
+                              Soporte técnico prioritario y asistencia en la creación de tu portfolio para maximizar tus ventas.
+                            </span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">🎯 Segmentación avanzada de audiencias</span>
+                          <li className="flex items-start gap-3 text-sm bg-green-50 p-3 rounded-lg">
+                            <span className="text-green-900 font-semibold">
+                              <strong>📊 Analítica de Rendimiento:</strong><br/>
+                              Recibe un informe mensual de cuántas personas han visto tu perfil y cuántas han hecho clic para contactarte.
+                            </span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📈 Mayor visibilidad y más clientes</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">💼 Gestor de anuncios dedicado</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
+                          <li className="flex items-start gap-2 text-sm">
                             <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
                           </li>
                         </>
@@ -499,6 +507,25 @@ export default function PricingPlansPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Nota de transparencia sobre anuncios */}
+            <Card className="border-0 shadow-md bg-purple-50 border-l-4 border-purple-600 mt-6">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Info className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-purple-900 mb-2">Sobre los anuncios del Plan Growth</h3>
+                    <p className="text-sm text-purple-800">
+                      Los 20€ mensuales se destinan íntegramente a la plataforma publicitaria Meta (Facebook e Instagram). 
+                      Nosotros configuramos, optimizamos y gestionamos tus campañas para maximizar el retorno. 
+                      <strong> Resultados sujetos a la demanda del sector en tu zona.</strong>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
