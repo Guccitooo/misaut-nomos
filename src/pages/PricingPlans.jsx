@@ -1,78 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Check, Star, TrendingUp, Megaphone, Shield, FileText, BarChart3, Zap, Users, Crown } from "lucide-react";
+import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
+import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-
-// ⚠️ CONFIGURACIÓN CRÍTICA DE STRIPE - SIGUE ESTOS PASOS:
-// 
-// PASO 1: Ir a Stripe Dashboard
-//   → https://dashboard.stripe.com/products
-// 
-// PASO 2: Crear "Plan Profesional MisAutónomos"
-//   - Clic en "+ Agregar producto"
-//   - Nombre: Plan Profesional MisAutónomos
-//   - Modelo de precio: Recurrente
-//   - Precio: 30 EUR
-//   - Periodo de facturación: Mensual
-//   - Guardar producto
-//   - Copiar el "Price ID" (empieza con price_)
-// 
-// PASO 3: Crear "Plan Growth MisAutónomos"  
-//   - Repetir proceso con precio 50 EUR mensual
-// 
-// PASO 4: Pegar los Price IDs aquí abajo
-const PLANS_CONFIG = {
-  profesional: {
-    name: "Plan Profesional",
-    price: 30,
-    stripePriceId: "price_1QkqHfRvqDrBRILCQzVJb5h0", // ⚠️ REEMPLAZAR con tu Price ID real
-    interval: "mes",
-    popular: false,
-    icon: Star,
-    gradient: "from-blue-600 to-blue-700",
-    features: [
-      { text: "Perfil verificado en el directorio", included: true },
-      { text: "Presencia prioritaria en búsquedas", included: true },
-      { text: "Sistema de facturación electrónica", included: true },
-      { text: "Gestión de presupuestos ilimitados", included: true },
-      { text: "CRM para gestión de clientes", included: true },
-      { text: "Chat directo con clientes", included: true },
-      { text: "Sistema de valoraciones", included: true },
-      { text: "Galería de fotos ilimitada", included: true },
-      { text: "Soporte por tickets 24/7", included: true },
-      { text: "Campaña publicitaria gestionada", included: false }
-    ]
-  },
-  growth: {
-    name: "Plan Growth",
-    price: 50,
-    stripePriceId: "price_1QkqIPRvqDrBRILC8VQ3rZYc", // ⚠️ REEMPLAZAR con tu Price ID real
-    interval: "mes",
-    popular: true,
-    icon: Megaphone,
-    gradient: "from-green-600 to-emerald-600",
-    badge: "Recomendado",
-    adBudget: 20,
-    features: [
-      { text: "Todo lo incluido en Plan Profesional", included: true, highlight: true },
-      { text: "20€/mes invertidos en publicidad", included: true, highlight: true },
-      { text: "Anuncios en Facebook e Instagram Ads", included: true, highlight: true },
-      { text: "Configuración técnica por MisAutónomos", included: true, highlight: true },
-      { text: "Segmentación local automática", included: true, highlight: true },
-      { text: "Reportes mensuales de resultados", included: true, highlight: true },
-      { text: "Optimización continua de campañas", included: true, highlight: true },
-      { text: "Mayor visibilidad y más clientes", included: true, highlight: true }
-    ]
-  }
-};
+import ProFeaturesSection from "../components/pricing/ProFeaturesSection";
 
 export default function PricingPlansPage() {
   const { t } = useLanguage();
@@ -83,6 +23,29 @@ export default function PricingPlansPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const canceled = searchParams.get("canceled");
+
+  const { data: plans = [], isLoading: loadingPlans } = useQuery({
+    queryKey: ['subscriptionPlans'],
+    queryFn: async () => {
+      const allPlans = await base44.entities.SubscriptionPlan.list();
+      const planMap = new Map();
+      
+      const validPlanIds = ['plan_monthly_trial', 'plan_quarterly', 'plan_annual'];
+      
+      allPlans.forEach(plan => {
+        if (validPlanIds.includes(plan.plan_id)) {
+          const existingPlan = planMap.get(plan.plan_id);
+          if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
+            planMap.set(plan.plan_id, plan);
+          }
+        }
+      });
+      
+      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
+    },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  });
 
   useEffect(() => {
     loadUser();
@@ -96,6 +59,26 @@ export default function PricingPlansPage() {
     }
   }, [canceled]);
 
+  useEffect(() => {
+    if (!user || plans.length === 0) return;
+
+    const pendingPlan = localStorage.getItem('pending_plan_selection');
+    if (pendingPlan) {
+      try {
+        const planData = JSON.parse(pendingPlan);
+        localStorage.removeItem('pending_plan_selection');
+        
+        const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
+        
+        if (fullPlan) {
+          handleSelectPlan(fullPlan);
+        }
+      } catch (error) {
+        localStorage.removeItem('pending_plan_selection');
+      }
+    }
+  }, [user, plans]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
@@ -105,227 +88,160 @@ export default function PricingPlansPage() {
     }
   };
 
-  const handleSelectPlan = async (planKey) => {
-    const plan = PLANS_CONFIG[planKey];
-    
-    console.log('═══════════════════════════════════════════');
-    console.log('🛒 INICIO PROCESO DE PAGO');
-    console.log('Plan seleccionado:', planKey);
-    console.log('Nombre del plan:', plan.name);
-    console.log('Price ID:', plan.stripePriceId);
-    console.log('Precio:', plan.price, '€');
-    console.log('═══════════════════════════════════════════');
-    
+  const handleSelectPlan = async (plan) => {
     if (!user) {
-      console.log('❌ Usuario no autenticado - redirigiendo a login');
       localStorage.setItem('pending_plan_selection', JSON.stringify({
-        plan_key: planKey,
-        precio: plan.price,
+        plan_id: plan.plan_id,
+        precio: plan.precio,
         timestamp: Date.now()
       }));
+      
       base44.auth.redirectToLogin(window.location.href);
       return;
     }
 
-    console.log('✅ Usuario autenticado:', user.email, '(ID:', user.id, ')');
-    
-    // Validar Price ID antes de enviar
-    if (!plan.stripePriceId || plan.stripePriceId.includes('_xxxxx') || !plan.stripePriceId.startsWith('price_')) {
-      console.error('❌ CRITICAL: Price ID inválido:', plan.stripePriceId);
-      toast.error('❌ Configuración incorrecta: Los Price IDs no están configurados. Contacta con soporte.', {
-        duration: 10000
-      });
-      return;
-    }
-
-    setSelectedPlan(planKey);
+    setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
-    
-    console.log('⏰ Configurando timeout de 15 segundos...');
-    const timeoutId = setTimeout(() => {
-      console.error('❌ TIMEOUT: La solicitud superó los 15 segundos');
-      console.error('Posibles causas:');
-      console.error('1. Servidor no responde');
-      console.error('2. Price ID no existe en Stripe');
-      console.error('3. Claves de Stripe incorrectas');
-      console.error('4. Problemas de red');
-      
-      toast.error('⏱️ Timeout: El servidor no responde. Verifica la configuración de Stripe.', {
-        duration: 10000
-      });
-      setIsProcessing(false);
-      setSelectedPlan(null);
-    }, 15000);
 
     try {
-      console.log('\n📤 Enviando solicitud al backend...');
-      console.log('Función: createCheckoutSession');
-      console.log('Parámetros:', {
-        stripePriceId: plan.stripePriceId,
-        planName: plan.name,
-        planPrice: plan.price,
-        isReactivation: false
-      });
-      
-      const startTime = Date.now();
+      console.log('🛒 Creando sesión de checkout para plan:', plan.plan_id);
       
       const response = await base44.functions.invoke('createCheckoutSession', {
-        stripePriceId: plan.stripePriceId,
-        planName: plan.name,
-        planPrice: plan.price,
+        planId: plan.plan_id,
+        planPrice: plan.precio,
         isReactivation: false
       });
-      
-      const elapsed = Date.now() - startTime;
-      console.log(`\n✅ Respuesta recibida en ${elapsed}ms`);
 
-      clearTimeout(timeoutId);
+      console.log('📦 Respuesta del servidor:', response);
 
-      console.log('\n📦 RESPUESTA DEL SERVIDOR:');
-      console.log('Status:', response.status);
-      console.log('Data:', JSON.stringify(response.data, null, 2));
-
-      // Validar estructura de respuesta
-      if (!response) {
-        throw new Error('❌ No se recibió respuesta del servidor (response is null/undefined)');
-      }
-
-      if (!response.data) {
-        throw new Error('❌ Respuesta sin data: ' + JSON.stringify(response));
-      }
-
-      // Verificar errores del servidor
-      if (response.data.error) {
-        console.error('❌ ERROR DEL SERVIDOR:', response.data.error);
-        if (response.data.detailedError) {
-          console.error('📋 Detalle técnico:', response.data.detailedError);
-        }
+      if (response.data?.error) {
         throw new Error(response.data.error);
       }
 
-      // Verificar URL de redirección
-      if (!response.data.url) {
-        console.error('❌ CRITICAL: No hay URL en la respuesta');
-        console.error('Respuesta completa:', JSON.stringify(response.data));
-        throw new Error('El servidor no devolvió una URL de pago válida');
-      }
-
-      // Validar formato de URL
-      if (!response.data.url.startsWith('https://checkout.stripe.com/')) {
-        console.error('❌ URL inválida:', response.data.url);
-        throw new Error('URL de Stripe no válida');
-      }
-
-      console.log('\n✅ URL DE STRIPE OBTENIDA:');
-      console.log('URL:', response.data.url);
-      console.log('Session ID:', response.data.sessionId);
-      console.log('Customer ID:', response.data.customerId);
-      
-      console.log('\n🔄 REDIRIGIENDO A STRIPE EN 500ms...');
-      
-      // Pequeño delay para asegurar que los logs se muestren
-      setTimeout(() => {
-        console.log('🚀 Ejecutando redirección ahora...');
+      if (response.data?.url) {
+        console.log('✅ Redirigiendo a Stripe:', response.data.url);
         window.location.href = response.data.url;
-      }, 500);
-      
-      return;
-      
-    } catch (err) {
-      clearTimeout(timeoutId);
-      
-      console.error('\n═══════════════════════════════════════════');
-      console.error('❌ ERROR EN PROCESO DE PAGO');
-      console.error('Tipo de error:', err.constructor.name);
-      console.error('Mensaje:', err.message);
-      console.error('Stack:', err.stack);
-      console.error('═══════════════════════════════════════════\n');
-      
-      const errorMessage = err.message || "Error desconocido al procesar el pago";
-      
-      // Análisis específico de errores
-      if (errorMessage.includes('Price ID') || errorMessage.includes('No such price')) {
-        console.error('💡 DIAGNÓSTICO: Price ID no existe en Stripe Dashboard');
-        toast.error('❌ Los Price IDs no existen en tu cuenta de Stripe', {
-          duration: 10000
-        });
-        setTimeout(() => {
-          toast.info('📝 SOLUCIÓN: Ve a https://dashboard.stripe.com/products y crea los productos con precios 30€ y 50€/mes. Luego actualiza los Price IDs en PricingPlans.js líneas 26 y 39.', {
-            duration: 15000
-          });
-        }, 1500);
-      } else if (errorMessage.includes('STRIPE_SECRET_KEY') || errorMessage.includes('API Key')) {
-        console.error('💡 DIAGNÓSTICO: Problema con las API Keys de Stripe');
-        toast.error('❌ Claves de Stripe no configuradas o inválidas', {
-          duration: 8000
-        });
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        console.error('💡 DIAGNÓSTICO: Problema de conectividad');
-        toast.error('❌ Error de red. Verifica tu conexión a internet.', {
-          duration: 8000
-        });
-      } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
-        console.error('💡 DIAGNÓSTICO: Problema de autenticación');
-        toast.error('❌ Sesión expirada. Recarga la página e intenta de nuevo.', {
-          duration: 8000
-        });
       } else {
-        console.error('💡 DIAGNÓSTICO: Error desconocido');
-        toast.error(`❌ ${errorMessage}`, {
-          duration: 10000
-        });
+        console.error('❌ Sin URL en respuesta:', response);
+        throw new Error('No se pudo crear la sesión de pago');
       }
-      
+    } catch (err) {
+      console.error('❌ Error en handleSelectPlan:', err);
+      toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
       setIsProcessing(false);
       setSelectedPlan(null);
     }
   };
 
+  const handleGoBack = () => {
+    navigate(createPageUrl("Search"));
+  };
+
+  const getPlanIcon = (planId) => {
+    switch (planId) {
+      case "plan_monthly_trial": return <Zap className="w-10 h-10" />;
+      case "plan_quarterly": return <TrendingUp className="w-10 h-10" />;
+      case "plan_annual": return <Crown className="w-10 h-10" />;
+      default: return <CheckCircle className="w-10 h-10" />;
+    }
+  };
+
+  const getPlanBadge = (planId) => {
+    switch (planId) {
+      case "plan_monthly_trial": 
+        return { text: t('sevenDaysTrial'), color: "bg-blue-500" };
+      case "plan_quarterly": 
+        return { text: t('mostPopular'), color: "bg-green-500" };
+      case "plan_annual": 
+        return { text: t('bestValue'), color: "bg-orange-500" };
+      default: 
+        return null;
+    }
+  };
+
+  const getPlanFeatures = () => [
+    `✅ ${t('appearInSearches')}`,
+    `💬 ${t('directChatWithClients')}`,
+    `📋 ${t('completeCRM')}`,
+    `📄 ${t('invoicingSystem')}`,
+    `💳 ${t('integratedPaymentGateway')}`,
+    `🎫 ${t('support247')}`,
+    `⭐ ${t('ratingsSystem')}`,
+    `📸 ${t('unlimitedPhotoGallery')}`,
+    `🔧 ${t('jobManagement')}`,
+    `❌ ${t('cancelAnytime')}`
+  ];
+
+  if (loadingPlans) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+      </div>
+    );
+  }
+
+  if (!loadingPlans && plans.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
+        <div className="text-center">
+          <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('noPlansAvailable')}</h2>
+          <p className="text-gray-600 mb-4">{t('plansBeingConfigured')}</p>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            {t('reloadPage')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <SEOHead 
-        title="Planes y Precios - Aumenta tus Clientes | MisAutónomos"
-        description="Plan Profesional 30€/mes: Presencia verificada. Plan Growth 50€/mes: + 20€ en publicidad gestionada. Sin permanencia, cancela cuando quieras."
-        keywords="planes autónomos, precio directorio, publicidad autónomos, facebook ads, instagram ads, facturación autónomos"
+        title="Planes y Precios - MisAutónomos | 7 Días Gratis"
+        description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 7 días gratis. Sin permanencia."
+        keywords="planes autónomos, precios profesionales, 7 días gratis, suscripción mensual, plan anual"
       />
+      <SubscriptionProductSchema plans={plans} />
       
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <Button
             variant="ghost"
-            onClick={() => navigate(createPageUrl("Search"))}
+            onClick={handleGoBack}
             className="mb-6 hover:bg-blue-50"
+            aria-label={t('back')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
+            {t('back')}
           </Button>
 
-          {/* Hero Section */}
+          {/* Hero Section mejorado */}
           <div className="text-center mb-12">
-            <Badge className="bg-green-500 text-white px-6 py-2 text-sm font-bold mb-4">
-              🚀 Sin permanencia • Cancela cuando quieras
-            </Badge>
-            
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg animate-pulse">
+              <Gift className="w-6 h-6" />
+              {t('sevenDaysTrial')}
+            </div>
+
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 leading-tight">
-              Aumenta tus Clientes con<br />MisAutónomos
+              {t('startFreeToday')}
             </h1>
-            
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-              Presencia verificada en el directorio líder de autónomos en España. 
-              Recibe solicitudes de clientes reales, gestiona tus presupuestos y facturas desde un solo lugar.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
+              {t('noCommitment')} • {t('cancelAnytime')} • {t('securePayment')}
             </p>
             
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
+            {/* Trust badges */}
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600" />
                 <span>Pago 100% seguro</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                <span>+5.000 búsquedas diarias</span>
+                <span>+5.000 búsquedas/día</span>
               </div>
               <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-600" />
+                <Clock className="w-5 h-5 text-purple-600" />
                 <span>Activo en minutos</span>
               </div>
             </div>
@@ -333,107 +249,105 @@ export default function PricingPlansPage() {
 
           {canceled && (
             <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Pago cancelado. No te preocupes, puedes volver cuando quieras.
+                {t('paymentCanceled')}
               </AlertDescription>
             </Alert>
           )}
 
-          {/* TABLA COMPARATIVA DE PLANES */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 max-w-5xl mx-auto">
-            {Object.entries(PLANS_CONFIG).map(([key, plan]) => {
-              const Icon = plan.icon;
-              const isGrowth = key === 'growth';
+          {/* Plan cards con diseño mejorado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {plans.map((plan) => {
+              const badge = getPlanBadge(plan.plan_id);
+              const isPopular = plan.plan_id === "plan_quarterly";
               
               return (
                 <Card 
-                  key={key}
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${
-                    plan.popular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
+                  key={plan.plan_id}
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
+                    isPopular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
                   }`}
                 >
-                  {plan.badge && (
+                  {badge && (
                     <div className="absolute top-0 left-0 right-0">
-                      <div className={`bg-gradient-to-r ${plan.gradient} text-white text-center py-2 text-sm font-bold`}>
-                        ⭐ {plan.badge}
+                      <div className={`${badge.color} text-white text-center py-2 text-sm font-bold`}>
+                        {badge.text}
                       </div>
                     </div>
                   )}
 
-                  <CardContent className={`p-8 ${plan.badge ? 'pt-14' : 'pt-8'}`}>
+                  <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
                     <div className="text-center mb-6">
-                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br ${plan.gradient} text-white`}>
-                        <Icon className="w-10 h-10" />
+                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
+                        plan.plan_id === "plan_monthly_trial" ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white" :
+                        plan.plan_id === "plan_quarterly" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
+                        "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
+                      }`}>
+                        {getPlanIcon(plan.plan_id)}
                       </div>
 
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        {plan.name}
-                      </h2>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                        {plan.plan_id === "plan_monthly_trial" ? t('monthly') : 
+                         plan.plan_id === "plan_quarterly" ? t('quarterly') : 
+                         t('annual')}
+                      </h3>
 
-                      <div className="mb-4">
-                        <p className="text-5xl font-black text-gray-900">
-                          {plan.price}€
+                      <div className="mb-3">
+                        <p className="text-6xl font-black text-gray-900">
+                          0€
                         </p>
-                        <p className="text-gray-600 font-medium">
-                          al mes
+                        <p className="text-lg text-gray-600 font-semibold mt-2">
+                          {t('firstSevenDays')}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-3">
+                          {t('then')} {Math.round(plan.precio)}€
+                          {plan.plan_id === "plan_monthly_trial" ? t('perMonth') : 
+                           plan.plan_id === "plan_quarterly" ? ` ${t('every3Months')}` : 
+                           t('perYear')}
                         </p>
                       </div>
 
-                      {isGrowth && (
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200 p-3 mb-4">
-                          <p className="text-sm font-bold text-green-700 flex items-center justify-center gap-2">
-                            <Megaphone className="w-4 h-4" />
-                            Incluye 20€/mes en publicidad gestionada
-                          </p>
-                          <p className="text-xs text-green-600 mt-1">
-                            Nosotros configuramos y optimizamos tus anuncios
+                      {plan.plan_id !== "plan_monthly_trial" && (
+                        <div className="mt-3 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                          <p className="text-sm font-bold text-green-700">
+                            {plan.plan_id === "plan_quarterly" && t('save10')}
+                            {plan.plan_id === "plan_annual" && t('save20')}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className={`flex items-start gap-3 text-sm ${feature.highlight ? 'font-semibold' : ''}`}>
-                          <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                            feature.included 
-                              ? (feature.highlight ? 'text-green-600' : 'text-blue-600')
-                              : 'text-gray-300'
-                          }`} />
-                          <span className={feature.included ? 'text-gray-900' : 'text-gray-400'}>
-                            {feature.text}
-                          </span>
+                    <ul className="space-y-2 mb-6">
+                      {getPlanFeatures().map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs">
+                          <span className="text-gray-700">{feature}</span>
                         </li>
                       ))}
                     </ul>
 
                     <Button
-                      className={`w-full h-12 text-base font-bold transition-all shadow-lg ${
-                        plan.popular 
-                          ? `bg-gradient-to-r ${plan.gradient} hover:shadow-xl` 
+                      className={`w-full h-12 text-base font-bold transition-all ${
+                        isPopular 
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
                           : "bg-blue-600 hover:bg-blue-700"
                       }`}
-                      onClick={() => handleSelectPlan(key)}
-                      disabled={isProcessing && selectedPlan === key}
+                      onClick={() => handleSelectPlan(plan)}
+                      disabled={isProcessing && selectedPlan === plan.plan_id}
+                      aria-label={`Seleccionar plan ${plan.nombre}`}
                     >
-                      {isProcessing && selectedPlan === key ? (
+                      {isProcessing && selectedPlan === plan.plan_id ? (
                         <>
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Procesando...
+                          {t('processing')}
                         </>
                       ) : (
-                        <>
-                          {plan.popular && <Crown className="w-5 h-5 mr-2" />}
-                          Empieza 7 días gratis
-                        </>
+                        t('startNow')
                       )}
                     </Button>
 
-                    <p className="text-xs text-center text-gray-600 mt-2 leading-relaxed">
-                      🎁 <strong>Prueba 7 días gratis.</strong> No se te cobrará nada hasta el día 7 y puedes cancelar cuando quieras.
-                    </p>
-                    <p className="text-xs text-center text-gray-500 mt-1">
-                      Pago seguro con Stripe • Sin permanencia
+                    <p className="text-xs text-center text-gray-500 mt-3">
+                      {t('clickGoToCheckout')}
                     </p>
                   </CardContent>
                 </Card>
@@ -441,419 +355,63 @@ export default function PricingPlansPage() {
             })}
           </div>
 
-          {/* TABLA COMPARATIVA DETALLADA */}
-          <div className="max-w-5xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-              Comparativa de Planes
-            </h2>
-            
-            <Card className="overflow-hidden border-0 shadow-lg">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-blue-50">
-                      <th className="px-6 py-4 text-left font-bold text-gray-900">Funcionalidad</th>
-                      <th className="px-6 py-4 text-center font-bold text-gray-900">
-                        Profesional<br />
-                        <span className="text-2xl">30€</span>
-                      </th>
-                      <th className="px-6 py-4 text-center font-bold text-green-700 bg-green-50">
-                        Growth 🌟<br />
-                        <span className="text-2xl">50€</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 text-gray-900 font-medium">Perfil en directorio MisAutónomos</td>
-                      <td className="px-6 py-4 text-center"><Check className="w-5 h-5 text-blue-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center bg-green-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-900 font-medium">Sistema de facturación electrónica</td>
-                      <td className="px-6 py-4 text-center"><Check className="w-5 h-5 text-blue-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center bg-green-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-900 font-medium">CRM y gestión de clientes</td>
-                      <td className="px-6 py-4 text-center"><Check className="w-5 h-5 text-blue-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center bg-green-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-900 font-medium">Presupuestos ilimitados</td>
-                      <td className="px-6 py-4 text-center"><Check className="w-5 h-5 text-blue-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center bg-green-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-900 font-medium">Valoraciones de clientes</td>
-                      <td className="px-6 py-4 text-center"><Check className="w-5 h-5 text-blue-600 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center bg-green-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="px-6 py-4 text-gray-900 font-bold">
-                        <div className="flex items-center gap-2">
-                          <Megaphone className="w-5 h-5 text-green-600" />
-                          Inversión publicitaria mensual
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center text-gray-400 font-medium">—</td>
-                      <td className="px-6 py-4 text-center bg-green-100">
-                        <span className="font-bold text-green-700">20€/mes</span>
-                      </td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="px-6 py-4 text-gray-900 font-medium">Configuración técnica de anuncios</td>
-                      <td className="px-6 py-4 text-center text-gray-400">—</td>
-                      <td className="px-6 py-4 text-center bg-green-100"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="px-6 py-4 text-gray-900 font-medium">Anuncios en Facebook e Instagram</td>
-                      <td className="px-6 py-4 text-center text-gray-400">—</td>
-                      <td className="px-6 py-4 text-center bg-green-100"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                    <tr className="bg-yellow-50">
-                      <td className="px-6 py-4 text-gray-900 font-medium">Reportes de rendimiento publicitario</td>
-                      <td className="px-6 py-4 text-center text-gray-400">—</td>
-                      <td className="px-6 py-4 text-center bg-green-100"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+          {/* Pro Features Section */}
+          <div className="mb-12">
+            <ProFeaturesSection />
           </div>
 
-          {/* BENEFICIOS DEL PLAN GROWTH */}
-          <div className="max-w-5xl mx-auto mb-12">
-            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <Badge className="bg-green-600 text-white px-4 py-1 mb-3">
-                    Plan Growth
-                  </Badge>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    ¿Por qué invertir 20€ más al mes?
-                  </h2>
-                  <p className="text-gray-700">
-                    Tu tiempo vale más que configurar anuncios. Nosotros lo hacemos por ti.
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-lg p-6 shadow-sm">
-                    <TrendingUp className="w-10 h-10 text-green-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Mayor alcance</h3>
-                    <p className="text-sm text-gray-600">
-                      Tus servicios aparecen en Facebook e Instagram ante miles de potenciales clientes en tu zona
-                    </p>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-6 shadow-sm">
-                    <Zap className="w-10 h-10 text-green-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Sin complicaciones</h3>
-                    <p className="text-sm text-gray-600">
-                      Olvidate de configurar píxeles, audiencias o pujas. Nosotros gestionamos todo técnicamente
-                    </p>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-6 shadow-sm">
-                    <BarChart3 className="w-10 h-10 text-green-600 mb-3" />
-                    <h3 className="font-bold text-gray-900 mb-2">Resultados medibles</h3>
-                    <p className="text-sm text-gray-600">
-                      Recibe reportes mensuales de impresiones, clics y conversiones de tu campaña
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg p-6 mt-6 border-2 border-green-300">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    <strong className="text-green-700">💰 Inversión real:</strong> Los 20€ van íntegros a Meta (Facebook/Instagram). 
-                    Tú pagas 50€/mes en total: 30€ por tu presencia en MisAutónomos + 20€ que nosotros invertimos directamente en tu publicidad.
-                    <br /><br />
-                    <strong className="text-green-700">⚙️ Configuración técnica incluida:</strong> Creamos tus anuncios, segmentamos tu audiencia local, optimizamos pujas y te enviamos reportes. 
-                    Sin costes ocultos ni sorpresas.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* FAQ ESPECÍFICA PLANES */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-              Preguntas Frecuentes
-            </h2>
-
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">¿Qué incluye el Plan Profesional de 30€/mes?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    Tu perfil verificado aparece en el directorio de MisAutónomos, donde más de 5.000 personas buscan profesionales cada día. 
-                    Incluye herramientas de facturación electrónica, gestión de presupuestos, CRM para clientes, chat directo y sistema de valoraciones. 
-                    Todo lo que necesitas para digitalizar tu negocio como autónomo.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-blue-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    🎁 ¿Cómo funciona el periodo de prueba de 7 días?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-blue-700">Acceso completo desde el día 1:</strong> Activa tu perfil profesional y accede a todas las funcionalidades del plan elegido (Profesional o Growth) de forma inmediata.
-                  </p>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-blue-700">Tarjeta requerida (sin cargo):</strong> Necesitamos tu método de pago para iniciar el trial, pero NO se realizará ningún cobro durante los primeros 7 días.
-                  </p>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-blue-700">Primer cobro al día 8:</strong> Si decides continuar, el primer cargo se realizará automáticamente el día 8. A partir de ahí, la renovación será mensual.
-                  </p>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-blue-700">Cancela sin coste:</strong> Puedes cancelar tu suscripción en cualquier momento durante el trial desde tu panel de control. Si cancelas antes del día 8, no se te cobrará nada.
-                  </p>
-                  <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200 mt-3">
-                    💡 <strong>Consejo:</strong> Aprovecha los 7 días para configurar tu perfil, subir fotos de tus trabajos y empezar a recibir contactos de clientes potenciales.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Megaphone className="w-5 h-5 text-green-600" />
-                    ¿Cómo funcionan los 20€ de publicidad del Plan Growth?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-green-700">Inversión directa:</strong> Los 20€ adicionales se invierten íntegramente en Facebook Ads e Instagram Ads cada mes para promocionar tu perfil específico.
-                  </p>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-green-700">Nosotros gestionamos:</strong> Nuestro equipo configura la campaña, crea los anuncios, segmenta la audiencia local (radio de 20-50km según tu zona de servicio), optimiza las pujas y monitoriza los resultados.
-                  </p>
-                  <p className="text-gray-700 mb-3">
-                    <strong className="text-green-700">Reportes mensuales:</strong> Recibes un informe con impresiones, clics, clientes potenciales generados y coste por resultado.
-                  </p>
-                  <p className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    ⚠️ <strong>Importante:</strong> Los resultados dependen del mercado, la competencia en tu zona y la época del año. 
-                    MisAutónomos no garantiza un número específico de clientes, pero optimizamos constantemente para maximizar tu retorno de inversión.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">¿Puedo cambiar de plan o cancelar cuando quiera?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    Sí, sin permanencia. Puedes cambiar de Plan Profesional a Growth (o viceversa) o cancelar tu suscripción en cualquier momento desde tu panel de control. 
-                    No hay penalizaciones ni costes adicionales. Si cancelas, tu perfil permanecerá activo hasta el final del período ya pagado.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">¿Qué pasa si mi categoría tiene mucha competencia?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    Con el Plan Growth, tus anuncios llegan más allá del directorio orgánico. Mientras que en el Plan Profesional solo apareces cuando alguien busca en MisAutónomos, 
-                    con Growth tus servicios se muestran activamente en Facebook e Instagram a usuarios que aún no conocen la plataforma, multiplicando tu alcance.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">¿Los clientes pueden contactarme directamente?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    Sí, con ambos planes. Los clientes ven tu perfil con tus métodos de contacto preferidos (chat interno, WhatsApp, teléfono) y pueden solicitarte presupuestos directamente. 
-                    Tú decides cómo y cuándo responder.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">¿Necesito conocimientos técnicos para usar la plataforma?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">
-                    No. MisAutónomos está diseñado para autónomos sin conocimientos técnicos. 
-                    La facturación electrónica cumple con Hacienda automáticamente, el sistema de presupuestos es intuitivo y el soporte está disponible 24/7 vía tickets.
-                  </p>
-                </CardContent>
-              </Card>
+          {/* Social Proof */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-12 text-white text-center">
+            <div className="flex items-center justify-center gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+              ))}
             </div>
+            <h3 className="text-2xl font-bold mb-2">
+              {t('language') === 'en' ? "Thousands of Clients Will See You Every Day" : "Miles de Clientes te Verán Cada Día"}
+            </h3>
+            <p className="text-blue-100 max-w-2xl mx-auto">
+              {t('language') === 'en' 
+                ? "Increase your visibility instantly. Get more work opportunities with your professional profile."
+                : "Aumenta tu visibilidad al instante. Consigue más oportunidades de trabajo con tu perfil profesional."
+              }
+            </p>
           </div>
 
-          {/* ROI CALCULATOR SECTION */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <Card className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-0 shadow-xl">
-              <CardContent className="p-8 text-center">
-                <h2 className="text-3xl font-bold mb-4">
-                  Recupera tu inversión con solo 1 cliente al mes
-                </h2>
-                <p className="text-blue-100 text-lg mb-6">
-                  Si tu servicio promedio genera 150-300€, el retorno de inversión es inmediato. 
-                  Con el Plan Growth, la publicidad te ayuda a conseguir 2-5 clientes extra cada mes.
-                </p>
-                <div className="grid md:grid-cols-3 gap-4 text-center">
-                  <div className="bg-white/10 rounded-lg p-4 backdrop-blur">
-                    <p className="text-3xl font-bold">30€</p>
-                    <p className="text-sm text-blue-100">Inversión mensual mínima</p>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-4 backdrop-blur">
-                    <p className="text-3xl font-bold">+3-5x</p>
-                    <p className="text-sm text-blue-100">Más visibilidad con Growth</p>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-4 backdrop-blur">
-                    <p className="text-3xl font-bold">∞</p>
-                    <p className="text-sm text-blue-100">Presupuestos sin límite</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* GARANTÍAS Y CONFIANZA */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-0 shadow-md">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-md bg-white">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-6 h-6 text-blue-600" />
+                      <CheckCircle className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-2">Pago 100% seguro</h3>
+                      <h3 className="font-bold text-gray-900 mb-2">{t('whatHappensAfterTrial')}</h3>
                       <p className="text-sm text-gray-600">
-                        Procesamos pagos con Stripe, la plataforma más segura del mundo. Tus datos bancarios están protegidos con cifrado de nivel bancario.
+                        {t('autoChargeExplain')}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-md">
+              <Card className="border-0 shadow-md bg-white">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-6 h-6 text-green-600" />
+                      <CheckCircle className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-2">Factura oficial</h3>
+                      <h3 className="font-bold text-gray-900 mb-2">{t('canCancelAnytime')}</h3>
                       <p className="text-sm text-gray-600">
-                        Recibes factura oficial en cada pago. Puedes deducir el 100% del coste como gasto de tu actividad profesional en la declaración trimestral.
+                        {t('noPermanenceExplain')}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </div>
-
-          {/* TESTIMONIOS SIMULADOS */}
-          <div className="max-w-5xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-              Lo que dicen nuestros autónomos
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 text-sm mb-4">
-                    "Con el Plan Growth he conseguido 4 clientes nuevos en el primer mes. Los 20€ de publicidad se pagan solos."
-                  </p>
-                  <p className="text-xs text-gray-500 font-semibold">
-                    Carlos M. • Electricista en Madrid
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 text-sm mb-4">
-                    "El sistema de facturación me ahorra horas cada mes. Y los presupuestos quedan super profesionales."
-                  </p>
-                  <p className="text-xs text-gray-500 font-semibold">
-                    Laura P. • Pintora en Valencia
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 text-sm mb-4">
-                    "Antes pagaba 80€/mes en anuncios sin saber si funcionaban. Ahora con 50€ tengo todo: directorio + publicidad + facturación."
-                  </p>
-                  <p className="text-xs text-gray-500 font-semibold">
-                    Miguel R. • Fontanero en Sevilla
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* CTA FINAL */}
-          <div className="max-w-3xl mx-auto text-center">
-            <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 border-0 shadow-2xl">
-              <CardContent className="p-8">
-                <h2 className="text-3xl font-bold text-white mb-4">
-                  ¿Listo para aumentar tus clientes?
-                </h2>
-                <p className="text-blue-100 mb-6">
-                  Únete a cientos de autónomos que ya están creciendo con MisAutónomos
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    onClick={() => handleSelectPlan('profesional')}
-                    className="bg-white hover:bg-gray-100 text-blue-700 h-12 px-8 font-bold"
-                    disabled={isProcessing}
-                  >
-                    Probar 7 días gratis (30€/mes)
-                  </Button>
-                  <Button
-                    onClick={() => handleSelectPlan('growth')}
-                    className="bg-green-600 hover:bg-green-700 text-white h-12 px-8 font-bold shadow-xl"
-                    disabled={isProcessing}
-                  >
-                    <Crown className="w-5 h-5 mr-2" />
-                    Probar 7 días gratis (50€/mes)
-                  </Button>
-                </div>
-                <p className="text-xs text-blue-100 mt-3">
-                  🎁 7 días gratis • Primer cobro después del trial
-                </p>
-                <p className="text-xs text-blue-200 mt-1">
-                  Sin permanencia • Cancela cuando quieras • Factura deducible
-                </p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

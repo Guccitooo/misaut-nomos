@@ -11,7 +11,6 @@ export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("processing");
   const [message, setMessage] = useState("Activando tu cuenta profesional...");
-  const [planDetails, setPlanDetails] = useState(null);
   const hasProcessed = useRef(false);
 
   const sessionId = searchParams.get("session_id");
@@ -52,16 +51,6 @@ export default function PaymentSuccessPage() {
           syncResult = response.data;
           console.log('🔄 Sync resultado:', syncResult);
           
-          // Guardar detalles del plan
-          if (syncResult?.subscription) {
-            setPlanDetails({
-              planName: syncResult.subscription.plan_nombre || 'Plan Profesional',
-              planPrice: syncResult.subscription.plan_precio || 30,
-              trialEnd: syncResult.subscription.fecha_expiracion,
-              status: syncResult.subscription.estado
-            });
-          }
-          
           if (syncResult?.subscription?.active) {
             break;
           }
@@ -74,59 +63,6 @@ export default function PaymentSuccessPage() {
           setMessage(`Esperando confirmación de Stripe... (${attempts}/${maxAttempts})`);
           await new Promise(r => setTimeout(r, 2000));
         }
-      }
-      
-      // ✅ ENVIAR EMAIL DE CONFIRMACIÓN
-      try {
-        await base44.integrations.Core.SendEmail({
-          to: user.email,
-          subject: '🎉 ¡Bienvenido a MisAutónomos Pro!',
-          body: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1d4ed8; text-align: center;">¡Bienvenido a MisAutónomos Pro!</h1>
-              
-              <div style="background: #f0f9ff; border-left: 4px solid #1d4ed8; padding: 20px; margin: 20px 0;">
-                <h2 style="margin-top: 0;">Tu suscripción está activa</h2>
-                <p><strong>Plan:</strong> ${planDetails?.planName || 'Plan Profesional'}</p>
-                <p><strong>Precio:</strong> ${planDetails?.planPrice || 30}€/mes</p>
-                <p><strong>🎁 Trial gratis:</strong> 7 días sin cargo</p>
-                <p style="margin-bottom: 0;">Tu primer cobro será después del período de prueba.</p>
-              </div>
-
-              <h3 style="color: #1e40af;">✨ Ahora puedes:</h3>
-              <ul style="line-height: 1.8; color: #374151;">
-                <li>🔍 Aparecer en las búsquedas de clientes</li>
-                <li>💬 Recibir mensajes directos de clientes</li>
-                <li>📄 Crear presupuestos profesionales ilimitados</li>
-                <li>💰 Generar y enviar facturas electrónicas</li>
-                <li>👥 Gestionar tu cartera de clientes con CRM</li>
-                <li>📊 Acceder a tu panel de control profesional</li>
-              </ul>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://misautonomos.es/ProfileOnboarding" 
-                   style="background: #1d4ed8; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
-                  🚀 Completar mi perfil
-                </a>
-              </div>
-
-              <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #78350f;">
-                  <strong>💡 Consejo:</strong> Completa tu perfil con fotos de tus trabajos y una descripción detallada para recibir más solicitudes de clientes.
-                </p>
-              </div>
-
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px;">
-                <p>¿Necesitas ayuda? Contacta con nosotros en <a href="mailto:soporte@misautonomos.es" style="color: #1d4ed8;">soporte@misautonomos.es</a></p>
-                <p style="margin-top: 10px;">Puedes gestionar tu suscripción desde <a href="https://misautonomos.es/SubscriptionManagement" style="color: #1d4ed8;">tu panel de control</a></p>
-              </div>
-            </div>
-          `
-        });
-        console.log('📧 Email de confirmación enviado');
-      } catch (emailError) {
-        console.error('❌ Error enviando email:', emailError);
-        // No bloquear el flujo si falla el email
       }
 
       // ✅ VERIFICAR SUSCRIPCIÓN EN BD
@@ -261,96 +197,17 @@ export default function PaymentSuccessPage() {
 
           {status === "success" && (
             <>
-              <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+              <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-12 h-12 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-green-800 mb-2">
-                🎉 ¡Pago confirmado!
+              <h1 className="text-2xl font-bold text-green-800 mb-3">
+                ¡Pago confirmado!
               </h1>
-              <p className="text-gray-600 mb-6">Tu cuenta profesional está activa</p>
-
-              {planDetails && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 mb-6 text-left border-2 border-blue-200">
-                  <h3 className="font-bold text-gray-900 mb-3 text-center">📋 Resumen de tu plan</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Plan seleccionado:</span>
-                      <span className="font-semibold text-gray-900">{planDetails.planName}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Precio mensual:</span>
-                      <span className="font-semibold text-gray-900">{planDetails.planPrice}€/mes</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Estado:</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                        <CheckCircle className="w-3 h-3" />
-                        Activo
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-blue-200">
-                    <p className="text-xs text-blue-800 bg-blue-100 rounded-lg p-3 flex items-start gap-2">
-                      <span>🎁</span>
-                      <span><strong>7 días gratis:</strong> Disfruta de todas las funcionalidades sin cargo hasta que finalice tu período de prueba.</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
-                <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  Ya tienes acceso a:
-                </h3>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-blue-600" />
-                    <span className="text-gray-700">Perfil visible</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-green-600" />
-                    <span className="text-gray-700">Chat clientes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                    <span className="text-gray-700">Facturación Pro</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-orange-600" />
-                    <span className="text-gray-700">Presupuestos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-teal-600" />
-                    <span className="text-gray-700">CRM Clientes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <LayoutDashboard className="w-4 h-4 text-indigo-600" />
-                    <span className="text-gray-700">Panel Pro</span>
-                  </div>
-                </div>
+              <p className="text-gray-600 mb-4">{message}</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Redirigiendo...
               </div>
-
-              <div className="space-y-3">
-                <Button 
-                  onClick={() => navigate(createPageUrl("ProfileOnboarding"))} 
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-base font-semibold"
-                >
-                  🚀 Completar mi perfil ahora
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate(createPageUrl("ProfessionalDashboard"))}
-                  className="w-full h-11"
-                >
-                  Ir a mi panel de control <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-
-              <p className="text-xs text-gray-500 mt-4">
-                📧 Revisa tu email para más detalles sobre tu suscripción
-              </p>
             </>
           )}
 

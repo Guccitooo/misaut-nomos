@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,12 +76,11 @@ export default function AdminDashboardPage() {
     loadUser();
   }, []);
 
+  // ✅ NUEVO: Ejecutar limpieza automática al cargar admin dashboard
   useEffect(() => {
     if (user && user.role === 'admin') {
-      const timer = setTimeout(() => {
-        executeAutomaticCleanup();
-      }, 2000);
-      return () => clearTimeout(timer);
+      console.log('👮 Admin detectado, ejecutando limpieza automática...');
+      executeAutomaticCleanup();
     }
   }, [user]);
 
@@ -313,8 +312,7 @@ export default function AdminDashboardPage() {
       const allUsers = await base44.entities.User.list();
       return allUsers;
     },
-    enabled: !!user && activeTab === 'users' || activeTab === 'data',
-    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
   });
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -323,22 +321,37 @@ export default function AdminDashboardPage() {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
       return allProfiles;
     },
-    enabled: !!user && (activeTab === 'profiles' || activeTab === 'data'),
-    staleTime: 1000 * 60 * 5,
+    enabled: !!user,
   });
 
+  // ✅ MODIFICADO: Filtrar suscripciones para NO mostrar huérfanas
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
     queryFn: async () => {
+      console.log('\n💳 ========== CARGANDO SUSCRIPCIONES ==========');
       const subs = await base44.entities.Subscription.list();
-      const usersList = await base44.entities.User.list();
+      console.log(`📊 Total suscripciones: ${subs.length}`);
+      
+      // ✅ Filtrar solo suscripciones con usuario existente
+      const usersList = await base44.entities.User.list(); // Renamed to avoid conflict with 'users' state/query result
       const userIds = new Set(usersList.map(u => u.id));
       
-      const validSubs = subs.filter(sub => userIds.has(sub.user_id));
+      const validSubs = subs.filter(sub => {
+        const hasUser = userIds.has(sub.user_id);
+        if (!hasUser) {
+          console.log(`⚠️ Suscripción huérfana detectada: user_id ${sub.user_id}`);
+        }
+        return hasUser;
+      });
+      
+      console.log(`✅ Suscripciones válidas: ${validSubs.length}`);
       return validSubs;
     },
-    enabled: !!user && (activeTab === 'subscriptions' || activeTab === 'profiles' || activeTab === 'data' || activeTab === 'users'),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: 'always',
+    initialData: [],
+    enabled: !!user,
   });
 
   const toggleVisibilityMutation = useMutation({
@@ -360,14 +373,12 @@ export default function AdminDashboardPage() {
     });
   };
 
-  const filteredProfiles = React.useMemo(() => {
-    if (!searchTerm) return profiles;
-    const search = searchTerm.toLowerCase();
-    return profiles.filter(profile => 
-      profile.business_name?.toLowerCase().includes(search) ||
-      profile.email_contacto?.toLowerCase().includes(search)
-    );
-  }, [profiles, searchTerm]);
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = !searchTerm || 
+      profile.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.email_contacto?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   const getEstadoBadge = (estado) => {
     const colors = {
@@ -569,12 +580,12 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                       {filteredProfiles.slice(0, 50).map((profile) => {
-                         const userSub = subscriptions.find(s => s.user_id === profile.user_id);
-                         const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
+                        {filteredProfiles.map((profile) => {
+                          const userSub = subscriptions.find(s => s.user_id === profile.user_id);
+                          const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
 
-                         return (
-                           <tr key={profile.id} className={`hover:bg-gray-50 ${!isActive && userSub && userSub.estado?.toLowerCase().trim() !== 'eliminado' && userSub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}`}>
+                          return (
+                            <tr key={profile.id} className={`hover:bg-gray-50 ${!isActive && userSub && userSub.estado?.toLowerCase().trim() !== 'eliminado' && userSub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}`}>
                               <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                 {profile.business_name || 'Sin nombre'}
                               </td>
@@ -683,17 +694,17 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                       {users.filter(u => {
-                         if (!searchTerm) return true;
-                         const search = searchTerm.toLowerCase();
-                         const profile = profiles.find(p => p.user_id === u.id);
-                         return (
-                           u.full_name?.toLowerCase().includes(search) ||
-                           u.email?.toLowerCase().includes(search) ||
-                           profile?.business_name?.toLowerCase().includes(search) ||
-                           profile?.telefono_contacto?.includes(search)
-                         );
-                       }).slice(0, 50).map((userInfo) => {
+                        {users.filter(u => {
+                          if (!searchTerm) return true;
+                          const search = searchTerm.toLowerCase();
+                          const profile = profiles.find(p => p.user_id === u.id);
+                          return (
+                            u.full_name?.toLowerCase().includes(search) ||
+                            u.email?.toLowerCase().includes(search) ||
+                            profile?.business_name?.toLowerCase().includes(search) ||
+                            profile?.telefono_contacto?.includes(search)
+                          );
+                        }).map((userInfo) => {
                           const profile = profiles.find(p => p.user_id === userInfo.id);
                           const userSub = subscriptions.find(s => s.user_id === userInfo.id);
                           const isActive = userSub && isSubscriptionActive(userSub.estado, userSub.fecha_expiracion);
@@ -972,10 +983,10 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                       {subscriptions.slice(0, 100).map((sub) => {
-                         const isActive = isSubscriptionActive(sub.estado, sub.fecha_expiracion);
-                         return (
-                           <tr key={sub.id} className={!isActive && sub.estado?.toLowerCase().trim() !== 'eliminado' && sub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}>
+                        {subscriptions.map((sub) => {
+                          const isActive = isSubscriptionActive(sub.estado, sub.fecha_expiracion);
+                          return (
+                            <tr key={sub.id} className={!isActive && sub.estado?.toLowerCase().trim() !== 'eliminado' && sub.estado?.toLowerCase().trim() !== 'suspendu' ? 'bg-red-50' : ''}>
                               <td className="px-4 py-3 text-sm">
                                 {users.find(u => u.id === sub.user_id)?.email || sub.user_id}
                               </td>
@@ -1008,8 +1019,9 @@ export default function AdminDashboardPage() {
           </TabsContent>
         </Tabs>
 
+        {/* ✅ NUEVO: Dialog de confirmación de eliminación - DISEÑO MEJORADO */}
         {showDeleteDialog && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <Card className="max-w-lg w-full bg-white shadow-2xl">
               <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 border-b-0 rounded-t-lg py-4">
                 <CardTitle className="flex items-center gap-2 text-white text-lg">
@@ -1078,7 +1090,7 @@ export default function AdminDashboardPage() {
                   </Button>
                   <Button
                     onClick={handleDeleteUser}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-slow border-2 border-red-700"
                   >
                     <AlertCircle className="w-4 h-4 mr-2" />
                     Eliminar definitivamente
@@ -1087,12 +1099,27 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
             
-
+            <style>{`
+              @keyframes pulse-slow {
+                0%, 100% {
+                  opacity: 1;
+                  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+                }
+                50% {
+                  opacity: 0.95;
+                  box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+                }
+              }
+              
+              .animate-pulse-slow {
+                animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+              }
+            `}</style>
           </div>
         )}
 
         {showExtendDialog && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <Card className="max-w-md w-full bg-white shadow-2xl">
               <CardHeader className="bg-gradient-to-r from-purple-600 to-purple-700 border-b-0 rounded-t-lg py-4">
                 <CardTitle className="flex items-center gap-2 text-white text-lg">

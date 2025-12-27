@@ -21,15 +21,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import { 
-  generateMetaTitle, 
-  generateMetaDescription, 
-  CategoryIntro, 
-  RelatedCategories,
-  CategoryFAQ,
-  generateCategoryStructuredData,
-  CATEGORY_SEO_CONTENT
-} from "../components/seo/CategorySEO";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
@@ -165,35 +156,29 @@ export default function CategoriaPage() {
     }
   };
 
-  // SEO optimizado
+  // SEO
   const canonicalUrl = ciudadName 
     ? `https://misautonomos.es/Categoria?name=${categorySlug}&ciudad=${slugify(ciudadName)}`
     : `https://misautonomos.es/Categoria?name=${categorySlug}`;
   
-  const seoTitle = generateMetaTitle(categoryName || 'Profesional', ciudadName);
-  const seoDescription = generateMetaDescription(categoryName || 'Profesional', ciudadName);
+  const seoTitle = ciudadName 
+    ? `${categoryName || 'Profesionales'} en ${ciudadName} - MisAutónomos`
+    : `${categoryName || 'Profesionales'} - Encuentra autónomos verificados | MisAutónomos`;
   
-  const seoKeywords = CATEGORY_SEO_CONTENT[categoryName]?.keywords || [];
-  const allKeywords = ciudadName 
-    ? [...seoKeywords, ciudadName.toLowerCase(), 'autónomo', 'presupuesto gratis', 'factura']
-    : [...seoKeywords, 'españa', 'autónomo', 'profesional verificado'];
-  
-  const structuredData = generateCategoryStructuredData(
-    categoryName || 'Profesional', 
-    ciudadName, 
-    profiles, 
-    canonicalUrl
-  );
+  const seoDescription = ciudadName
+    ? `Encuentra ${categoryName?.toLowerCase() || 'profesionales'} verificados en ${ciudadName}. Contacta directamente, pide presupuesto gratis.`
+    : `Directorio de ${categoryName?.toLowerCase() || 'profesionales'} autónomos en España. Compara precios, lee opiniones y contacta gratis.`;
 
   return (
     <>
       <SEOHead 
         title={seoTitle}
         description={seoDescription}
-        keywords={allKeywords.join(', ')}
-        canonicalUrl={canonicalUrl}
-        jsonLd={structuredData}
+        keywords={`${categoryName?.toLowerCase()}, ${ciudadName?.toLowerCase() || 'españa'}, autónomo, profesional, presupuesto`}
       />
+      
+      {/* Canonical */}
+      <link rel="canonical" href={canonicalUrl} />
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -209,24 +194,15 @@ export default function CategoriaPage() {
             </Button>
             
             <h1 className="text-2xl md:text-4xl font-bold mb-2">
-              Mejores {categoryName || 'Profesionales'} {ciudadName ? `en ${ciudadName}` : 'en España'}
+              {categoryName || 'Profesionales'} {ciudadName ? `en ${ciudadName}` : 'en España'}
             </h1>
             <p className="text-blue-100 text-lg">
-              {profiles.length} profesionales verificados • Presupuesto gratis • Factura legal
+              {profiles.length} profesionales verificados disponibles
             </p>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-6">
-          {/* Introducción SEO */}
-          {!isLoading && profiles.length > 0 && (
-            <CategoryIntro 
-              categoryName={categoryName}
-              cityName={ciudadName}
-              profileCount={profiles.length}
-            />
-          )}
-
           {/* Filtro de ciudad */}
           <Card className="mb-6 shadow-sm border-0 rounded-xl">
             <CardContent className="p-4">
@@ -362,34 +338,11 @@ export default function CategoriaPage() {
             </div>
           )}
 
-          {/* Categorías relacionadas */}
+          {/* CTA */}
           {!isLoading && profiles.length > 0 && (
-            <RelatedCategories 
-              currentCategory={categoryName}
-              cityName={ciudadName}
-              navigate={navigate}
-              createPageUrl={createPageUrl}
-              slugify={slugify}
-            />
-          )}
-
-          {/* FAQ Estructurado */}
-          {!isLoading && profiles.length > 0 && (
-            <CategoryFAQ 
-              categoryName={categoryName}
-              cityName={ciudadName}
-            />
-          )}
-
-          {/* CTA para profesionales */}
-          {!isLoading && profiles.length > 0 && (
-            <div className="mt-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white">
-              <h2 className="text-2xl font-bold mb-2">
-                ¿Eres {categoryName?.toLowerCase()} {ciudadName ? `en ${ciudadName}` : ''}?
-              </h2>
-              <p className="text-blue-100 mb-5">
-                Únete a MisAutónomos y recibe solicitudes de clientes verificados. Gestiona tus presupuestos y facturas desde un solo lugar.
-              </p>
+            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white">
+              <h3 className="text-2xl font-bold mb-2">¿Eres {categoryName?.toLowerCase()}?</h3>
+              <p className="text-blue-100 mb-5">Regístrate y consigue más clientes</p>
               <Button
                 onClick={() => navigate(createPageUrl("PricingPlans"))}
                 className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 font-semibold"
