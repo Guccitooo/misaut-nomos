@@ -34,7 +34,19 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { stripePriceId, planName, planPrice, isReactivation = false } = body;
 
-    console.log('📦 Plan solicitado:', planName, '- Precio ID:', stripePriceId, '- Reactivación:', isReactivation);
+    console.log('📦 Datos recibidos:');
+    console.log('  - Plan:', planName);
+    console.log('  - Price ID:', stripePriceId);
+    console.log('  - Precio:', planPrice, '€');
+    console.log('  - Reactivación:', isReactivation);
+
+    if (!stripePriceId || stripePriceId.includes('_xxxxx')) {
+      console.error('❌ Price ID no configurado correctamente:', stripePriceId);
+      return Response.json({ 
+        error: '⚠️ Price ID no válido. Debes crear los productos en Stripe Dashboard y actualizar los Price IDs en el código.',
+        detailedError: `Price ID recibido: "${stripePriceId}"`
+      }, { status: 400 });
+    }
 
     console.log('\n🔍 Buscando/creando cliente en Stripe...');
     let stripeCustomerId = null;
@@ -73,8 +85,6 @@ Deno.serve(async (req) => {
         detailedError: stripeError.message
       }, { status: 500 });
     }
-
-    console.log('💼 Plan:', planName, '- Precio:', planPrice, '€');
 
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
     const successUrl = `${baseUrl}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`;
