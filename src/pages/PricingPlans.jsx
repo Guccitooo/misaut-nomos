@@ -122,8 +122,19 @@ export default function PricingPlansPage() {
     setSelectedPlan(planKey);
     setIsProcessing(true);
 
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ Timeout: La solicitud tardó más de 15 segundos');
+      toast.error('⏱️ La solicitud está tardando demasiado. Verifica tu conexión o los Price IDs de Stripe.', {
+        duration: 8000
+      });
+      setIsProcessing(false);
+      setSelectedPlan(null);
+    }, 15000);
+
     try {
-      console.log('🛒 Iniciando checkout para:', plan.name, 'con Price ID:', plan.stripePriceId);
+      console.log('🛒 Iniciando checkout para:', plan.name);
+      console.log('💳 Price ID:', plan.stripePriceId);
+      console.log('👤 Usuario:', user.email);
       
       const response = await base44.functions.invoke('createCheckoutSession', {
         stripePriceId: plan.stripePriceId,
@@ -132,37 +143,55 @@ export default function PricingPlansPage() {
         isReactivation: false
       });
 
-      console.log('📦 Respuesta del servidor:', response.data);
+      clearTimeout(timeoutId);
 
-      if (response.data?.error) {
+      console.log('📦 Respuesta completa:', JSON.stringify(response, null, 2));
+
+      if (!response || !response.data) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+
+      if (response.data.error) {
         console.error('❌ Error del servidor:', response.data.error);
+        if (response.data.detailedError) {
+          console.error('📋 Detalle:', response.data.detailedError);
+        }
         throw new Error(response.data.error);
       }
 
-      if (response.data?.url) {
-        console.log('✅ Redirigiendo a Stripe:', response.data.url);
+      if (response.data.url) {
+        console.log('✅ URL de Stripe obtenida:', response.data.url);
+        console.log('🔄 Redirigiendo...');
         window.location.href = response.data.url;
-      } else {
-        console.error('❌ No hay URL en la respuesta:', response.data);
-        throw new Error('No se pudo crear la sesión de pago. Verifica los Price IDs en Stripe.');
+        return;
       }
-    } catch (err) {
-      console.error('❌ Error completo en checkout:', err);
+
+      throw new Error('No se recibió URL de pago. Respuesta: ' + JSON.stringify(response.data));
       
-      const errorMessage = err.message || "Error al procesar el pago";
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('❌ Error completo:', err);
+      
+      const errorMessage = err.message || "Error desconocido al procesar el pago";
       
       if (errorMessage.includes('Price ID inválido') || errorMessage.includes('No such price')) {
-        toast.error('⚠️ Configuración pendiente: Debes crear los productos en Stripe Dashboard y actualizar los Price IDs.', {
-          duration: 8000
+        toast.error('❌ Price IDs no configurados correctamente en Stripe', {
+          duration: 10000
         });
         
         setTimeout(() => {
-          toast.info('📝 Instrucciones: Ve a https://dashboard.stripe.com/products y crea los planes con precios 30€ y 50€ mensuales.', {
-            duration: 10000
+          toast.info('📝 ACCIÓN REQUERIDA: Crea los productos en https://dashboard.stripe.com/products (30€ y 50€/mes) y actualiza los Price IDs en el código.', {
+            duration: 15000
           });
-        }, 1000);
+        }, 1500);
+      } else if (errorMessage.includes('STRIPE_SECRET_KEY')) {
+        toast.error('❌ Claves de Stripe no configuradas. Contacta con soporte.', {
+          duration: 8000
+        });
       } else {
-        toast.error(errorMessage);
+        toast.error(`❌ ${errorMessage}`, {
+          duration: 8000
+        });
       }
       
       setIsProcessing(false);
