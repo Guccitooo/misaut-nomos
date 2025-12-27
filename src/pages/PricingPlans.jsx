@@ -397,6 +397,59 @@ export default function PricingPlansPage() {
             <ProFeaturesSection />
           </div>
 
+          {/* Comparación de planes */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">¿Cuál es la diferencia?</h2>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-white font-semibold">Característica</th>
+                    <th className="px-6 py-4 text-center text-white font-semibold">Profesional</th>
+                    <th className="px-6 py-4 text-center text-white font-semibold">Growth</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-700">Aparecer en búsquedas</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-700">Chat directo con clientes</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-700">CRM + Facturación</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-700">Sistema de valoraciones</td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 bg-purple-50">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">🚀 Anuncios en Meta Ads (20€/mes gestionados)</td>
+                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 bg-purple-50">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">📊 Análisis y optimización de campañas</td>
+                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 bg-purple-50">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">🎯 Mayor alcance y visibilidad</td>
+                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
+                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Social Proof */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-12 text-white text-center">
             <div className="flex items-center justify-center gap-1 mb-4">
@@ -405,13 +458,10 @@ export default function PricingPlansPage() {
               ))}
             </div>
             <h3 className="text-2xl font-bold mb-2">
-              {t('language') === 'en' ? "Thousands of Clients Will See You Every Day" : "Miles de Clientes te Verán Cada Día"}
+              Miles de Clientes te Verán Cada Día
             </h3>
             <p className="text-blue-100 max-w-2xl mx-auto">
-              {t('language') === 'en' 
-                ? "Increase your visibility instantly. Get more work opportunities with your professional profile."
-                : "Aumenta tu visibilidad al instante. Consigue más oportunidades de trabajo con tu perfil profesional."
-              }
+              Aumenta tu visibilidad al instante. Consigue más oportunidades de trabajo con tu perfil profesional.
             </p>
           </div>
 
