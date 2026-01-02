@@ -197,13 +197,28 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
 
   const getCategoryIcon = (category) => {
     const icons = {
-      "Electricista": Zap, "Fontanero": Droplets, "Carpintero": Hammer,
-      "Albañil / Reformas": HardHat, "Pintor": Paintbrush, "Jardinero": Trees,
-      "Transportista": Truck, "Autónomo de limpieza": Sparkles, "Cerrajero": Key,
-      "Instalador de aire acondicionado": Wind, "Mantenimiento general": Wrench,
-      "Mantenimiento de piscinas": Waves
+      "Electricista": Zap,
+      "Fontanero": Droplets,
+      "Carpintero": Hammer,
+      "Albañil / Reformas": HardHat,
+      "Pintor": Paintbrush,
+      "Jardinero": Trees,
+      "Transportista": Truck,
+      "Autónomo de limpieza": Sparkles,
+      "Cerrajero": Key,
+      "Instalador de aire acondicionado": Wind,
+      "Climatización / Calefacción": Wind,
+      "Mantenimiento general": Wrench,
+      "Mantenimiento de piscinas": Waves,
+      "Abogado": Briefcase,
+      "Asesoría o gestoría": FileText,
+      "Empresa multiservicios": Wrench,
+      "Informático a domicilio / soporte IT": Wrench,
+      "Marketing digital / diseño web": Sparkles,
+      "Peluquería y estética a domicilio": Sparkles,
+      "Persianas y toldos": HardHat
     };
-    return icons[category] || MoreHorizontal;
+    return icons[category] || Briefcase;
   };
 
   const CategoryIcon = getCategoryIcon(profile.categories?.[0]);
@@ -385,6 +400,33 @@ export default function SearchPage() {
     } finally {
       setLoadingUser(false);
     }
+  };
+
+  // Mapeo de emojis por categoría (solo para el selector)
+  const getCategoryEmoji = (categoryName) => {
+    const emojis = {
+      "Abogado": "⚖️",
+      "Albañil / Reformas": "🏗️",
+      "Asesoría o gestoría": "📊",
+      "Autónomo de limpieza": "🧹",
+      "Carpintero": "🪚",
+      "Cerrajero": "🔑",
+      "Climatización / Calefacción": "❄️",
+      "Electricista": "⚡",
+      "Empresa multiservicios": "🔧",
+      "Fontanero": "🚰",
+      "Informático a domicilio / soporte IT": "💻",
+      "Jardinero": "🌳",
+      "Marketing digital / diseño web": "🎨",
+      "Peluquería y estética a domicilio": "💇",
+      "Persianas y toldos": "🏠",
+      "Pintor": "🎨",
+      "Transportista": "🚚",
+      "Instalador de aire acondicionado": "❄️",
+      "Mantenimiento general": "🔧",
+      "Mantenimiento de piscinas": "🏊"
+    };
+    return emojis[categoryName] || "🔹";
   };
 
   // Categorías de fallback (se usan si BD no responde o no hay auth)
@@ -623,7 +665,9 @@ export default function SearchPage() {
                   <SelectContent className="max-h-[300px]">
                     <SelectItem value="all">{t('allCategories')}</SelectItem>
                     {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
+                      <SelectItem key={cat.id} value={cat.name}>
+                        {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
