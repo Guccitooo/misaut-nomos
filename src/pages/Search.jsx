@@ -664,12 +664,7 @@ export default function SearchPage() {
             </CardContent>
           </Card>
 
-          <div className="mb-5" style={{ minHeight: '56px' }}>
-            <h2 className="text-xl font-bold text-gray-900">
-              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
-            </h2>
-            <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
-          </div>
+
 
           {isInitialLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
