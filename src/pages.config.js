@@ -26,6 +26,7 @@ import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import PayInvoice from './pages/PayInvoice';
 import PaymentSuccess from './pages/PaymentSuccess';
+import Presupuestos from './pages/Presupuestos';
 import PricingPlans from './pages/PricingPlans';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
@@ -41,7 +42,6 @@ import TermsConditions from './pages/TermsConditions';
 import TicketDetail from './pages/TicketDetail';
 import Tickets from './pages/Tickets';
 import UserTypeSelection from './pages/UserTypeSelection';
-import Presupuestos from './pages/Presupuestos';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +74,7 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "PayInvoice": PayInvoice,
     "PaymentSuccess": PaymentSuccess,
+    "Presupuestos": Presupuestos,
     "PricingPlans": PricingPlans,
     "PrivacyPolicy": PrivacyPolicy,
     "ProfessionalDashboard": ProfessionalDashboard,
@@ -89,7 +90,6 @@ export const PAGES = {
     "TicketDetail": TicketDetail,
     "Tickets": Tickets,
     "UserTypeSelection": UserTypeSelection,
-    "Presupuestos": Presupuestos,
 }
 
 export const pagesConfig = {

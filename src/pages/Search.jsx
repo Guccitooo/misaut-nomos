@@ -61,15 +61,28 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
-const PROVINCIAS_ESPANA = [
-  "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
-  "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ceuta",
-  "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa",
-  "Huelva", "Huesca", "Jaén", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid",
-  "Málaga", "Melilla", "Murcia", "Navarra", "Ourense", "Palencia", "Pontevedra", "Salamanca",
-  "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo",
-  "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza"
-];
+// Comunidades Autónomas y sus provincias
+const COMUNIDADES_AUTONOMAS = {
+  "Andalucía": ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"],
+  "Aragón": ["Huesca", "Teruel", "Zaragoza"],
+  "Asturias": ["Asturias"],
+  "Islas Baleares": ["Baleares"],
+  "Canarias": ["Las Palmas", "Santa Cruz de Tenerife"],
+  "Cantabria": ["Cantabria"],
+  "Castilla y León": ["Ávila", "Burgos", "León", "Palencia", "Salamanca", "Segovia", "Soria", "Valladolid", "Zamora"],
+  "Castilla-La Mancha": ["Albacete", "Ciudad Real", "Cuenca", "Guadalajara", "Toledo"],
+  "Cataluña": ["Barcelona", "Girona", "Lleida", "Tarragona"],
+  "Comunidad Valenciana": ["Alicante", "Castellón", "Valencia"],
+  "Extremadura": ["Badajoz", "Cáceres"],
+  "Galicia": ["A Coruña", "Lugo", "Ourense", "Pontevedra"],
+  "Madrid": ["Madrid"],
+  "Murcia": ["Murcia"],
+  "Navarra": ["Navarra"],
+  "País Vasco": ["Álava", "Guipúzcoa", "Vizcaya"],
+  "La Rioja": ["La Rioja"],
+  "Ceuta": ["Ceuta"],
+  "Melilla": ["Melilla"]
+};
 
 const CIUDADES_POR_PROVINCIA = {
   "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
@@ -349,6 +362,7 @@ export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedComunidad, setSelectedComunidad] = useState("all");
   const [selectedProvincia, setSelectedProvincia] = useState("all");
   const [selectedCiudad, setSelectedCiudad] = useState("all");
   const [displayLimit, setDisplayLimit] = useState(12);
@@ -452,6 +466,11 @@ export default function SearchPage() {
     refetchOnWindowFocus: false,
   });
 
+  const availableProvincias = React.useMemo(() => {
+    if (selectedComunidad === "all") return [];
+    return COMUNIDADES_AUTONOMAS[selectedComunidad] || [];
+  }, [selectedComunidad]);
+
   const filteredProfiles = React.useMemo(() => {
     const filtered = profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -459,19 +478,37 @@ export default function SearchPage() {
         profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+      
+      // Filtro jerárquico: Comunidad → Provincia → Ciudad
+      let matchesLocation = true;
+      if (selectedComunidad !== "all") {
+        const provinciasEnComunidad = COMUNIDADES_AUTONOMAS[selectedComunidad] || [];
+        matchesLocation = provinciasEnComunidad.includes(profile.provincia);
+      }
+      if (selectedProvincia !== "all") {
+        matchesLocation = matchesLocation && profile.provincia === selectedProvincia;
+      }
+      if (selectedCiudad !== "all") {
+        matchesLocation = matchesLocation && profile.ciudad === selectedCiudad;
+      }
+      
+      return matchesSearch && matchesCategory && matchesLocation;
     });
     
     // Orden aleatorio
     return filtered.sort(() => Math.random() - 0.5);
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedComunidad, selectedProvincia, selectedCiudad]);
 
   const availableCities = React.useMemo(() => {
     if (selectedProvincia === "all") return [];
     return CIUDADES_POR_PROVINCIA[selectedProvincia] || [];
   }, [selectedProvincia]);
+
+  const handleComunidadChange = (value) => {
+    setSelectedComunidad(value);
+    setSelectedProvincia("all");
+    setSelectedCiudad("all");
+  };
 
   const handleProvinciaChange = (value) => {
     setSelectedProvincia(value);
@@ -530,7 +567,7 @@ export default function SearchPage() {
       <div className="min-h-screen bg-gray-50">
         {/* Hero visible solo si no hay usuario y ya se terminó de cargar */}
         {!user && !loadingUser && (
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '320px' }}>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '280px' }}>
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
               <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
@@ -548,13 +585,9 @@ export default function SearchPage() {
                   <span>{t('directChat')}</span>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
-                <Button onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
-                  <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
-                </Button>
+              <div className="flex justify-center">
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
+                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-10 text-base font-semibold shadow-xl rounded-xl">
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
               </div>
@@ -565,57 +598,68 @@ export default function SearchPage() {
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
           <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
             <CardContent className="p-5">
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <Input type="text" placeholder={t('search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 pr-4 h-12 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-                  </div>
-                  <Button className="hidden md:flex bg-blue-600 hover:bg-blue-700 h-12 px-6 rounded-xl font-semibold">
-                    <SearchIcon className="w-5 h-5 mr-2" />{t('search')}
-                  </Button>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div className="relative md:col-span-1">
+                  <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input type="text" placeholder={t('search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 pr-4 h-11 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCategories')}>
-                        {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">{t('allCategories')}</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder={t('allCategories')}>
+                      {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">{t('allCategories')}</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allProvinces')} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">{t('allProvinces')}</SelectItem>
-                      {PROVINCIAS_ESPANA.map((prov) => (
-                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder="Comunidad Autónoma">
+                      {selectedComunidad === "all" ? "Todas las CC.AA" : selectedComunidad}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">Todas las CC.AA</SelectItem>
+                    {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
+                      <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder={t('allCities')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('allCities')}</SelectItem>
-                      {availableCities.map((ciudad) => (
-                        <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={selectedProvincia} onValueChange={handleProvinciaChange} disabled={selectedComunidad === "all"}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder={t('allProvinces')}>
+                      {selectedProvincia === "all" ? t('allProvinces') : selectedProvincia}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">{t('allProvinces')}</SelectItem>
+                    {availableProvincias.map((prov) => (
+                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder={t('allCities')}>
+                      {selectedCiudad === "all" ? t('allCities') : selectedCiudad}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">{t('allCities')}</SelectItem>
+                    {availableCities.map((ciudad) => (
+                      <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
