@@ -226,9 +226,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
   return (
     <>
       <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
-        <CardContent className="p-4 flex flex-col flex-1">
-          <div className="flex items-start gap-3 mb-3">
-            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
+        <CardContent className="p-3 md:p-4 flex flex-col flex-1">
+          <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
+            <Avatar className="w-11 md:w-12 h-11 md:h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
@@ -262,12 +262,12 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             </div>
 
             <Button variant="ghost" size="icon" onClick={onToggleFavorite}
-              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-8 w-8 flex-shrink-0`}>
+              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-7 md:h-8 w-7 md:w-8 flex-shrink-0 hidden md:flex`}>
               <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
             </Button>
           </div>
 
-          <div className="space-y-2 mb-3 flex-1">
+          <div className="space-y-1.5 md:space-y-2 mb-2 md:mb-3 flex-1">
             <div className="flex items-center gap-1.5 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
@@ -286,8 +286,18 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             )}
           </div>
 
-          <div className="flex gap-1.5 mt-auto">
-            <Button onClick={onClick} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-1.5 mt-auto">
+            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
+              <Button onClick={handleWhatsApp} 
+                className="w-full md:flex-1 bg-green-600 hover:bg-green-700 text-white h-11 md:h-9 text-sm md:text-xs font-semibold rounded-lg flex items-center justify-center gap-2">
+                <MessageCircle className="w-5 md:w-4 h-5 md:h-4" />
+                <span className="md:hidden">Contactar por WhatsApp</span>
+                <span className="hidden md:inline">WhatsApp</span>
+              </Button>
+            )}
+
+            <Button onClick={onClick} 
+              className="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 md:h-9 text-xs font-medium rounded-lg px-2">
               {t('viewProfile')}
             </Button>
 
@@ -301,7 +311,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                 navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
               }}
               variant="outline" size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
+              className="hidden md:flex h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
               title={t('sendDirectMessage')}>
               <MessageSquare className="w-4 h-4 text-gray-700" />
             </Button>
@@ -311,17 +321,10 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                 onClick={handleCall}
                 variant="outline" 
                 size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" 
+                className="hidden md:flex h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" 
                 title={t('callPhone')}
               >
                 <Phone className="w-4 h-4 text-gray-700" />
-              </Button>
-            )}
-
-            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <Button onClick={handleWhatsApp} variant="outline" size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-green-50 rounded-lg flex-shrink-0" title={t('contactViaWhatsApp')}>
-                <MessageCircle className="w-4 h-4 text-green-600" />
               </Button>
             )}
           </div>
@@ -647,48 +650,50 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
-            <CardContent className="p-5">
-              <div className="flex flex-wrap gap-3">
-                <div className="relative flex-1 min-w-[200px]">
-                  <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input type="text" placeholder={t('search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-4 h-11 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+          <Card className="mb-4 md:mb-6 shadow-sm md:shadow-md border-0 rounded-xl md:rounded-2xl bg-white">
+            <CardContent className="p-3 md:p-5">
+              <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-3">
+                <div className="relative w-full md:flex-1 md:min-w-[200px]">
+                  <SearchIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 md:w-5 h-4 md:h-5" />
+                  <Input type="text" placeholder="Buscar servicio o profesional" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 md:pl-12 pr-3 md:pr-4 h-10 md:h-11 text-sm rounded-lg md:rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                 </div>
 
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[200px]">
-                    <SelectValue placeholder={t('allCategories')}>
-                      {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">{t('allCategories')}</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2 w-full md:w-auto">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm flex-1 md:w-[200px]">
+                      <SelectValue placeholder="Categoría">
+                        {selectedCategory === "all" ? "Categoría" : (t(selectedCategory) || selectedCategory)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[200px]">
-                    <SelectValue placeholder="Comunidad autónoma">
-                      {selectedComunidad === "all" ? "Comunidad autónoma" : selectedComunidad}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Comunidad autónoma</SelectItem>
-                    {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
-                      <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
+                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm flex-1 md:w-[200px]">
+                      <SelectValue placeholder="Ubicación">
+                        {selectedComunidad === "all" ? "Ubicación" : selectedComunidad}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">Toda España</SelectItem>
+                      {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
+                        <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {selectedComunidad !== "all" && (
                   <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[180px]">
+                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[180px]">
                       <SelectValue placeholder={t('allProvinces')}>
                         {selectedProvincia === "all" ? t('allProvinces') : selectedProvincia}
                       </SelectValue>
@@ -704,7 +709,7 @@ export default function SearchPage() {
 
                 {selectedProvincia !== "all" && availableCities.length > 0 && (
                   <Select value={selectedCiudad} onValueChange={setSelectedCiudad}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[180px]">
+                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[180px]">
                       <SelectValue placeholder={t('allCities')}>
                         {selectedCiudad === "all" ? t('allCities') : selectedCiudad}
                       </SelectValue>
@@ -764,7 +769,13 @@ export default function SearchPage() {
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="mb-4 text-center md:text-left">
+                <p className="text-sm md:text-base text-gray-700 font-medium">
+                  ✓ Profesionales verificados disponibles ahora mismo
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <AnimatePresence>
                   {filteredProfiles.slice(0, displayLimit).map((profile) => (
                     <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
