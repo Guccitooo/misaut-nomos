@@ -365,11 +365,16 @@ export default function SearchPage() {
   const [selectedComunidad, setSelectedComunidad] = useState("all");
   const [selectedProvincia, setSelectedProvincia] = useState("all");
   const [selectedCiudad, setSelectedCiudad] = useState("all");
-  const [displayLimit, setDisplayLimit] = useState(12);
+  const [displayLimit, setDisplayLimit] = useState(6);
+  const [randomSeed, setRandomSeed] = useState(() => {
+    const stored = sessionStorage.getItem('profile_random_seed');
+    return stored ? parseFloat(stored) : Math.random();
+  });
 
   useEffect(() => {
     loadUser();
-  }, []);
+    sessionStorage.setItem('profile_random_seed', randomSeed.toString());
+  }, [randomSeed]);
 
   const loadUser = async () => {
     try {
@@ -495,9 +500,13 @@ export default function SearchPage() {
       return matchesSearch && matchesCategory && matchesLocation;
     });
     
-    // Orden aleatorio
-    return filtered.sort(() => Math.random() - 0.5);
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedComunidad, selectedProvincia, selectedCiudad]);
+    // Orden aleatorio estable durante la sesión
+    return filtered.sort((a, b) => {
+      const hashA = (a.id + randomSeed.toString()).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hashB = (b.id + randomSeed.toString()).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return hashA - hashB;
+    });
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedComunidad, selectedProvincia, selectedCiudad, randomSeed]);
 
   const availableCities = React.useMemo(() => {
     if (selectedProvincia === "all") return [];
@@ -731,12 +740,12 @@ export default function SearchPage() {
               {filteredProfiles.length > displayLimit && (
                 <div className="text-center mt-8">
                   <Button
-                    onClick={() => setDisplayLimit(prev => prev + 12)}
+                    onClick={() => setDisplayLimit(filteredProfiles.length)}
                     variant="outline"
                     size="lg"
                     className="px-8 rounded-xl hover:bg-blue-50 hover:border-blue-300"
                   >
-                    {t('viewAll')} ({filteredProfiles.length - displayLimit} {t('professionals')})
+                    Ver todos los profesionales
                   </Button>
                 </div>
               )}
