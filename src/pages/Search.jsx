@@ -598,15 +598,15 @@ export default function SearchPage() {
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
           <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
             <CardContent className="p-5">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <div className="relative md:col-span-1">
+              <div className="flex flex-wrap gap-3">
+                <div className="relative flex-1 min-w-[200px]">
                   <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input type="text" placeholder={t('search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-12 pr-4 h-11 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                 </div>
 
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[200px]">
                     <SelectValue placeholder={t('allCategories')}>
                       {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
                     </SelectValue>
@@ -620,7 +620,7 @@ export default function SearchPage() {
                 </Select>
 
                 <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[200px]">
                     <SelectValue placeholder="Comunidad Autónoma">
                       {selectedComunidad === "all" ? "Todas las CC.AA" : selectedComunidad}
                     </SelectValue>
@@ -633,33 +633,37 @@ export default function SearchPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedProvincia} onValueChange={handleProvinciaChange} disabled={selectedComunidad === "all"}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                    <SelectValue placeholder={t('allProvinces')}>
-                      {selectedProvincia === "all" ? t('allProvinces') : selectedProvincia}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">{t('allProvinces')}</SelectItem>
-                    {availableProvincias.map((prov) => (
-                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {selectedComunidad !== "all" && (
+                  <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[180px]">
+                      <SelectValue placeholder={t('allProvinces')}>
+                        {selectedProvincia === "all" ? t('allProvinces') : selectedProvincia}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">{t('allProvinces')}</SelectItem>
+                      {availableProvincias.map((prov) => (
+                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-                <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                    <SelectValue placeholder={t('allCities')}>
-                      {selectedCiudad === "all" ? t('allCities') : selectedCiudad}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">{t('allCities')}</SelectItem>
-                    {availableCities.map((ciudad) => (
-                      <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {selectedProvincia !== "all" && availableCities.length > 0 && (
+                  <Select value={selectedCiudad} onValueChange={setSelectedCiudad}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[180px]">
+                      <SelectValue placeholder={t('allCities')}>
+                        {selectedCiudad === "all" ? t('allCities') : selectedCiudad}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">{t('allCities')}</SelectItem>
+                      {availableCities.map((ciudad) => (
+                        <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </CardContent>
           </Card>
