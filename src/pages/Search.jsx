@@ -621,12 +621,12 @@ export default function SearchPage() {
 
                 <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
                   <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm w-[200px]">
-                    <SelectValue placeholder="Comunidad Autónoma">
-                      {selectedComunidad === "all" ? "Todas las CC.AA" : selectedComunidad}
+                    <SelectValue placeholder="Comunidad autónoma">
+                      {selectedComunidad === "all" ? "Comunidad autónoma" : selectedComunidad}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Todas las CC.AA</SelectItem>
+                    <SelectItem value="all">Comunidad autónoma</SelectItem>
                     {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
                       <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
                     ))}
