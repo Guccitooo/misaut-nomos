@@ -726,7 +726,14 @@ export default function SearchPage() {
             </CardContent>
           </Card>
 
-
+          <div className="mb-6 text-center">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+              Profesionales verificados disponibles cerca de ti
+            </h2>
+            <p className="text-sm md:text-base text-gray-600">
+              Contacta directamente con autónomos reales. Sin intermediarios ni comisiones.
+            </p>
+          </div>
 
           {isInitialLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -769,12 +776,6 @@ export default function SearchPage() {
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
-              <div className="mb-4 text-center md:text-left">
-                <p className="text-sm md:text-base text-gray-700 font-medium">
-                  ✓ Profesionales verificados disponibles ahora mismo
-                </p>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 <AnimatePresence>
                   {filteredProfiles.slice(0, displayLimit).map((profile) => (
