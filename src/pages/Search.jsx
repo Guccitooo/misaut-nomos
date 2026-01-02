@@ -214,8 +214,8 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
       "Asesoría o gestoría": FileText,
       "Empresa multiservicios": Wrench,
       "Informático a domicilio / soporte IT": Wrench,
-      "Marketing digital / diseño web": Sparkles,
-      "Peluquería y estética a domicilio": Sparkles,
+      "Marketing digital / diseño web": Briefcase,
+      "Peluquería y estética a domicilio": Briefcase,
       "Persianas y toldos": HardHat
     };
     return icons[category] || Briefcase;
@@ -652,44 +652,42 @@ export default function SearchPage() {
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
           <Card className="mb-4 md:mb-6 shadow-sm md:shadow-md border-0 rounded-xl md:rounded-2xl bg-white">
             <CardContent className="p-3 md:p-5">
-              <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-3">
+              <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-3">
                 <div className="relative w-full md:flex-1 md:min-w-[200px]">
-                  <SearchIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 md:w-5 h-4 md:h-5" />
+                  <SearchIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 md:w-5 h-4 md:h-5 pointer-events-none z-10" />
                   <Input type="text" placeholder="Buscar servicio o profesional" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 md:pl-12 pr-3 md:pr-4 h-10 md:h-11 text-sm rounded-lg md:rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                    className="pl-11 md:pl-12 pr-3 md:pr-4 h-11 md:h-11 text-sm rounded-lg md:rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm flex-1 md:w-[200px]">
-                      <SelectValue placeholder="Categoría">
-                        {selectedCategory === "all" ? "Categoría" : (t(selectedCategory) || selectedCategory)}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">Todas</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-11 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[200px]">
+                    <SelectValue placeholder="Categoría">
+                      {selectedCategory === "all" ? "Categoría" : (t(selectedCategory) || selectedCategory)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
-                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm flex-1 md:w-[200px]">
-                      <SelectValue placeholder="Ubicación">
-                        {selectedComunidad === "all" ? "Ubicación" : selectedComunidad}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="all">Toda España</SelectItem>
-                      {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
-                        <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
+                  <SelectTrigger className="h-11 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[200px]">
+                    <SelectValue placeholder="Ubicación">
+                      {selectedComunidad === "all" ? "Ubicación" : selectedComunidad}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">Toda España</SelectItem>
+                    {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
+                      <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {selectedComunidad !== "all" && (
                   <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
