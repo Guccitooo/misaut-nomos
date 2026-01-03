@@ -61,28 +61,15 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
-// Comunidades Autónomas y sus provincias
-const COMUNIDADES_AUTONOMAS = {
-  "Andalucía": ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"],
-  "Aragón": ["Huesca", "Teruel", "Zaragoza"],
-  "Asturias": ["Asturias"],
-  "Islas Baleares": ["Baleares"],
-  "Canarias": ["Las Palmas", "Santa Cruz de Tenerife"],
-  "Cantabria": ["Cantabria"],
-  "Castilla y León": ["Ávila", "Burgos", "León", "Palencia", "Salamanca", "Segovia", "Soria", "Valladolid", "Zamora"],
-  "Castilla-La Mancha": ["Albacete", "Ciudad Real", "Cuenca", "Guadalajara", "Toledo"],
-  "Cataluña": ["Barcelona", "Girona", "Lleida", "Tarragona"],
-  "Comunidad Valenciana": ["Alicante", "Castellón", "Valencia"],
-  "Extremadura": ["Badajoz", "Cáceres"],
-  "Galicia": ["A Coruña", "Lugo", "Ourense", "Pontevedra"],
-  "Madrid": ["Madrid"],
-  "Murcia": ["Murcia"],
-  "Navarra": ["Navarra"],
-  "País Vasco": ["Álava", "Guipúzcoa", "Vizcaya"],
-  "La Rioja": ["La Rioja"],
-  "Ceuta": ["Ceuta"],
-  "Melilla": ["Melilla"]
-};
+const PROVINCIAS_ESPANA = [
+  "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
+  "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ceuta",
+  "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa",
+  "Huelva", "Huesca", "Jaén", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid",
+  "Málaga", "Melilla", "Murcia", "Navarra", "Ourense", "Palencia", "Pontevedra", "Salamanca",
+  "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo",
+  "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza"
+];
 
 const CIUDADES_POR_PROVINCIA = {
   "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
@@ -197,28 +184,13 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
 
   const getCategoryIcon = (category) => {
     const icons = {
-      "Electricista": Zap,
-      "Fontanero": Droplets,
-      "Carpintero": Hammer,
-      "Albañil / Reformas": HardHat,
-      "Pintor": Paintbrush,
-      "Jardinero": Trees,
-      "Transportista": Truck,
-      "Autónomo de limpieza": Sparkles,
-      "Cerrajero": Key,
-      "Instalador de aire acondicionado": Wind,
-      "Climatización / Calefacción": Wind,
-      "Mantenimiento general": Wrench,
-      "Mantenimiento de piscinas": Waves,
-      "Abogado": Briefcase,
-      "Asesoría o gestoría": FileText,
-      "Empresa multiservicios": Wrench,
-      "Informático a domicilio / soporte IT": Wrench,
-      "Marketing digital / diseño web": Briefcase,
-      "Peluquería y estética a domicilio": Briefcase,
-      "Persianas y toldos": HardHat
+      "Electricista": Zap, "Fontanero": Droplets, "Carpintero": Hammer,
+      "Albañil / Reformas": HardHat, "Pintor": Paintbrush, "Jardinero": Trees,
+      "Transportista": Truck, "Autónomo de limpieza": Sparkles, "Cerrajero": Key,
+      "Instalador de aire acondicionado": Wind, "Mantenimiento general": Wrench,
+      "Mantenimiento de piscinas": Waves
     };
-    return icons[category] || Briefcase;
+    return icons[category] || MoreHorizontal;
   };
 
   const CategoryIcon = getCategoryIcon(profile.categories?.[0]);
@@ -226,9 +198,9 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
   return (
     <>
       <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
-        <CardContent className="p-3 md:p-4 flex flex-col flex-1">
-          <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
-            <Avatar className="w-11 md:w-12 h-11 md:h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
+        <CardContent className="p-4 flex flex-col flex-1">
+          <div className="flex items-start gap-3 mb-3">
+            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
@@ -262,12 +234,12 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             </div>
 
             <Button variant="ghost" size="icon" onClick={onToggleFavorite}
-              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-7 md:h-8 w-7 md:w-8 flex-shrink-0 hidden md:flex`}>
+              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-8 w-8 flex-shrink-0`}>
               <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
             </Button>
           </div>
 
-          <div className="space-y-1.5 md:space-y-2 mb-2 md:mb-3 flex-1">
+          <div className="space-y-2 mb-3 flex-1">
             <div className="flex items-center gap-1.5 text-xs text-gray-600">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
@@ -286,18 +258,8 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row gap-2 md:gap-1.5 mt-auto">
-            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <Button onClick={handleWhatsApp} 
-                className="w-full md:flex-1 bg-green-600 hover:bg-green-700 text-white h-11 md:h-9 text-sm md:text-xs font-semibold rounded-lg flex items-center justify-center gap-2">
-                <MessageCircle className="w-5 md:w-4 h-5 md:h-4" />
-                <span className="md:hidden">Contactar por WhatsApp</span>
-                <span className="hidden md:inline">WhatsApp</span>
-              </Button>
-            )}
-
-            <Button onClick={onClick} 
-              className="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 md:h-9 text-xs font-medium rounded-lg px-2">
+          <div className="flex gap-1.5 mt-auto">
+            <Button onClick={onClick} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2">
               {t('viewProfile')}
             </Button>
 
@@ -311,7 +273,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                 navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
               }}
               variant="outline" size="icon"
-              className="hidden md:flex h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
+              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
               title={t('sendDirectMessage')}>
               <MessageSquare className="w-4 h-4 text-gray-700" />
             </Button>
@@ -321,10 +283,17 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
                 onClick={handleCall}
                 variant="outline" 
                 size="icon"
-                className="hidden md:flex h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" 
+                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" 
                 title={t('callPhone')}
               >
                 <Phone className="w-4 h-4 text-gray-700" />
+              </Button>
+            )}
+
+            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
+              <Button onClick={handleWhatsApp} variant="outline" size="icon"
+                className="h-9 w-9 border-gray-200 hover:bg-green-50 rounded-lg flex-shrink-0" title={t('contactViaWhatsApp')}>
+                <MessageCircle className="w-4 h-4 text-green-600" />
               </Button>
             )}
           </div>
@@ -380,19 +349,13 @@ export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedComunidad, setSelectedComunidad] = useState("all");
   const [selectedProvincia, setSelectedProvincia] = useState("all");
   const [selectedCiudad, setSelectedCiudad] = useState("all");
-  const [displayLimit, setDisplayLimit] = useState(6);
-  const [randomSeed, setRandomSeed] = useState(() => {
-    const stored = sessionStorage.getItem('profile_random_seed');
-    return stored ? parseFloat(stored) : Math.random();
-  });
+  const [displayLimit, setDisplayLimit] = useState(12);
 
   useEffect(() => {
     loadUser();
-    sessionStorage.setItem('profile_random_seed', randomSeed.toString());
-  }, [randomSeed]);
+  }, []);
 
   const loadUser = async () => {
     try {
@@ -403,33 +366,6 @@ export default function SearchPage() {
     } finally {
       setLoadingUser(false);
     }
-  };
-
-  // Mapeo de emojis por categoría (solo para el selector)
-  const getCategoryEmoji = (categoryName) => {
-    const emojis = {
-      "Abogado": "⚖️",
-      "Albañil / Reformas": "🏗️",
-      "Asesoría o gestoría": "📊",
-      "Autónomo de limpieza": "🧹",
-      "Carpintero": "🪚",
-      "Cerrajero": "🔑",
-      "Climatización / Calefacción": "❄️",
-      "Electricista": "⚡",
-      "Empresa multiservicios": "🔧",
-      "Fontanero": "🚰",
-      "Informático a domicilio / soporte IT": "💻",
-      "Jardinero": "🌳",
-      "Marketing digital / diseño web": "🎨",
-      "Peluquería y estética a domicilio": "💇",
-      "Persianas y toldos": "🏠",
-      "Pintor": "🎨",
-      "Transportista": "🚚",
-      "Instalador de aire acondicionado": "❄️",
-      "Mantenimiento general": "🔧",
-      "Mantenimiento de piscinas": "🏊"
-    };
-    return emojis[categoryName] || "🔹";
   };
 
   // Categorías de fallback (se usan si BD no responde o no hay auth)
@@ -516,11 +452,6 @@ export default function SearchPage() {
     refetchOnWindowFocus: false,
   });
 
-  const availableProvincias = React.useMemo(() => {
-    if (selectedComunidad === "all") return [];
-    return COMUNIDADES_AUTONOMAS[selectedComunidad] || [];
-  }, [selectedComunidad]);
-
   const filteredProfiles = React.useMemo(() => {
     const filtered = profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
@@ -528,41 +459,19 @@ export default function SearchPage() {
         profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-      
-      // Filtro jerárquico: Comunidad → Provincia → Ciudad
-      let matchesLocation = true;
-      if (selectedComunidad !== "all") {
-        const provinciasEnComunidad = COMUNIDADES_AUTONOMAS[selectedComunidad] || [];
-        matchesLocation = provinciasEnComunidad.includes(profile.provincia);
-      }
-      if (selectedProvincia !== "all") {
-        matchesLocation = matchesLocation && profile.provincia === selectedProvincia;
-      }
-      if (selectedCiudad !== "all") {
-        matchesLocation = matchesLocation && profile.ciudad === selectedCiudad;
-      }
-      
-      return matchesSearch && matchesCategory && matchesLocation;
+      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
+      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
     });
     
-    // Orden aleatorio estable durante la sesión
-    return filtered.sort((a, b) => {
-      const hashA = (a.id + randomSeed.toString()).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const hashB = (b.id + randomSeed.toString()).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      return hashA - hashB;
-    });
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedComunidad, selectedProvincia, selectedCiudad, randomSeed]);
+    // Orden aleatorio
+    return filtered.sort(() => Math.random() - 0.5);
+  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
 
   const availableCities = React.useMemo(() => {
     if (selectedProvincia === "all") return [];
     return CIUDADES_POR_PROVINCIA[selectedProvincia] || [];
   }, [selectedProvincia]);
-
-  const handleComunidadChange = (value) => {
-    setSelectedComunidad(value);
-    setSelectedProvincia("all");
-    setSelectedCiudad("all");
-  };
 
   const handleProvinciaChange = (value) => {
     setSelectedProvincia(value);
@@ -621,7 +530,7 @@ export default function SearchPage() {
       <div className="min-h-screen bg-gray-50">
         {/* Hero visible solo si no hay usuario y ya se terminó de cargar */}
         {!user && !loadingUser && (
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '280px' }}>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '320px' }}>
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
               <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
@@ -639,9 +548,13 @@ export default function SearchPage() {
                   <span>{t('directChat')}</span>
                 </div>
               </div>
-              <div className="flex justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
+                <Button onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
+                  <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
+                </Button>
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-10 text-base font-semibold shadow-xl rounded-xl">
+                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
               </div>
@@ -650,91 +563,72 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <Card className="mb-4 md:mb-6 shadow-sm md:shadow-md border-0 rounded-xl md:rounded-2xl bg-white">
-            <CardContent className="p-3 md:p-5">
-              <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-3">
-                <div className="relative w-full md:flex-1 md:min-w-[200px]">
-                  <SearchIcon className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 md:w-5 h-4 md:h-5 pointer-events-none z-10" />
-                  <Input type="text" placeholder="Buscar servicio o profesional" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-11 md:pl-12 pr-3 md:pr-4 h-11 md:h-11 text-sm rounded-lg md:rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+          <Card className="mb-6 shadow-md border-0 rounded-2xl bg-white">
+            <CardContent className="p-5">
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input type="text" placeholder={t('search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-12 pr-4 h-12 text-sm rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                  </div>
+                  <Button className="hidden md:flex bg-blue-600 hover:bg-blue-700 h-12 px-6 rounded-xl font-semibold">
+                    <SearchIcon className="w-5 h-5 mr-2" />{t('search')}
+                  </Button>
                 </div>
 
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-11 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[200px]">
-                    <SelectValue placeholder="Categoría">
-                      {selectedCategory === "all" ? "Categoría" : (t(selectedCategory) || selectedCategory)}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Todas</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {getCategoryEmoji(cat.name)} {t(cat.name) || cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={selectedComunidad} onValueChange={handleComunidadChange}>
-                  <SelectTrigger className="h-11 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[200px]">
-                    <SelectValue placeholder="Ubicación">
-                      {selectedComunidad === "all" ? "Ubicación" : selectedComunidad}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">Toda España</SelectItem>
-                    {Object.keys(COMUNIDADES_AUTONOMAS).map((ccaa) => (
-                      <SelectItem key={ccaa} value={ccaa}>{ccaa}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {selectedComunidad !== "all" && (
-                  <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[180px]">
-                      <SelectValue placeholder={t('allProvinces')}>
-                        {selectedProvincia === "all" ? t('allProvinces') : selectedProvincia}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder={t('allCategories')}>
+                        {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">{t('allCategories')}</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder={t('allProvinces')} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
                       <SelectItem value="all">{t('allProvinces')}</SelectItem>
-                      {availableProvincias.map((prov) => (
+                      {PROVINCIAS_ESPANA.map((prov) => (
                         <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
 
-                {selectedProvincia !== "all" && availableCities.length > 0 && (
-                  <Select value={selectedCiudad} onValueChange={setSelectedCiudad}>
-                    <SelectTrigger className="h-10 md:h-11 rounded-lg md:rounded-xl border-gray-200 text-sm w-full md:w-[180px]">
-                      <SelectValue placeholder={t('allCities')}>
-                        {selectedCiudad === "all" ? t('allCities') : selectedCiudad}
-                      </SelectValue>
+                  <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder={t('allCities')} />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
+                    <SelectContent>
                       <SelectItem value="all">{t('allCities')}</SelectItem>
                       {availableCities.map((ciudad) => (
                         <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="mb-6 text-center">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-              Profesionales verificados disponibles cerca de ti
+          <div className="mb-5" style={{ minHeight: '56px' }}>
+            <h2 className="text-xl font-bold text-gray-900">
+              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
             </h2>
-            <p className="text-sm md:text-base text-gray-600">
-              Contacta directamente con autónomos reales. Sin intermediarios ni comisiones.
-            </p>
+            <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
           </div>
 
           {isInitialLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[...Array(6)].map((_, idx) => (
                 <div key={idx} className="border border-gray-100 rounded-xl bg-white p-4" style={{ height: '220px' }}>
                   <div className="flex items-start gap-3 mb-3">
@@ -774,7 +668,7 @@ export default function SearchPage() {
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <AnimatePresence>
                   {filteredProfiles.slice(0, displayLimit).map((profile) => (
                     <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -794,12 +688,12 @@ export default function SearchPage() {
               {filteredProfiles.length > displayLimit && (
                 <div className="text-center mt-8">
                   <Button
-                    onClick={() => setDisplayLimit(filteredProfiles.length)}
+                    onClick={() => setDisplayLimit(prev => prev + 12)}
                     variant="outline"
                     size="lg"
                     className="px-8 rounded-xl hover:bg-blue-50 hover:border-blue-300"
                   >
-                    Ver todos los profesionales
+                    {t('viewAll')} ({filteredProfiles.length - displayLimit} {t('professionals')})
                   </Button>
                 </div>
               )}

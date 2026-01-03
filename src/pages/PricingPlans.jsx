@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight, Briefcase, Award, Target, TrendingDown } from "lucide-react";
+import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight, Briefcase } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
@@ -155,7 +155,7 @@ export default function PricingPlansPage() {
       case "plan_profesional": 
         return { text: "Más popular", color: "bg-green-500" };
       case "plan_growth": 
-        return { text: "EL PLAN QUE MÁS CLIENTES GENERA", color: "bg-gradient-to-r from-purple-600 to-pink-600" };
+        return { text: "Crecimiento", color: "bg-purple-500" };
       default: 
         return null;
     }
@@ -258,137 +258,117 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* Plan cards - Diseño minimalista profesional */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-16">
+          {/* Plan cards con diseño mejorado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
-              const isGrowth = plan.plan_id === "plan_growth";
-              const isProfesional = plan.plan_id === "plan_profesional";
+              const isPopular = plan.plan_id === "plan_profesional";
 
               return (
                 <Card 
                   key={plan.plan_id}
-                  className={`relative overflow-hidden bg-white transition-all duration-200 hover:shadow-xl ${
-                    isGrowth ? "border border-purple-200 shadow-lg scale-[1.02]" : 
-                    "border border-gray-200 shadow-sm"
+                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
+                    isPopular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
                   }`}
-                  style={{ borderRadius: '16px' }}
                 >
                   {badge && (
                     <div className="absolute top-0 left-0 right-0">
-                      <div className={`${badge.color} text-white text-center py-2.5 text-xs font-semibold tracking-wide uppercase`}>
+                      <div className={`${badge.color} text-white text-center py-2 text-sm font-bold`}>
                         {badge.text}
                       </div>
                     </div>
                   )}
 
-                  <CardContent className={`p-8 ${badge ? 'pt-16' : 'pt-8'}`}>
-                    {/* Header del plan */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
+                    <div className="text-center mb-6">
+                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
+                        plan.plan_id === "plan_profesional" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
+                        "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                      }`}>
+                        {getPlanIcon(plan.plan_id)}
+                      </div>
+
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
                         {plan.nombre}
                       </h3>
 
-                      <div className="mb-6">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-5xl font-bold text-gray-900">0€</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
+                      <div className="mb-3">
+                        <p className="text-6xl font-black text-gray-900">
+                          0€
+                        </p>
+                        <p className="text-lg text-gray-600 font-semibold mt-2">
                           {t('firstSevenDays')}
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Luego {Math.round(plan.precio)}€/mes
+                        <p className="text-sm text-gray-500 mt-3">
+                          {t('then')} {Math.round(plan.precio)}€{t('perMonth')}
                         </p>
                       </div>
                     </div>
 
-                    {/* Lista de beneficios limpia */}
-                    <ul className="space-y-3.5 mb-8">
+                    <ul className="space-y-2 mb-6">
                       {plan.plan_id === "plan_profesional" ? (
                         <>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('appearInSearches')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">✅ {t('appearInSearches')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('directChatWithClients')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💬 {t('directChatWithClients')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('completeCRM')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📋 {t('completeCRM')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('invoicingSystem')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📄 {t('invoicingSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('integratedPaymentGateway')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💳 {t('integratedPaymentGateway')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('support247')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🎫 {t('support247')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('ratingsSystem')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">⭐ {t('ratingsSystem')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('unlimitedPhotoGallery')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📸 {t('unlimitedPhotoGallery')}</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
                           </li>
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">
-                              <strong className="text-gray-900">Inversión en Meta Ads:</strong> 20€/mes de inversión real gestionada por nosotros
-                            </span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">✅ Todo lo del Plan Profesional</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">
-                              <strong className="text-gray-900">Sello de Destacado:</strong> Insignia dorada y primeras posiciones en tu ciudad
-                            </span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🚀 20€/mes en anuncios de Meta Ads gestionados</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">
-                              <strong className="text-gray-900">Gestión VIP:</strong> Soporte prioritario y asistencia en portfolio
-                            </span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📊 Análisis y optimización de campañas</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">
-                              <strong className="text-gray-900">Analítica:</strong> Informe mensual de vistas y contactos
-                            </span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">🎯 Segmentación avanzada de audiencias</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">Todo lo del Plan Profesional incluido</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">📈 Mayor visibilidad y más clientes</span>
                           </li>
-                          <li className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700 leading-relaxed">{t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">💼 Gestor de anuncios dedicado</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs">
+                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
                           </li>
                         </>
                       )}
                     </ul>
 
-                    {/* Botón CTA limpio */}
                     <Button
-                      className={`w-full h-12 text-base font-semibold transition-all ${
-                        isProfesional 
-                          ? "bg-green-600 hover:bg-green-700 text-white" 
-                          : "bg-purple-600 hover:bg-purple-700 text-white"
+                      className={`w-full h-12 text-base font-bold transition-all ${
+                        isPopular 
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
+                          : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
                       }`}
-                      style={{ borderRadius: '8px' }}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}
                       aria-label={`Seleccionar plan ${plan.nombre}`}
@@ -404,14 +384,8 @@ export default function PricingPlansPage() {
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 mt-3">
-                      Pago 100% seguro con Stripe
+                      {t('clickGoToCheckout')}
                     </p>
-
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <p className="text-xs text-center text-amber-700 bg-amber-50 py-2 px-3 rounded-md font-medium">
-                        ⚡ Plazas limitadas por zona. Máx. 10 profesionales por categoría y ciudad
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               );
@@ -421,90 +395,6 @@ export default function PricingPlansPage() {
           {/* Pro Features Section */}
           <div className="mb-12">
             <ProFeaturesSection />
-          </div>
-
-          {/* Reglas de Oro - Garantía de Calidad */}
-          <div className="max-w-5xl mx-auto mb-16">
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-900 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                <Shield className="w-4 h-4" />
-                Garantía de Calidad
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Nuestras Reglas de Oro</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Un ecosistema exclusivo que protege tu inversión y maximiza tus oportunidades
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Regla 1: Exclusividad */}
-              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
-                    <Award className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Exclusividad Territorial
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                    Máximo <strong className="text-gray-900">10 profesionales por categoría y ciudad</strong>. Esto garantiza que no compites con decenas de perfiles similares.
-                  </p>
-                  <p className="text-xs text-gray-500 italic">
-                    Si tu zona está completa, entrarás en lista de espera hasta que haya una plaza disponible.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Regla 2: Autorregulación */}
-              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4">
-                    <Target className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Ecosistema Autorregulado
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                    Los perfiles con <strong className="text-gray-900">malas valoraciones verificadas o incumplimientos</strong> son expulsados automáticamente.
-                  </p>
-                  <p className="text-xs text-gray-500 italic">
-                    Tu plaza es un activo valioso: cuídala ofreciendo un servicio excelente.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Regla 3: Beneficio Real */}
-              <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white" style={{ borderRadius: '12px' }}>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-4">
-                    <TrendingUp className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Flujo Constante de Clientes
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                    Al limitar la competencia, <strong className="text-gray-900">los 10 elegidos reciben más visibilidad</strong> y un flujo constante de solicitudes reales.
-                  </p>
-                  <p className="text-xs text-gray-500 italic">
-                    Sin canibalización de precios. Tu experiencia y calidad son las que destacan.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Call to Action de Exclusividad */}
-            <div className="mt-8 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 text-center">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Info className="w-5 h-5 text-amber-700" />
-                <h4 className="text-lg font-semibold text-amber-900">
-                  Tu plaza es un privilegio, no un derecho
-                </h4>
-              </div>
-              <p className="text-sm text-amber-800 max-w-2xl mx-auto">
-                Mantén tus valoraciones altas, responde rápido a los clientes y ofrece un servicio impecable. 
-                Así tu plaza seguirá activa y recibirás un flujo continuo de oportunidades de negocio.
-              </p>
-            </div>
           </div>
 
           {/* Comparación de planes */}
@@ -609,25 +499,6 @@ export default function PricingPlansPage() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Nota de transparencia sobre anuncios */}
-            <Card className="border-0 shadow-md bg-purple-50 border-l-4 border-purple-600 mt-6">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Info className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-purple-900 mb-2">Sobre los anuncios del Plan Growth</h3>
-                    <p className="text-sm text-purple-800">
-                      Los 20€ mensuales se destinan íntegramente a la plataforma publicitaria Meta (Facebook e Instagram). 
-                      Nosotros configuramos, optimizamos y gestionamos tus campañas para maximizar el retorno. 
-                      <strong> Resultados sujetos a la demanda del sector en tu zona.</strong>
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
