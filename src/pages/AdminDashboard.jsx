@@ -18,7 +18,8 @@ import {
   XCircle,
   AlertCircle,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -354,6 +355,15 @@ export default function AdminDashboardPage() {
     enabled: !!user,
   });
 
+  const { data: quotes = [], isLoading: loadingQuotes } = useQuery({
+    queryKey: ['allQuotes'],
+    queryFn: async () => {
+      const allQuotes = await base44.entities.Quote.list('-created_date');
+      return allQuotes;
+    },
+    enabled: !!user,
+  });
+
   const toggleVisibilityMutation = useMutation({
     mutationFn: async ({ profileId, newVisibility }) => {
       await base44.entities.ProfessionalProfile.update(profileId, {
@@ -514,7 +524,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="profiles" className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
               Perfiles
@@ -530,6 +540,10 @@ export default function AdminDashboardPage() {
             <TabsTrigger value="subscriptions" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
               Suscripciones
+            </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Presupuestos
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center gap-2" onClick={() => window.location.href = '/AdminMessagesStats'}>
               <MessageSquare className="w-4 h-4" />
@@ -1006,6 +1020,87 @@ export default function AdminDashboardPage() {
                                 <Badge className={sub.renovacion_automatica ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                                   {sub.renovacion_automatica ? '🔄 Automática' : '⏸️ Manual'}
                                 </Badge>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="quotes">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-700" />
+                    Gestión de Presupuestos
+                  </CardTitle>
+                  <Badge variant="outline" className="text-sm">
+                    {quotes.length} presupuestos
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingQuotes ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
+                  </div>
+                ) : quotes.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay presupuestos en el sistema
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fecha</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Título</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Profesional</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Cliente</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Total</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Estado</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Versión</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {quotes.map((quote) => {
+                          const statusColors = {
+                            borrador: "bg-gray-100 text-gray-800",
+                            enviado: "bg-blue-100 text-blue-800",
+                            aceptado: "bg-green-100 text-green-800",
+                            rechazado: "bg-red-100 text-red-800"
+                          };
+                          
+                          return (
+                            <tr key={quote.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {new Date(quote.created_date).toLocaleDateString('es-ES')}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                {quote.title}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {quote.professional_name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {quote.client_name}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                                {quote.total?.toFixed(2)}€
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge className={statusColors[quote.status] || "bg-gray-100 text-gray-800"}>
+                                  {quote.status}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                v{quote.version || 1}
                               </td>
                             </tr>
                           );
