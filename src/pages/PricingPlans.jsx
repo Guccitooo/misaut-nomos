@@ -218,35 +218,14 @@ export default function PricingPlansPage() {
             {t('back')}
           </Button>
 
-          {/* Hero Section mejorado */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold mb-6 shadow-lg animate-pulse">
-              <Gift className="w-6 h-6" />
-              {t('sevenDaysTrial')}
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 leading-tight">
-              {t('startFreeToday')}
+          {/* Hero Section minimalista */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Planes y Precios
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
-              {t('noCommitment')} • {t('cancelAnytime')} • {t('securePayment')}
+            <p className="text-sm text-gray-600">
+              7 días gratis • Sin permanencia • Cancela cuando quieras
             </p>
-            
-            {/* Trust badges */}
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-600" />
-                <span>Pago 100% seguro</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <span>+5.000 búsquedas/día</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-purple-600" />
-                <span>Activo en minutos</span>
-              </div>
-            </div>
           </div>
 
           {canceled && (
@@ -258,8 +237,8 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* Plan cards con diseño mejorado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
+          {/* Plan cards minimalistas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isPopular = plan.plan_id === "plan_profesional";
@@ -268,252 +247,125 @@ export default function PricingPlansPage() {
               return (
                 <Card 
                   key={plan.plan_id}
-                  className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
-                    isGrowth ? "border-4 border-orange-500 shadow-2xl scale-105 z-10" :
-                    isPopular ? "border-green-500 shadow-xl" : "border-gray-200"
-                  }`}
+                  className="relative bg-white border border-gray-200 hover:border-gray-300 transition-colors"
+                  style={{ borderRadius: '4px' }}
                 >
-                  {badge && (
-                    <div className="absolute top-0 left-0 right-0">
-                      <div className={`${badge.color} text-white text-center py-2 text-sm font-bold`}>
-                        {badge.text}
-                      </div>
-                    </div>
-                  )}
-
-                  <CardContent className={`p-6 ${badge ? 'pt-14' : 'pt-6'}`}>
-                    <div className="text-center mb-6">
-                      <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
-                        plan.plan_id === "plan_profesional" ? "bg-gradient-to-br from-green-500 to-green-600 text-white" :
-                        "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
-                      }`}>
-                        {getPlanIcon(plan.plan_id)}
-                      </div>
-
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <CardContent className="p-8">
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4">
                         {plan.nombre}
                       </h3>
 
-                      <div className="mb-3">
-                        <p className="text-6xl font-black text-gray-900">
-                          0€
+                      <div className="mb-1">
+                        <p className="text-4xl font-semibold text-gray-900">
+                          {Math.round(plan.precio)}€<span className="text-base text-gray-600 font-normal">/mes</span>
                         </p>
-                        <p className="text-lg text-gray-600 font-semibold mt-2">
-                          {t('firstSevenDays')}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-3">
-                          {t('then')} {Math.round(plan.precio)}€{t('perMonth')}
+                        <p className="text-sm text-gray-500 mt-1">
+                          7 días gratis, luego {Math.round(plan.precio)}€/mes
                         </p>
                       </div>
                     </div>
 
-                    <ul className="space-y-2 mb-6">
+                    <ul className="space-y-2 mb-6" style={{ fontSize: '14px' }}>
                       {plan.plan_id === "plan_profesional" ? (
                         <>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">✅ {t('appearInSearches')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Perfil en búsquedas</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">💬 {t('directChatWithClients')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Chat con clientes</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📋 {t('completeCRM')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">CRM completo</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📄 {t('invoicingSystem')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Facturación ilimitada</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">💳 {t('integratedPaymentGateway')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Pasarela de pagos</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">🎫 {t('support247')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Sistema de reseñas</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">⭐ {t('ratingsSystem')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Galería ilimitada</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📸 {t('unlimitedPhotoGallery')}</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Soporte 24/7</span>
                           </li>
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-2 text-xs bg-orange-50 p-3 rounded-lg border border-orange-200">
-                            <span className="text-gray-900"><strong>💰 Inversión Directa en Clientes:</strong> Incluye 20€/mes de inversión real en Meta Ads (Facebook e Instagram). Nosotros configuramos y optimizamos tu publicidad para que te lleguen contactos.</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Meta Ads incluidos</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                            <span className="text-gray-900"><strong>🏆 Sello de Profesional Destacado:</strong> Tu perfil aparecerá con una insignia dorada de "Recomendado" y se mostrará siempre en las primeras posiciones de tu ciudad.</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Perfil verificado</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs bg-purple-50 p-3 rounded-lg border border-purple-200">
-                            <span className="text-gray-900"><strong>👤 Gestión VIP:</strong> Soporte técnico prioritario y asistencia en la creación de tu portfolio para maximizar tus ventas.</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Soporte VIP</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs bg-blue-50 p-3 rounded-lg border border-blue-200">
-                            <span className="text-gray-900"><strong>📊 Analítica de Rendimiento:</strong> Recibe un informe mensual de cuántas personas han visto tu perfil y cuántas han hecho clic para contactarte.</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Informes mensuales</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">✅ + Todo lo del Plan Profesional (CRM, Facturación, Chat...)</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Primeras posiciones</span>
                           </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
+                          <li className="flex items-start gap-2">
+                            <span className="text-gray-500">✓</span>
+                            <span className="text-gray-700">Todo del Profesional</span>
                           </li>
                         </>
                       )}
                     </ul>
 
                     <Button
-                      className={`w-full h-12 text-base font-bold transition-all ${
-                        isGrowth
-                          ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-xl"
-                          : isPopular 
-                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
-                          : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                      }`}
+                      className="w-full h-10 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+                      style={{ borderRadius: '4px' }}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}
                       aria-label={`Seleccionar plan ${plan.nombre}`}
                     >
                       {isProcessing && selectedPlan === plan.plan_id ? (
                         <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          {t('processing')}
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Procesando...
                         </>
                       ) : (
-                        t('startNow')
+                        "Empezar ahora"
                       )}
                     </Button>
-
-                    <p className="text-xs text-center text-gray-500 mt-3">
-                      {t('clickGoToCheckout')}
-                    </p>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
 
-          {/* Pro Features Section */}
-          <div className="mb-12">
-            <ProFeaturesSection />
-          </div>
 
-          {/* Comparación de planes */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">¿Cuál es la diferencia?</h2>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-white font-semibold">Característica</th>
-                    <th className="px-6 py-4 text-center text-white font-semibold">Profesional</th>
-                    <th className="px-6 py-4 text-center text-white font-semibold">Growth</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-700">Aparecer en búsquedas</td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-700">Chat directo con clientes</td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-700">CRM + Facturación</td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-700">Sistema de valoraciones</td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50 bg-purple-50">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">🚀 Anuncios en Meta Ads (20€/mes gestionados)</td>
-                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50 bg-purple-50">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">📊 Análisis y optimización de campañas</td>
-                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
-                  </tr>
-                  <tr className="hover:bg-gray-50 bg-purple-50">
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">🎯 Mayor alcance y visibilidad</td>
-                    <td className="px-6 py-4 text-center"><span className="text-gray-400">—</span></td>
-                    <td className="px-6 py-4 text-center"><CheckCircle className="w-5 h-5 text-purple-600 mx-auto" /></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
-          {/* Social Proof */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-12 text-white text-center">
-            <div className="flex items-center justify-center gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-            <h3 className="text-2xl font-bold mb-2">
-              Miles de Clientes te Verán Cada Día
-            </h3>
-            <p className="text-blue-100 max-w-2xl mx-auto">
-              Aumenta tu visibilidad al instante. Consigue más oportunidades de trabajo con tu perfil profesional.
-            </p>
-          </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-0 shadow-md bg-white">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-2">{t('whatHappensAfterTrial')}</h3>
-                      <p className="text-sm text-gray-600">
-                        {t('autoChargeExplain')}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-0 shadow-md bg-white">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 mb-2">{t('canCancelAnytime')}</h3>
-                      <p className="text-sm text-gray-600">
-                        {t('noPermanenceExplain')}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="mt-8 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
-              <div className="flex items-start gap-3">
-                <Info className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-2">📢 Sobre los anuncios del Plan Growth</h3>
-                  <p className="text-sm text-gray-700 mb-2">
-                    Los 20€/mes se destinan íntegramente a la plataforma publicitaria de Meta (Facebook e Instagram). Nuestro equipo configura, gestiona y optimiza tus campañas para maximizar el alcance en tu zona.
-                  </p>
-                  <p className="text-xs text-gray-600 italic">
-                    * Los resultados están sujetos a la demanda del sector en tu ubicación. No podemos garantizar un número específico de contactos, pero optimizamos cada euro para lograr el mejor rendimiento posible.
-                  </p>
-                </div>
-              </div>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gray-50 border border-gray-200 p-6" style={{ borderRadius: '4px' }}>
+              <p className="text-sm text-gray-700 text-center mb-3">
+                Después de los 7 días gratis se cobrará automáticamente. Puedes cancelar en cualquier momento desde tu panel.
+              </p>
+              <p className="text-xs text-gray-600 text-center">
+                * Plan Growth: Los 20€/mes se destinan a anuncios en Meta Ads. Resultados sujetos a demanda local.
+              </p>
             </div>
           </div>
         </div>
