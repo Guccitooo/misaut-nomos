@@ -27,6 +27,7 @@ import Onboarding from './pages/Onboarding';
 import PayInvoice from './pages/PayInvoice';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Presupuestos from './pages/Presupuestos';
+import PricingPlans from './pages/PricingPlans';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
 import ProfessionalProfile from './pages/ProfessionalProfile';
@@ -35,13 +36,12 @@ import ProjectDetail from './pages/ProjectDetail';
 import Projects from './pages/Projects';
 import QuoteRequests from './pages/QuoteRequests';
 import RequestQuote from './pages/RequestQuote';
+import Search from './pages/Search';
 import SubscriptionManagement from './pages/SubscriptionManagement';
 import TermsConditions from './pages/TermsConditions';
 import TicketDetail from './pages/TicketDetail';
 import Tickets from './pages/Tickets';
 import UserTypeSelection from './pages/UserTypeSelection';
-import Search from './pages/Search';
-import PricingPlans from './pages/PricingPlans';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +75,7 @@ export const PAGES = {
     "PayInvoice": PayInvoice,
     "PaymentSuccess": PaymentSuccess,
     "Presupuestos": Presupuestos,
+    "PricingPlans": PricingPlans,
     "PrivacyPolicy": PrivacyPolicy,
     "ProfessionalDashboard": ProfessionalDashboard,
     "ProfessionalProfile": ProfessionalProfile,
@@ -83,13 +84,12 @@ export const PAGES = {
     "Projects": Projects,
     "QuoteRequests": QuoteRequests,
     "RequestQuote": RequestQuote,
+    "Search": Search,
     "SubscriptionManagement": SubscriptionManagement,
     "TermsConditions": TermsConditions,
     "TicketDetail": TicketDetail,
     "Tickets": Tickets,
     "UserTypeSelection": UserTypeSelection,
-    "Search": Search,
-    "PricingPlans": PricingPlans,
 }
 
 export const pagesConfig = {
