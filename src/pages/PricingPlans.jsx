@@ -155,7 +155,7 @@ export default function PricingPlansPage() {
       case "plan_profesional": 
         return { text: "Más popular", color: "bg-green-500" };
       case "plan_growth": 
-        return { text: "Crecimiento", color: "bg-purple-500" };
+        return { text: "⭐ EL PLAN QUE MÁS CLIENTES GENERA", color: "bg-gradient-to-r from-yellow-500 to-orange-500 animate-pulse" };
       default: 
         return null;
     }
@@ -263,12 +263,14 @@ export default function PricingPlansPage() {
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
               const isPopular = plan.plan_id === "plan_profesional";
+              const isGrowth = plan.plan_id === "plan_growth";
 
               return (
                 <Card 
                   key={plan.plan_id}
                   className={`relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-white rounded-2xl ${
-                    isPopular ? "border-green-500 shadow-xl scale-105 z-10" : "border-gray-200"
+                    isGrowth ? "border-4 border-orange-500 shadow-2xl scale-105 z-10" :
+                    isPopular ? "border-green-500 shadow-xl" : "border-gray-200"
                   }`}
                 >
                   {badge && (
@@ -338,23 +340,20 @@ export default function PricingPlansPage() {
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">✅ Todo lo del Plan Profesional</span>
+                          <li className="flex items-start gap-2 text-xs bg-orange-50 p-3 rounded-lg border border-orange-200">
+                            <span className="text-gray-900"><strong>💰 Inversión Directa en Clientes:</strong> Incluye 20€/mes de inversión real en Meta Ads (Facebook e Instagram). Nosotros configuramos y optimizamos tu publicidad para que te lleguen contactos.</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                            <span className="text-gray-900"><strong>🏆 Sello de Profesional Destacado:</strong> Tu perfil aparecerá con una insignia dorada de "Recomendado" y se mostrará siempre en las primeras posiciones de tu ciudad.</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <span className="text-gray-900"><strong>👤 Gestión VIP:</strong> Soporte técnico prioritario y asistencia en la creación de tu portfolio para maximizar tus ventas.</span>
+                          </li>
+                          <li className="flex items-start gap-2 text-xs bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <span className="text-gray-900"><strong>📊 Analítica de Rendimiento:</strong> Recibe un informe mensual de cuántas personas han visto tu perfil y cuántas han hecho clic para contactarte.</span>
                           </li>
                           <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">🚀 20€/mes en anuncios de Meta Ads gestionados</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📊 Análisis y optimización de campañas</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">🎯 Segmentación avanzada de audiencias</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">📈 Mayor visibilidad y más clientes</span>
-                          </li>
-                          <li className="flex items-start gap-2 text-xs">
-                            <span className="text-gray-700">💼 Gestor de anuncios dedicado</span>
+                            <span className="text-gray-700">✅ + Todo lo del Plan Profesional (CRM, Facturación, Chat...)</span>
                           </li>
                           <li className="flex items-start gap-2 text-xs">
                             <span className="text-gray-700">❌ {t('cancelAnytime')}</span>
@@ -365,7 +364,9 @@ export default function PricingPlansPage() {
 
                     <Button
                       className={`w-full h-12 text-base font-bold transition-all ${
-                        isPopular 
+                        isGrowth
+                          ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-xl"
+                          : isPopular 
                           ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg" 
                           : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
                       }`}
@@ -498,6 +499,21 @@ export default function PricingPlansPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            <div className="mt-8 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+              <div className="flex items-start gap-3">
+                <Info className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-2">📢 Sobre los anuncios del Plan Growth</h3>
+                  <p className="text-sm text-gray-700 mb-2">
+                    Los 20€/mes se destinan íntegramente a la plataforma publicitaria de Meta (Facebook e Instagram). Nuestro equipo configura, gestiona y optimiza tus campañas para maximizar el alcance en tu zona.
+                  </p>
+                  <p className="text-xs text-gray-600 italic">
+                    * Los resultados están sujetos a la demanda del sector en tu ubicación. No podemos garantizar un número específico de contactos, pero optimizamos cada euro para lograr el mejor rendimiento posible.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
