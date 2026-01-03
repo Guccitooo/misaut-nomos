@@ -41,7 +41,7 @@ import TicketDetail from './pages/TicketDetail';
 import Tickets from './pages/Tickets';
 import UserTypeSelection from './pages/UserTypeSelection';
 import Search from './pages/Search';
-import Planes from './pages/Planes';
+import PricingPlans from './pages/PricingPlans';
 import __Layout from './Layout.jsx';
 
 
@@ -89,7 +89,7 @@ export const PAGES = {
     "Tickets": Tickets,
     "UserTypeSelection": UserTypeSelection,
     "Search": Search,
-    "Planes": Planes,
+    "PricingPlans": PricingPlans,
 }
 
 export const pagesConfig = {
