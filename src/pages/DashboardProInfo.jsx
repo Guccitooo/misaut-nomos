@@ -207,7 +207,7 @@ export default function DashboardProInfoPage() {
               <Link to={createPageUrl("PricingPlans")}>
                 <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 h-14 px-8 text-lg font-semibold shadow-xl rounded-xl w-full sm:w-auto">
                   <Rocket className="w-5 h-5 mr-2" />
-                  {isEn ? "Start Now - 2 Months Free" : "Empezar Ahora - 2 Meses Gratis"}
+                  {isEn ? "Start Now - 7 Days Free" : "Empezar Ahora - 7 Días Gratis"}
                 </Button>
               </Link>
             </div>
@@ -344,7 +344,7 @@ export default function DashboardProInfoPage() {
                 </div>
                 
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  {isEn ? "Start Today with 2 Free Months" : "Empieza Hoy con 2 Meses Gratis"}
+                  {isEn ? "Start Today with 7 Free Days" : "Empieza Hoy con 7 Días Gratis"}
                 </h2>
                 
                 <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
