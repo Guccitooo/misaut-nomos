@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import ProFeaturesSection from "../components/pricing/ProFeaturesSection";
+
 
 export default function PricingPlansPage() {
   const { t } = useLanguage();
@@ -206,8 +206,8 @@ export default function PricingPlansPage() {
       />
       <SubscriptionProductSchema plans={plans} />
       
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="min-h-screen bg-white">
+        <div className="max-w-5xl mx-auto px-4 py-12">
           <Button
             variant="ghost"
             onClick={handleGoBack}
@@ -218,13 +218,13 @@ export default function PricingPlansPage() {
             {t('back')}
           </Button>
 
-          {/* Hero Section minimalista */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {/* Hero Section */}
+          <div className="text-center mb-16">
+            <h1 className="text-4xl font-semibold text-gray-900 mb-3 tracking-tight">
               Planes y Precios
             </h1>
-            <p className="text-sm text-gray-600">
-              7 días gratis • Sin permanencia • Cancela cuando quieras
+            <p className="text-base text-gray-600">
+              Prueba gratis durante 7 días. Sin permanencia.
             </p>
           </div>
 
@@ -237,104 +237,89 @@ export default function PricingPlansPage() {
             </Alert>
           )}
 
-          {/* Plan cards minimalistas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
+          {/* Plan cards estilo Apple/Stripe */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
             {plans.map((plan) => {
-              const badge = getPlanBadge(plan.plan_id);
-              const isPopular = plan.plan_id === "plan_profesional";
               const isGrowth = plan.plan_id === "plan_growth";
 
               return (
                 <Card 
                   key={plan.plan_id}
-                  className="relative bg-white border border-gray-200 hover:border-gray-300 transition-colors"
-                  style={{ borderRadius: '4px' }}
+                  className="relative bg-white border border-gray-200 hover:shadow-sm transition-all duration-200"
+                  style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
-                  <CardContent className="p-8">
-                    <div className="mb-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  {isGrowth && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-gray-900 text-white text-xs font-medium px-4 py-1 rounded-full">
+                        MÁS RENTABLE
+                      </span>
+                    </div>
+                  )}
+
+                  <CardContent className="p-10">
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-6">
                         {plan.nombre}
                       </h3>
 
-                      <div className="mb-1">
-                        <p className="text-4xl font-semibold text-gray-900">
-                          {Math.round(plan.precio)}€<span className="text-base text-gray-600 font-normal">/mes</span>
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          7 días gratis, luego {Math.round(plan.precio)}€/mes
+                      <div className="mb-2">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-5xl font-semibold text-gray-900 tracking-tight">
+                            {Math.round(plan.precio)}€
+                          </span>
+                          <span className="text-lg text-gray-500">/mes</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Luego {Math.round(plan.precio)}€/mes
                         </p>
                       </div>
                     </div>
 
-                    <ul className="space-y-2 mb-6" style={{ fontSize: '14px' }}>
+                    <ul className="space-y-3 mb-8 text-sm text-gray-700">
                       {plan.plan_id === "plan_profesional" ? (
                         <>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Perfil en búsquedas</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span>Visibilidad en directorio</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Chat con clientes</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span>Perfil verificado</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">CRM completo</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span>Gestión de facturas</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Facturación ilimitada</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Pasarela de pagos</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Sistema de reseñas</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Galería ilimitada</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Soporte 24/7</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span>Chat con clientes</span>
                           </li>
                         </>
                       ) : (
                         <>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Meta Ads incluidos</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                            <span className="font-medium">Incluye 20€/mes en Ads</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Perfil verificado</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                            <span className="font-medium">Posición TOP 1</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Soporte VIP</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                            <span className="font-medium">Soporte VIP</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Informes mensuales</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Primeras posiciones</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-gray-500">✓</span>
-                            <span className="text-gray-700">Todo del Profesional</span>
+                          <li className="flex items-center gap-3">
+                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
+                            <span className="font-medium">Informes de clics</span>
                           </li>
                         </>
                       )}
                     </ul>
 
                     <Button
-                      className="w-full h-10 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
-                      style={{ borderRadius: '4px' }}
+                      className="w-full h-11 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+                      style={{ borderRadius: '8px' }}
                       onClick={() => handleSelectPlan(plan)}
                       disabled={isProcessing && selectedPlan === plan.plan_id}
                       aria-label={`Seleccionar plan ${plan.nombre}`}
@@ -345,7 +330,7 @@ export default function PricingPlansPage() {
                           Procesando...
                         </>
                       ) : (
-                        "Empezar ahora"
+                        "Empieza 7 días gratis"
                       )}
                     </Button>
                   </CardContent>
@@ -358,15 +343,41 @@ export default function PricingPlansPage() {
 
 
 
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-gray-50 border border-gray-200 p-6" style={{ borderRadius: '4px' }}>
-              <p className="text-sm text-gray-700 text-center mb-3">
-                Después de los 7 días gratis se cobrará automáticamente. Puedes cancelar en cualquier momento desde tu panel.
-              </p>
-              <p className="text-xs text-gray-600 text-center">
-                * Plan Growth: Los 20€/mes se destinan a anuncios en Meta Ads. Resultados sujetos a demanda local.
-              </p>
+          {/* Sección de exclusividad */}
+          <div className="max-w-3xl mx-auto mb-16">
+            <div className="border-t border-gray-200 pt-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
+                <div>
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-full border border-gray-300 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <p className="text-sm text-gray-900 font-medium mb-1">
+                    Plazas limitadas
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Solo 10 profesionales por ciudad/categoría
+                  </p>
+                </div>
+                <div>
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-full border border-gray-300 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <p className="text-sm text-gray-900 font-medium mb-1">
+                    Garantía de calidad
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Expulsión automática si baja la calidad
+                  </p>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="max-w-2xl mx-auto text-center">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Después de los 7 días gratis se cobrará automáticamente. Puedes cancelar en cualquier momento. 
+              Plan Growth: Los 20€/mes se destinan a anuncios en Meta Ads. Resultados sujetos a demanda local.
+            </p>
           </div>
         </div>
       </div>
