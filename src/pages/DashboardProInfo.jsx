@@ -27,10 +27,10 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 const features = [
   {
     icon: Eye,
-    title: "Visibilidad Pública",
-    titleEn: "Public Visibility",
-    description: "Tu perfil aparece en las búsquedas de clientes. Miles de personas podrán encontrarte cada día según tu zona y servicios.",
-    descriptionEn: "Your profile appears in client searches. Thousands of people can find you every day based on your area and services.",
+    title: "Visibilidad en el Marketplace",
+    titleEn: "Marketplace Visibility",
+    description: "Tu perfil profesional aparece en las búsquedas de clientes potenciales en tu zona y categoría de servicio.",
+    descriptionEn: "Your professional profile appears in searches by potential clients in your area and service category.",
     color: "from-blue-500 to-blue-600",
     bgColor: "bg-blue-50",
     iconColor: "text-blue-600",
@@ -38,123 +38,123 @@ const features = [
       "Apareces en resultados de búsqueda",
       "Ficha pública con fotos y descripción",
       "Valoraciones de clientes visibles",
-      "Posicionamiento por ubicación"
+      "Posicionamiento geográfico optimizado"
     ],
     benefitsEn: [
       "Appear in search results",
       "Public profile with photos and description",
       "Visible client reviews",
-      "Location-based positioning"
-    ]
-  },
-  {
-    icon: MessageSquare,
-    title: "Mensajes y Contactos",
-    titleEn: "Messages & Contacts",
-    description: "Los clientes te contactan directamente desde tu ficha. Recibe mensajes, fotos del trabajo y todos los detalles que necesitas.",
-    descriptionEn: "Clients contact you directly from your profile. Receive messages, work photos and all the details you need.",
-    color: "from-green-500 to-green-600",
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    benefits: [
-      "Chat directo con clientes",
-      "Envío de fotos y archivos",
-      "Historial de conversaciones",
-      "Notificaciones en tiempo real"
-    ],
-    benefitsEn: [
-      "Direct chat with clients",
-      "Send photos and files",
-      "Conversation history",
-      "Real-time notifications"
-    ]
-  },
-  {
-    icon: FileText,
-    title: "Facturas Profesionales",
-    titleEn: "Professional Invoices",
-    description: "Crea facturas con tu logo, múltiples conceptos, IVA desglosado y descarga en PDF. Todo legal y profesional.",
-    descriptionEn: "Create invoices with your logo, multiple items, itemized VAT and download as PDF. Everything legal and professional.",
-    color: "from-purple-500 to-purple-600",
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-    benefits: [
-      "Logo personalizado",
-      "Múltiples líneas y conceptos",
-      "IVA y retenciones automáticas",
-      "Descarga PDF profesional"
-    ],
-    benefitsEn: [
-      "Custom logo",
-      "Multiple lines and items",
-      "Automatic VAT and withholdings",
-      "Professional PDF download"
-    ]
-  },
-  {
-    icon: CreditCard,
-    title: "Enlaces de Pago",
-    titleEn: "Payment Links",
-    description: "Envía un enlace de pago por tarjeta a tu cliente. Cobra al instante y la factura se marca como pagada automáticamente.",
-    descriptionEn: "Send a card payment link to your client. Get paid instantly and the invoice is marked as paid automatically.",
-    color: "from-orange-500 to-orange-600",
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-    benefits: [
-      "Pago con tarjeta seguro",
-      "Cobro instantáneo",
-      "Factura actualizada automáticamente",
-      "Sin comisiones ocultas"
-    ],
-    benefitsEn: [
-      "Secure card payment",
-      "Instant collection",
-      "Automatically updated invoice",
-      "No hidden fees"
+      "Optimized geographic positioning"
     ]
   },
   {
     icon: Users,
-    title: "Gestión de Clientes",
-    titleEn: "Client Management",
-    description: "Mantén una lista organizada de todos tus clientes con notas internas, historial de trabajos y pagos.",
-    descriptionEn: "Keep an organized list of all your clients with internal notes, work history and payments.",
+    title: "Gestión de Clientes (CRM)",
+    titleEn: "Client Management (CRM)",
+    description: "Sistema completo para organizar clientes, trabajos, seguimiento de pagos y notas internas de cada proyecto.",
+    descriptionEn: "Complete system to organize clients, jobs, payment tracking and internal notes for each project.",
     color: "from-teal-500 to-teal-600",
     bgColor: "bg-teal-50",
     iconColor: "text-teal-600",
     benefits: [
       "Base de datos de clientes",
-      "Notas internas privadas",
-      "Historial de trabajos",
-      "Seguimiento de pagos"
+      "Historial de trabajos por cliente",
+      "Seguimiento de pagos y cobros",
+      "Notas internas privadas"
     ],
     benefitsEn: [
       "Client database",
-      "Private internal notes",
-      "Work history",
-      "Payment tracking"
+      "Work history per client",
+      "Payment and collection tracking",
+      "Private internal notes"
+    ]
+  },
+  {
+    icon: FileText,
+    title: "Presupuestos y Facturación",
+    titleEn: "Quotes & Invoicing",
+    description: "Crea presupuestos personalizados y conviértelos en facturas profesionales con tu logo, IVA desglosado y descarga en PDF.",
+    descriptionEn: "Create custom quotes and convert them into professional invoices with your logo, itemized VAT and PDF download.",
+    color: "from-purple-500 to-purple-600",
+    bgColor: "bg-purple-50",
+    iconColor: "text-purple-600",
+    benefits: [
+      "Creación de presupuestos personalizados",
+      "Emisión de facturas profesionales con logo",
+      "Cálculo automático de IVA y retenciones",
+      "Descarga en PDF lista para enviar"
+    ],
+    benefitsEn: [
+      "Create custom quotes",
+      "Issue professional invoices with logo",
+      "Automatic VAT and withholding calculation",
+      "Download as PDF ready to send"
+    ]
+  },
+  {
+    icon: CreditCard,
+    title: "Cobro Online Inmediato",
+    titleEn: "Instant Online Payment",
+    description: "Genera enlaces de pago por tarjeta y recibe el dinero al instante. La factura se actualiza automáticamente al recibir el pago.",
+    descriptionEn: "Generate card payment links and receive money instantly. The invoice updates automatically upon payment receipt.",
+    color: "from-orange-500 to-orange-600",
+    bgColor: "bg-orange-50",
+    iconColor: "text-orange-600",
+    benefits: [
+      "Pago con tarjeta seguro (Stripe)",
+      "Cobro instantáneo sin esperas",
+      "Factura marcada como pagada automáticamente",
+      "Sin comisiones ocultas"
+    ],
+    benefitsEn: [
+      "Secure card payment (Stripe)",
+      "Instant collection without waiting",
+      "Invoice automatically marked as paid",
+      "No hidden fees"
+    ]
+  },
+  {
+    icon: MessageSquare,
+    title: "Contacto Directo con Clientes",
+    titleEn: "Direct Client Contact",
+    description: "Los clientes te contactan directamente desde tu ficha. Recibe mensajes, fotos del trabajo y todos los detalles necesarios.",
+    descriptionEn: "Clients contact you directly from your profile. Receive messages, work photos and all necessary details.",
+    color: "from-green-500 to-green-600",
+    bgColor: "bg-green-50",
+    iconColor: "text-green-600",
+    benefits: [
+      "Chat directo en la plataforma",
+      "Envío y recepción de archivos",
+      "Historial completo de conversaciones",
+      "Notificaciones en tiempo real"
+    ],
+    benefitsEn: [
+      "Direct chat on platform",
+      "Send and receive files",
+      "Complete conversation history",
+      "Real-time notifications"
     ]
   },
   {
     icon: LayoutDashboard,
-    title: "Panel Pro Completo",
-    titleEn: "Complete Pro Dashboard",
-    description: "Dashboard actualizado en tiempo real con ingresos, mensajes pendientes, estado del perfil y métricas clave.",
-    descriptionEn: "Real-time updated dashboard with earnings, pending messages, profile status and key metrics.",
+    title: "Dashboard Profesional",
+    titleEn: "Professional Dashboard",
+    description: "Panel de control centralizado con métricas en tiempo real: ingresos, clientes, trabajos pendientes y estado de visibilidad.",
+    descriptionEn: "Centralized control panel with real-time metrics: revenue, clients, pending jobs and visibility status.",
     color: "from-indigo-500 to-indigo-600",
     bgColor: "bg-indigo-50",
     iconColor: "text-indigo-600",
     benefits: [
-      "Vista de ingresos mensual",
-      "Contador de mensajes nuevos",
-      "Estado de visibilidad",
-      "Métricas de rendimiento"
+      "Vista consolidada de ingresos",
+      "Estado de trabajos y presupuestos",
+      "Notificaciones de mensajes nuevos",
+      "Métricas de rendimiento del perfil"
     ],
     benefitsEn: [
-      "Monthly earnings view",
-      "New messages counter",
-      "Visibility status",
-      "Performance metrics"
+      "Consolidated revenue view",
+      "Jobs and quotes status",
+      "New message notifications",
+      "Profile performance metrics"
     ]
   }
 ];
@@ -198,8 +198,8 @@ export default function DashboardProInfoPage() {
             
             <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
               {isEn 
-                ? "With MisAutónomos Pro you get visibility, contacts, invoices and payments in one place. Focus on working, we take care of the rest."
-                : "Con MisAutónomos Pro tienes visibilidad, contactos, facturas y cobros en un solo lugar. Céntrate en trabajar, nosotros nos encargamos del resto."
+                ? "Manage clients, quotes, invoices and campaigns from a single professional dashboard. Everything you need to grow your business."
+                : "Gestiona clientes, presupuestos, facturas y campañas desde un único panel profesional. Todo lo que necesitas para hacer crecer tu negocio."
               }
             </p>
 
@@ -305,21 +305,21 @@ export default function DashboardProInfoPage() {
                   <Users className="w-6 h-6 text-blue-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{isEn ? "More Clients" : "Más Clientes"}</h3>
-                <p className="text-gray-400">{isEn ? "Thousands of people search for professionals every day" : "Miles de personas buscan profesionales cada día"}</p>
+                <p className="text-gray-400">{isEn ? "Visibility in searches and optional paid campaigns" : "Visibilidad en búsquedas y campañas de pago opcionales"}</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-6 h-6 text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{isEn ? "More Control" : "Más Control"}</h3>
-                <p className="text-gray-400">{isEn ? "Everything in one place, no wasted time" : "Todo en un solo lugar, sin perder tiempo"}</p>
+                <h3 className="text-xl font-semibold mb-2">{isEn ? "Centralized Management" : "Gestión Centralizada"}</h3>
+                <p className="text-gray-400">{isEn ? "Clients, quotes, invoices and jobs in one place" : "Clientes, presupuestos, facturas y trabajos en un solo lugar"}</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <Award className="w-6 h-6 text-purple-400" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{isEn ? "Professional Image" : "Imagen Profesional"}</h3>
-                <p className="text-gray-400">{isEn ? "Invoices, profile and communications at your level" : "Facturas, perfil y comunicaciones a tu nivel"}</p>
+                <p className="text-gray-400">{isEn ? "Professional invoices and verified profile" : "Facturas profesionales y perfil verificado"}</p>
               </div>
             </div>
 
@@ -344,7 +344,7 @@ export default function DashboardProInfoPage() {
                 </div>
                 
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  {isEn ? "Start Today with 7 Free Days" : "Empieza Hoy con 7 Días Gratis"}
+                  {isEn ? "Start Today - 7 Days Free" : "Empieza Hoy - 7 Días Gratis"}
                 </h2>
                 
                 <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">

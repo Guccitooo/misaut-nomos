@@ -151,22 +151,26 @@ export default function PricingPlansPage() {
   const getPlanFeatures = (planId) => {
     if (planId === 'plan_visibility') {
       return [
-        '👁️ Perfil visible en búsquedas',
-        '📋 Ficha pública completa',
-        '📞 Contacto por WhatsApp/llamada',
-        '✏️ Gestión básica del perfil',
-        '📸 Editar fotos y servicios',
+        'Perfil visible en búsquedas de MisAutónomos',
+        'Ficha pública profesional con servicios y zona',
+        'Contacto directo con clientes (WhatsApp o llamada)',
+        'Gestión básica del perfil',
+        'Edición de servicios, fotos y descripción',
       ];
     }
     
     if (planId === 'plan_adsplus') {
       return [
-        '✅ Todo lo del Plan Visibilidad',
-        '📱 Campañas en Instagram',
-        '📘 Campañas en Facebook',
-        '🎵 Campañas en TikTok',
-        '💰 Presupuesto publicitario incluido',
-        '📊 Resumen de campaña en dashboard',
+        'Todo lo incluido en el Plan Visibilidad',
+        'Dashboard Pro de gestión profesional',
+        'Recepción y gestión de clientes desde el panel',
+        'Creación y envío de presupuestos al cliente',
+        'Conversión de presupuestos en clientes',
+        'Emisión automática de facturas',
+        'Historial de clientes y trabajos',
+        'Campañas de captación en Instagram, Facebook y TikTok',
+        'Gestión e inversión publicitaria incluida',
+        'Resumen de campañas y rendimiento en el dashboard',
       ];
     }
     
@@ -223,7 +227,7 @@ export default function PricingPlansPage() {
               Planes y Precios
             </h1>
             <p className="text-base text-gray-600">
-              Prueba gratis durante 7 días. Sin permanencia.
+              7 días gratis. Sin permanencia. Cancela cuando quieras.
             </p>
           </div>
 
@@ -270,8 +274,8 @@ export default function PricingPlansPage() {
                         </div>
                         <p className="text-sm text-gray-500 mt-2">
                           {plan.plan_id === 'plan_visibility' 
-                            ? 'Aparece en MisAutónomos y recibe clientes'
-                            : 'Aparece en MisAutónomos + Ads (gestión + inversión)'}
+                            ? 'Aparece en MisAutónomos y empieza a recibir clientes'
+                            : 'Visibilidad + captación activa de clientes desde el Dashboard Pro'}
                         </p>
                       </div>
                     </div>
@@ -343,8 +347,9 @@ export default function PricingPlansPage() {
 
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Después de los 7 días gratis se cobrará automáticamente. Puedes cancelar en cualquier momento. 
-              Plan Ads+: Incluye gestión completa + inversión publicitaria en Meta Ads y TikTok. Resultados sujetos a demanda local.
+              Los primeros 7 días son gratis. Si no cancelas antes, se cobrará automáticamente según el plan elegido. 
+              Plan Ads+: Incluye gestión completa de clientes, presupuestos, facturación + inversión publicitaria en Instagram, Facebook y TikTok. 
+              Campañas gestionadas por nuestro equipo. Resultados sujetos a demanda local.
             </p>
           </div>
         </div>
