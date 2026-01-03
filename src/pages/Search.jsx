@@ -646,20 +646,22 @@ export default function SearchPage() {
           )}
 
           {!isInitialLoading && filteredProfiles.length === 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`grid ${!loadingUser && (!user || user.user_type === "client") ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'} gap-6`}>
               <Card className="p-8 text-center border-0 shadow-sm rounded-xl bg-white">
                 <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{t('noResults')}</h3>
                 <p className="text-sm text-gray-600">{t('tryDifferentFilters')}</p>
               </Card>
-              <Card className="p-8 text-center border-0 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                <h3 className="text-xl font-bold mb-2">{t('areYouProfessionalHere')}</h3>
-                <p className="text-blue-50 mb-6 text-sm">{t('joinFreeAppearHere')}</p>
-                <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 font-semibold mx-auto">
-                  <Briefcase className="w-4 h-4 mr-2" />{t('registerAsProfessional')}
-                </Button>
-              </Card>
+              {!loadingUser && (!user || user.user_type === "client") && (
+                <Card className="p-8 text-center border-0 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <h3 className="text-xl font-bold mb-2">{t('areYouProfessionalHere')}</h3>
+                  <p className="text-blue-50 mb-6 text-sm">{t('joinFreeAppearHere')}</p>
+                  <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="bg-orange-500 hover:bg-orange-600 text-white h-11 px-6 font-semibold mx-auto">
+                    <Briefcase className="w-4 h-4 mr-2" />{t('registerAsProfessional')}
+                  </Button>
+                </Card>
+              )}
             </div>
           )}
 
@@ -697,7 +699,7 @@ export default function SearchPage() {
             </>
           )}
 
-          {!isInitialLoading && filteredProfiles.length > 0 && (
+          {!isInitialLoading && !loadingUser && filteredProfiles.length > 0 && (!user || user.user_type === "client") && (
             <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
               <h3 className="text-2xl font-bold mb-2">{t('areYouProfessionalHere')}</h3>
               <p className="text-blue-100 mb-5 text-lg">{t('getMoreClients')}</p>
