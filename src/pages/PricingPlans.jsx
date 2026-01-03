@@ -28,20 +28,13 @@ export default function PricingPlansPage() {
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
-      const planMap = new Map();
       
-      const validPlanIds = ['plan_profesional', 'plan_growth'];
+      // Solo Plan Visibilidad (13€) y Plan Ads+ (33€)
+      const activePlans = allPlans.filter(p => 
+        p.plan_id === 'plan_visibility' || p.plan_id === 'plan_adsplus'
+      );
       
-      allPlans.forEach(plan => {
-        if (validPlanIds.includes(plan.plan_id)) {
-          const existingPlan = planMap.get(plan.plan_id);
-          if (!existingPlan || new Date(plan.updated_date) > new Date(existingPlan.updated_date)) {
-            planMap.set(plan.plan_id, plan);
-          }
-        }
-      });
-      
-      return Array.from(planMap.values()).sort((a, b) => a.precio - b.precio);
+      return activePlans.sort((a, b) => a.precio - b.precio);
     },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
@@ -143,36 +136,42 @@ export default function PricingPlansPage() {
   };
 
   const getPlanIcon = (planId) => {
-    switch (planId) {
-      case "plan_profesional": return <Briefcase className="w-10 h-10" />;
-      case "plan_growth": return <TrendingUp className="w-10 h-10" />;
-      default: return <CheckCircle className="w-10 h-10" />;
-    }
+    if (planId === 'plan_visibility') return <Briefcase className="w-10 h-10" />;
+    if (planId === 'plan_adsplus') return <TrendingUp className="w-10 h-10" />;
+    return <CheckCircle className="w-10 h-10" />;
   };
 
   const getPlanBadge = (planId) => {
-    switch (planId) {
-      case "plan_profesional": 
-        return { text: "Más popular", color: "bg-green-500" };
-      case "plan_growth": 
-        return { text: "⭐ EL PLAN QUE MÁS CLIENTES GENERA", color: "bg-gradient-to-r from-yellow-500 to-orange-500 animate-pulse" };
-      default: 
-        return null;
+    if (planId === 'plan_adsplus') {
+      return { text: "⭐ MÁS CLIENTES", color: "bg-gradient-to-r from-yellow-500 to-orange-500" };
     }
+    return null;
   };
 
-  const getPlanFeatures = () => [
-    `✅ ${t('appearInSearches')}`,
-    `💬 ${t('directChatWithClients')}`,
-    `📋 ${t('completeCRM')}`,
-    `📄 ${t('invoicingSystem')}`,
-    `💳 ${t('integratedPaymentGateway')}`,
-    `🎫 ${t('support247')}`,
-    `⭐ ${t('ratingsSystem')}`,
-    `📸 ${t('unlimitedPhotoGallery')}`,
-    `🔧 ${t('jobManagement')}`,
-    `❌ ${t('cancelAnytime')}`
-  ];
+  const getPlanFeatures = (planId) => {
+    if (planId === 'plan_visibility') {
+      return [
+        '👁️ Perfil visible en búsquedas',
+        '📋 Ficha pública completa',
+        '📞 Contacto por WhatsApp/llamada',
+        '✏️ Gestión básica del perfil',
+        '📸 Editar fotos y servicios',
+      ];
+    }
+    
+    if (planId === 'plan_adsplus') {
+      return [
+        '✅ Todo lo del Plan Visibilidad',
+        '📱 Campañas en Instagram',
+        '📘 Campañas en Facebook',
+        '🎵 Campañas en TikTok',
+        '💰 Presupuesto publicitario incluido',
+        '📊 Resumen de campaña en dashboard',
+      ];
+    }
+    
+    return [];
+  };
 
   if (loadingPlans) {
     return (
@@ -201,8 +200,8 @@ export default function PricingPlansPage() {
     <>
       <SEOHead 
         title="Planes y Precios - MisAutónomos | 7 Días Gratis"
-        description="Elige tu plan: Mensual 33€, Trimestral 89€ (10% off), Anual 316€ (20% off). Todos con 7 días gratis. Sin permanencia."
-        keywords="planes autónomos, precios profesionales, 7 días gratis, suscripción mensual, plan anual"
+        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 7 días gratis. Sin permanencia."
+        keywords="planes autónomos, precios profesionales, 7 días gratis, publicidad incluida, plan visibilidad"
       />
       <SubscriptionProductSchema plans={plans} />
       
@@ -240,7 +239,7 @@ export default function PricingPlansPage() {
           {/* Plan cards estilo Apple/Stripe */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
             {plans.map((plan) => {
-              const isGrowth = plan.plan_id === "plan_growth";
+              const badge = getPlanBadge(plan.plan_id);
 
               return (
                 <Card 
@@ -248,10 +247,10 @@ export default function PricingPlansPage() {
                   className="relative bg-white border border-gray-200 hover:shadow-sm transition-all duration-200"
                   style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
-                  {isGrowth && (
+                  {badge && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gray-900 text-white text-xs font-medium px-4 py-1 rounded-full">
-                        MÁS RENTABLE
+                      <span className={`${badge.color} text-white text-xs font-medium px-4 py-1 rounded-full`}>
+                        {badge.text}
                       </span>
                     </div>
                   )}
@@ -265,56 +264,25 @@ export default function PricingPlansPage() {
                       <div className="mb-2">
                         <div className="flex items-baseline gap-1">
                           <span className="text-5xl font-semibold text-gray-900 tracking-tight">
-                            {Math.round(plan.precio)}€
+                            {plan.precio}€
                           </span>
                           <span className="text-lg text-gray-500">/mes</span>
                         </div>
                         <p className="text-sm text-gray-500 mt-2">
-                          Luego {Math.round(plan.precio)}€/mes
+                          {plan.plan_id === 'plan_visibility' 
+                            ? 'Aparece en MisAutónomos y recibe clientes'
+                            : 'Aparece en MisAutónomos + Ads (gestión + inversión)'}
                         </p>
                       </div>
                     </div>
 
                     <ul className="space-y-3 mb-8 text-sm text-gray-700">
-                      {plan.plan_id === "plan_profesional" ? (
-                        <>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span>Visibilidad en directorio</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span>Perfil verificado</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span>Gestión de facturas</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span>Chat con clientes</span>
-                          </li>
-                        </>
-                      ) : (
-                        <>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
-                            <span className="font-medium">Incluye 20€/mes en Ads</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
-                            <span className="font-medium">Posición TOP 1</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
-                            <span className="font-medium">Soporte VIP</span>
-                          </li>
-                          <li className="flex items-center gap-3">
-                            <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />
-                            <span className="font-medium">Informes de clics</span>
-                          </li>
-                        </>
-                      )}
+                      {getPlanFeatures(plan.plan_id).map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-3">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
                     </ul>
 
                     <Button
@@ -330,7 +298,7 @@ export default function PricingPlansPage() {
                           Procesando...
                         </>
                       ) : (
-                        "Empieza 7 días gratis"
+                        plan.plan_id === 'plan_visibility' ? 'Elegir Visibilidad' : 'Elegir Ads+'
                       )}
                     </Button>
                   </CardContent>
@@ -376,7 +344,7 @@ export default function PricingPlansPage() {
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-xs text-gray-500 leading-relaxed">
               Después de los 7 días gratis se cobrará automáticamente. Puedes cancelar en cualquier momento. 
-              Plan Growth: Los 20€/mes se destinan a anuncios en Meta Ads. Resultados sujetos a demanda local.
+              Plan Ads+: Incluye gestión completa + inversión publicitaria en Meta Ads y TikTok. Resultados sujetos a demanda local.
             </p>
           </div>
         </div>
