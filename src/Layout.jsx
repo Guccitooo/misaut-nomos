@@ -134,9 +134,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }, [location.pathname, currentPageName]);
 
   const hideBottomBarRoutes = [
-    createPageUrl("UserTypeSelection"),
-    createPageUrl("ProfileOnboarding"),
-    createPageUrl("ClientOnboarding"),
+    createPageUrl("SeleccionTipoUsuario"),
+    createPageUrl("OnboardingPerfil"),
+    createPageUrl("OnboardingCliente"),
     createPageUrl("Onboarding")
   ];
 
@@ -162,18 +162,18 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   useEffect(() => {
     if (loadingUser || !user) return;
     
-    const isOnboardingRoute = location.pathname === createPageUrl("ProfileOnboarding") || 
-                              location.pathname === createPageUrl("PricingPlans") ||
-                              location.pathname === createPageUrl("SubscriptionManagement") ||
-                              location.pathname === createPageUrl("PaymentSuccess");
+    const isOnboardingRoute = location.pathname === createPageUrl("OnboardingPerfil") || 
+                              location.pathname === createPageUrl("Planes") ||
+                              location.pathname === createPageUrl("GestionSuscripcion") ||
+                              location.pathname === createPageUrl("PagoExitoso");
     
     if (user.user_type === "professionnel" && professionalProfile !== undefined) {
-      if (!professionalProfile || !professionalProfile.onboarding_completed) {
-        if (!isOnboardingRoute) {
-          navigate(createPageUrl("ProfileOnboarding"));
+        if (!professionalProfile || !professionalProfile.onboarding_completed) {
+          if (!isOnboardingRoute) {
+            navigate(createPageUrl("OnboardingPerfil"));
+          }
         }
       }
-    }
   }, [user, professionalProfile, loadingUser, location.pathname]);
 
   const loadUser = React.useCallback(async () => {
@@ -291,7 +291,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     setUnreadCount(0);
     setProfessionalProfile(null);
     // Cerrar sesión (redirige automáticamente)
-    base44.auth.logout(createPageUrl("Search"));
+    base44.auth.logout(createPageUrl("Buscar"));
   };
 
   const handleLogin = () => {
@@ -338,28 +338,28 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     navigationItems.push(
       {
         title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
+        url: createPageUrl("Buscar"),
         icon: Search,
       },
       {
         title: t('messages'),
-        url: createPageUrl("Messages"),
+        url: createPageUrl("Mensajes"),
         icon: MessageSquare,
         badge: unreadCount > 0 ? unreadCount : null
       },
       {
         title: "Dashboard Pro",
-        url: createPageUrl("ProfessionalDashboard"),
+        url: createPageUrl("PanelProfesional"),
         icon: LayoutDashboard,
       },
       {
         title: "Proyectos",
-        url: createPageUrl("Projects"),
+        url: createPageUrl("Proyectos"),
         icon: FolderKanban,
       },
       {
         title: t('calendar'),
-        url: createPageUrl("Calendar"),
+        url: createPageUrl("Calendario"),
         icon: Calendar,
       },
       {
@@ -369,17 +369,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       },
       {
         title: t('favorites'),
-        url: createPageUrl("Favorites"),
+        url: createPageUrl("Favoritos"),
         icon: Heart,
       },
       {
         title: t('myProfile'),
-        url: createPageUrl("MyProfile"),
+        url: createPageUrl("MiPerfil"),
         icon: User,
       },
       {
         title: t('mySubscription'),
-        url: createPageUrl("SubscriptionManagement"),
+        url: createPageUrl("GestionSuscripcion"),
         icon: Briefcase,
       },
       {
@@ -393,12 +393,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     navigationItems.push(
       {
         title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
+        url: createPageUrl("Buscar"),
         icon: Search,
       },
       {
         title: t('messages'),
-        url: createPageUrl("Messages"),
+        url: createPageUrl("Mensajes"),
         icon: MessageSquare,
         badge: unreadCount > 0 ? unreadCount : null
       },
@@ -409,17 +409,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       },
       {
         title: t('favorites'),
-        url: createPageUrl("Favorites"),
+        url: createPageUrl("Favoritos"),
         icon: Heart,
       },
       {
         title: t('myProfile'),
-        url: createPageUrl("MyProfile"),
+        url: createPageUrl("MiPerfil"),
         icon: User,
       },
       {
         title: t('viewPlans'),
-        url: createPageUrl("PricingPlans"),
+        url: createPageUrl("Planes"),
         icon: CreditCard,
       },
       {
@@ -438,17 +438,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   if (user?.role === "admin") {
     navigationItems.push({
       title: t('administration'),
-      url: createPageUrl("AdminDashboard"),
+      url: createPageUrl("PanelAdmin"),
       icon: LayoutDashboard,
     });
     navigationItems.push({
       title: "💰 Pagos",
-      url: createPageUrl("AdminPayments"),
+      url: createPageUrl("PagosPanelAdmin"),
       icon: CreditCard,
     });
     navigationItems.push({
       title: "Admin Tickets",
-      url: createPageUrl("AdminTickets"),
+      url: createPageUrl("TicketsAdmin"),
       icon: MessageSquare,
     });
   }
@@ -790,7 +790,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             {user && shouldShowSidebar() && (
               <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
                 <SidebarHeader className="border-b border-gray-100 p-6">
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
+                  <Link to={createPageUrl("Buscar")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
                   <img
                     src={LOGO_URL}
                     alt="Logo MisAutónomos"
@@ -967,9 +967,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       {!user && (
                       <>
                         <Link
-                          to={createPageUrl("Search")}
+                          to={createPageUrl("Buscar")}
                           className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                            location.pathname === createPageUrl("Search")
+                            location.pathname === createPageUrl("Buscar")
                               ? 'bg-blue-600 text-white'
                               : 'hover:bg-gray-100'
                           }`}
@@ -978,9 +978,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           <span className="font-medium flex-1">{t('searchFreelancers')}</span>
                         </Link>
                         <Link
-                          to={createPageUrl("PricingPlans")}
+                          to={createPageUrl("Planes")}
                           className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                            location.pathname === createPageUrl("PricingPlans")
+                            location.pathname === createPageUrl("Planes")
                               ? 'bg-blue-600 text-white'
                               : 'hover:bg-gray-100'
                           }`}
@@ -1073,7 +1073,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               {!user && (
                 <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
+                    <Link to={createPageUrl("Buscar")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
                       <img
                         src={LOGO_URL}
                         alt="Logo MisAutónomos"
@@ -1103,14 +1103,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                       )}
                       {!user && (
-                        <Link to={createPageUrl("ClientOnboarding")}>
+                        <Link to={createPageUrl("OnboardingCliente")}>
                           <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeClient')}
                           </Button>
                         </Link>
                       )}
-                      <Link to={createPageUrl("PricingPlans")}>
+                      <Link to={createPageUrl("Planes")}>
                         <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                           <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('becomeFreelancer')}
@@ -1167,7 +1167,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   >
                     <Menu className="w-6 h-6" aria-hidden="true" />
                   </Button>
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-2">
+                  <Link to={createPageUrl("Buscar")} className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
                       alt="Logo MisAutónomos"

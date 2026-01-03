@@ -14,7 +14,7 @@ import SubscriptionProductSchema from "../components/seo/SubscriptionProductSche
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 
-export default function PricingPlansPage() {
+export default function PlanesPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -22,7 +22,7 @@ export default function PricingPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const canceled = searchParams.get("canceled");
+  const canceled = searchParams.get("cancelado");
 
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
@@ -120,11 +120,9 @@ export default function PricingPlansPage() {
 
       if (response.data?.url) {
         console.log('✅ Redirigiendo a Stripe:', response.data.url);
-        // Redirección inmediata sin timeout
         window.location.href = response.data.url;
       } else if (response.data?.sessionId) {
         console.log('✅ Session ID recibido, redirigiendo...');
-        // Fallback: usar sessionId si no hay URL directa
         window.location.href = `https://checkout.stripe.com/pay/${response.data.sessionId}`;
       } else {
         console.error('❌ Sin URL en respuesta:', response);
@@ -139,40 +137,8 @@ export default function PricingPlansPage() {
   };
 
   const handleGoBack = () => {
-    navigate(createPageUrl("Search"));
+    navigate(createPageUrl("Buscar"));
   };
-
-  const getPlanIcon = (planId) => {
-    switch (planId) {
-      case "plan_profesional": return <Briefcase className="w-10 h-10" />;
-      case "plan_growth": return <TrendingUp className="w-10 h-10" />;
-      default: return <CheckCircle className="w-10 h-10" />;
-    }
-  };
-
-  const getPlanBadge = (planId) => {
-    switch (planId) {
-      case "plan_profesional": 
-        return { text: "Más popular", color: "bg-green-500" };
-      case "plan_growth": 
-        return { text: "⭐ EL PLAN QUE MÁS CLIENTES GENERA", color: "bg-gradient-to-r from-yellow-500 to-orange-500 animate-pulse" };
-      default: 
-        return null;
-    }
-  };
-
-  const getPlanFeatures = () => [
-    `✅ ${t('appearInSearches')}`,
-    `💬 ${t('directChatWithClients')}`,
-    `📋 ${t('completeCRM')}`,
-    `📄 ${t('invoicingSystem')}`,
-    `💳 ${t('integratedPaymentGateway')}`,
-    `🎫 ${t('support247')}`,
-    `⭐ ${t('ratingsSystem')}`,
-    `📸 ${t('unlimitedPhotoGallery')}`,
-    `🔧 ${t('jobManagement')}`,
-    `❌ ${t('cancelAnytime')}`
-  ];
 
   if (loadingPlans) {
     return (
@@ -338,10 +304,6 @@ export default function PricingPlansPage() {
               );
             })}
           </div>
-
-
-
-
 
           {/* Sección de exclusividad */}
           <div className="max-w-3xl mx-auto mb-16">
