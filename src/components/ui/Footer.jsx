@@ -88,14 +88,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(new Event('cookie-consent-reopen'));
-                  }}
-                  className="text-gray-400 hover:text-blue-400 transition-colors text-sm text-left"
-                >
+                <Link to={createPageUrl("CookiePolicy")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
                   {t('cookiePolicy')}
-                </button>
+                </Link>
               </li>
               <li>
                 <Link to={createPageUrl("LegalNotice")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
