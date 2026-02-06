@@ -308,6 +308,18 @@ a:hover {
   contain-intrinsic-size: 0 500px;
 }
 
+/* Prevent text selection on interactive elements */
+button, a, [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Aplicar overscroll-behavior a contenedores principales */
+main, [role="main"], .flex-1 {
+  overscroll-behavior-y: none;
+}
+
 /* Reduce repaints y layout shifts */
 .profile-card,
 .professional-card {
