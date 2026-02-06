@@ -20,9 +20,14 @@ import {
   ArrowRight
 } from "lucide-react";
 import Loader from "@/components/ui/Loader";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
+import SEOHead from "../components/seo/SEOHead";
+import PullToRefresh from "../components/ui/PullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfessionalDashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,8 +91,17 @@ export default function ProfessionalDashboardPage() {
     .sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))
     .slice(0, 5);
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['clientContacts'] }),
+      queryClient.invalidateQueries({ queryKey: ['jobs'] }),
+      queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+    ]);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         
         <div className="flex items-center justify-between">
@@ -261,6 +275,6 @@ export default function ProfessionalDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PullToRefresh>
   );
 }
