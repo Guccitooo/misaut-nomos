@@ -14,6 +14,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -108,6 +118,8 @@ export default function MyProfilePage() {
   const [success, setSuccess] = useState(false);
   const [searchParams] = useSearchParams();
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const MAX_POLLING_ATTEMPTS = 10;
 
   const reactivationSuccess = searchParams.get("reactivation");
@@ -671,6 +683,21 @@ export default function MyProfilePage() {
     });
   };
 
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await base44.functions.invoke('deleteUser', { userId: user.id });
+      toast.success('Tu cuenta ha sido eliminada correctamente');
+      setTimeout(() => {
+        base44.auth.logout(createPageUrl("Search"));
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Error al eliminar la cuenta. Contacta con soporte.');
+      setDeletingAccount(false);
+    }
+  };
+
 
 
   const isInitialLoading = !user || loadingProfile || (loadingSubscription && !isVerifyingSubscription);
@@ -940,6 +967,19 @@ export default function MyProfilePage() {
                   <Badge className="bg-blue-100 text-blue-900">
                     {isProfessional ? t('professional') : t('client')}
                   </Badge>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="w-full"
+                  >
+                    Eliminar cuenta
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Esta acción es irreversible y eliminará todos tus datos
+                  </p>
                 </div>
 
                 {isProfessional && profile && !loadingProfile && subscriptionStatus?.isActive && (
@@ -1669,6 +1709,43 @@ export default function MyProfilePage() {
 
 
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es permanente e irreversible. Se eliminarán:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Tu perfil profesional completo</li>
+                <li>Todos tus mensajes y conversaciones</li>
+                <li>Tu historial de clientes y trabajos</li>
+                <li>Facturas y presupuestos</li>
+                <li>Valoraciones recibidas</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAccount}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deletingAccount ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Sí, eliminar mi cuenta'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

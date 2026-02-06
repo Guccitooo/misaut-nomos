@@ -26,6 +26,7 @@ import SEOHead from "../components/seo/SEOHead";
 import FileAttachment from "../components/messages/FileAttachment";
 import QuoteRequest from "../components/messages/QuoteRequest";
 import { Input } from "@/components/ui/input";
+import PullToRefresh from "../components/ui/PullToRefresh";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
@@ -1203,6 +1204,10 @@ export default function MessagesPage() {
     createReviewMutation.mutate(reviewData);
   };
 
+  const handleRefreshConversations = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['messages'] });
+  };
+
   const StarRating = ({ value, onChange, label }) => (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{t(label)}</Label>
@@ -1267,7 +1272,7 @@ export default function MessagesPage() {
             </h2>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <PullToRefresh onRefresh={handleRefreshConversations}>
             {conversationList.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -1340,7 +1345,7 @@ export default function MessagesPage() {
                 </div>
               ))
             )}
-          </div>
+          </PullToRefresh>
         </div>
 
         <div className={`flex-1 flex flex-col bg-white md:bg-gray-50 ${
