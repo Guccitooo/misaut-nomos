@@ -690,6 +690,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               border-top: 2px solid #E5E7EB !important;
               grid-template-columns: repeat(4, 1fr);
               padding: 8px 0;
+              padding-bottom: max(8px, env(safe-area-inset-bottom));
               z-index: 30;
               box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
             }
@@ -1156,7 +1157,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20">
+              <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
                 <div className="flex items-center justify-between">
                   {window.history.length > 1 && location.pathname !== createPageUrl("Search") ? (
                     <Button
