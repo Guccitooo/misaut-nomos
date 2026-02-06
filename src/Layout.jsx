@@ -1060,7 +1060,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
             <main className="flex-1 flex flex-col overflow-hidden">
               {!user && (
-                <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm">
+                  <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm will-change-transform">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
                       <img
@@ -1145,7 +1145,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+              <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20 will-change-transform" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
                 <div className="flex items-center justify-between">
                   {window.history.length > 1 && location.pathname !== createPageUrl("Search") ? (
                     <Button

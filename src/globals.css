@@ -321,6 +321,13 @@ a:hover {
 }
 
 /* ✨ MOBILE OPTIMIZATIONS */
+button, a, [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (max-width: 768px) {
   button, a[role="button"], [role="button"] {
     min-height: 44px;
