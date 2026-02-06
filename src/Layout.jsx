@@ -40,6 +40,7 @@ import NotificationCenter from "@/components/notifications/NotificationCenter";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 // import AIAssistantButton from "@/components/chat/AIAssistantButton";
 import WebsiteSchema from "@/components/seo/WebsiteSchema";
+import PageTransitions from "@/components/ui/PageTransitions";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -457,20 +458,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     <>
       <style>
         {`
-          :root {
-            --primary: #1D4ED8;
-            --primary-dark: #1E40AF;
-            --primary-light: #3B82F6;
-            --success: #22C55E;
-            --success-dark: #16A34A;
-            --warning: #F59E0B;
-            --error: #EF4444;
-            --error-dark: #DC2626;
-            --gray-bg: #F3F4F6;
-            --gray-border: #E5E7EB;
-            --gray-text: #6B7280;
-            --text-dark: #111827;
-          }
+          /* Colors handled by globals.css :root and prefers-color-scheme */
           
           * {
             -webkit-tap-highlight-color: transparent;
@@ -505,7 +493,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           [data-radix-alert-dialog-overlay],
           .dialog-overlay,
           .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.6) !important;
+            background-color: hsl(var(--foreground) / 0.6) !important;
             backdrop-filter: blur(4px);
             animation: fadeIn 200ms ease-out;
           }
@@ -532,10 +520,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           [data-radix-alert-dialog-content],
           .modal-content,
           .dialog-content {
-            background-color: #FFFFFF !important;
-            color: #1F2937 !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-            border: 1px solid #E5E7EB !important;
+            background-color: hsl(var(--card)) !important;
+            color: hsl(var(--card-foreground)) !important;
+            box-shadow: 0 25px 50px -12px hsl(var(--foreground) / 0.25) !important;
+            border: 1px solid hsl(var(--border)) !important;
             border-radius: 16px !important;
             animation: slideIn 250ms ease-out;
             max-height: 90vh;
@@ -548,7 +536,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           .dialog-header h2,
           .modal-header {
             background-color: transparent !important;
-            color: #111827 !important;
+            color: hsl(var(--foreground)) !important;
             font-weight: 700 !important;
             font-size: 1.5rem !important;
             line-height: 1.3 !important;
@@ -559,7 +547,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           [role="alertdialog"] p,
           [data-dialog-description],
           .dialog-description {
-            color: #4B5563 !important;
+            color: hsl(var(--muted-foreground)) !important;
             line-height: 1.6 !important;
           }
           
@@ -569,9 +557,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           [role="alertdialog"] input,
           [role="alertdialog"] select,
           [role="alertdialog"] textarea {
-            background-color: #FFFFFF !important;
-            color: #1F2937 !important;
-            border: 2px solid #D1D5DB !important;
+            background-color: hsl(var(--background)) !important;
+            color: hsl(var(--foreground)) !important;
+            border: 2px solid hsl(var(--input)) !important;
             border-radius: 8px !important;
             padding: 12px !important;
             font-size: 16px !important;
@@ -580,22 +568,22 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           [role="dialog"] input:focus,
           [role="dialog"] select:focus,
           [role="dialog"] textarea:focus {
-            border-color: #3B82F6 !important;
+            border-color: hsl(var(--primary)) !important;
             outline: none !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+            box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15) !important;
           }
           
           [role="dialog"] input:disabled,
           [role="dialog"] select:disabled,
           [role="dialog"] textarea:disabled {
-            background-color: #F3F4F6 !important;
-            color: #9CA3AF !important;
+            background-color: hsl(var(--muted)) !important;
+            color: hsl(var(--muted-foreground)) !important;
             cursor: not-allowed !important;
           }
           
           [role="dialog"] label,
           [role="alertdialog"] label {
-            color: #374151 !important;
+            color: hsl(var(--foreground)) !important;
             font-weight: 600 !important;
             font-size: 14px !important;
             margin-bottom: 8px !important;
@@ -615,16 +603,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           .popover-content,
           .select-content,
           .dropdown-content {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E5E7EB !important;
+            background-color: hsl(var(--popover)) !important;
+            border: 1px solid hsl(var(--border)) !important;
             border-radius: 12px !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 10px 40px hsl(var(--foreground) / 0.15) !important;
             z-index: 100 !important;
           }
           
           [data-radix-select-item],
           .select-item {
-            color: #1F2937 !important;
+            color: hsl(var(--popover-foreground)) !important;
             padding: 10px 12px !important;
             cursor: pointer !important;
             transition: background-color 150ms ease !important;
@@ -632,14 +620,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           
           [data-radix-select-item]:hover,
           .select-item:hover {
-            background-color: #EFF6FF !important;
-            color: #1E40AF !important;
+            background-color: hsl(var(--accent)) !important;
+            color: hsl(var(--accent-foreground)) !important;
           }
           
           [data-radix-select-item][data-state="checked"],
           .select-item[data-state="checked"] {
-            background-color: #DBEAFE !important;
-            color: #1E40AF !important;
+            background-color: hsl(var(--primary) / 0.1) !important;
+            color: hsl(var(--primary)) !important;
             font-weight: 600 !important;
           }
           
@@ -647,12 +635,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             .mobile-menu-overlay {
               position: fixed;
               inset: 0;
-              background: rgba(0, 0, 0, 0.6) !important;
+              background: hsl(var(--foreground) / 0.6) !important;
               backdrop-filter: blur(4px);
               z-index: 40;
               animation: fadeIn 200ms ease;
             }
-            
+
             .mobile-menu {
               position: fixed;
               left: 0;
@@ -660,11 +648,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               bottom: 0;
               width: 80%;
               max-width: 320px;
-              background: #FFFFFF !important;
+              background: hsl(var(--background)) !important;
               z-index: 50;
               animation: slideInLeft 200ms ease;
               overflow-y: auto;
-              box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
+              box-shadow: 10px 0 40px hsl(var(--foreground) / 0.3);
             }
             
             @keyframes slideInLeft {
@@ -686,13 +674,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               bottom: 0;
               left: 0;
               right: 0;
-              background: #FFFFFF !important;
-              border-top: 2px solid #E5E7EB !important;
+              background: hsl(var(--background)) !important;
+              border-top: 2px solid hsl(var(--border)) !important;
               grid-template-columns: repeat(4, 1fr);
               padding: 8px 0;
               padding-bottom: max(8px, env(safe-area-inset-bottom));
               z-index: 30;
-              box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+              box-shadow: 0 -4px 20px hsl(var(--foreground) / 0.1) !important;
             }
             
             .main-content-with-bottom-nav {
@@ -717,14 +705,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             justify-content: center;
             gap: 4px;
             padding: 8px;
-            color: #6B7280;
+            color: hsl(var(--muted-foreground));
             text-decoration: none;
             transition: color 150ms ease;
             position: relative;
           }
-          
+
           .mobile-bottom-nav-item.active {
-            color: #1D4ED8;
+            color: hsl(var(--primary));
           }
           
           .mobile-bottom-nav-item span {
@@ -736,8 +724,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             position: absolute;
             top: 4px;
             right: 20%;
-            background: #EF4444;
-            color: white;
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
             font-size: 10px;
             font-weight: bold;
             padding: 2px 6px;
@@ -749,7 +737,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           button:focus-visible,
           a:focus-visible,
           [role="button"]:focus-visible {
-            outline: 2px solid #3B82F6 !important;
+            outline: 2px solid hsl(var(--ring)) !important;
             outline-offset: 2px !important;
           }
           
@@ -766,19 +754,19 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           
           [role="dialog"]::-webkit-scrollbar-track,
           [role="alertdialog"]::-webkit-scrollbar-track {
-            background: #F3F4F6;
+            background: hsl(var(--muted));
             border-radius: 10px;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar-thumb,
           [role="alertdialog"]::-webkit-scrollbar-thumb {
-            background: #D1D5DB;
+            background: hsl(var(--border));
             border-radius: 10px;
           }
-          
+
           [role="dialog"]::-webkit-scrollbar-thumb:hover,
           [role="alertdialog"]::-webkit-scrollbar-thumb:hover {
-            background: #9CA3AF;
+            background: hsl(var(--muted-foreground));
           }
         `}
       </style>
@@ -1229,7 +1217,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
                 }>
-                  {children}
+                  <PageTransitions>
+                    {children}
+                  </PageTransitions>
                 </Suspense>
               </div>
 
@@ -1241,6 +1231,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <Link
                       key={item.title}
                       to={item.url}
+                      onClick={(e) => {
+                        if (location.pathname === item.url) {
+                          e.preventDefault();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
                       className={`mobile-bottom-nav-item ${
                         location.pathname === item.url ? 'active' : ''
                       }`}
