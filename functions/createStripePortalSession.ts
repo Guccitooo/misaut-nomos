@@ -21,16 +21,65 @@ Deno.serve(async (req) => {
       user_id: user.id
     });
 
-    if (subs.length === 0 || !subs[0].stripe_customer_id) {
+    if (subs.length === 0) {
       return Response.json({ 
-        error: 'No tienes suscripción activa o no está vinculada a Stripe' 
+        error: 'No tienes suscripción activa' 
       }, { status: 404 });
     }
 
     const subscription = subs[0];
-    const customerId = subscription.stripe_customer_id;
+    let customerId = subscription.stripe_customer_id;
+
+    // 🔥 Si no hay customer_id en BD, buscar en Stripe por email
+    if (!customerId) {
+      console.log('🔍 No hay customer_id, buscando en Stripe...');
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1
+      });
+      
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        console.log('✅ Customer encontrado en Stripe:', customerId);
+        
+        // Actualizar BD con el customer_id
+        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
+          stripe_customer_id: customerId
+        });
+      } else {
+        return Response.json({ 
+          error: 'No se encontró tu cuenta en Stripe. Contacta con soporte.' 
+        }, { status: 404 });
+      }
+    }
 
     console.log('✅ Customer ID:', customerId);
+
+    // 🔥 VERIFICAR QUE EL CUSTOMER EXISTE EN STRIPE
+    try {
+      await stripe.customers.retrieve(customerId);
+    } catch (stripeError) {
+      console.error('❌ Customer no existe en Stripe:', stripeError.message);
+      
+      // Intentar buscar por email como fallback
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1
+      });
+      
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        console.log('✅ Customer encontrado por email:', customerId);
+        
+        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
+          stripe_customer_id: customerId
+        });
+      } else {
+        return Response.json({ 
+          error: 'Tu cuenta de Stripe no está disponible. Contacta con soporte.' 
+        }, { status: 404 });
+      }
+    }
 
     // ✅ CREAR PORTAL SESSION
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
