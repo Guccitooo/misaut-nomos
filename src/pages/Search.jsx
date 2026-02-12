@@ -46,6 +46,9 @@ import { useProfileTranslation } from "../components/profile/useProfileTranslati
 import OptimizedImage from "../components/ui/OptimizedImage";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 
+// Asegurar que motion está disponible
+const MotionDiv = motion.div;
+
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
   if (!text) return '';
@@ -508,59 +511,35 @@ export default function SearchPage() {
             </div>
 
             <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
+              <div>
                 <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight drop-shadow-lg">
                   {t('heroTitle')}
                 </h1>
                 <p className="text-xl md:text-2xl text-blue-50 mb-8 font-light max-w-3xl mx-auto">
                   {t('heroSubtitle')}
                 </p>
-              </motion.div>
+              </div>
 
               {/* Stats destacadas */}
               <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-base md:text-lg mb-8">
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
-                >
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <Users className="w-5 h-5 text-green-400" />
                   <span className="font-bold">247+</span>
                   <span className="text-blue-100">profesionales</span>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
-                >
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   <span className="font-bold">4.8</span>
                   <span className="text-blue-100">valoración</span>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
-                >
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                   <TrendingUp className="w-5 h-5 text-green-400" />
                   <span className="font-bold">1,840</span>
                   <span className="text-blue-100">trabajos/mes</span>
-                </motion.div>
+                </div>
               </div>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto"
-              >
+              <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
                 <Button onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
                   className="bg-white hover:bg-gray-50 text-blue-700 h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl">
                   <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
@@ -683,20 +662,18 @@ export default function SearchPage() {
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <AnimatePresence>
-                  {filteredProfiles.slice(0, displayLimit).map((profile) => (
-                    <motion.div key={profile.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                      <ProfileCard
-                        profile={profile}
-                        onClick={() => handleViewProfile(profile)}
-                        onToggleFavorite={() => handleToggleFavorite(profile)}
-                        isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
-                        professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                        currentUserId={user?.id}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                {filteredProfiles.slice(0, displayLimit).map((profile) => (
+                  <div key={profile.id}>
+                    <ProfileCard
+                      profile={profile}
+                      onClick={() => handleViewProfile(profile)}
+                      onToggleFavorite={() => handleToggleFavorite(profile)}
+                      isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                      professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                      currentUserId={user?.id}
+                    />
+                  </div>
+                ))}
               </div>
               
               {filteredProfiles.length > displayLimit && (
