@@ -338,7 +338,9 @@ export default function MessagesPage() {
           conversationId: convId,
           messages: [],
           otherUserId: otherUserId,
-          otherUserName: "Usuario de MisAutónomos", // Default mejorado
+          otherUserName: msg.sender_id === user?.id 
+            ? (msg.client_name || msg.professional_name || "Contacto")
+            : (msg.professional_name || msg.client_name || "Contacto"),
           lastMessage: msg,
           unreadCount: 0
         };
@@ -443,7 +445,7 @@ export default function MessagesPage() {
   };
 
   const getDisplayName = (userId, conversationId = null) => {
-    if (!userId) return "Usuario de MisAutónomos";
+    if (!userId) return "Contacto";
     
     if (userId === user?.id) {
       if (user.user_type === "professionnel") {
@@ -539,7 +541,7 @@ export default function MessagesPage() {
       }
     }
     
-    return "Usuario de MisAutónomos";
+    return "Contacto";
   };
 
   const getUserType = (userId) => {
