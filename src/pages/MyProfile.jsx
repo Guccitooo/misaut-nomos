@@ -42,6 +42,7 @@ import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm
 import SkillsSection from "../components/profile/SkillsSection";
 import PortfolioSection from "../components/profile/PortfolioSection";
 import FAQSection from "../components/profile/FAQSection";
+import AIAssistantPro from "../components/ai/AIAssistantPro";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -1328,6 +1329,22 @@ export default function MyProfilePage() {
                             placeholder="Describe brevemente tus servicios..."
                           />
                           <p className="text-xs text-gray-500 mt-1">{profileData.descripcion_corta.length}/220</p>
+                          
+                          {isEditing && (
+                            <div className="mt-3">
+                              <AIAssistantPro
+                                type="description"
+                                context={{
+                                  category: profileData.categories[0] || "Servicio profesional",
+                                  experience: profileData.years_experience || "varios",
+                                  location: profileData.ciudad || profileData.provincia || "tu zona"
+                                }}
+                                onApply={(suggestion) => {
+                                  setProfileData({ ...profileData, descripcion_corta: suggestion.slice(0, 220) });
+                                }}
+                              />
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -1417,6 +1434,21 @@ export default function MyProfilePage() {
                         placeholder="35"
                         min="0"
                       />
+                      
+                      {isEditing && (
+                        <div className="mt-3">
+                          <AIAssistantPro
+                            type="pricing"
+                            context={{
+                              service: profileData.activity_other || profileData.categories[0] || "Servicio profesional",
+                              category: profileData.categories[0] || "Servicio profesional",
+                              location: profileData.ciudad || profileData.provincia || "España",
+                              experience: profileData.years_experience || "media"
+                            }}
+                            onApply={() => {}}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div>

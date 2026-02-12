@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle, Paperclip, FileText, X } from "lucide-react";
+import { Send, MessageSquare, Loader2, Star, CheckCheck, Check, Briefcase, User as UserIcon, ExternalLink, ArrowLeft, Phone, MessageCircle, Paperclip, FileText, X, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -27,6 +27,7 @@ import FileAttachment from "../components/messages/FileAttachment";
 import QuoteRequest from "../components/messages/QuoteRequest";
 import { Input } from "@/components/ui/input";
 import PullToRefresh from "../components/ui/PullToRefresh";
+import AIAssistantPro from "../components/ai/AIAssistantPro";
 
 // ✅ CACHE KEYS
 const CACHE_KEY = 'milautonomos_conversations_cache';
@@ -129,6 +130,7 @@ export default function MessagesPage() {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   const [quoteData, setQuoteData] = useState({ description: "", budget: "", deadline: "" });
   const fileInputRef = useRef(null);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -1595,6 +1597,24 @@ export default function MessagesPage() {
                   paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))'
                 }}
               >
+                  {showAIAssistant && user?.user_type === "professionnel" && currentMessages.length > 0 && (
+                    <div className="mb-3">
+                      <AIAssistantPro
+                        type="message"
+                        context={{
+                          clientName: getDisplayName(selectedProfessionalId),
+                          clientMessage: currentMessages[currentMessages.length - 1]?.content || "",
+                          professionalName: getDisplayName(user.id),
+                          service: otherUserData?.profile?.categories?.[0] || "Servicio profesional"
+                        }}
+                        onApply={(suggestion) => {
+                          setNewMessage(suggestion);
+                          setShowAIAssistant(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {attachments.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">
                       {attachments.map((file, idx) => (
@@ -1617,6 +1637,19 @@ export default function MessagesPage() {
                       className="hidden"
                       accept="image/*,.pdf,.doc,.docx,.txt"
                     />
+                    {user?.user_type === "professionnel" && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className={`h-[42px] w-[42px] md:h-[44px] md:w-[44px] ${showAIAssistant ? 'bg-purple-100 border-purple-300' : ''}`}
+                        onClick={() => setShowAIAssistant(!showAIAssistant)}
+                        title="Asistente IA"
+                      >
+                        <Sparkles className={`w-4 h-4 ${showAIAssistant ? 'text-purple-600' : ''}`} />
+                      </Button>
+                    )}
+
                     <Button
                       type="button"
                       size="icon"
