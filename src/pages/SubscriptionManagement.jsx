@@ -166,8 +166,31 @@ export default function SubscriptionManagementPage() {
 
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
-    await cancelSubscriptionMutation.mutateAsync();
-    setIsCancelling(false);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {});
+      
+      if (response.data?.success) {
+        // 🔥 ACTUALIZACIÓN INMEDIATA
+        await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        await refetchSubscription();
+        
+        toast.success('Suscripción cancelada correctamente', {
+          description: 'Tu perfil ya no es visible en búsquedas'
+        });
+        
+        setShowCancelDialog(false);
+        
+        // 🔥 LIMPIAR CACHE
+        sessionStorage.removeItem('current_user');
+      } else {
+        toast.error(response.data?.error || 'Error al cancelar');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cancelar la suscripción');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleReactivateSubscription = async () => {
