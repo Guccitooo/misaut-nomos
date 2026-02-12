@@ -1099,12 +1099,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           </Button>
                         </Link>
                       )}
-                      <Link to={createPageUrl("PricingPlans")}>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                          <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('becomeFreelancer')}
-                        </Button>
-                      </Link>
+                      {!user || user.user_type !== 'professionnel' ? (
+                        <Link to={createPageUrl("PricingPlans")}>
+                          <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+                            <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
+                            {t('becomeFreelancer')}
+                          </Button>
+                        </Link>
+                      ) : null}
                       <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                         <button
                           onClick={() => changeLanguage('es')}

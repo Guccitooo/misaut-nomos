@@ -534,6 +534,36 @@ export default function SubscriptionManagementPage() {
                   </Card>
                 )}
 
+                <Card className="shadow-lg border-0">
+                  <CardContent className="p-6 text-center">
+                    <CreditCard className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      Gestionar método de pago
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Actualiza tu tarjeta, consulta facturas o cancela tu suscripción
+                    </p>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={async () => {
+                        try {
+                          const response = await base44.functions.invoke('createStripePortalSession', {});
+                          if (response.data?.url) {
+                            window.location.href = response.data.url;
+                          } else {
+                            toast.error('Error al abrir el portal de pagos');
+                          }
+                        } catch (error) {
+                          toast.error('Error al abrir el portal de pagos');
+                        }
+                      }}
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Abrir portal de pagos
+                    </Button>
+                  </CardContent>
+                </Card>
+
                 {(subscription.estado === "activo" || subscription.estado === "en_prueba") && (
                   <Card className="shadow-lg border-0">
                     <CardContent className="p-6 text-center">

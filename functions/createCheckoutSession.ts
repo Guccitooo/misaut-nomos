@@ -21,6 +21,26 @@ Deno.serve(async (req) => {
 
     console.log('📦 Plan solicitado:', planId, '- Precio:', planPrice, '- Reactivación:', isReactivation);
 
+    // 🔥 VERIFICAR SI YA TIENE SUSCRIPCIÓN ACTIVA - BLOQUEAR DUPLICADOS
+    const existingSubs = await base44.asServiceRole.entities.Subscription.filter({
+      user_id: user.id
+    });
+
+    if (existingSubs.length > 0 && !isReactivation) {
+      const activeSub = existingSubs[0];
+      const today = new Date();
+      const expiration = new Date(activeSub.fecha_expiracion);
+      
+      // Si la suscripción está activa o en trial y no ha expirado, BLOQUEAR
+      if ((activeSub.estado === 'activo' || activeSub.estado === 'en_prueba') && expiration >= today) {
+        console.log('🚫 BLOQUEADO: Usuario ya tiene suscripción activa');
+        return Response.json({ 
+          error: 'Ya tienes una suscripción activa. Gestiona tu plan desde "Mi Suscripción".',
+          redirect: '/SubscriptionManagement'
+        }, { status: 400 });
+      }
+    }
+
     // ✅ VERIFICAR SI YA USÓ TRIAL
     if (user.has_used_trial === true && !isReactivation) {
       console.log('⚠️ Usuario ya usó prueba gratuita');

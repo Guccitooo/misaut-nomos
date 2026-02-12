@@ -40,6 +40,27 @@ export default function PricingPlansPage() {
     gcTime: 1000 * 60 * 30,
   });
 
+  const { data: currentSubscription } = useQuery({
+    queryKey: ['currentSubscription', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const subs = await base44.entities.Subscription.filter({ user_id: user.id });
+      if (subs.length === 0) return null;
+      
+      const sub = subs[0];
+      const today = new Date();
+      const expiration = new Date(sub.fecha_expiracion);
+      
+      // Solo retornar si está realmente activa
+      if ((sub.estado === 'activo' || sub.estado === 'en_prueba') && expiration >= today) {
+        return sub;
+      }
+      return null;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 30,
+  });
+
   useEffect(() => {
     loadUser();
   }, []);
@@ -82,6 +103,13 @@ export default function PricingPlansPage() {
   };
 
   const handleSelectPlan = async (plan) => {
+    // 🔥 BLOQUEAR SI YA TIENE SUSCRIPCIÓN ACTIVA
+    if (currentSubscription && user) {
+      toast.error('Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.');
+      navigate(createPageUrl("SubscriptionManagement"));
+      return;
+    }
+
     if (!user) {
       localStorage.setItem('pending_plan_selection', JSON.stringify({
         plan_id: plan.plan_id,
@@ -108,6 +136,12 @@ export default function PricingPlansPage() {
       console.log('📦 Respuesta del servidor:', response);
 
       if (response.data?.error) {
+        // Si el error indica suscripción duplicada, redirigir
+        if (response.data.redirect) {
+          toast.error(response.data.error);
+          navigate(response.data.redirect);
+          return;
+        }
         throw new Error(response.data.error);
       }
 
@@ -289,22 +323,33 @@ export default function PricingPlansPage() {
                       ))}
                     </ul>
 
-                    <Button
-                      className="w-full h-11 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
-                      style={{ borderRadius: '8px' }}
-                      onClick={() => handleSelectPlan(plan)}
-                      disabled={isProcessing && selectedPlan === plan.plan_id}
-                      aria-label={`Seleccionar plan ${plan.nombre}`}
-                    >
-                      {isProcessing && selectedPlan === plan.plan_id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Procesando...
-                        </>
-                      ) : (
-                        plan.plan_id === 'plan_visibility' ? 'Elegir Visibilidad' : 'Elegir Ads+'
-                      )}
-                    </Button>
+                    {currentSubscription ? (
+                      <Button
+                        className="w-full h-11 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        style={{ borderRadius: '8px' }}
+                        onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
+                        aria-label="Gestionar suscripción"
+                      >
+                        Gestionar mi suscripción
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full h-11 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+                        style={{ borderRadius: '8px' }}
+                        onClick={() => handleSelectPlan(plan)}
+                        disabled={isProcessing && selectedPlan === plan.plan_id}
+                        aria-label={`Seleccionar plan ${plan.nombre}`}
+                      >
+                        {isProcessing && selectedPlan === plan.plan_id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Procesando...
+                          </>
+                        ) : (
+                          plan.plan_id === 'plan_visibility' ? 'Empezar ahora' : 'Empezar ahora'
+                        )}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
