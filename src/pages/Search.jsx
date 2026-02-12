@@ -44,7 +44,7 @@ import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredDat
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import OptimizedImage from "../components/ui/OptimizedImage";
-import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../utils/locationsData";
+import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
