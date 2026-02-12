@@ -47,6 +47,10 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import OptimizedImage from "../components/ui/OptimizedImage";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
+import SearchAutocomplete from "../components/search/SearchAutocomplete";
+import SearchFilters from "../components/search/SearchFilters";
+import MapView from "../components/search/MapView";
+import SavedSearches from "../components/search/SavedSearches";
 
 // Asegurar que motion está disponible
 const MotionDiv = motion.div;
@@ -292,10 +296,15 @@ export default function SearchPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedProvincia, setSelectedProvincia] = useState("all");
-  const [selectedCiudad, setSelectedCiudad] = useState("all");
+  const [filters, setFilters] = useState({
+    category: "all",
+    provincia: "all",
+    ciudad: "all",
+    minRating: 0,
+    availability: "all"
+  });
   const [displayLimit, setDisplayLimit] = useState(12);
+  const [viewMode, setViewMode] = useState("grid"); // "grid" o "map"
 
   useEffect(() => {
     loadUser();
@@ -402,28 +411,25 @@ export default function SearchPage() {
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-      const matchesCategory = selectedCategory === "all" || profile.categories?.includes(selectedCategory);
-      const matchesProvincia = selectedProvincia === "all" || profile.provincia === selectedProvincia;
-      const matchesCiudad = selectedCiudad === "all" || profile.ciudad === selectedCiudad;
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad;
+      const matchesCategory = filters.category === "all" || profile.categories?.includes(filters.category);
+      const matchesProvincia = filters.provincia === "all" || profile.provincia === filters.provincia;
+      const matchesCiudad = filters.ciudad === "all" || profile.ciudad === filters.ciudad;
+      const matchesRating = !filters.minRating || (profile.average_rating >= filters.minRating);
+      const matchesAvailability = filters.availability === "all" || profile.disponibilidad_tipo === filters.availability;
+      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad && matchesRating && matchesAvailability;
     });
     
     // Orden aleatorio
     return filtered.sort(() => Math.random() - 0.5);
-  }, [profiles, debouncedSearchTerm, selectedCategory, selectedProvincia, selectedCiudad]);
+  }, [profiles, debouncedSearchTerm, filters]);
 
   const availableCities = React.useMemo(() => {
-    if (selectedProvincia === "all") return [];
-    return CIUDADES_POR_PROVINCIA[selectedProvincia] || [];
-  }, [selectedProvincia]);
+    if (filters.provincia === "all") return [];
+    return CIUDADES_POR_PROVINCIA[filters.provincia] || [];
+  }, [filters.provincia]);
 
-  const handleProvinciaChange = (value) => {
-    setSelectedProvincia(value);
-    setSelectedCiudad("all"); // Reset ciudad al cambiar provincia
-  };
-
-  const handleCategoryChange = (value) => {
-    setSelectedCategory(value);
+  const handleSelectFromAutocomplete = (profile) => {
+    handleViewProfile(profile);
   };
 
   const handleViewProfile = (profile) => {
@@ -461,31 +467,31 @@ export default function SearchPage() {
     <>
       <SEOHead 
         title={
-          selectedCategory !== "all" && selectedProvincia !== "all" && selectedCiudad !== "all"
-            ? `${selectedCategory} en ${selectedCiudad} - MisAutónomos`
-            : selectedCategory !== "all" && selectedProvincia !== "all"
-            ? `${selectedCategory} en ${selectedProvincia} - MisAutónomos`
-            : selectedProvincia !== "all" && selectedCiudad !== "all"
-            ? `Autónomos en ${selectedCiudad}, ${selectedProvincia} - MisAutónomos`
-            : selectedCategory !== "all"
-            ? `${selectedCategory} en España - MisAutónomos`
-            : selectedProvincia !== "all"
-            ? `Autónomos en ${selectedProvincia} - MisAutónomos`
+          filters.category !== "all" && filters.provincia !== "all" && filters.ciudad !== "all"
+            ? `${filters.category} en ${filters.ciudad} - MisAutónomos`
+            : filters.category !== "all" && filters.provincia !== "all"
+            ? `${filters.category} en ${filters.provincia} - MisAutónomos`
+            : filters.provincia !== "all" && filters.ciudad !== "all"
+            ? `Autónomos en ${filters.ciudad}, ${filters.provincia} - MisAutónomos`
+            : filters.category !== "all"
+            ? `${filters.category} en España - MisAutónomos`
+            : filters.provincia !== "all"
+            ? `Autónomos en ${filters.provincia} - MisAutónomos`
             : "Buscar Autónomos Profesionales - MisAutónomos"
         }
         description={
-          selectedCategory !== "all" && selectedProvincia !== "all"
-            ? `${filteredProfiles.length} profesionales de ${selectedCategory} en ${selectedProvincia}. Contacta gratis con autónomos verificados.`
-            : selectedCategory !== "all"
-            ? `Encuentra ${selectedCategory} profesionales verificados en España. ${filteredProfiles.length} autónomos disponibles.`
-            : selectedProvincia !== "all"
-            ? `${filteredProfiles.length} autónomos verificados en ${selectedProvincia}. Electricistas, fontaneros, carpinteros y más.`
+          filters.category !== "all" && filters.provincia !== "all"
+            ? `${filteredProfiles.length} profesionales de ${filters.category} en ${filters.provincia}. Contacta gratis con autónomos verificados.`
+            : filters.category !== "all"
+            ? `Encuentra ${filters.category} profesionales verificados en España. ${filteredProfiles.length} autónomos disponibles.`
+            : filters.provincia !== "all"
+            ? `${filteredProfiles.length} autónomos verificados en ${filters.provincia}. Electricistas, fontaneros, carpinteros y más.`
             : `Encuentra y contacta con profesionales autónomos verificados en España. ${filteredProfiles.length}+ profesionales disponibles.`
         }
         keywords={[
-          selectedCategory !== "all" ? selectedCategory : "autónomos",
-          selectedProvincia !== "all" ? selectedProvincia : "España",
-          selectedCiudad !== "all" ? selectedCiudad : "",
+          filters.category !== "all" ? filters.category : "autónomos",
+          filters.provincia !== "all" ? filters.provincia : "España",
+          filters.ciudad !== "all" ? filters.ciudad : "",
           "profesionales verificados",
           "servicios a domicilio",
           "contactar gratis"
@@ -495,7 +501,7 @@ export default function SearchPage() {
       {/* Schemas estructurados para SEO */}
       <ServiceSchema 
         categories={categories.map(c => c.name)} 
-        location={selectedProvincia !== "all" ? selectedProvincia : "España"} 
+        location={filters.provincia !== "all" ? filters.provincia : "España"} 
       />
       <BreadcrumbSchema items={[
         { name: "Inicio", url: "https://misautonomos.es" },
@@ -557,67 +563,62 @@ export default function SearchPage() {
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
           <div className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex flex-col md:flex-row gap-2.5 items-center">
-              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[220px] font-medium hover:border-blue-300 transition-colors">
-                  <SelectValue placeholder={t('allCategories')}>
-                    {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">{t('allCategories')}</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors">
-                  <SelectValue placeholder={t('allProvinces')} />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">{t('allProvinces')}</SelectItem>
-                  {PROVINCIAS.map((prov) => (
-                    <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  <SelectValue placeholder={selectedProvincia === "all" ? "Primero selecciona provincia" : t('allCities')} />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">{t('allCities')}</SelectItem>
-                  {availableCities.map((ciudad) => (
-                    <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedCategory("all");
-                    setSelectedProvincia("all");
-                    setSelectedCiudad("all");
-                  }}
-                  className="text-xs text-gray-500 hover:text-gray-700 h-11 md:ml-auto whitespace-nowrap"
-                >
-                  ✕ Limpiar filtros
-                </Button>
-              )}
+            <div className="mb-3">
+              <SearchAutocomplete
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onSelect={handleSelectFromAutocomplete}
+              />
             </div>
+            
+            <SearchFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              availableCities={availableCities}
+              categories={categories}
+              provinces={PROVINCIAS}
+            />
           </div>
 
-          <div className="mb-5" style={{ minHeight: '56px' }}>
-            <h2 className="text-xl font-bold text-gray-900">
-              {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
-            </h2>
-            <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
+          <SavedSearches
+            user={user}
+            currentFilters={filters}
+            resultsCount={filteredProfiles.length}
+            onLoadSearch={(savedFilters) => setFilters(savedFilters)}
+          />
+
+          <div className="mb-5 flex items-center justify-between" style={{ minHeight: '56px' }}>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
+              </h2>
+              <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
+            </div>
+            
+            {!isInitialLoading && filteredProfiles.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className={viewMode === "grid" ? "bg-blue-600" : ""}
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Lista
+                </Button>
+                <Button
+                  variant={viewMode === "map" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("map")}
+                  className={viewMode === "map" ? "bg-blue-600" : ""}
+                >
+                  <MapPin className="w-4 h-4 mr-1" />
+                  Mapa
+                </Button>
+              </div>
+            )}
           </div>
 
           {isInitialLoading && (
@@ -663,32 +664,41 @@ export default function SearchPage() {
 
           {!isInitialLoading && filteredProfiles.length > 0 && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProfiles.slice(0, displayLimit).map((profile) => (
-                  <div key={profile.id}>
-                    <ProfileCard
-                      profile={profile}
-                      onClick={() => handleViewProfile(profile)}
-                      onToggleFavorite={() => handleToggleFavorite(profile)}
-                      isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
-                      professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                      currentUserId={user?.id}
-                    />
+              {viewMode === "grid" ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {filteredProfiles.slice(0, displayLimit).map((profile) => (
+                      <div key={profile.id}>
+                        <ProfileCard
+                          profile={profile}
+                          onClick={() => handleViewProfile(profile)}
+                          onToggleFavorite={() => handleToggleFavorite(profile)}
+                          isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                          professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                          currentUserId={user?.id}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              
-              {filteredProfiles.length > displayLimit && (
-                <div className="text-center mt-8">
-                  <Button
-                    onClick={() => setDisplayLimit(prev => prev + 12)}
-                    variant="outline"
-                    size="lg"
-                    className="px-8 rounded-xl hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    {t('viewAll')} ({filteredProfiles.length - displayLimit} {t('professionals')})
-                  </Button>
-                </div>
+                  
+                  {filteredProfiles.length > displayLimit && (
+                    <div className="text-center mt-8">
+                      <Button
+                        onClick={() => setDisplayLimit(prev => prev + 12)}
+                        variant="outline"
+                        size="lg"
+                        className="px-8 rounded-xl hover:bg-blue-50 hover:border-blue-300"
+                      >
+                        {t('viewAll')} ({filteredProfiles.length - displayLimit} {t('professionals')})
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <MapView
+                  profiles={filteredProfiles}
+                  onProfileClick={handleViewProfile}
+                />
               )}
             </>
           )}
