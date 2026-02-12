@@ -11,8 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Instagram, Facebook, Globe, Music, Check } from "lucide-react";
+import { Loader2, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Instagram, Facebook, Globe, Music, Check, Lightbulb } from "lucide-react";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
+import OnboardingTooltip from "../components/onboarding/OnboardingTooltip";
+import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
+import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 
 // Categorías se cargan dinámicamente desde BD
 
@@ -60,6 +63,7 @@ export default function ProfileOnboardingPage() {
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -502,9 +506,28 @@ export default function ProfileOnboardingPage() {
   const progress = (currentStep / 3) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <Card className="shadow-xl border-0 bg-white rounded-2xl overflow-hidden">
+    <>
+      <OnboardingTutorial open={showTutorial} onClose={() => setShowTutorial(false)} />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 py-8 px-4">
+        <div className="max-w-2xl mx-auto space-y-4">
+          
+          {/* Tutorial Button */}
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowTutorial(true)}
+              variant="outline"
+              className="bg-white border-2 border-blue-200 hover:bg-blue-50 gap-2"
+            >
+              <Lightbulb className="w-4 h-4 text-amber-500" />
+              ¿Cómo funciona el sistema?
+            </Button>
+          </div>
+
+          {/* Checklist del paso actual */}
+          <OnboardingChecklist currentStep={currentStep} formData={formData} />
+
+          <Card className="shadow-xl border-0 bg-white rounded-2xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white pb-8">
             <div className="text-center mb-4">
               <h1 className="text-3xl font-bold mb-2">Completa tu perfil profesional</h1>
@@ -527,7 +550,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="business_name">
-                  <Label>Nombre profesional *</Label>
+                  <OnboardingTooltip content="Tu nombre profesional es lo primero que ven los clientes. Usa tu nombre real o el de tu negocio. Ejemplos: 'Juan Pérez - Fontanero', 'Electricidad Rodríguez', etc.">
+                    <Label>Nombre profesional *</Label>
+                  </OnboardingTooltip>
                   <p className="text-xs text-gray-500 mb-2">Se mostrará así a los clientes</p>
                   <Input
                     value={formData.business_name}
@@ -552,7 +577,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="cif_nif">
-                  <Label>NIF/CIF *</Label>
+                  <OnboardingTooltip content="Tu NIF/CIF es privado y solo se usa para verificación interna. NUNCA será visible para los clientes en tu perfil público.">
+                    <Label>NIF/CIF *</Label>
+                  </OnboardingTooltip>
                   <p className="text-xs text-gray-500 mb-2">(Este dato NO se mostrará públicamente)</p>
                   <Input
                     value={formData.cif_nif}
@@ -627,7 +654,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div>
-                  <Label className="mb-3 block">Métodos de contacto visibles</Label>
+                  <OnboardingTooltip content="Elige cómo quieres que los clientes te contacten. El chat interno es obligatorio y seguro. WhatsApp y teléfono son opcionales pero aumentan tus contactos.">
+                    <Label className="mb-3 block">Métodos de contacto visibles</Label>
+                  </OnboardingTooltip>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="relative w-5 h-5 flex items-center justify-center">
@@ -693,7 +722,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="categories">
-                  <Label className="mb-3 block">Categoría de servicio * (elige solo una)</Label>
+                  <OnboardingTooltip content="Elige la categoría que mejor describa tu actividad principal. Los clientes buscan por categorías, así que elige la más relevante para aparecer en búsquedas correctas.">
+                    <Label className="mb-3 block">Categoría de servicio * (elige solo una)</Label>
+                  </OnboardingTooltip>
                   {fieldErrors.categories && (
                     <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.categories}</p>
                   )}
@@ -772,7 +803,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="descripcion_corta">
-                  <Label>Descripción corta *</Label>
+                  <OnboardingTooltip content="Esta descripción aparecerá en las búsquedas. Sé claro, profesional y menciona tus servicios clave. Buenos ejemplos: 'Electricista con 15 años de experiencia en instalaciones residenciales y comerciales' o 'Fontanero especializado en reparaciones urgentes 24/7'.">
+                    <Label>Descripción corta *</Label>
+                  </OnboardingTooltip>
                   <p className="text-xs text-gray-500 mb-2">Describe brevemente tus servicios (mínimo 20 caracteres)</p>
                   <Textarea
                     value={formData.descripcion_corta}
@@ -872,7 +905,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="formas_pago">
-                  <Label className="mb-3 block">Formas de pago aceptadas * (mínimo una)</Label>
+                  <OnboardingTooltip content="Indica qué formas de pago aceptas. Cuantas más opciones ofrezcas, más fácil será para los clientes contratarte. Bizum y transferencia son las más populares en España.">
+                    <Label className="mb-3 block">Formas de pago aceptadas * (mínimo una)</Label>
+                  </OnboardingTooltip>
                   {fieldErrors.formas_pago && (
                     <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.formas_pago}</p>
                   )}
@@ -900,7 +935,9 @@ export default function ProfileOnboardingPage() {
                 </div>
 
                 <div id="photos">
-                  <Label className="mb-3 block">Portfolio de trabajos * (mínimo 1 foto)</Label>
+                  <OnboardingTooltip content="Las fotos de tus trabajos son CLAVE. Los perfiles con más fotos reciben 3x más contactos. Sube fotos nítidas de trabajos reales que hayas completado. No uses imágenes de internet.">
+                    <Label className="mb-3 block">Portfolio de trabajos * (mínimo 1 foto)</Label>
+                  </OnboardingTooltip>
                   {fieldErrors.photos && (
                     <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.photos}</p>
                   )}
@@ -1147,5 +1184,6 @@ export default function ProfileOnboardingPage() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
