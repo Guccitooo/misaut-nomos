@@ -252,431 +252,314 @@ export default function SubscriptionManagementPage() {
         noindex={true}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('mySubscription')}</h1>
-              <p className="text-gray-600">{t('manageProfessionalPlan')}</p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate(createPageUrl("MyProfile"))}
-              aria-label={t('backToProfile')}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('backToProfile')}
-            </Button>
-          </div>
+      <div className="min-h-screen bg-white p-4 md:p-8">
+        <div className="max-w-3xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("MyProfile"))}
+            className="mb-6 hover:bg-gray-100"
+            aria-label={t('backToProfile')}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
 
           {!subscription ? (
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-amber-600" />
-                </div>
-                
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                  {t('noActiveSubscription')}
-                </h2>
-                
-                <p className="text-gray-600 mb-4 max-w-md mx-auto">
-                  {t('needPlanToAppear')}
-                </p>
-                
-                <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-6 inline-block">
-                  Descubre todo lo que incluye el Dashboard Pro →
-                </Link>
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-10 h-10 text-gray-400" />
+              </div>
+              
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                No tienes un plan activo
+              </h2>
+              
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Necesitas contratar un plan profesional para que tu perfil aparezca en las búsquedas
+              </p>
 
-                {/* Mostrar info de sync si hay datos */}
-                {syncResult && (
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left text-sm">
-                    <p className="font-medium text-gray-700 mb-2">Diagnóstico:</p>
-                    <p className="text-gray-600">
-                      {syncResult.message || 'Sin información adicional'}
-                    </p>
-                    {syncResult.subscription && (
-                      <p className="text-gray-600 mt-1">
-                        Estado en Stripe: <strong>{syncResult.subscription.status}</strong>
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    size="lg"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    {t('viewAvailablePlans')}
-                  </Button>
-                  
-                  {/* Botón de resincronizar para todos los usuarios */}
-                  <Button
-                    onClick={async () => {
-                      setIsFixing(true);
-                      await refetchSync();
-                      await refetchSubscription();
-                      setIsFixing(false);
-                      toast.info("Sincronización completada");
-                    }}
-                    disabled={isFixing}
-                    variant="outline"
-                    size="lg"
-                  >
-                    {isFixing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Sincronizando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Sincronizar con Stripe
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <Button
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+                size="lg"
+                className="bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                Ver planes disponibles
+              </Button>
+            </div>
           ) : (
             <>
-              <Card className="mb-6 shadow-lg border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-6 h-6 text-blue-700" />
-                    {t('yourPlanInfo')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">{t('currentPlan')}</p>
-                      <p className="text-xl font-bold text-gray-900">{plan?.nombre || subscription.plan_nombre}</p>
-                    </div>
-                    {getStatusBadge(subscription.estado)}
+              {/* ENCABEZADO DE ESTADO - Visual y Directo */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Tu plan actual</p>
+                    <h2 className="text-2xl font-semibold text-gray-900">{plan?.nombre || subscription.plan_nombre}</h2>
                   </div>
-
-                  {/* Mostrar IDs de Stripe si existen */}
-                  {subscription.stripe_subscription_id && (
-                    <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
-                      <p><strong>Stripe ID:</strong> {subscription.stripe_subscription_id}</p>
-                      {subscription.stripe_customer_id && (
-                        <p><strong>Customer ID:</strong> {subscription.stripe_customer_id}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Alerta si no hay ID de Stripe pero dice activo */}
-                  {!subscription.stripe_subscription_id && (subscription.estado === 'activo' || subscription.estado === 'en_prueba') && (
-                    <Alert className="bg-red-50 border-red-200">
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <AlertDescription className="text-red-800 text-sm">
-                        <strong>⚠️ Problema detectado:</strong> Tu suscripción no está sincronizada con Stripe. 
-                        El pago no se realizará correctamente. Por favor, contacta con soporte o reactiva tu suscripción.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">{t('startDate')}</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(subscription.fecha_inicio).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">{t('renewalExpiration')}</p>
-                      <p className="font-semibold text-gray-900">
-                        {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}
-                        {getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                          <span className="text-sm text-blue-600 ml-2">
-                            ({getDaysLeft(subscription.fecha_expiracion)} {t('days')})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
                   {subscription.estado === "activo" && (
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-green-900">
-                        ✅ {t('profileVisibleOk')}
-                      </p>
-                    </div>
+                    <Badge className="bg-green-100 text-green-700 border-0 px-3 py-1">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Activo
+                    </Badge>
                   )}
+                  {subscription.estado === "en_prueba" && (
+                    <Badge className="bg-blue-100 text-blue-700 border-0 px-3 py-1">
+                      Periodo de prueba
+                    </Badge>
+                  )}
+                  {subscription.estado === "cancelado" && (
+                    <Badge className="bg-amber-100 text-amber-700 border-0 px-3 py-1">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Cancelado
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Precio</span>
+                    <span className="font-semibold text-gray-900">{plan?.precio || subscription.plan_precio}€/mes</span>
+                  </div>
+                  
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-600">
+                      {subscription.estado === "en_prueba" ? "Fin de prueba" : "Próximo cobro"}
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
+                      {subscription.estado === "en_prueba" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
+                        <span className="text-blue-600 ml-2">
+                          ({getDaysLeft(subscription.fecha_expiracion)} días)
+                        </span>
+                      )}
+                    </span>
+                  </div>
 
                   {subscription.estado === "en_prueba" && (
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-blue-900">
-                        🎁 {t('trialActive')}
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        {getDaysLeft(subscription.fecha_expiracion)} {t('daysRemainingTrial')}
+                    <div className="bg-blue-50 rounded-lg p-3 mt-3">
+                      <p className="text-xs text-blue-900">
+                        <strong>Periodo de prueba:</strong> Los primeros 7 días son gratis. 
+                        Si no cancelas antes del {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}, 
+                        se cobrará automáticamente {plan?.precio || subscription.plan_precio}€/mes.
                       </p>
                     </div>
                   )}
+                </div>
+              </div>
 
-                  {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                    <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-amber-900">
-                            ⚠️ {t('subscriptionCanceledActive')} {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}.
-                          </p>
-                          <p className="text-xs text-amber-700 mt-1">
-                            {t('profileVisibleFor')} {getDaysLeft(subscription.fecha_expiracion)} {t('moreDays')}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={handleReactivateSubscription}
-                          disabled={isReactivating}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 flex-shrink-0"
-                        >
-                          {isReactivating ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                              Reactivando...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="w-4 h-4 mr-1" />
-                              Reactivar
-                            </>
-                          )}
-                        </Button>
+              {/* ACCIONES PRINCIPALES */}
+              <div className="space-y-4 mb-6">
+                {/* UPGRADE si está en Plan Visibility */}
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_visibility' && (
+                  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2">Mejorar a Plan Ads+</h3>
+                        <p className="text-sm text-purple-100">
+                          Acceso completo al Dashboard Pro + Campañas publicitarias gestionadas
+                        </p>
+                      </div>
+                      <TrendingUp className="w-10 h-10 opacity-80" />
+                    </div>
+                    
+                    <ul className="space-y-2 mb-4 text-sm">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                        CRM completo y gestión de clientes
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                        Campañas en Instagram, Facebook y TikTok
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                        Facturación y presupuestos automáticos
+                      </li>
+                    </ul>
+
+                    <Button
+                      className="w-full bg-white text-purple-700 hover:bg-purple-50 font-semibold"
+                      onClick={() => handleUpgradePlan('plan_adsplus')}
+                      disabled={isUpgrading}
+                    >
+                      {isUpgrading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Mejorar por 33€/mes
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-purple-100 mt-2 text-center">
+                      Prorrateo automático. Solo pagas la diferencia del mes actual.
+                    </p>
+                  </div>
+                )}
+
+                {/* GESTIONAR PAGOS Y FACTURAS */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">Gestionar método de pago</h3>
+                      <p className="text-sm text-gray-600">
+                        Actualiza tu tarjeta o consulta tus facturas
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                    onClick={async () => {
+                      try {
+                        const response = await base44.functions.invoke('createStripePortalSession', {});
+                        if (response.data?.url) {
+                          window.location.href = response.data.url;
+                        } else {
+                          toast.error('Error al abrir el portal de pagos');
+                        }
+                      } catch (error) {
+                        toast.error('Error al abrir el portal de pagos');
+                      }
+                    }}
+                  >
+                    Abrir portal de Stripe
+                  </Button>
+                </div>
+
+                {/* REACTIVAR si está cancelado con días restantes */}
+                {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-gray-900 mb-1">
+                          Suscripción cancelada
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          Tu plan sigue activo hasta el {new Date(subscription.fecha_expiracion).toLocaleDateString('es-ES')}. 
+                          Quedan {getDaysLeft(subscription.fecha_expiracion)} días.
+                        </p>
                       </div>
                     </div>
-                  )}
-
-                  {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0 && (
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-red-900">
-                        ❌ {t('subscriptionFinishedHidden')}
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        {t('considerReactivating')}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {subscription.estado === "finalizada" && (
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                      <p className="text-sm font-semibold text-red-900">
-                        ❌ {t('subscriptionFinishedHidden')}
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        {t('considerReactivating')}
-                      </p>
-                    </div>
-                  )}
-
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_visibility' && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
-                    <CardContent className="p-6 text-center">
-                      <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        Mejorar a Plan Ads+
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Accede al Dashboard Pro + Campañas publicitarias gestionadas
-                      </p>
-                      <Button
-                        className="w-full bg-purple-600 hover:bg-purple-700"
-                        onClick={() => handleUpgradePlan('plan_adsplus')}
-                        disabled={isUpgrading}
-                      >
-                        {isUpgrading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Mejorando...
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="w-4 h-4 mr-2" />
-                            Mejorar ahora (33€/mes)
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                    
+                    <Button
+                      onClick={handleReactivateSubscription}
+                      disabled={isReactivating}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      {isReactivating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Reactivando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Reactivar suscripción
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
 
+                {/* REACTIVAR si está finalizado */}
                 {(subscription.estado === "finalizada" || (subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) <= 0)) && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
-                    <CardContent className="p-6 text-center">
-                      <RefreshCw className="w-12 h-12 text-blue-700 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('reactivateYourPlan')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {t('appearInSearches')}
-                      </p>
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => navigate(createPageUrl("PricingPlans"))}
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        {t('viewAllPlans')}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {subscription.estado === "cancelado" && getDaysLeft(subscription.fecha_expiracion) > 0 && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-green-100">
-                    <CardContent className="p-6 text-center">
-                      <RefreshCw className="w-12 h-12 text-green-700 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        Reactivar suscripción
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Tienes <strong>{getDaysLeft(subscription.fecha_expiracion)} días restantes</strong>
-                      </p>
-                      <p className="text-xs text-gray-500 mb-4">
-                        Reactiva ahora sin coste adicional y aprovecha el tiempo restante
-                      </p>
-                      <Button
-                        onClick={handleReactivateSubscription}
-                        disabled={isReactivating}
-                        className="w-full bg-green-600 hover:bg-green-700"
-                      >
-                        {isReactivating ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Reactivando...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="w-5 h-5 mr-2" />
-                            Reactivar suscripción gratis
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card className="shadow-lg border-0">
-                  <CardContent className="p-6 text-center">
-                    <CreditCard className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      Gestionar método de pago
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Tu plan ha expirado
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Actualiza tu tarjeta, consulta facturas o cancela tu suscripción
+                    <p className="text-sm text-gray-700 mb-4">
+                      Tu perfil no es visible en las búsquedas
                     </p>
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700"
-                      onClick={async () => {
-                        try {
-                          const response = await base44.functions.invoke('createStripePortalSession', {});
-                          if (response.data?.url) {
-                            window.location.href = response.data.url;
-                          } else {
-                            toast.error('Error al abrir el portal de pagos');
-                          }
-                        } catch (error) {
-                          toast.error('Error al abrir el portal de pagos');
-                        }
-                      }}
+                      onClick={() => navigate(createPageUrl("PricingPlans"))}
                     >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Abrir portal de pagos
+                      Ver planes disponibles
                     </Button>
-                  </CardContent>
-                </Card>
-
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && (
-                  <Card className="shadow-lg border-0">
-                    <CardContent className="p-6 text-center">
-                      <XCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('cancelSubscription')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {subscription.estado === "en_prueba" 
-                          ? t('cancelTrialNoCharge')
-                          : t('cancelHideProfile')}
-                      </p>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        onClick={() => setShowCancelDialog(true)}
-                      >
-                        {t('cancelSubscription')}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  </div>
                 )}
               </div>
+
+              {/* CANCELAR SUSCRIPCIÓN - Sutil pero visible */}
+              {(subscription.estado === "activo" || subscription.estado === "en_prueba") && (
+                <div className="border-t border-gray-200 pt-6">
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="text-sm text-gray-500 hover:text-red-600 transition-colors mx-auto block"
+                  >
+                    Cancelar suscripción
+                  </button>
+                </div>
+              )}
             </>
           )}
 
           <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  {t('confirmCancelSubscription')}
+                <DialogTitle className="text-xl">
+                  ¿Cancelar tu suscripción?
                 </DialogTitle>
-                <DialogDescription className="space-y-3 pt-4">
-                  <p>
-                    {t('ifYouCancel')}
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 text-sm">
-                    {subscription?.estado === "en_prueba" ? (
-                      <>
-                        <li><strong>{t('noChargeTrialCanceled')}</strong></li>
-                        <li>{t('profileHidesImmediately')}</li>
-                        <li>{t('canReactivateAnytime')}</li>
-                      </>
-                    ) : (
-                      <>
-                        <li>{t('profileHidesFromSearch')}</li>
-                        <li>{t('noNewClientContacts')}</li>
-                        <li>{t('accessUntil')} <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES')}</strong></li>
-                        <li>{t('canReactivateSubscription')}</li>
-                      </>
-                    )}
-                  </ul>
-                  <p className="text-gray-900 font-semibold pt-2">
-                    {t('areYouSureContinue')}
-                  </p>
+                <DialogDescription className="space-y-4 pt-4 text-base">
+                  {subscription?.estado === "en_prueba" ? (
+                    <>
+                      <p className="text-gray-700">
+                        Si cancelas ahora, <strong>no se te cobrará nada</strong>. Tu prueba gratuita se detendrá inmediatamente.
+                      </p>
+                      <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded">
+                        <p className="text-sm text-amber-900">
+                          Tu perfil dejará de aparecer en las búsquedas al instante y perderás tu plaza reservada (máximo 10 por ciudad).
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-700">
+                        Tu suscripción seguirá activa hasta el <strong>{new Date(subscription?.fecha_expiracion).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</strong>.
+                      </p>
+                      <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
+                        <p className="text-sm text-red-900">
+                          Después de esa fecha, tu perfil pasará a ser gratuito y <strong>perderás tu plaza reservada</strong> (máximo 10 profesionales por ciudad).
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
                   onClick={() => setShowCancelDialog(false)}
                   disabled={isCancelling}
+                  className="w-full sm:w-auto"
                 >
-                  {t('noKeepActive')}
+                  No, mantener activo
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={handleCancelSubscription}
                   disabled={isCancelling}
+                  className="w-full sm:w-auto"
                 >
                   {isCancelling ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t('canceling')}
+                      Cancelando...
                     </>
                   ) : (
-                    <>
-                      <XCircle className="w-4 h-4 mr-2" />
-                      {t('yesCancelSubscription')}
-                    </>
+                    'Sí, cancelar suscripción'
                   )}
                 </Button>
               </DialogFooter>
