@@ -45,6 +45,7 @@ export default function SubscriptionManagementPage() {
   const [isFixing, setIsFixing] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -451,19 +452,37 @@ export default function SubscriptionManagementPage() {
                   <Button
                     className="w-full bg-gray-900 hover:bg-gray-800 text-white"
                     onClick={async () => {
+                      setOpeningPortal(true);
                       try {
                         const response = await base44.functions.invoke('createStripePortalSession', {});
                         if (response.data?.url) {
-                          window.location.href = response.data.url;
+                          toast.success('Redirigiendo al portal de Stripe...');
+                          setTimeout(() => {
+                            window.location.href = response.data.url;
+                          }, 500);
                         } else {
-                          toast.error('Error al abrir el portal de pagos');
+                          toast.error(response.data?.error || 'Error al abrir el portal');
+                          setOpeningPortal(false);
                         }
                       } catch (error) {
+                        console.error('Error:', error);
                         toast.error('Error al abrir el portal de pagos');
+                        setOpeningPortal(false);
                       }
                     }}
+                    disabled={openingPortal}
                   >
-                    Abrir portal de Stripe
+                    {openingPortal ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Cargando portal...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Abrir portal de Stripe
+                      </>
+                    )}
                   </Button>
                 </div>
 

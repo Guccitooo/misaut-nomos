@@ -772,6 +772,14 @@ Deno.serve(async (req) => {
             return Response.json({ received: true, processed: true });
         }
 
+        // ✅ MÉTODO DE PAGO ACTUALIZADO
+        if (event.type === 'customer.updated' || event.type === 'payment_method.attached') {
+            console.log('\n💳 ========== MÉTODO DE PAGO ACTUALIZADO ==========');
+            console.log('📊 Tipo:', event.type);
+            console.log('✅ El cliente ha actualizado su método de pago en el portal');
+            return Response.json({ received: true, processed: true });
+        }
+
         console.log('ℹ️ Evento no manejado:', event.type);
         return Response.json({ received: true });
 
