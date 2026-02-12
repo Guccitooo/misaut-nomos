@@ -278,14 +278,24 @@ export default function PricingPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
             {plans.map((plan) => {
               const badge = getPlanBadge(plan.plan_id);
+              const isCurrentPlan = currentSubscription?.plan_id === plan.plan_id;
 
               return (
                 <Card 
                   key={plan.plan_id}
-                  className="relative bg-white border border-gray-200 hover:shadow-sm transition-all duration-200"
-                  style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                  className={`relative bg-white border transition-all duration-200 ${
+                    isCurrentPlan ? 'border-green-400 shadow-lg' : 'border-gray-200 hover:shadow-sm'
+                  }`}
+                  style={{ borderRadius: '12px', boxShadow: isCurrentPlan ? '0 4px 12px rgba(34,197,94,0.15)' : '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
-                  {badge && (
+                  {isCurrentPlan && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-green-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
+                        ✓ Tu plan actual
+                      </span>
+                    </div>
+                  )}
+                  {!isCurrentPlan && badge && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <span className={`${badge.color} text-white text-xs font-medium px-4 py-1 rounded-full`}>
                         {badge.text}
@@ -323,14 +333,24 @@ export default function PricingPlansPage() {
                       ))}
                     </ul>
 
-                    {currentSubscription ? (
+                    {isCurrentPlan ? (
+                      <Button
+                        className="w-full h-11 text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-default"
+                        style={{ borderRadius: '8px' }}
+                        disabled
+                        aria-label="Plan actual"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Tu plan actual
+                      </Button>
+                    ) : currentSubscription ? (
                       <Button
                         className="w-full h-11 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                         style={{ borderRadius: '8px' }}
                         onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
                         aria-label="Gestionar suscripción"
                       >
-                        Gestionar mi suscripción
+                        Gestionar suscripción
                       </Button>
                     ) : (
                       <Button
@@ -346,7 +366,7 @@ export default function PricingPlansPage() {
                             Procesando...
                           </>
                         ) : (
-                          plan.plan_id === 'plan_visibility' ? 'Empezar ahora' : 'Empezar ahora'
+                          'Empezar ahora'
                         )}
                       </Button>
                     )}

@@ -44,6 +44,7 @@ export default function SubscriptionManagementPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -184,6 +185,27 @@ export default function SubscriptionManagementPage() {
       toast.error(error.message || "Error al reactivar la suscripción");
     } finally {
       setIsReactivating(false);
+    }
+  };
+
+  const handleUpgradePlan = async (newPlanId) => {
+    setIsUpgrading(true);
+    try {
+      const response = await base44.functions.invoke('upgradeSubscription', {
+        newPlanId
+      });
+
+      if (response.data?.ok) {
+        toast.success(response.data.message);
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        await refetchSubscription();
+      } else {
+        toast.error(response.data?.error || 'Error al mejorar el plan');
+      }
+    } catch (error) {
+      toast.error('Error al mejorar el plan');
+    } finally {
+      setIsUpgrading(false);
     }
   };
 
@@ -458,22 +480,32 @@ export default function SubscriptionManagementPage() {
               </Card>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subscription.estado === "en_prueba" && (
-                  <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-blue-100">
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_visibility' && (
+                  <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-purple-100">
                     <CardContent className="p-6 text-center">
-                      <TrendingUp className="w-12 h-12 text-blue-700 mx-auto mb-3" />
+                      <TrendingUp className="w-12 h-12 text-purple-700 mx-auto mb-3" />
                       <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {t('upgradeYourPlan')}
+                        Mejorar a Plan Ads+
                       </h3>
                       <p className="text-sm text-gray-600 mb-4">
-                        {t('saveUpTo')}
+                        Accede al Dashboard Pro + Campañas publicitarias gestionadas
                       </p>
                       <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => navigate(createPageUrl("PricingPlans"))}
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        onClick={() => handleUpgradePlan('plan_adsplus')}
+                        disabled={isUpgrading}
                       >
-                        <Zap className="w-4 h-4 mr-2" />
-                        {t('viewAllPlans')}
+                        {isUpgrading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Mejorando...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Mejorar ahora (33€/mes)
+                          </>
+                        )}
                       </Button>
                     </CardContent>
                   </Card>
