@@ -563,28 +563,16 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          {/* Barra de búsqueda minimalista en una línea */}
-          <div className="mb-6 bg-gray-50 rounded-2xl p-3 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-2 md:gap-3">
-              <div className="relative flex-1 md:flex-[2]">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input 
-                  type="text" 
-                  placeholder={t('search') || "¿Qué servicio buscas?"} 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-3 h-11 text-sm bg-white border-0 focus:ring-1 focus:ring-blue-500 rounded-xl shadow-sm"
-                />
-              </div>
-
+          <div className="mb-6 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row gap-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-11 bg-white border-0 text-sm shadow-sm rounded-xl md:flex-1">
-                  <SelectValue placeholder={t('allCategories') || "Todas las categorías"}>
-                    {selectedCategory === "all" ? t('allCategories') || "Todas las categorías" : (t(selectedCategory) || selectedCategory)}
+                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[200px]">
+                  <SelectValue placeholder={t('allCategories')}>
+                    {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">{t('allCategories') || "Todas las categorías"}</SelectItem>
+                  <SelectItem value="all">{t('allCategories')}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
                   ))}
@@ -592,11 +580,11 @@ export default function SearchPage() {
               </Select>
 
               <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                <SelectTrigger className="h-11 bg-white border-0 text-sm shadow-sm rounded-xl md:flex-1">
-                  <SelectValue placeholder={t('allProvinces') || "Todas las provincias"} />
+                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[180px]">
+                  <SelectValue placeholder={t('allProvinces')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">{t('allProvinces') || "Todas las provincias"}</SelectItem>
+                  <SelectItem value="all">{t('allProvinces')}</SelectItem>
                   {PROVINCIAS_ESPANA.map((prov) => (
                     <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                   ))}
@@ -604,11 +592,11 @@ export default function SearchPage() {
               </Select>
 
               <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                <SelectTrigger className="h-11 bg-white border-0 text-sm shadow-sm rounded-xl md:flex-1 disabled:opacity-50">
-                  <SelectValue placeholder={selectedProvincia === "all" ? (t('selectProvince') || "Elige provincia") : (t('allCities') || "Todas las ciudades")} />
+                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[180px] disabled:opacity-50">
+                  <SelectValue placeholder={selectedProvincia === "all" ? t('selectProvince') : t('allCities')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('allCities') || "Todas las ciudades"}</SelectItem>
+                  <SelectItem value="all">{t('allCities')}</SelectItem>
                   {availableCities.map((ciudad) => (
                     <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                   ))}
