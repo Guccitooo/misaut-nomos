@@ -264,27 +264,35 @@ export default function SubscriptionManagementPage() {
             Volver
           </Button>
 
-          {!subscription ? (
+          {!subscription || subscription.estado === 'finalizada' ? (
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="w-10 h-10 text-gray-400" />
               </div>
               
               <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-                No tienes un plan activo
+                {subscription?.estado === 'finalizada' ? 'Tu suscripción ha sido cancelada' : 'No tienes un plan activo'}
               </h2>
               
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Necesitas contratar un plan profesional para que tu perfil aparezca en las búsquedas
+                {subscription?.estado === 'finalizada' 
+                  ? 'Tu perfil ya no es visible en las búsquedas. Puedes volver a suscribirte cuando quieras.'
+                  : 'Necesitas contratar un plan profesional para que tu perfil aparezca en las búsquedas'}
               </p>
 
-              <Button
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-                size="lg"
-                className="bg-gray-900 hover:bg-gray-800 text-white"
-              >
-                Ver planes disponibles
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+                >
+                  Ver planes disponibles
+                </Button>
+                
+                <p className="text-sm text-gray-500">
+                  ¿Necesitas ayuda? <a href="mailto:soporte@misautonomos.es" className="text-blue-600 hover:underline">soporte@misautonomos.es</a>
+                </p>
+              </div>
             </div>
           ) : (
             <>

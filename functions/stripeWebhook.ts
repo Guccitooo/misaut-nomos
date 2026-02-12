@@ -525,7 +525,7 @@ Deno.serve(async (req) => {
             return Response.json({ received: true, processed: true });
         }
 
-        // ✅ SUSCRIPCIÓN ELIMINADA
+        // ✅ SUSCRIPCIÓN ELIMINADA (cuando expira cancel_at_period_end)
         if (event.type === 'customer.subscription.deleted') {
             const subscription = event.data.object;
             console.log('\n🔴 ========== SUSCRIPCIÓN ELIMINADA ==========');
@@ -537,23 +537,87 @@ Deno.serve(async (req) => {
             if (subs.length > 0) {
                 const dbSub = subs[0];
                 
+                // 🔥 MARCAR COMO FINALIZADA
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: 'finalizada',
                     renovacion_automatica: false
                 });
 
+                // 🔥 OCULTAR PERFIL
                 const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
                 if (profiles.length > 0) {
-                    // 🔥 OCULTAR solo si suscripción eliminada completamente
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
                         visible_en_busqueda: false,
-                        estado_perfil: 'suspendido'
+                        estado_perfil: 'inactivo'
                     });
+                    console.log('✅ Perfil oculto tras expiración');
                 }
 
+                // 🔥 ACTUALIZAR USUARIO
                 await base44.asServiceRole.entities.User.update(dbSub.user_id, {
                     subscription_status: 'finalizada'
                 });
+
+                // 🔥 EMAIL DE EXPIRACIÓN
+                const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
+                if (users.length > 0) {
+                    const user = users[0];
+                    const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+                    
+                    await base44.asServiceRole.integrations.Core.SendEmail({
+                        to: user.email,
+                        subject: '⏰ Tu suscripción ha expirado - MisAutónomos',
+                        body: `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; }
+    .header { background: #64748b; padding: 40px; text-align: center; border-radius: 16px 16px 0 0; }
+    .header h1 { color: white; margin: 0; font-size: 24px; }
+    .content { padding: 40px; }
+    .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+    .cta { text-align: center; margin: 30px 0; }
+    .button { display: inline-block; background: #3b82f6; color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: bold; }
+    .footer { background: #1f2937; color: #9ca3af; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="${LOGO_URL}" style="width: 64px; height: 64px; border-radius: 12px; margin-bottom: 16px;" />
+      <h1>⏰ Suscripción expirada</h1>
+    </div>
+    <div class="content">
+      <p>Hola <strong>${user.full_name || 'Profesional'}</strong>,</p>
+      
+      <div class="warning">
+        <p style="color: #92400e; margin: 0;"><strong>Tu suscripción ha expirado</strong></p>
+        <p style="color: #78350f; margin: 8px 0 0 0;">Tu perfil ya no es visible en las búsquedas.</p>
+      </div>
+
+      <p>Para volver a aparecer y recibir contactos de clientes, reactiva tu suscripción:</p>
+
+      <div class="cta">
+        <a href="https://misautonomos.es/PricingPlans" class="button">Reactivar suscripción →</a>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; text-align: center;">
+        ¿Dudas? <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6;">soporte@misautonomos.es</a>
+      </p>
+    </div>
+    <div class="footer">
+      <strong style="color: #fff;">MisAutónomos</strong>
+    </div>
+  </div>
+</body>
+</html>`,
+                        from_name: "MisAutónomos"
+                    });
+                    console.log('📧 Email de expiración enviado');
+                }
 
                 console.log('✅ Suscripción finalizada y perfil oculto');
             }
