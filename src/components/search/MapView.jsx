@@ -97,12 +97,29 @@ const CITY_COORDS = {
 export default function MapView({ profiles, onProfileClick }) {
   const mapRef = useRef(null);
 
-  const profilesWithCoords = profiles
-    .filter(p => p.ciudad && CITY_COORDS[p.ciudad])
-    .map(p => ({
-      ...p,
-      coords: CITY_COORDS[p.ciudad]
-    }));
+  // Agrupar por ciudad para añadir offset a coordenadas
+  const cityGroups = {};
+  profiles.forEach(p => {
+    if (p.ciudad && CITY_COORDS[p.ciudad]) {
+      if (!cityGroups[p.ciudad]) cityGroups[p.ciudad] = [];
+      cityGroups[p.ciudad].push(p);
+    }
+  });
+
+  // Añadir offset a profesionales en la misma ciudad para evitar superposición
+  const profilesWithCoords = [];
+  Object.entries(cityGroups).forEach(([ciudad, cityProfiles]) => {
+    cityProfiles.forEach((p, index) => {
+      const baseCoords = CITY_COORDS[ciudad];
+      // Añadir pequeño offset aleatorio (0.01 grados ≈ 1km)
+      const offsetLat = (Math.random() - 0.5) * 0.02 * (index + 1) * 0.3;
+      const offsetLng = (Math.random() - 0.5) * 0.02 * (index + 1) * 0.3;
+      profilesWithCoords.push({
+        ...p,
+        coords: [baseCoords[0] + offsetLat, baseCoords[1] + offsetLng]
+      });
+    });
+  });
 
   const center = profilesWithCoords.length > 0 
     ? profilesWithCoords[0].coords 
