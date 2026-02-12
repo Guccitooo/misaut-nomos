@@ -450,23 +450,41 @@ export default function SubscriptionManagementPage() {
                   </div>
                   
                   <Button
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12"
                     onClick={async () => {
+                      if (openingPortal) return;
+                      
                       setOpeningPortal(true);
+                      
+                      const timeout = setTimeout(() => {
+                        toast.error('La conexión está tardando mucho. Intenta de nuevo.');
+                        setOpeningPortal(false);
+                      }, 10000);
+
                       try {
                         const response = await base44.functions.invoke('createStripePortalSession', {});
+                        clearTimeout(timeout);
+                        
                         if (response.data?.url) {
-                          toast.success('Redirigiendo al portal de Stripe...');
-                          setTimeout(() => {
-                            window.location.href = response.data.url;
-                          }, 500);
+                          const portalUrl = response.data.url;
+                          
+                          const newWindow = window.open(portalUrl, '_blank', 'noopener,noreferrer');
+                          
+                          if (!newWindow) {
+                            window.location.href = portalUrl;
+                          } else {
+                            toast.success('Portal abierto en nueva pestaña');
+                            setOpeningPortal(false);
+                          }
                         } else {
-                          toast.error(response.data?.error || 'Error al abrir el portal');
+                          const errorMsg = response.data?.error || 'Error al abrir el portal';
+                          toast.error(errorMsg);
                           setOpeningPortal(false);
                         }
                       } catch (error) {
-                        console.error('Error:', error);
-                        toast.error('Error al abrir el portal de pagos');
+                        clearTimeout(timeout);
+                        console.error('Error completo:', error);
+                        toast.error('Error de conexión. Verifica tu suscripción e intenta de nuevo.');
                         setOpeningPortal(false);
                       }
                     }}
@@ -475,15 +493,20 @@ export default function SubscriptionManagementPage() {
                     {openingPortal ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Cargando portal...
+                        Abriendo portal...
                       </>
                     ) : (
                       <>
                         <CreditCard className="w-4 h-4 mr-2" />
-                        Abrir portal de Stripe
+                        Gestionar pago y facturas
                       </>
                     )}
                   </Button>
+                  {subscription?.stripe_customer_id && (
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      ID Cliente: {subscription.stripe_customer_id.substring(0, 12)}...
+                    </p>
+                  )}
                 </div>
 
                 {/* REACTIVAR si está cancelado con días restantes */}

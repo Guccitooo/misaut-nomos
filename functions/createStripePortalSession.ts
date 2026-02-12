@@ -1,7 +1,10 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe@17.5.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+  timeout: 8000,
+  maxNetworkRetries: 2
+});
 
 Deno.serve(async (req) => {
   console.log('🔐 ========== CREAR STRIPE PORTAL SESSION ==========');
@@ -30,30 +33,45 @@ Deno.serve(async (req) => {
     const subscription = subs[0];
     let customerId = subscription.stripe_customer_id;
 
+    console.log('📋 Suscripción encontrada:', {
+      id: subscription.id,
+      estado: subscription.estado,
+      customer_id: customerId ? customerId.substring(0, 10) + '...' : 'NULL'
+    });
+
     // 🔥 Si no hay customer_id en BD, buscar en Stripe por email
     if (!customerId) {
-      console.log('🔍 No hay customer_id, buscando en Stripe...');
-      const customers = await stripe.customers.list({
-        email: user.email,
-        limit: 1
-      });
+      console.log('🔍 No hay customer_id en BD, buscando por email:', user.email);
       
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-        console.log('✅ Customer encontrado en Stripe:', customerId);
-        
-        // Actualizar BD con el customer_id
-        await base44.asServiceRole.entities.Subscription.update(subscription.id, {
-          stripe_customer_id: customerId
+      try {
+        const customers = await stripe.customers.list({
+          email: user.email,
+          limit: 1
         });
-      } else {
+        
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+          console.log('✅ Customer encontrado:', customerId);
+          
+          // Actualizar BD
+          await base44.asServiceRole.entities.Subscription.update(subscription.id, {
+            stripe_customer_id: customerId
+          });
+        } else {
+          console.error('❌ No hay customer en Stripe para:', user.email);
+          return Response.json({ 
+            error: 'Tu cuenta de Stripe no está configurada. Contacta con soporte.' 
+          }, { status: 404 });
+        }
+      } catch (searchError) {
+        console.error('❌ Error buscando customer:', searchError.message);
         return Response.json({ 
-          error: 'No se encontró tu cuenta en Stripe. Contacta con soporte.' 
-        }, { status: 404 });
+          error: 'Error al buscar tu cuenta de Stripe' 
+        }, { status: 500 });
       }
     }
 
-    console.log('✅ Customer ID:', customerId);
+    console.log('✅ Customer ID confirmado:', customerId);
 
     // 🔥 VERIFICAR QUE EL CUSTOMER EXISTE EN STRIPE
     try {
@@ -83,18 +101,30 @@ Deno.serve(async (req) => {
 
     // ✅ CREAR PORTAL SESSION
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
-    const returnUrl = `${baseUrl}/SubscriptionManagement`;
+    const returnUrl = `${baseUrl}/SubscriptionManagement?from=stripe_portal`;
 
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl,
-    });
+    console.log('🔗 Creando portal session para:', customerId);
+    console.log('🔙 Return URL:', returnUrl);
 
-    console.log('✅ Portal session creada:', portalSession.id);
+    try {
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+      });
 
-    return Response.json({
-      url: portalSession.url
-    });
+      console.log('✅ Portal session creada:', portalSession.id);
+      console.log('🌐 URL del portal:', portalSession.url.substring(0, 50) + '...');
+
+      return Response.json({
+        url: portalSession.url,
+        customer_id: customerId
+      });
+    } catch (portalError) {
+      console.error('❌ Error creando portal session:', portalError.message);
+      return Response.json({ 
+        error: 'Error al generar el portal de Stripe: ' + portalError.message 
+      }, { status: 500 });
+    }
 
   } catch (error) {
     console.error('❌ Error:', error.message);
