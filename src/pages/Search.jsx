@@ -545,10 +545,10 @@ export default function SearchPage() {
                   <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
                 </Button>
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl animate-pulse">
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl">
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
-              </motion.div>
+              </div>
             </div>
           </div>
         )}
