@@ -500,34 +500,76 @@ export default function SearchPage() {
       <div className="min-h-screen bg-gray-50">
         {/* Hero visible solo si no hay usuario y ya se terminó de cargar */}
         {!user && !loadingUser && (
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-12 md:py-16 mb-8" style={{ minHeight: '320px' }}>
-            <div className="max-w-6xl mx-auto px-4 text-center">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">{t('heroTitle')}</h1>
-              <p className="text-lg md:text-xl text-blue-50 mb-3 font-light">{t('heroSubtitle')}</p>
-              <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm md:text-base text-blue-100 mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>{t('verifiedProfessionals')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span>{t('realReviews')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{t('directChat')}</span>
-                </div>
+          <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-16 md:py-20 mb-8 overflow-hidden">
+            {/* Elementos decorativos de fondo */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-400 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+            </div>
+
+            <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight drop-shadow-lg">
+                  {t('heroTitle')}
+                </h1>
+                <p className="text-xl md:text-2xl text-blue-50 mb-8 font-light max-w-3xl mx-auto">
+                  {t('heroSubtitle')}
+                </p>
+              </motion.div>
+
+              {/* Stats destacadas */}
+              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-base md:text-lg mb-8">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
+                >
+                  <Users className="w-5 h-5 text-green-400" />
+                  <span className="font-bold">247+</span>
+                  <span className="text-blue-100">profesionales</span>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
+                >
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <span className="font-bold">4.8</span>
+                  <span className="text-blue-100">valoración</span>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
+                >
+                  <TrendingUp className="w-5 h-5 text-green-400" />
+                  <span className="font-bold">1,840</span>
+                  <span className="text-blue-100">trabajos/mes</span>
+                </motion.div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto"
+              >
                 <Button onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
+                  className="bg-white hover:bg-gray-50 text-blue-700 h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl">
                   <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
                 </Button>
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8 text-base font-semibold shadow-xl flex-1 rounded-xl">
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl animate-pulse">
                   <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
                 </Button>
-              </div>
+              </motion.div>
             </div>
           </div>
         )}

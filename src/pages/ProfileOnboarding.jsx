@@ -16,6 +16,7 @@ import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/location
 import OnboardingTooltip from "../components/onboarding/OnboardingTooltip";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
+import ProfilePreview from "../components/onboarding/ProfilePreview";
 
 // Categorías se cargan dinámicamente desde BD
 
@@ -526,6 +527,9 @@ export default function ProfileOnboardingPage() {
 
           {/* Checklist del paso actual */}
           <OnboardingChecklist currentStep={currentStep} formData={formData} />
+
+          {/* Preview del perfil en vivo */}
+          {currentStep >= 2 && <ProfilePreview formData={formData} currentUser={user} />}
 
           <Card className="shadow-xl border-0 bg-white rounded-2xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white pb-8">
