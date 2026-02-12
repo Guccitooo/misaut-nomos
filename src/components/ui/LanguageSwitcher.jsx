@@ -264,7 +264,6 @@ const translations = {
     ratesAndWorkMethod: 'Tarifas y Forma de Trabajo',
     baseRate: 'Tarifa base',
     invoicingType: 'Tipo de facturación',
-    paymentMethods: 'Formas de pago',
     photos: 'Fotos',
     noPhotosAdded: 'Sin fotos añadidas',
     legalConfirmations: 'Confirmaciones legales',
@@ -491,7 +490,6 @@ const translations = {
     analyticsCookiesDescription: 'Nos ayudan a entender cómo interactúan los usuarios con la web para mejorar la experiencia (Google Analytics).',
     marketingCookies: 'Cookies de marketing',
     marketingCookiesDescription: 'Utilizadas para mostrar publicidad relevante y medir la efectividad de nuestras campañas publicitarias.',
-    alwaysActive: 'Siempre activas',
     savePreferences: 'Guardar preferencias',
     learnMoreCookies: 'Más información:',
     
@@ -523,7 +521,6 @@ const translations = {
     save20: '🎉 Ahorra 20% - Solo 26€/mes',
     mostPopular: 'Más popular',
     bestValue: 'Mejor valor',
-    appearInSearches: 'Aparece en búsquedas',
     directChatWithClients: 'Chat directo con clientes',
     completeCRM: 'CRM completo para clientes',
     invoicingSystem: 'Sistema de facturación',
@@ -542,9 +539,9 @@ const translations = {
     noPlansAvailable: 'No hay planes disponibles',
     plansBeingConfigured: 'Los planes se están configurando. Intenta de nuevo en unos minutos.',
     reloadPage: 'Recargar página',
+    appearInSearches: 'Aparece en búsquedas',
     
     // MyProfile
-    myProfile: 'Mi Perfil',
     manageYourProfile: 'Gestiona tu perfil profesional',
     manageYourInformation: 'Gestiona tu información',
     visibleToClients: 'Visible para clientes',
@@ -626,7 +623,7 @@ const translations = {
     exceedsSize: '{filename} supera los 5MB',
     noCategory: 'Sin categoría',
     saveChanges: 'Guardar cambios',
-    saving: 'Guardando...',
+    paymentMethods: 'Formas de pago',
     
     // Invoicing
     invoices: 'Facturas',
@@ -766,9 +763,6 @@ const translations = {
     skills: 'Habilidades',
     certificationsAndTitles: 'Certificaciones y Títulos',
     phoneNumberTitle: 'Número de teléfono',
-    copied: 'Copiado',
-    copyNumber: 'Copiar número',
-    openWhatsApp: 'Abrir WhatsApp',
     enlargedView: 'Vista ampliada',
   },
   en: {
@@ -1022,7 +1016,6 @@ const translations = {
     ratesAndWorkMethod: 'Rates and Work Method',
     baseRate: 'Base rate',
     invoicingType: 'Invoice type',
-    paymentMethods: 'Payment methods',
     photos: 'Photos',
     legalConfirmations: 'Legal confirmations',
     acceptTerms: 'I accept the terms and conditions',
@@ -1096,7 +1089,6 @@ const translations = {
     redirectingToProfile: 'Redirecting to your profile...',
     freeBenefit: '100% Free',
     noHiddenCosts: 'No hidden costs',
-    verifiedProfessionals: 'Verified professionals',
     realReviews: 'With real reviews',
     directChat: 'Direct chat',
     immediateContact: 'Immediate contact',
@@ -1280,7 +1272,6 @@ const translations = {
     save20: '🎉 Save 20% - Only €26/month',
     mostPopular: 'Most popular',
     bestValue: 'Best value',
-    appearInSearches: 'Appear in searches',
     directChatWithClients: 'Direct chat with clients',
     completeCRM: 'Complete CRM for clients',
     invoicingSystem: 'Invoicing system',
@@ -1299,9 +1290,9 @@ const translations = {
     noPlansAvailable: 'No plans available',
     plansBeingConfigured: 'Plans are being configured. Please try again in a few minutes.',
     reloadPage: 'Reload page',
+    appearInSearches: 'Appear in searches',
     
     // MyProfile
-    myProfile: 'My Profile',
     manageYourProfile: 'Manage your professional profile',
     manageYourInformation: 'Manage your information',
     visibleToClients: 'Visible to clients',
@@ -1383,8 +1374,7 @@ const translations = {
     exceedsSize: '{filename} exceeds 5MB',
     noCategory: 'No category',
     saveChanges: 'Save changes',
-    saving: 'Saving...',
-    sitioWeb: 'Website',
+    paymentMethods: 'Payment methods',
     
     // Invoicing
     invoices: 'Invoices',
@@ -1508,12 +1498,7 @@ const translations = {
     previous: 'Previous',
     confirm: 'Confirm',
     close: 'Close',
-    search: 'Search',
     calendar: 'Calendar',
-    searchPlaceholder: 'E.g: plumber in Málaga, office cleaning…',
-    allCategories: 'All categories',
-    allProvinces: 'All provinces',
-    allCities: 'All cities',
     results: 'results',
     professionalSingular: 'professional',
     professionalPlural: 'professionals',
@@ -1540,7 +1525,6 @@ const translations = {
     skills: 'Skills',
     certificationsAndTitles: 'Certifications and Titles',
     phoneNumberTitle: 'Phone number',
-    openWhatsApp: 'Open WhatsApp',
     enlargedView: 'Enlarged view',
   }
 };
