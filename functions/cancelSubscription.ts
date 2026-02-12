@@ -48,8 +48,14 @@ Deno.serve(async (req) => {
 
     // 🔥 4. OCULTAR PERFIL INMEDIATAMENTE
     const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
+    let profileInfo = null;
+    
     if (profiles.length > 0) {
       const profile = profiles[0];
+      profileInfo = {
+        ciudad: profile.ciudad,
+        categoria: profile.categories?.[0] || 'Sin categoría'
+      };
       
       await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
         visible_en_busqueda: false,
@@ -57,11 +63,10 @@ Deno.serve(async (req) => {
       });
       console.log('✅ Perfil oculto en búsquedas');
 
-      // 🔥 5. LIBERAR PLAZA (restar contador de ciudad/categoría)
+      // 🔥 5. LIBERAR PLAZA
       if (profile.ciudad && profile.categories && profile.categories.length > 0) {
         const category = profile.categories[0];
-        console.log(`🔓 Liberando plaza en ${profile.ciudad} - ${category}`);
-        // Aquí podrías implementar lógica de contador si lo necesitas
+        console.log(`🔓 Plaza liberada en ${profile.ciudad} - ${category}`);
       }
     }
 
@@ -72,6 +77,9 @@ Deno.serve(async (req) => {
       month: 'long',
       year: 'numeric'
     });
+
+    const userName = user.full_name || user.email.split('@')[0];
+    const cityName = profileInfo?.ciudad || 'tu ciudad';
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: user.email,
@@ -104,7 +112,7 @@ Deno.serve(async (req) => {
       <h1>👋 Cancelación confirmada</h1>
     </div>
     <div class="content">
-      <p style="font-size: 18px; color: #1f2937;">Hola <strong>${user.full_name || 'Profesional'}</strong>,</p>
+      <p style="font-size: 18px; color: #1f2937;">Hola <strong>${userName}</strong>,</p>
       
       <div class="info-box">
         <h3 style="color: #475569; margin: 0 0 12px 0;">✅ Tu suscripción ha sido cancelada correctamente</h3>
@@ -119,8 +127,8 @@ Deno.serve(async (req) => {
       </ul>
 
       <div class="warning-box">
-        <p style="color: #92400e; margin: 0;"><strong>⚠️ Has perdido tu plaza reservada</strong></p>
-        <p style="color: #78350f; margin: 8px 0 0 0; font-size: 14px;">Solo hay 10 plazas por ciudad. Si vuelves más tarde, puede que no haya disponibilidad.</p>
+        <p style="color: #92400e; margin: 0;"><strong>⚠️ Plaza liberada en ${cityName}</strong></p>
+        <p style="color: #78350f; margin: 8px 0 0 0; font-size: 14px;">Solo hay 10 plazas por ciudad. Si vuelves más tarde, puede que esté ocupada.</p>
       </div>
 
       <p style="color: #475569; font-size: 15px; line-height: 1.6;">

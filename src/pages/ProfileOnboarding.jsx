@@ -270,8 +270,16 @@ export default function ProfileOnboardingPage() {
       errors.provincia = "Selecciona una provincia";
     }
 
+    if (!formData.ciudad) {
+      errors.ciudad = "Selecciona una ciudad";
+    }
+
     if (formData.formas_pago.length === 0) {
       errors.formas_pago = "Selecciona al menos una forma de pago";
+    }
+
+    if (formData.photos.length === 0) {
+      errors.photos = "Sube al menos 1 foto de tus trabajos";
     }
 
     if (!formData.acepta_terminos) {
@@ -448,12 +456,25 @@ export default function ProfileOnboardingPage() {
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 
+      // ✅ ACTIVACIÓN AUTOMÁTICA: Si tiene suscripción, activar perfil AHORA
       if (shouldBeVisible || hasActiveSubscription) {
-        toast.success("¡Perfil completado y publicado con éxito! Ya eres visible para clientes.");
-        // Ir al dashboard si tiene suscripción activa
+        toast.success("¡Perfil completado y publicado! Ya eres visible para clientes.", {
+          duration: 3000
+        });
+        
+        // Forzar activación del perfil si existe suscripción
+        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+        if (profiles[0]) {
+          await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+            visible_en_busqueda: true,
+            estado_perfil: 'activo'
+          });
+          console.log('🔥 PERFIL ACTIVADO AUTOMÁTICAMENTE tras onboarding');
+        }
+        
         setTimeout(() => {
-          navigate(createPageUrl("ProfessionalDashboard") + "?onboarding=completed");
-        }, 1500);
+          navigate(createPageUrl("Search") + "?onboarding=completed");
+        }, 2000);
       } else {
         toast.warning("Perfil guardado. Activa tu suscripción para ser visible en búsquedas.");
         setTimeout(() => {
@@ -565,7 +586,8 @@ export default function ProfileOnboardingPage() {
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Identidad profesional</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Identidad profesional</h2>
+                  <p className="text-sm text-gray-600">Información básica de tu negocio</p>
                 </div>
 
                 <div id="business_name">
@@ -730,7 +752,8 @@ export default function ProfileOnboardingPage() {
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Actividad y servicios</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Actividad y servicios</h2>
+                  <p className="text-sm text-gray-600">¿Qué servicios ofreces?</p>
                 </div>
 
                 <div id="categories">
@@ -842,7 +865,8 @@ export default function ProfileOnboardingPage() {
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Ubicación, precios y portfolio</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Ubicación y portfolio</h2>
+                  <p className="text-sm text-gray-600">Completa tu ubicación y añade fotos de tus trabajos</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -869,14 +893,17 @@ export default function ProfileOnboardingPage() {
                     )}
                   </div>
 
-                  <div>
-                    <Label>Ciudad (opcional)</Label>
+                  <div id="ciudad">
+                    <Label>Ciudad *</Label>
                     <Select
                       value={formData.ciudad}
-                      onValueChange={(value) => setFormData({ ...formData, ciudad: value })}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, ciudad: value });
+                        setFieldErrors({ ...fieldErrors, ciudad: null });
+                      }}
                       disabled={!formData.provincia}
                     >
-                      <SelectTrigger className="h-12">
+                      <SelectTrigger className={`h-12 ${fieldErrors.ciudad ? 'border-red-500' : formData.ciudad ? 'border-green-500' : ''}`}>
                         <SelectValue placeholder={formData.provincia ? "Selecciona ciudad" : "Primero selecciona provincia"} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -885,6 +912,14 @@ export default function ProfileOnboardingPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {fieldErrors.ciudad && (
+                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.ciudad}</p>
+                    )}
+                    {!fieldErrors.ciudad && formData.ciudad && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Correcto
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -928,8 +963,11 @@ export default function ProfileOnboardingPage() {
                   </div>
                 </div>
 
-                <div>
-                  <Label className="mb-3 block">Portfolio de trabajos (opcional)</Label>
+                <div id="photos">
+                  <Label className="mb-3 block">Portfolio de trabajos * (mínimo 1 foto)</Label>
+                  {fieldErrors.photos && (
+                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.photos}</p>
+                  )}
                   {formData.photos.length < 10 && (
                     <label className="cursor-pointer block">
                       <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors">
@@ -959,10 +997,13 @@ export default function ProfileOnboardingPage() {
                           <img
                             src={photo}
                             alt={`Foto ${idx + 1}`}
-                            className="w-full h-24 object-cover rounded-lg"
+                            className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
                           />
                           <button
-                            onClick={() => removePhoto(idx)}
+                            onClick={() => {
+                              removePhoto(idx);
+                              setFieldErrors({ ...fieldErrors, photos: null });
+                            }}
                             className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-4 h-4" />
@@ -972,9 +1013,17 @@ export default function ProfileOnboardingPage() {
                               Principal
                             </div>
                           )}
+                          <div className="absolute top-1 left-1 bg-green-500 text-white p-1 rounded-full">
+                            <Check className="w-3 h-3" />
+                          </div>
                         </div>
                       ))}
                     </div>
+                  )}
+                  {formData.photos.length > 0 && (
+                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> {formData.photos.length} foto(s) añadida(s)
+                    </p>
                   )}
                 </div>
 
