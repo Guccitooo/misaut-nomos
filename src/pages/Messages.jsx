@@ -242,27 +242,36 @@ export default function MessagesPage() {
       if (conversationUserIds.length === 0) return {};
       
       const usersData = {};
-      const allUsers = await base44.entities.User.list();
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
       
+      // Verificar cache primero
+      const uncachedUserIds = [];
       for (const userId of conversationUserIds) {
         const cached = loadUserFromCache(userId);
         if (cached) {
           usersData[userId] = cached;
-          continue;
+        } else {
+          uncachedUserIds.push(userId);
         }
-        
-        const userData = allUsers.find(u => u.id === userId);
-        if (!userData) continue;
-        
-        let fullData = userData;
-        if (userData.user_type === "professionnel") {
-          const profile = allProfiles.find(p => p.user_id === userId);
-          fullData = { ...userData, profile: profile || null };
-        }
-        
-        usersData[userId] = fullData;
-        saveUserToCache(userId, fullData);
+      }
+      
+      // Si todos están en cache, retornar
+      if (uncachedUserIds.length === 0) {
+        console.log('✅ Todos los usuarios cargados desde cache');
+        return usersData;
+      }
+      
+      console.log(`🔄 Cargando ${uncachedUserIds.length} usuarios desde backend`);
+      
+      // Usar backend function para obtener usuarios (con service role)
+      const response = await base44.functions.invoke('getUsersForMessages', {
+        user_ids: uncachedUserIds
+      });
+      
+      if (response.data?.ok && response.data?.users) {
+        Object.entries(response.data.users).forEach(([userId, userData]) => {
+          usersData[userId] = userData;
+          saveUserToCache(userId, userData);
+        });
       }
       
       return usersData;
@@ -286,26 +295,20 @@ export default function MessagesPage() {
         return cached;
       }
       
-      const users = await base44.entities.User.filter({ id: selectedProfessionalId });
-      const otherUser = users[0];
+      // Usar backend function para obtener usuario completo
+      const response = await base44.functions.invoke('getUsersForMessages', {
+        user_ids: [selectedProfessionalId]
+      });
       
-      if (!otherUser) return null;
-
-      let fullData = otherUser;
-      
-      if (otherUser.user_type === "professionnel") {
-        const profiles = await base44.entities.ProfessionalProfile.filter({
-          user_id: selectedProfessionalId
-        });
-        fullData = {
-          ...otherUser,
-          profile: profiles[0] || null
-        };
+      if (response.data?.ok && response.data?.users) {
+        const fullData = response.data.users[selectedProfessionalId];
+        if (fullData) {
+          saveUserToCache(selectedProfessionalId, fullData);
+          return fullData;
+        }
       }
       
-      saveUserToCache(selectedProfessionalId, fullData);
-      
-      return fullData;
+      return null;
     },
     enabled: !!selectedProfessionalId,
     staleTime: 1000 * 60 * 10,
