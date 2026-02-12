@@ -455,9 +455,36 @@ export default function SearchPage() {
   return (
     <>
       <SEOHead 
-        title="Buscar Autónomos Profesionales - MisAutónomos"
-        description="Encuentra y contacta con profesionales autónomos verificados en toda España. Electricistas, fontaneros, carpinteros y más."
-        keywords="buscar autónomos, profesionales, servicios, España"
+        title={
+          selectedCategory !== "all" && selectedProvincia !== "all" && selectedCiudad !== "all"
+            ? `${selectedCategory} en ${selectedCiudad} - MisAutónomos`
+            : selectedCategory !== "all" && selectedProvincia !== "all"
+            ? `${selectedCategory} en ${selectedProvincia} - MisAutónomos`
+            : selectedProvincia !== "all" && selectedCiudad !== "all"
+            ? `Autónomos en ${selectedCiudad}, ${selectedProvincia} - MisAutónomos`
+            : selectedCategory !== "all"
+            ? `${selectedCategory} en España - MisAutónomos`
+            : selectedProvincia !== "all"
+            ? `Autónomos en ${selectedProvincia} - MisAutónomos`
+            : "Buscar Autónomos Profesionales - MisAutónomos"
+        }
+        description={
+          selectedCategory !== "all" && selectedProvincia !== "all"
+            ? `${filteredProfiles.length} profesionales de ${selectedCategory} en ${selectedProvincia}. Contacta gratis con autónomos verificados.`
+            : selectedCategory !== "all"
+            ? `Encuentra ${selectedCategory} profesionales verificados en España. ${filteredProfiles.length} autónomos disponibles.`
+            : selectedProvincia !== "all"
+            ? `${filteredProfiles.length} autónomos verificados en ${selectedProvincia}. Electricistas, fontaneros, carpinteros y más.`
+            : `Encuentra y contacta con profesionales autónomos verificados en España. ${filteredProfiles.length}+ profesionales disponibles.`
+        }
+        keywords={[
+          selectedCategory !== "all" ? selectedCategory : "autónomos",
+          selectedProvincia !== "all" ? selectedProvincia : "España",
+          selectedCiudad !== "all" ? selectedCiudad : "",
+          "profesionales verificados",
+          "servicios a domicilio",
+          "contactar gratis"
+        ].filter(Boolean).join(', ')}
       />
       
       {/* Schemas estructurados para SEO */}
