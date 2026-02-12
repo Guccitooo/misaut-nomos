@@ -78,7 +78,7 @@ const CIUDADES_POR_PROVINCIA = {
   "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Alfaro"]
 };
 
-// Categorías se cargarán dinámicamente desde BD
+// Categorías se cargan dinámicamente desde BD
 
 export default function ProfileOnboardingPage() {
   const navigate = useNavigate();

@@ -44,6 +44,7 @@ import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredDat
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import OptimizedImage from "../components/ui/OptimizedImage";
+import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../utils/locationsData";
 
 // Función para generar slug limpio (sin acentos, sin IDs aleatorios)
 function slugify(text) {
@@ -61,69 +62,7 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
-const PROVINCIAS_ESPANA = [
-  "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
-  "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ceuta",
-  "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa",
-  "Huelva", "Huesca", "Jaén", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid",
-  "Málaga", "Melilla", "Murcia", "Navarra", "Ourense", "Palencia", "Pontevedra", "Salamanca",
-  "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo",
-  "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza"
-];
-
-const CIUDADES_POR_PROVINCIA = {
-  "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas"],
-  "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat"],
-  "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira", "Mislata", "Burjassot", "Catarroja"],
-  "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Los Palacios", "Écija"],
-  "Málaga": ["Málaga", "Marbella", "Vélez-Málaga", "Fuengirola", "Mijas", "Torremolinos", "Estepona", "Benalmádena"],
-  "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "Elda", "San Vicente del Raspeig"],
-  "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Yecla", "Águilas"],
-  "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Tarazona"],
-  "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Durango"],
-  "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón", "Oleiros", "Arteixo"],
-  "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Arucas", "Agüimes", "Santa Lucía"],
-  "Granada": ["Granada", "Motril", "Almuñécar", "Baza", "Loja", "Armilla"],
-  "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana"],
-  "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba"],
-  "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas"],
-  "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje"],
-  "Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Ibiza", "Mahón"],
-  "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres"],
-  "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Zarautz"],
-  "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils"],
-  "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero", "Arroyo de la Encomienda"],
-  "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña"],
-  "Girona": ["Girona", "Figueres", "Lloret de Mar", "Blanes", "Salt"],
-  "Lleida": ["Lleida", "Balaguer", "Tàrrega", "Mollerussa"],
-  "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo"],
-  "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs"],
-  "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena"],
-  "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Ayamonte"],
-  "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos"],
-  "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro"],
-  "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada"],
-  "Álava": ["Vitoria-Gasteiz", "Llodio", "Amurrio"],
-  "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar", "Níjar"],
-  "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro"],
-  "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero"],
-  "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata"],
-  "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Alcázar de San Juan"],
-  "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey"],
-  "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera"],
-  "Huesca": ["Huesca", "Monzón", "Barbastro", "Jaca"],
-  "León": ["León", "Ponferrada", "San Andrés del Rabanedo"],
-  "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro"],
-  "Ourense": ["Ourense", "Verín", "O Barco de Valdeorras"],
-  "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo"],
-  "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo"],
-  "Segovia": ["Segovia", "Cuéllar", "San Ildefonso"],
-  "Soria": ["Soria", "Almazán", "El Burgo de Osma"],
-  "Teruel": ["Teruel", "Alcañiz", "Andorra"],
-  "Zamora": ["Zamora", "Benavente", "Toro"],
-  "Ceuta": ["Ceuta"],
-  "Melilla": ["Melilla"]
-};
+// Ubicaciones importadas desde módulo centralizado
 
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -475,7 +414,11 @@ export default function SearchPage() {
 
   const handleProvinciaChange = (value) => {
     setSelectedProvincia(value);
-    setSelectedCiudad("all");
+    setSelectedCiudad("all"); // Reset ciudad al cambiar provincia
+  };
+
+  const handleCategoryChange = (value) => {
+    setSelectedCategory(value);
   };
 
   const handleViewProfile = (profile) => {
@@ -563,10 +506,10 @@ export default function SearchPage() {
         )}
 
         <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <div className="mb-6 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className="flex flex-col md:flex-row gap-2">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[200px]">
+          <div className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row gap-2.5 items-center">
+              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[220px] font-medium hover:border-blue-300 transition-colors">
                   <SelectValue placeholder={t('allCategories')}>
                     {selectedCategory === "all" ? t('allCategories') : (t(selectedCategory) || selectedCategory)}
                   </SelectValue>
@@ -580,28 +523,43 @@ export default function SearchPage() {
               </Select>
 
               <Select value={selectedProvincia} onValueChange={handleProvinciaChange}>
-                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[180px]">
+                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors">
                   <SelectValue placeholder={t('allProvinces')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">{t('allProvinces')}</SelectItem>
-                  {PROVINCIAS_ESPANA.map((prov) => (
+                  {PROVINCIAS.map((prov) => (
                     <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Select value={selectedCiudad} onValueChange={setSelectedCiudad} disabled={selectedProvincia === "all"}>
-                <SelectTrigger className="h-10 border border-gray-200 text-sm rounded-lg md:w-[180px] disabled:opacity-50">
-                  <SelectValue placeholder={selectedProvincia === "all" ? t('selectProvince') : t('allCities')} />
+                <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <SelectValue placeholder={selectedProvincia === "all" ? "Primero selecciona provincia" : t('allCities')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px]">
                   <SelectItem value="all">{t('allCities')}</SelectItem>
                   {availableCities.map((ciudad) => (
                     <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {(selectedCategory !== "all" || selectedProvincia !== "all" || selectedCiudad !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setSelectedProvincia("all");
+                    setSelectedCiudad("all");
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700 h-11 md:ml-auto whitespace-nowrap"
+                >
+                  ✕ Limpiar filtros
+                </Button>
+              )}
             </div>
           </div>
 
