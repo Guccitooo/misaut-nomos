@@ -73,17 +73,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       if (analyticsLoaded) return;
       analyticsLoaded = true;
 
-      // Google Analytics (GA4)
+      // Google Analytics (GA4) - con defer
       const scriptGA = document.createElement('script');
       scriptGA.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
-      scriptGA.async = true;
+      scriptGA.async = false;
       scriptGA.defer = true;
       document.head.appendChild(scriptGA);
 
-      // Google Ads
+      // Google Ads - con defer
       const scriptAds = document.createElement('script');
       scriptAds.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17763802205';
-      scriptAds.async = true;
+      scriptAds.async = false;
       scriptAds.defer = true;
       document.head.appendChild(scriptAds);
 

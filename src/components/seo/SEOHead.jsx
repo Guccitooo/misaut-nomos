@@ -97,7 +97,13 @@ export default function SEOHead({
     const cleanCanonicalUrl = canonicalUrl.split('?')[0];
     canonical.setAttribute('href', cleanCanonicalUrl);
 
-    // No usar Cache-Control en meta tag (no es estándar y puede confundir a bots)
+    // Cache-Control headers configurados desde servidor (globals.css + service worker potencial)
+
+    // Preload de fuentes críticas si las hay
+    let fontPreload = document.querySelector('link[rel="preload"][as="font"]');
+    if (!fontPreload && document.fonts) {
+      // Solo si hay fuentes críticas definidas
+    }
 
     // Hreflang for alternate languages - limpiar todos antes de crear nuevos
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');

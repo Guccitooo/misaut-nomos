@@ -308,6 +308,24 @@ a:hover {
   contain-intrinsic-size: 0 500px;
 }
 
+/* Optimización de LCP - hints para navegador */
+img[fetchpriority="high"] {
+  content-visibility: auto;
+}
+
+/* Prevenir CLS (Cumulative Layout Shift) */
+img {
+  height: auto;
+  max-width: 100%;
+}
+
+/* Optimización de fuentes - font-display swap */
+@supports (font-display: swap) {
+  * {
+    font-display: swap;
+  }
+}
+
 /* Prevent text selection on interactive elements */
 button, a, [role="button"] {
   user-select: none;
