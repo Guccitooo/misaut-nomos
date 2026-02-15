@@ -43,6 +43,8 @@ import SkillsSection from "../components/profile/SkillsSection";
 import PortfolioSection from "../components/profile/PortfolioSection";
 import FAQSection from "../components/profile/FAQSection";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
+import ServicesSection from "../components/profile/ServicesSection";
+import AvailabilityCalendar from "../components/profile/AvailabilityCalendar";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -169,6 +171,7 @@ export default function MyProfilePage() {
     skills: [],
     portfolio_items: [],
     faq_items: [],
+    services_offered: [],
   });
 
   const [newCertification, setNewCertification] = useState("");
@@ -388,6 +391,7 @@ export default function MyProfilePage() {
         skills: profile.skills || [],
         portfolio_items: profile.portfolio_items || [],
         faq_items: profile.faq_items || [],
+        services_offered: profile.services_offered || [],
       });
     }
   }, [profile]);
@@ -866,7 +870,7 @@ export default function MyProfilePage() {
         <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
           {/* Tabs móvil: scroll horizontal */}
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-6' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
+            <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-8' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
               <TabsTrigger value="personal" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
                 <User className="w-4 h-4" />
                 {t('tabPersonal')}
@@ -881,9 +885,17 @@ export default function MyProfilePage() {
                     <Award className="w-4 h-4" />
                     {t('tabSkills')}
                   </TabsTrigger>
+                  <TabsTrigger value="services" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Briefcase className="w-4 h-4" />
+                    Servicios
+                  </TabsTrigger>
                   <TabsTrigger value="portfolio" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
                     <Camera className="w-4 h-4" />
                     {t('tabPortfolio')}
+                  </TabsTrigger>
+                  <TabsTrigger value="availability" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
+                    <Clock className="w-4 h-4" />
+                    Disponibilidad
                   </TabsTrigger>
                   <TabsTrigger value="faq" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
                     <BarChart3 className="w-4 h-4" />
@@ -1511,6 +1523,16 @@ export default function MyProfilePage() {
           )}
 
           {isProfessional && (
+            <TabsContent value="services">
+              <ServicesSection
+                services={profileData.services_offered || []}
+                isEditing={isEditing}
+                onServicesChange={(services) => setProfileData({ ...profileData, services_offered: services })}
+              />
+            </TabsContent>
+          )}
+
+          {isProfessional && (
             <TabsContent value="portfolio">
               <div className="space-y-6">
                 {/* Portfolio de trabajos con descripciones */}
@@ -1717,6 +1739,19 @@ export default function MyProfilePage() {
                   </Card>
                   </div>
                   </TabsContent>
+          )}
+
+          {isProfessional && (
+            <TabsContent value="availability">
+              <AvailabilityCalendar
+                disponibilidadTipo={profileData.disponibilidad_tipo}
+                horarioApertura={profileData.horario_apertura}
+                horarioCierre={profileData.horario_cierre}
+                horariorDias={profileData.horario_dias}
+                isEditing={isEditing}
+                onChange={(data) => setProfileData({ ...profileData, ...data })}
+              />
+            </TabsContent>
           )}
 
           {isProfessional && (
