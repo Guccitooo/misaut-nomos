@@ -30,7 +30,8 @@ import {
   Sparkles,
   BadgeCheck,
   Briefcase,
-  FileText
+  FileText,
+  Clock
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
