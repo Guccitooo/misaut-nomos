@@ -9,11 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, FileText, Clock, CheckCircle, XCircle, Send, Eye, Euro, Plus, Trash2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, FileText, Clock, CheckCircle, XCircle, Send, Euro, Plus, Trash2, RefreshCw, AlertTriangle, Users, FolderKanban, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import SEOHead from "../components/seo/SEOHead";
@@ -28,6 +27,7 @@ export default function PresupuestosPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   
   const [quoteData, setQuoteData] = useState({
@@ -61,21 +61,18 @@ export default function PresupuestosPage() {
 
   const isProfessional = user?.user_type === "professionnel";
 
-  // Cargar clientes del autónomo
   const { data: myClients = [] } = useQuery({
     queryKey: ['clientContacts', user?.id],
     queryFn: () => base44.entities.ClientContact.filter({ professional_id: user.id }),
     enabled: !!user && isProfessional,
   });
 
-  // Cargar presupuestos ENVIADOS por el autónomo
   const { data: sentQuotes = [], isLoading: loadingSent } = useQuery({
     queryKey: ['quotes', 'sent', user?.id],
     queryFn: () => base44.entities.Quote.filter({ professional_id: user.id }, '-created_date'),
     enabled: !!user && isProfessional,
   });
 
-  // Cargar presupuestos RECIBIDOS por el cliente
   const { data: receivedQuotes = [], isLoading: loadingReceived } = useQuery({
     queryKey: ['quotes', 'received', user?.id],
     queryFn: () => base44.entities.Quote.filter({ client_id: user.id }, '-created_date'),
@@ -131,7 +128,6 @@ export default function PresupuestosPage() {
       resetForm();
       toast.success("Presupuesto creado");
     },
-    onError: () => toast.error("Error al crear presupuesto")
   });
 
   const sendQuoteMutation = useMutation({
@@ -237,6 +233,31 @@ export default function PresupuestosPage() {
     }
   });
 
+  const convertToProjectMutation = useMutation({
+    mutationFn: async (quote) => {
+      const project = await base44.entities.Project.create({
+        professional_id: user.id,
+        client_contact_id: quote.client_id,
+        client_name: quote.client_name,
+        name: quote.title,
+        description: quote.description,
+        status: 'planning',
+        priority: 'medium',
+        budget: quote.total,
+        total_hours_estimated: quote.estimated_days * 8,
+        progress_percentage: 0,
+        color: '#3B82F6'
+      });
+
+      toast.success("Proyecto creado desde presupuesto");
+      navigate(createPageUrl("ProjectDetail") + `?id=${project.id}`);
+    },
+    onSuccess: () => {
+      setShowConvertDialog(false);
+      setSelectedQuote(null);
+    }
+  });
+
   const remakeQuoteMutation = useMutation({
     mutationFn: async (originalQuote) => {
       return await base44.entities.Quote.create({
@@ -262,25 +283,8 @@ export default function PresupuestosPage() {
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      setSelectedQuote(null);
       toast.success("Nueva versión creada como borrador");
       setSelectedQuote(newQuote);
-      setShowCreateDialog(true);
-      
-      // Pre-cargar datos en el formulario
-      setQuoteData({
-        client_id: newQuote.client_id,
-        title: newQuote.title,
-        description: newQuote.description,
-        items: newQuote.items,
-        subtotal: newQuote.subtotal,
-        iva: newQuote.iva,
-        total: newQuote.total,
-        estimated_days: newQuote.estimated_days,
-        validity_days: newQuote.validity_days,
-        payment_conditions: newQuote.payment_conditions,
-        notes: newQuote.notes
-      });
     }
   });
 
@@ -343,48 +347,140 @@ export default function PresupuestosPage() {
         description="Gestiona tus presupuestos"
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-4 md:py-8 px-3 md:px-4 pb-24 md:pb-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="w-8 h-8 text-blue-600" />
-              Presupuestos
-            </h1>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2 md:gap-3">
+                <FileText className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
+                Presupuestos
+              </h1>
+              <p className="text-xs md:text-sm text-gray-600 mt-1">
+                {isProfessional ? "Crea y envía presupuestos a tus clientes" : "Revisa los presupuestos que has recibido"}
+              </p>
+            </div>
             {isProfessional && (
-              <Button onClick={() => setShowCreateDialog(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo presupuesto
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => navigate(createPageUrl("CRM"))}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Ver clientes</span>
+                  <span className="sm:hidden">CRM</span>
+                </Button>
+                <Button 
+                  onClick={() => setShowCreateDialog(true)} 
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Nuevo presupuesto</span>
+                  <span className="sm:hidden">Nuevo</span>
+                </Button>
+              </div>
             )}
           </div>
+
+          {/* Quick Links */}
+          {isProfessional && (
+            <Card className="border-0 shadow-sm bg-white mb-6">
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 text-sm">Gestión completa</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button 
+                    onClick={() => navigate(createPageUrl("CRM"))}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    <span className="truncate">Clientes</span>
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(createPageUrl("Projects"))}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <FolderKanban className="w-4 h-4 mr-2" />
+                    <span className="truncate">Proyectos</span>
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(createPageUrl("Calendar"))}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span className="truncate">Calendario</span>
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(createPageUrl("Invoices"))}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                  >
+                    <Euro className="w-4 h-4 mr-2" />
+                    <span className="truncate">Facturas</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {isLoading ? (
             <div className="text-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
             </div>
           ) : quotes.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-16 text-center">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
                   {isProfessional ? "No has creado presupuestos aún" : "No has recibido presupuestos aún"}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {isProfessional 
+                    ? "Crea presupuestos profesionales y envíalos a tus clientes" 
+                    : "Cuando un profesional te envíe un presupuesto, aparecerá aquí"}
                 </p>
                 {isProfessional && (
-                  <Button onClick={() => setShowCreateDialog(true)} className="bg-blue-600 hover:bg-blue-700">
-                    Crear primer presupuesto
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+                    <Button 
+                      onClick={() => navigate(createPageUrl("CRM"))}
+                      variant="outline"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Primero añade clientes
+                    </Button>
+                    <Button 
+                      onClick={() => setShowCreateDialog(true)} 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Crear primer presupuesto
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4">
               {quotes.map(quote => (
-                <Card key={quote.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedQuote(quote)}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
+                <Card 
+                  key={quote.id} 
+                  className="cursor-pointer hover:shadow-lg transition-all border-0 shadow-sm active:scale-98" 
+                  onClick={() => setSelectedQuote(quote)}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-bold text-lg">{quote.title}</h3>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <h3 className="font-bold text-base md:text-lg">{quote.title}</h3>
                           {quote.version > 1 && (
                             <Badge variant="outline" className="text-xs">v{quote.version}</Badge>
                           )}
@@ -406,7 +502,7 @@ export default function PresupuestosPage() {
                           )}
                         </div>
                       </div>
-                      <div className="text-right text-sm text-gray-500">
+                      <div className="text-left md:text-right text-sm text-gray-500">
                         <p>{format(new Date(quote.created_date), "dd/MM/yyyy")}</p>
                       </div>
                     </div>
@@ -418,23 +514,23 @@ export default function PresupuestosPage() {
         </div>
       </div>
 
-      {/* DIÁLOGO DE DETALLE */}
+      {/* DIALOG: DETALLE */}
       <Dialog open={!!selectedQuote} onOpenChange={() => setSelectedQuote(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedQuote && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <FileText className="w-5 h-5" />
                   {selectedQuote.title}
                   {selectedQuote.version > 1 && (
-                    <Badge variant="outline">Versión {selectedQuote.version}</Badge>
+                    <Badge variant="outline">v{selectedQuote.version}</Badge>
                   )}
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-6">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {getStatusBadge(selectedQuote.status)}
                   <Badge variant="outline">
                     {isProfessional ? `Cliente: ${selectedQuote.client_name}` : `De: ${selectedQuote.professional_name}`}
@@ -450,45 +546,47 @@ export default function PresupuestosPage() {
                   <p><strong>Validez:</strong> {selectedQuote.validity_days} días</p>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold mb-2">Descripción:</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedQuote.description}</p>
-                </div>
+                {selectedQuote.description && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Descripción:</h4>
+                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedQuote.description}</p>
+                  </div>
+                )}
 
                 <div>
                   <h4 className="font-semibold mb-3">Desglose:</h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full">
+                  <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold">Concepto</th>
-                          <th className="px-4 py-2 text-right text-xs font-semibold">Cant.</th>
-                          <th className="px-4 py-2 text-right text-xs font-semibold">P. Unit.</th>
-                          <th className="px-4 py-2 text-right text-xs font-semibold">Total</th>
+                          <th className="px-3 md:px-4 py-2 text-left text-xs font-semibold">Concepto</th>
+                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">Cant.</th>
+                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">P. Unit.</th>
+                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedQuote.items.map((item, idx) => (
                           <tr key={idx} className="border-t">
-                            <td className="px-4 py-2 text-sm">{item.concept}</td>
-                            <td className="px-4 py-2 text-sm text-right">{item.quantity}</td>
-                            <td className="px-4 py-2 text-sm text-right">{item.unit_price.toFixed(2)}€</td>
-                            <td className="px-4 py-2 text-sm text-right font-semibold">{item.total.toFixed(2)}€</td>
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm">{item.concept}</td>
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{item.quantity}</td>
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{item.unit_price.toFixed(2)}€</td>
+                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right font-semibold">{item.total.toFixed(2)}€</td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot className="bg-gray-50 font-semibold">
                         <tr className="border-t">
-                          <td colSpan="3" className="px-4 py-2 text-sm text-right">Subtotal:</td>
-                          <td className="px-4 py-2 text-sm text-right">{selectedQuote.subtotal.toFixed(2)}€</td>
+                          <td colSpan="3" className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">Subtotal:</td>
+                          <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{selectedQuote.subtotal.toFixed(2)}€</td>
                         </tr>
                         <tr>
-                          <td colSpan="3" className="px-4 py-2 text-sm text-right">IVA ({selectedQuote.iva}%):</td>
-                          <td className="px-4 py-2 text-sm text-right">{(selectedQuote.total - selectedQuote.subtotal).toFixed(2)}€</td>
+                          <td colSpan="3" className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">IVA ({selectedQuote.iva}%):</td>
+                          <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{(selectedQuote.total - selectedQuote.subtotal).toFixed(2)}€</td>
                         </tr>
                         <tr className="border-t-2">
-                          <td colSpan="3" className="px-4 py-3 text-base text-right">TOTAL:</td>
-                          <td className="px-4 py-3 text-base text-right text-blue-600">{selectedQuote.total.toFixed(2)}€</td>
+                          <td colSpan="3" className="px-3 md:px-4 py-3 text-sm md:text-base text-right">TOTAL:</td>
+                          <td className="px-3 md:px-4 py-3 text-sm md:text-base text-right text-blue-600">{selectedQuote.total.toFixed(2)}€</td>
                         </tr>
                       </tfoot>
                     </table>
@@ -522,11 +620,12 @@ export default function PresupuestosPage() {
                   </div>
                 )}
 
-                <div className="pt-4 border-t flex gap-2">
+                <div className="pt-4 border-t flex flex-col sm:flex-row gap-2">
                   {isProfessional && selectedQuote.status === "borrador" && (
                     <Button
                       onClick={() => sendQuoteMutation.mutate(selectedQuote.id)}
                       className="flex-1 bg-green-600 hover:bg-green-700"
+                      size="sm"
                       disabled={sendQuoteMutation.isPending}
                     >
                       {sendQuoteMutation.isPending ? (
@@ -537,10 +636,22 @@ export default function PresupuestosPage() {
                     </Button>
                   )}
 
+                  {isProfessional && selectedQuote.status === "aceptado" && (
+                    <Button
+                      onClick={() => setShowConvertDialog(true)}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                      size="sm"
+                    >
+                      <FolderKanban className="w-4 h-4 mr-2" />
+                      Convertir a proyecto
+                    </Button>
+                  )}
+
                   {isProfessional && selectedQuote.status === "rechazado" && (
                     <Button
                       onClick={() => remakeQuoteMutation.mutate(selectedQuote)}
                       className="flex-1 bg-orange-600 hover:bg-orange-700"
+                      size="sm"
                       disabled={remakeQuoteMutation.isPending}
                     >
                       {remakeQuoteMutation.isPending ? (
@@ -556,13 +667,15 @@ export default function PresupuestosPage() {
                       <Button
                         onClick={() => setShowAcceptDialog(true)}
                         className="flex-1 bg-green-600 hover:bg-green-700"
+                        size="sm"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        Aceptar presupuesto
+                        Aceptar
                       </Button>
                       <Button
                         onClick={() => setShowRejectDialog(true)}
                         variant="outline"
+                        size="sm"
                         className="flex-1 border-red-300 hover:bg-red-50"
                       >
                         <XCircle className="w-4 h-4 mr-2" />
@@ -577,8 +690,11 @@ export default function PresupuestosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DIÁLOGO CREAR PRESUPUESTO */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      {/* DIALOG: CREAR PRESUPUESTO */}
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (!open) resetForm();
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Crear Presupuesto</DialogTitle>
@@ -586,9 +702,9 @@ export default function PresupuestosPage() {
 
           <div className="space-y-4">
             <div>
-              <Label>Cliente *</Label>
+              <Label className="text-sm">Cliente *</Label>
               <Select value={quoteData.client_id} onValueChange={(value) => setQuoteData({ ...quoteData, client_id: value })}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Selecciona un cliente" />
                 </SelectTrigger>
                 <SelectContent>
@@ -600,48 +716,52 @@ export default function PresupuestosPage() {
                 </SelectContent>
               </Select>
               {myClients.length === 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Añade clientes desde tu <a href={createPageUrl("CRM")} className="text-blue-600 underline">CRM</a> primero
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Añade clientes desde tu <button onClick={() => navigate(createPageUrl("CRM"))} className="text-blue-600 underline font-medium">CRM</button> primero
                 </p>
               )}
             </div>
 
             <div>
-              <Label>Título del presupuesto *</Label>
+              <Label className="text-sm">Título del presupuesto *</Label>
               <Input
                 value={quoteData.title}
                 onChange={(e) => setQuoteData({ ...quoteData, title: e.target.value })}
                 placeholder="Ej: Reforma integral cocina"
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label>Descripción del servicio</Label>
+              <Label className="text-sm">Descripción del servicio</Label>
               <Textarea
                 value={quoteData.description}
                 onChange={(e) => setQuoteData({ ...quoteData, description: e.target.value })}
                 placeholder="Describe el trabajo a realizar..."
                 rows={3}
+                className="mt-1"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Líneas del presupuesto *</Label>
+                <Label className="text-sm">Líneas del presupuesto *</Label>
                 <Button onClick={addItem} variant="outline" size="sm">
                   <Plus className="w-3 h-3 mr-1" />
                   Añadir línea
                 </Button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-x-auto">
                 {quoteData.items.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-end min-w-[400px]">
                     <div className="col-span-5">
                       <Input
                         placeholder="Concepto"
                         value={item.concept}
                         onChange={(e) => updateItem(idx, 'concept', e.target.value)}
+                        className="text-sm"
                       />
                     </div>
                     <div className="col-span-2">
@@ -650,21 +770,23 @@ export default function PresupuestosPage() {
                         placeholder="Cant."
                         value={item.quantity}
                         onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))}
+                        className="text-sm"
                       />
                     </div>
                     <div className="col-span-2">
                       <Input
                         type="number"
-                        placeholder="Precio"
+                        placeholder="€"
                         value={item.unit_price}
                         onChange={(e) => updateItem(idx, 'unit_price', Number(e.target.value))}
+                        className="text-sm"
                       />
                     </div>
                     <div className="col-span-2">
                       <Input
                         readOnly
                         value={item.total.toFixed(2)}
-                        className="bg-gray-50 font-semibold"
+                        className="bg-gray-50 font-semibold text-sm"
                       />
                     </div>
                     <div className="col-span-1">
@@ -673,7 +795,7 @@ export default function PresupuestosPage() {
                           onClick={() => removeItem(idx)}
                           variant="ghost"
                           size="icon"
-                          className="hover:bg-red-50 hover:text-red-600"
+                          className="hover:bg-red-50 hover:text-red-600 h-9 w-9"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -699,7 +821,7 @@ export default function PresupuestosPage() {
                         const { total } = calculateTotals(quoteData.items, newIva);
                         setQuoteData({ ...quoteData, iva: newIva, total });
                       }}
-                      className="w-16 h-8 text-right"
+                      className="w-14 h-8 text-right text-sm"
                     />
                     <span>%</span>
                     <span className="font-semibold w-20 text-right">{(quoteData.total - quoteData.subtotal).toFixed(2)}€</span>
@@ -714,50 +836,55 @@ export default function PresupuestosPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Días estimados</Label>
+                <Label className="text-sm">Días estimados</Label>
                 <Input
                   type="number"
                   value={quoteData.estimated_days}
                   onChange={(e) => setQuoteData({ ...quoteData, estimated_days: Number(e.target.value) })}
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label>Validez (días)</Label>
+                <Label className="text-sm">Validez (días)</Label>
                 <Input
                   type="number"
                   value={quoteData.validity_days}
                   onChange={(e) => setQuoteData({ ...quoteData, validity_days: Number(e.target.value) })}
+                  className="mt-1"
                 />
               </div>
             </div>
 
             <div>
-              <Label>Condiciones de pago</Label>
+              <Label className="text-sm">Condiciones de pago</Label>
               <Textarea
                 value={quoteData.payment_conditions}
                 onChange={(e) => setQuoteData({ ...quoteData, payment_conditions: e.target.value })}
                 placeholder="Ej: 50% al inicio, 50% al finalizar"
                 rows={2}
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label>Notas adicionales</Label>
+              <Label className="text-sm">Notas adicionales</Label>
               <Textarea
                 value={quoteData.notes}
                 onChange={(e) => setQuoteData({ ...quoteData, notes: e.target.value })}
                 placeholder="Información adicional para el cliente..."
                 rows={2}
+                className="mt-1"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
+            <Button variant="outline" size="sm" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
               Cancelar
             </Button>
             <Button
               onClick={handleCreateQuote}
+              size="sm"
               disabled={createQuoteMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -771,7 +898,36 @@ export default function PresupuestosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DIÁLOGO RECHAZAR */}
+      {/* DIALOG: CONVERTIR A PROYECTO */}
+      <AlertDialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <FolderKanban className="w-5 h-5 text-indigo-600" />
+              Convertir a proyecto
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Se creará un nuevo proyecto basado en este presupuesto. Podrás gestionarlo desde la sección de Proyectos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => convertToProjectMutation.mutate(selectedQuote)}
+              className="bg-indigo-600 hover:bg-indigo-700"
+              disabled={convertToProjectMutation.isPending}
+            >
+              {convertToProjectMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creando...</>
+              ) : (
+                "Crear proyecto"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DIALOG: RECHAZAR */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -785,11 +941,11 @@ export default function PresupuestosPage() {
           </AlertDialogHeader>
 
           <div className="my-4">
-            <Label>Motivo del rechazo *</Label>
+            <Label className="text-sm">Motivo del rechazo *</Label>
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Ej: El precio es superior a mi presupuesto, necesito ajustes en el alcance..."
+              placeholder="Ej: El precio es superior a mi presupuesto..."
               rows={4}
               className="mt-2"
             />
@@ -818,7 +974,7 @@ export default function PresupuestosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* DIÁLOGO ACEPTAR */}
+      {/* DIALOG: ACEPTAR */}
       <AlertDialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -827,7 +983,7 @@ export default function PresupuestosPage() {
               Aceptar presupuesto
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Al aceptar este presupuesto, el profesional recibirá una notificación y podrá comenzar el trabajo según las condiciones acordadas.
+              Al aceptar este presupuesto, el profesional recibirá una notificación y podrá comenzar el trabajo.
             </AlertDialogDescription>
           </AlertDialogHeader>
 

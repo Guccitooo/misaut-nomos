@@ -26,16 +26,18 @@ import {
   Euro,
   User,
   Filter,
-  LayoutGrid,
-  List,
-  RefreshCw,
-  ExternalLink
+  Download,
+  Users,
+  FolderKanban,
+  X
 } from "lucide-react";
 
 const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const EVENT_TYPES = {
+  project_start: { label: 'Inicio proyecto', color: 'bg-indigo-500', icon: FolderKanban },
+  project_end: { label: 'Fin proyecto', color: 'bg-indigo-700', icon: FolderKanban },
   job_start: { label: 'Inicio trabajo', color: 'bg-blue-500', icon: Briefcase },
   job_end: { label: 'Fin trabajo', color: 'bg-blue-700', icon: Briefcase },
   invoice_due: { label: 'Vencimiento factura', color: 'bg-orange-500', icon: FileText },
@@ -49,8 +51,8 @@ export default function CalendarPage() {
   const [user, setUser] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [viewMode, setViewMode] = useState('month'); // month, week, list
   const [filters, setFilters] = useState({
+    projects: true,
     jobs: true,
     invoices: true,
     reminders: true,
@@ -86,6 +88,12 @@ export default function CalendarPage() {
   };
 
   // Fetch all data
+  const { data: projects = [] } = useQuery({
+    queryKey: ['calendar-projects', user?.id],
+    queryFn: () => base44.entities.Project.filter({ professional_id: user.id }),
+    enabled: !!user?.id
+  });
+
   const { data: jobs = [] } = useQuery({
     queryKey: ['calendar-jobs', user?.id],
     queryFn: () => base44.entities.Job.filter({ professional_id: user.id }),
@@ -119,7 +127,7 @@ export default function CalendarPage() {
     enabled: !!user?.id
   });
 
-  // Create/Update task mutation
+  // Mutations
   const taskMutation = useMutation({
     mutationFn: async (data) => {
       if (editingTask) {
@@ -155,6 +163,34 @@ export default function CalendarPage() {
   // Build calendar events
   const calendarEvents = useMemo(() => {
     const events = [];
+
+    // Projects
+    if (filters.projects) {
+      projects.forEach(project => {
+        if (project.start_date) {
+          events.push({
+            id: `project-start-${project.id}`,
+            type: 'project_start',
+            title: `🚀 ${project.name}`,
+            subtitle: project.client_name,
+            date: project.start_date,
+            data: project,
+            link: createPageUrl("ProjectDetail") + `?id=${project.id}`
+          });
+        }
+        if (project.end_date) {
+          events.push({
+            id: `project-end-${project.id}`,
+            type: 'project_end',
+            title: `🏁 ${project.name}`,
+            subtitle: project.client_name,
+            date: project.end_date,
+            data: project,
+            link: createPageUrl("ProjectDetail") + `?id=${project.id}`
+          });
+        }
+      });
+    }
 
     // Jobs
     if (filters.jobs) {
@@ -202,7 +238,7 @@ export default function CalendarPage() {
       });
     }
 
-    // Reminders from CRM
+    // Reminders
     if (filters.reminders) {
       activities.forEach(act => {
         if (act.reminder_date && !act.reminder_completed) {
@@ -240,7 +276,7 @@ export default function CalendarPage() {
     }
 
     return events.sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [jobs, invoices, activities, tasks, clients, filters]);
+  }, [projects, jobs, invoices, activities, tasks, clients, filters]);
 
   // Calendar helpers
   const getDaysInMonth = (date) => {
@@ -250,13 +286,11 @@ export default function CalendarPage() {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     
-    // Adjust for Monday start (0 = Monday, 6 = Sunday)
     let startDayOfWeek = firstDay.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6;
 
     const days = [];
     
-    // Previous month days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       days.push({
@@ -265,7 +299,6 @@ export default function CalendarPage() {
       });
     }
 
-    // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         date: new Date(year, month, i),
@@ -273,7 +306,6 @@ export default function CalendarPage() {
       });
     }
 
-    // Next month days
     const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
@@ -348,6 +380,51 @@ export default function CalendarPage() {
     taskMutation.mutate(taskForm);
   };
 
+  const downloadICalendar = () => {
+    let icalContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MisAutónomos//ES
+CALNAME:MisAutónomos - Calendario Profesional
+X-WR-CALNAME:MisAutónomos
+X-WR-TIMEZONE:Europe/Madrid
+`;
+
+    calendarEvents.forEach(event => {
+      const eventDate = new Date(event.date);
+      const dateStr = eventDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      let summary = event.title;
+      let description = event.subtitle || '';
+      if (event.type === 'invoice_due') {
+        description += ` - Vencimiento de factura`;
+      }
+      
+      icalContent += `BEGIN:VEVENT
+UID:${event.id}@misautonomos.es
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DTSTART:${dateStr}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+STATUS:${event.isCompleted ? 'COMPLETED' : 'CONFIRMED'}
+END:VEVENT
+`;
+    });
+
+    icalContent += 'END:VCALENDAR';
+
+    const blob = new Blob([icalContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'misautonomos-calendar.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Calendario descargado. Importa el archivo .ics en Apple Calendar, Google Calendar o Outlook');
+  };
+
   const isToday = (date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
@@ -369,35 +446,86 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 md:p-6 pb-24 md:pb-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Calendario</h1>
-            <p className="text-gray-600">Gestiona tu agenda de trabajos, facturas y tareas</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Calendario</h1>
+            <p className="text-xs md:text-sm text-gray-600">Gestiona tu agenda de proyectos, trabajos, facturas y tareas</p>
           </div>
           <div className="flex items-center gap-2">
             <Button 
-              onClick={goToToday} 
-              className="hidden md:flex bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+              onClick={downloadICalendar}
+              variant="outline"
+              size="sm"
+              className="bg-white border-green-300 text-green-700 hover:bg-green-50"
             >
-              Hoy
+              <Download className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Exportar .ics</span>
+              <span className="sm:hidden">Exportar</span>
             </Button>
             <Button 
               onClick={() => openTaskDialog(selectedDate)}
+              size="sm"
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nueva tarea
+              <span className="hidden sm:inline">Nueva tarea</span>
+              <span className="sm:hidden">Tarea</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filtros y vista */}
+        {/* Quick Links */}
+        <Card className="border-0 shadow-sm bg-white mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-gray-900 mb-3 text-sm">Enlaces rápidos</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button 
+                onClick={() => navigate(createPageUrl("Projects"))}
+                variant="outline"
+                size="sm"
+                className="justify-start"
+              >
+                <FolderKanban className="w-4 h-4 mr-2" />
+                <span className="truncate">Proyectos</span>
+              </Button>
+              <Button 
+                onClick={() => navigate(createPageUrl("CRM"))}
+                variant="outline"
+                size="sm"
+                className="justify-start"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                <span className="truncate">Clientes</span>
+              </Button>
+              <Button 
+                onClick={() => navigate(createPageUrl("Presupuestos"))}
+                variant="outline"
+                size="sm"
+                className="justify-start"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                <span className="truncate">Presupuestos</span>
+              </Button>
+              <Button 
+                onClick={() => navigate(createPageUrl("Invoices"))}
+                variant="outline"
+                size="sm"
+                className="justify-start"
+              >
+                <Euro className="w-4 h-4 mr-2" />
+                <span className="truncate">Facturas</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Filtros */}
           <div className="lg:col-span-1 space-y-4">
-            <Card>
+            <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Filter className="w-4 h-4" />
@@ -405,40 +533,64 @@ export default function CalendarPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {Object.entries(EVENT_TYPES).map(([key, config]) => {
-                  const filterKey = key === 'job_start' || key === 'job_end' ? 'jobs' : 
-                                   key === 'invoice_due' ? 'invoices' :
-                                   key === 'reminder' ? 'reminders' : 'tasks';
-                  return (
-                    <label key={key} className="flex items-center gap-3 cursor-pointer">
-                      <Checkbox
-                        checked={filters[filterKey]}
-                        onCheckedChange={(checked) => setFilters(f => ({ ...f, [filterKey]: checked }))}
-                        className="border-gray-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                      />
-                      <span className={`w-3 h-3 rounded-full ${config.color}`} />
-                      <span className="text-sm text-gray-700">{config.label}</span>
-                    </label>
-                  );
-                })}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={filters.projects}
+                    onCheckedChange={(checked) => setFilters(f => ({ ...f, projects: checked }))}
+                  />
+                  <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                  <span className="text-sm text-gray-700">Proyectos</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={filters.jobs}
+                    onCheckedChange={(checked) => setFilters(f => ({ ...f, jobs: checked }))}
+                  />
+                  <span className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-sm text-gray-700">Trabajos</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={filters.invoices}
+                    onCheckedChange={(checked) => setFilters(f => ({ ...f, invoices: checked }))}
+                  />
+                  <span className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="text-sm text-gray-700">Facturas</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={filters.reminders}
+                    onCheckedChange={(checked) => setFilters(f => ({ ...f, reminders: checked }))}
+                  />
+                  <span className="w-3 h-3 rounded-full bg-purple-500" />
+                  <span className="text-sm text-gray-700">Recordatorios</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={filters.tasks}
+                    onCheckedChange={(checked) => setFilters(f => ({ ...f, tasks: checked }))}
+                  />
+                  <span className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-sm text-gray-700">Tareas</span>
+                </label>
               </CardContent>
             </Card>
 
             {/* Próximos eventos */}
-            <Card>
+            <Card className="border-0 shadow-sm hidden lg:block">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Próximos eventos</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+              <CardContent className="space-y-2 max-h-80 overflow-y-auto">
                 {calendarEvents
                   .filter(e => new Date(e.date) >= new Date().setHours(0,0,0,0))
-                  .slice(0, 5)
+                  .slice(0, 8)
                   .map(event => {
                     const config = EVENT_TYPES[event.type];
                     return (
                       <div 
                         key={event.id} 
-                        className={`p-2 rounded-lg border text-sm cursor-pointer hover:bg-gray-50 ${event.isCompleted ? 'opacity-50' : ''}`}
+                        className={`p-2 rounded-lg border text-sm cursor-pointer hover:bg-gray-50 transition-all active:scale-98 ${event.isCompleted ? 'opacity-50' : ''}`}
                         onClick={() => {
                           if (event.type === 'task') {
                             openTaskDialog(null, event.data);
@@ -448,12 +600,12 @@ export default function CalendarPage() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${config.color}`} />
+                          <span className={`w-2 h-2 rounded-full ${config.color} flex-shrink-0`} />
                           <span className={`font-medium truncate ${event.isCompleted ? 'line-through' : ''}`}>
                             {event.title}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 ml-4">
+                        <p className="text-xs text-gray-500 ml-4 truncate">
                           {new Date(event.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                           {event.time && ` · ${event.time}`}
                         </p>
@@ -468,30 +620,30 @@ export default function CalendarPage() {
           </div>
 
           {/* Calendario */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 border-0 shadow-sm">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>
-                    <ChevronLeft className="w-5 h-5" />
+                <div className="flex items-center gap-1 md:gap-2">
+                  <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)} className="h-8 w-8 md:h-9 md:w-9">
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
-                  <h2 className="text-lg font-semibold min-w-[180px] text-center">
+                  <h2 className="text-base md:text-lg font-semibold min-w-[140px] md:min-w-[180px] text-center">
                     {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </h2>
-                  <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)}>
-                    <ChevronRight className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)} className="h-8 w-8 md:h-9 md:w-9">
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
                 </div>
                 <Button 
                   size="sm" 
                   onClick={goToToday} 
-                  className="md:hidden bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-3 md:h-9 md:px-4"
                 >
                   Hoy
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-2 md:px-6">
               {/* Days header */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {DAYS.map(day => (
@@ -505,39 +657,38 @@ export default function CalendarPage() {
               <div className="grid grid-cols-7 gap-1">
                 {days.map((day, idx) => {
                   const dayEvents = getEventsForDate(day.date);
-                  const hasEvents = dayEvents.length > 0;
                   
                   return (
                     <div
                       key={idx}
                       onClick={() => setSelectedDate(day.date)}
                       className={`
-                        min-h-[80px] p-1 rounded-lg border cursor-pointer transition-all
+                        min-h-[60px] md:min-h-[80px] p-1 rounded-lg border cursor-pointer transition-all active:scale-95
                         ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
                         ${isToday(day.date) ? 'border-blue-500 border-2' : 'border-gray-100'}
                         ${isSelected(day.date) ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
                         hover:bg-gray-50
                       `}
                     >
-                      <div className={`text-sm font-medium mb-1 ${isToday(day.date) ? 'text-blue-600' : ''}`}>
+                      <div className={`text-xs md:text-sm font-medium mb-1 ${isToday(day.date) ? 'text-blue-600' : ''}`}>
                         {day.date.getDate()}
                       </div>
                       <div className="space-y-0.5">
-                        {dayEvents.slice(0, 3).map(event => {
+                        {dayEvents.slice(0, 2).map(event => {
                           const config = EVENT_TYPES[event.type];
                           return (
                             <div 
                               key={event.id}
-                              className={`${config.color} text-white text-[10px] px-1 py-0.5 rounded truncate ${event.isCompleted ? 'opacity-50' : ''}`}
+                              className={`${config.color} text-white text-[9px] md:text-[10px] px-1 py-0.5 rounded truncate ${event.isCompleted ? 'opacity-50' : ''}`}
                               title={event.title}
                             >
                               {event.title}
                             </div>
                           );
                         })}
-                        {dayEvents.length > 3 && (
-                          <div className="text-[10px] text-gray-500 text-center">
-                            +{dayEvents.length - 3} más
+                        {dayEvents.length > 2 && (
+                          <div className="text-[9px] md:text-[10px] text-gray-500 text-center">
+                            +{dayEvents.length - 2}
                           </div>
                         )}
                       </div>
@@ -549,7 +700,7 @@ export default function CalendarPage() {
           </Card>
 
           {/* Panel de detalles del día */}
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 border-0 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">
                 {selectedDate 
@@ -572,14 +723,14 @@ export default function CalendarPage() {
                   </Button>
 
                   {selectedDateEvents.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
                       {selectedDateEvents.map(event => {
                         const config = EVENT_TYPES[event.type];
                         const Icon = config.icon;
                         return (
                           <div 
                             key={event.id}
-                            className={`p-3 rounded-lg border hover:shadow-sm transition-shadow cursor-pointer ${event.isCompleted ? 'bg-gray-50 opacity-60' : 'bg-white'}`}
+                            className={`p-3 rounded-lg border hover:shadow-sm transition-all cursor-pointer active:scale-98 ${event.isCompleted ? 'bg-gray-50 opacity-60' : 'bg-white'}`}
                             onClick={() => {
                               if (event.type === 'task') {
                                 openTaskDialog(null, event.data);
@@ -597,7 +748,7 @@ export default function CalendarPage() {
                                   {event.title}
                                 </p>
                                 {event.subtitle && (
-                                  <p className="text-xs text-gray-500">{event.subtitle}</p>
+                                  <p className="text-xs text-gray-500 truncate">{event.subtitle}</p>
                                 )}
                                 {event.time && (
                                   <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
@@ -724,7 +875,6 @@ export default function CalendarPage() {
                     <SelectItem value="client">Cliente</SelectItem>
                     <SelectItem value="admin">Administrativo</SelectItem>
                     <SelectItem value="personal">Personal</SelectItem>
-                    <SelectItem value="other">Otro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -753,6 +903,7 @@ export default function CalendarPage() {
             {editingTask && (
               <Button 
                 variant="destructive" 
+                size="sm"
                 onClick={() => {
                   deleteTaskMutation.mutate(editingTask.id);
                   closeTaskDialog();
@@ -762,13 +913,14 @@ export default function CalendarPage() {
               </Button>
             )}
             <div className="flex gap-2 ml-auto">
-              <Button variant="outline" onClick={closeTaskDialog}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={closeTaskDialog}>Cancelar</Button>
               <Button 
                 onClick={handleSaveTask} 
+                size="sm"
                 disabled={taskMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {taskMutation.isPending ? 'Guardando...' : editingTask ? 'Guardar' : 'Crear tarea'}
+                {taskMutation.isPending ? 'Guardando...' : editingTask ? 'Guardar' : 'Crear'}
               </Button>
             </div>
           </DialogFooter>
