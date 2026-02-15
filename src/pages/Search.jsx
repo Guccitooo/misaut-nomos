@@ -214,7 +214,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
             <Button
               onClick={() => {
                 if (!currentUserId) {
-                  window.location.href = '/api/auth/login?next=' + encodeURIComponent('/Messages?professional=' + profile.user_id);
+                  base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
                   return;
                 }
                 const conversationId = [currentUserId, profile.user_id].sort().join('_');
