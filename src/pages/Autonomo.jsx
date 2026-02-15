@@ -625,6 +625,113 @@ export default function AutonomoPage() {
             )}
           </Card>
 
+          {/* SERVICIOS OFRECIDOS */}
+          {displayProfile.services_offered && displayProfile.services_offered.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-blue-600" />
+                Servicios ofrecidos
+              </h3>
+              <div className="space-y-3">
+                {displayProfile.services_offered.map((service) => (
+                  <div key={service.id} className="border rounded-lg p-3 bg-gray-50">
+                    <h4 className="font-semibold text-gray-900 mb-1">{service.name}</h4>
+                    {service.description && (
+                      <p className="text-sm text-gray-600 mb-2">{service.description}</p>
+                    )}
+                    <div className="flex gap-2 text-xs">
+                      {service.price && (
+                        <span className="bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                          <Euro className="w-3 h-3" />
+                          {service.price}€/{service.unit}
+                        </span>
+                      )}
+                      {service.duration && (
+                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                          {service.duration}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* DISPONIBILIDAD */}
+          {(displayProfile.horario_apertura || displayProfile.horario_cierre) && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-green-600" />
+                Disponibilidad
+              </h3>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700">
+                  {displayProfile.disponibilidad_tipo === "ambos" && "Disponible todos los días"}
+                  {displayProfile.disponibilidad_tipo === "laborables" && "Disponible de lunes a viernes"}
+                  {displayProfile.disponibilidad_tipo === "festivos" && "Disponible fines de semana y festivos"}
+                </p>
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" />
+                  Horario: {displayProfile.horario_apertura} - {displayProfile.horario_cierre}
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* PORTFOLIO DE TRABAJOS */}
+          {displayProfile.portfolio_items && displayProfile.portfolio_items.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-indigo-600" />
+                Portfolio de trabajos
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {displayProfile.portfolio_items.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="border rounded-xl overflow-hidden bg-gray-50 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => {
+                      if (item.images?.[0]) {
+                        setSelectedImage(item.images[0]);
+                        setSelectedImageIndex(-2);
+                      }
+                    }}
+                  >
+                    {item.images?.[0] && (
+                      <div className="relative h-32 bg-gray-200">
+                        <img 
+                          src={item.images[0]} 
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                        {item.images.length > 1 && (
+                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                            +{item.images.length - 1} fotos
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <h4 className="font-semibold text-gray-900 text-sm mb-1">{item.title}</h4>
+                      {item.description && (
+                        <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        {item.date && <span>{item.date}</span>}
+                        {item.category && (
+                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                            {item.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           {/* HABILIDADES */}
           {displayProfile.skills && displayProfile.skills.length > 0 && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
