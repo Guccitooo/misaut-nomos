@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, Save, Plus, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone } from "lucide-react";
+import { User, Building2, Save, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone, Eye, EyeOff, Pencil } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -30,13 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
 import ProfileCompleteness from "../components/profile/ProfileCompleteness";
-import PremiumDashboard from "../components/premium/PremiumDashboard";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import InvoicingSettingsForm from "../components/invoicing/InvoicingSettingsForm";
 import SkillsSection from "../components/profile/SkillsSection";
@@ -109,22 +105,22 @@ const ciudadesPorProvincia = {
   "Islas Baleares": ["Palma", "Calvià", "Manacor", "Llucmajor", "Ibiza"],
 };
 
-// Eliminado - se cargarán dinámicamente desde BD
-
 export default function MyProfilePage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams();
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  
   const MAX_POLLING_ATTEMPTS = 10;
-
   const reactivationSuccess = searchParams.get("reactivation");
   const onboardingPending = searchParams.get("onboarding");
   const onboardingCompleted = searchParams.get("onboarding") === "completed";
@@ -174,142 +170,10 @@ export default function MyProfilePage() {
     services_offered: [],
   });
 
-  const [newCertification, setNewCertification] = useState("");
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  useEffect(() => {
-    if (profileData.provincia && profileData.ciudad) {
-      const area = profileData.municipio 
-        ? `${profileData.municipio}, ${profileData.ciudad}, ${profileData.provincia}`
-        : `${profileData.ciudad}, ${profileData.provincia}`;
-      setProfileData(prev => ({ ...prev, service_area: area }));
-    }
-  }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
-
-  useEffect(() => {
-    if (reactivationSuccess === "success" || onboardingPending === "pending") {
-      setIsVerifyingSubscription(true);
-      startSubscriptionPolling();
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (onboardingCompleted) {
-      toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
-        duration: 8000
-      });
-      
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-    } else if (reactivationSuccess === "canceled") {
-      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [reactivationSuccess, onboardingPending, onboardingCompleted, queryClient, navigate]);
-
-  const startSubscriptionPolling = async () => {
-    for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
-      try {
-        const currentUser = await loadUser();
-        if (!currentUser) throw new Error("User not loaded during polling");
-        
-        await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
-        const result = await queryClient.fetchQuery({
-          queryKey: ['subscription', currentUser.id],
-          queryFn: async () => {
-            const subs = await base44.entities.Subscription.filter({
-              user_id: currentUser.id
-            });
-            return subs[0] || null;
-          },
-          staleTime: 0,
-          gcTime: 0,
-        });
-        
-        if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
-          setIsVerifyingSubscription(false);
-          
-          if (reactivationSuccess === "success") {
-            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
-              duration: 6000
-            });
-          } else if (onboardingPending === "pending") {
-            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
-              duration: 8000
-            });
-            
-            setTimeout(() => {
-              navigate(createPageUrl("ProfileOnboarding"));
-            }, 2000);
-          }
-          
-          queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-          return;
-        }
-        
-        if (attempt === 5 && currentUser) {
-          try {
-            const syncResponse = await base44.functions.invoke('syncStripeSubscription', {
-              user_id: currentUser.id
-            });
-            
-            if (syncResponse.data.ok) {
-              await loadUser();
-              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-              await queryClient.refetchQueries({ queryKey: ['subscription'] });
-              
-              if (syncResponse.data.needs_onboarding) {
-                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", {
-                  duration: 8000
-                });
-                setTimeout(() => {
-                  navigate(createPageUrl("ProfileOnboarding"));
-                }, 2000);
-              } else {
-                toast.success("🎉 ¡Tu suscripción está activa!", {
-                  duration: 6000
-                });
-              }
-              
-              setIsVerifyingSubscription(false);
-              return;
-            }
-          } catch (syncError) {
-            console.error('❌ Error en sincronización forzada:', syncError);
-          }
-        }
-        
-        if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      } catch (error) {
-        console.error(`❌ Error en intento ${attempt}:`, error);
-        if (attempt < MAX_POLLING_ATTEMPTS) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-      }
-    }
-
-    setIsVerifyingSubscription(false);
-    
-    toast.error(
-      <div>
-        <p className="font-semibold">No se pudo verificar tu suscripción</p>
-        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
-      </div>,
-      {
-        duration: 15000
-      }
-    );
-  };
-
+  // ================== LOAD USER ==================
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      console.log('👤 Usuario cargado:', currentUser.email);
-      console.log('📸 Foto de perfil URL:', currentUser.profile_picture);
       setUser(currentUser);
       setUserData({
         full_name: currentUser.full_name || "",
@@ -324,13 +188,15 @@ export default function MyProfilePage() {
     }
   };
 
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  // ================== QUERIES ==================
   const { data: subscription, isLoading: loadingSubscription } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      const subs = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-      
+      const subs = await base44.entities.Subscription.filter({ user_id: user.id });
       return subs.length > 0 ? subs[0] : null;
     },
     enabled: !!user && !isVerifyingSubscription,
@@ -343,9 +209,7 @@ export default function MyProfilePage() {
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['myProfile', user?.id],
     queryFn: async () => {
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: user.id
-      });
+      const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
       return profiles[0];
     },
     enabled: !!user,
@@ -353,6 +217,25 @@ export default function MyProfilePage() {
     refetchOnMount: true,
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const cats = await base44.entities.ServiceCategory.list();
+      return cats.filter(c => c.name).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const { data: invoicingSettings } = useQuery({
+    queryKey: ['invoicingSettings', user?.id],
+    queryFn: async () => {
+      const settings = await base44.entities.InvoicingSettings.filter({ professional_id: user.id });
+      return settings[0] || null;
+    },
+    enabled: !!user && !!profile,
+  });
+
+  // ================== SYNC PROFILE DATA ==================
   useEffect(() => {
     if (profile) {
       setProfileData({
@@ -394,42 +277,164 @@ export default function MyProfilePage() {
         services_offered: profile.services_offered || [],
       });
     }
-  }, [profile]);
+  }, [profile, user]);
 
-  const { data: metrics = [] } = useQuery({
-    queryKey: ['profileMetrics', user?.id],
-    queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const allMetrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: user.id
+  // Auto-fill service_area
+  useEffect(() => {
+    if (profileData.provincia && profileData.ciudad) {
+      const area = profileData.municipio 
+        ? `${profileData.municipio}, ${profileData.ciudad}, ${profileData.provincia}`
+        : `${profileData.ciudad}, ${profileData.provincia}`;
+      setProfileData(prev => ({ ...prev, service_area: area }));
+    }
+  }, [profileData.provincia, profileData.ciudad, profileData.municipio]);
+
+  // ================== SUBSCRIPTION POLLING ==================
+  useEffect(() => {
+    if (reactivationSuccess === "success" || onboardingPending === "pending") {
+      setIsVerifyingSubscription(true);
+      startSubscriptionPolling();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (onboardingCompleted) {
+      toast.success('🎉 ¡Enhorabuena! Tu perfil está publicado y visible para clientes.', {
+        duration: 8000
       });
+      window.history.replaceState({}, document.title, window.location.pathname);
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    } else if (reactivationSuccess === "canceled") {
+      toast.info("Reactivación cancelada. Puedes intentarlo de nuevo cuando quieras.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [reactivationSuccess, onboardingPending, onboardingCompleted]);
+
+  const startSubscriptionPolling = async () => {
+    for (let attempt = 1; attempt <= MAX_POLLING_ATTEMPTS; attempt++) {
+      try {
+        const currentUser = await loadUser();
+        if (!currentUser) throw new Error("User not loaded during polling");
+        
+        await queryClient.invalidateQueries({ queryKey: ['subscription', currentUser.id] });
+        const result = await queryClient.fetchQuery({
+          queryKey: ['subscription', currentUser.id],
+          queryFn: async () => {
+            const subs = await base44.entities.Subscription.filter({ user_id: currentUser.id });
+            return subs[0] || null;
+          },
+          staleTime: 0,
+          gcTime: 0,
+        });
+        
+        if (result && isSubscriptionActive(result.estado, result.fecha_expiracion)) {
+          setIsVerifyingSubscription(false);
+          
+          if (reactivationSuccess === "success") {
+            toast.success("🎉 ¡Tu suscripción ha sido reactivada! Tu perfil ya es visible en búsquedas.", {
+              duration: 6000
+            });
+          } else if (onboardingPending === "pending") {
+            toast.success("✅ ¡Pago confirmado! Ahora completa tu perfil profesional.", {
+              duration: 8000
+            });
+            setTimeout(() => navigate(createPageUrl("ProfileOnboarding")), 2000);
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+          return;
+        }
+        
+        if (attempt === 5 && currentUser) {
+          try {
+            const syncResponse = await base44.functions.invoke('syncStripeSubscription', { user_id: currentUser.id });
+            
+            if (syncResponse.data.ok) {
+              await loadUser();
+              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+              await queryClient.refetchQueries({ queryKey: ['subscription'] });
+              
+              if (syncResponse.data.needs_onboarding) {
+                toast.success("✅ ¡Suscripción activada! Completa tu perfil profesional.", { duration: 8000 });
+                setTimeout(() => navigate(createPageUrl("ProfileOnboarding")), 2000);
+              } else {
+                toast.success("🎉 ¡Tu suscripción está activa!", { duration: 6000 });
+              }
+              
+              setIsVerifyingSubscription(false);
+              return;
+            }
+          } catch (syncError) {
+            console.error('❌ Error en sincronización forzada:', syncError);
+          }
+        }
+        
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`❌ Error en intento ${attempt}:`, error);
+        if (attempt < MAX_POLLING_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
+    }
+
+    setIsVerifyingSubscription(false);
+    toast.error(
+      <div>
+        <p className="font-semibold">No se pudo verificar tu suscripción</p>
+        <p className="text-sm mt-1">Por favor, contacta con soporte: soporte@misautonomos.es</p>
+      </div>,
+      { duration: 15000 }
+    );
+  };
+
+  // ================== MUTATIONS ==================
+  const updateUserMutation = useMutation({
+    mutationFn: (data) => base44.auth.updateMe(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      toast.success(t('personalDataUpdated'));
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data) => {
+      const dataToSave = {
+        ...data,
+        imagen_principal: user.profile_picture || data.photos?.[0] || data.imagen_principal || ""
+      };
       
-      return allMetrics.filter(m => new Date(m.date) >= thirtyDaysAgo);
+      if (profile) {
+        return await base44.entities.ProfessionalProfile.update(profile.id, dataToSave);
+      } else {
+        return await base44.entities.ProfessionalProfile.create({
+          ...dataToSave,
+          user_id: user.id,
+          estado_perfil: "activo",
+          visible_en_busqueda: true,
+          onboarding_completed: true
+        });
+      }
     },
-    enabled: !!user && !!profile,
-    staleTime: 1000 * 60 * 5,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      setIsEditing(false);
+      setSuccess(true);
+      toast.success(t('professionalProfileUpdated'));
+      setTimeout(() => setSuccess(false), 3000);
+    },
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const cats = await base44.entities.ServiceCategory.list();
-      return cats
-        .filter(c => c.name)
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async (visible) => {
+      return await base44.entities.ProfessionalProfile.update(profile.id, {
+        visible_en_busqueda: visible
+      });
     },
-    staleTime: 1000 * 60 * 30,
-  });
-
-  const { data: invoicingSettings } = useQuery({
-    queryKey: ['invoicingSettings', user?.id],
-    queryFn: async () => {
-      const settings = await base44.entities.InvoicingSettings.filter({ professional_id: user.id });
-      return settings[0] || null;
+    onSuccess: (_, visible) => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      toast.success(visible ? t('profileNowVisible') : t('profileNowHidden'));
     },
-    enabled: !!user && !!profile,
   });
 
   const saveInvoicingSettingsMutation = useMutation({
@@ -449,6 +454,116 @@ export default function MyProfilePage() {
     },
   });
 
+  // ================== HANDLERS ==================
+  const handleSave = async () => {
+    const userDataToUpdate = { ...userData };
+    
+    if (profile && profileData.business_name) {
+      userDataToUpdate.full_name = profileData.business_name;
+    }
+    
+    updateUserMutation.mutate(userDataToUpdate);
+    
+    if (profile || profileData.business_name) {
+      updateProfileMutation.mutate(profileData);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t('exceedsSize').replace('{filename}', file.name));
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setUploadingPhoto(true);
+    const uploadedUrls = [];
+
+    try {
+      for (const file of validFiles) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        uploadedUrls.push(file_url);
+      }
+
+      const updatedPhotos = [...(profileData.photos || []), ...uploadedUrls];
+      setProfileData(prev => ({ ...prev, photos: updatedPhotos }));
+
+      if (profile) {
+        await base44.entities.ProfessionalProfile.update(profile.id, {
+          photos: updatedPhotos,
+          imagen_principal: user?.profile_picture || updatedPhotos[0] || ""
+        });
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      }
+
+      toast.success(t('photosAdded').replace('{count}', validFiles.length));
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+      toast.error(t('errorUploadingPhotos'));
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const removePhoto = async (index) => {
+    const newPhotos = [...profileData.photos];
+    newPhotos.splice(index, 1);
+    setProfileData({ ...profileData, photos: newPhotos });
+
+    if (profile) {
+      try {
+        await base44.entities.ProfessionalProfile.update(profile.id, {
+          photos: newPhotos,
+          imagen_principal: user?.profile_picture || newPhotos[0] || ""
+        });
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+        toast.success(t('photoRemoved'));
+      } catch (error) {
+        console.error("Error removing photo:", error);
+        toast.error(t('errorRemovingPhoto'));
+      }
+    }
+  };
+
+  const selectCategory = (category) => {
+    setProfileData({ ...profileData, categories: [category] });
+  };
+
+  const toggleFormaPago = (forma) => {
+    const formas = profileData.formas_pago;
+    if (formas.includes(forma)) {
+      setProfileData({ ...profileData, formas_pago: formas.filter(f => f !== forma) });
+    } else {
+      setProfileData({ ...profileData, formas_pago: [...formas, forma] });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await base44.functions.invoke('deleteUser', { userId: user.id });
+      toast.success('Tu cuenta ha sido eliminada correctamente');
+      setTimeout(() => {
+        base44.auth.logout(createPageUrl("Search"));
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Error al eliminar la cuenta. Contacta con soporte.');
+      setDeletingAccount(false);
+    }
+  };
+
+  // ================== COMPUTED VALUES ==================
+  const isProfessional = (profile && profile.onboarding_completed) || user?.user_type === "professionnel";
+  
   const getSubscriptionStatus = () => {
     if (!subscription) return null;
     
@@ -515,196 +630,12 @@ export default function MyProfilePage() {
     };
   };
 
-  const updateUserMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success(t('personalDataUpdated'));
-    },
-  });
+  const subscriptionStatus = getSubscriptionStatus();
+  const isProfileVisible = profile?.visible_en_busqueda === true && 
+                           subscriptionStatus?.isActive && 
+                           profile?.onboarding_completed === true;
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data) => {
-      const dataToSave = {
-        ...data,
-        imagen_principal: user.profile_picture || data.photos?.[0] || data.imagen_principal || ""
-      };
-      
-      if (profile) {
-        return await base44.entities.ProfessionalProfile.update(profile.id, dataToSave);
-      } else {
-        return await base44.entities.ProfessionalProfile.create({
-          ...dataToSave,
-          user_id: user.id,
-          estado_perfil: "activo",
-          visible_en_busqueda: true,
-          onboarding_completed: true
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      setIsEditing(false);
-      setSuccess(true);
-      toast.success(t('professionalProfileUpdated'));
-      setTimeout(() => setSuccess(false), 3000);
-    },
-  });
-
-  const toggleVisibilityMutation = useMutation({
-    mutationFn: async (visible) => {
-      return await base44.entities.ProfessionalProfile.update(profile.id, {
-        visible_en_busqueda: visible
-      });
-    },
-    onSuccess: (_, visible) => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      toast.success(visible ? t('profileNowVisible') : t('profileNowHidden'));
-    },
-  });
-
-  const handleSave = async () => {
-    console.log('💾 Guardando datos de usuario:', userData);
-    
-    const userDataToUpdate = { ...userData };
-    
-    if (profile && profileData.business_name) {
-      userDataToUpdate.full_name = profileData.business_name;
-    }
-    
-    updateUserMutation.mutate(userDataToUpdate);
-    
-    if (profile || profileData.business_name) {
-      console.log('💾 Guardando datos de perfil profesional:', profileData);
-      updateProfileMutation.mutate(profileData);
-    }
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    const validFiles = files.filter(file => {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(t('exceedsSize').replace('{filename}', file.name));
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    setUploadingPhoto(true);
-    const uploadedUrls = [];
-
-    try {
-      for (const file of validFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploadedUrls.push(file_url);
-      }
-
-      const updatedPhotos = [...(profileData.photos || []), ...uploadedUrls];
-      setProfileData(prev => ({
-        ...prev,
-        photos: updatedPhotos
-      }));
-
-      // Guardar automáticamente después de subir las fotos
-      if (profile) {
-        await base44.entities.ProfessionalProfile.update(profile.id, {
-          photos: updatedPhotos,
-          imagen_principal: user?.profile_picture || updatedPhotos[0] || ""
-        });
-        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-      }
-
-      toast.success(t('photosAdded').replace('{count}', validFiles.length));
-    } catch (error) {
-      console.error("Error uploading photos:", error);
-      toast.error(t('errorUploadingPhotos'));
-    } finally {
-      setUploadingPhoto(false);
-      e.target.value = '';
-    }
-  };
-
-  const removePhoto = async (index) => {
-    const newPhotos = [...profileData.photos];
-    newPhotos.splice(index, 1);
-    setProfileData({ ...profileData, photos: newPhotos });
-
-    // Guardar automáticamente después de eliminar la foto
-    if (profile) {
-      try {
-        await base44.entities.ProfessionalProfile.update(profile.id, {
-          photos: newPhotos,
-          imagen_principal: user?.profile_picture || newPhotos[0] || ""
-        });
-        queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-        toast.success(t('photoRemoved'));
-      } catch (error) {
-        console.error("Error removing photo:", error);
-        toast.error(t('errorRemovingPhoto'));
-      }
-    }
-  };
-
-  const selectCategory = (category) => {
-    setProfileData({
-      ...profileData,
-      categories: [category]
-    });
-  };
-
-  const toggleFormaPago = (forma) => {
-    const formas = profileData.formas_pago;
-    if (formas.includes(forma)) {
-      setProfileData({
-        ...profileData,
-        formas_pago: formas.filter(f => f !== forma)
-      });
-    } else {
-      setProfileData({
-        ...profileData,
-        formas_pago: [...formas, forma]
-      });
-    }
-  };
-
-  const addCertification = () => {
-    if (newCertification && !profileData.certifications.includes(newCertification)) {
-      setProfileData({
-        ...profileData,
-        certifications: [...(profileData.certifications || []), newCertification]
-      });
-      setNewCertification("");
-    }
-  };
-
-  const removeCertification = (cert) => {
-    setProfileData({
-      ...profileData,
-      certifications: (profileData.certifications || []).filter(c => c !== cert)
-    });
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeletingAccount(true);
-    try {
-      await base44.functions.invoke('deleteUser', { userId: user.id });
-      toast.success('Tu cuenta ha sido eliminada correctamente');
-      setTimeout(() => {
-        base44.auth.logout(createPageUrl("Search"));
-      }, 1500);
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast.error('Error al eliminar la cuenta. Contacta con soporte.');
-      setDeletingAccount(false);
-    }
-  };
-
-
-
+  // ================== LOADING STATES ==================
   const isInitialLoading = !user || loadingProfile || (loadingSubscription && !isVerifyingSubscription);
 
   if (isInitialLoading) {
@@ -724,19 +655,11 @@ export default function MyProfilePage() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Verificando tu suscripción
-              </h2>
-              <p className="text-gray-600">
-                Estamos confirmando tu pago y activando tu cuenta...
-              </p>
+              <h2 className="text-2xl font-bold text-gray-900">Verificando tu suscripción</h2>
+              <p className="text-gray-600">Estamos confirmando tu pago y activando tu cuenta...</p>
               <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-900 font-medium">
-                  Esto tardará solo unos segundos
-                </p>
-                <p className="text-xs text-blue-700 mt-2">
-                  Por favor, no cierres esta ventana mientras procesamos tu pago.
-                </p>
+                <p className="text-sm text-blue-900 font-medium">Esto tardará solo unos segundos</p>
+                <p className="text-xs text-blue-700 mt-2">Por favor, no cierres esta ventana mientras procesamos tu pago.</p>
               </div>
             </div>
           </CardContent>
@@ -745,78 +668,79 @@ export default function MyProfilePage() {
     );
   }
 
-  // Determinar si es profesional: tiene perfil con onboarding completado O tiene user_type professionnel
-  const isProfessional = (profile && profile.onboarding_completed) || user?.user_type === "professionnel";
-  const subscriptionStatus = getSubscriptionStatus();
-  
-  // El perfil está visible si: tiene suscripción activa Y visible_en_busqueda = true Y onboarding completado
-  const isProfileVisible = profile?.visible_en_busqueda === true && 
-                           subscriptionStatus?.isActive && 
-                           profile?.onboarding_completed === true;
-
+  // ================== MAIN RENDER ==================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 md:p-8 pb-24 md:pb-8">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('myProfile')}</h1>
-            <p className="text-gray-600">
-              {isProfessional ? t('manageYourProfile') : t('manageYourInformation')}
-            </p>
-            {profile && (
-              <div className="mt-2 flex gap-2">
-                {isProfileVisible ? (
-                  <Badge className="bg-green-100 text-green-800">
-                    ✓ {t('visibleToClients')}
-                  </Badge>
-                ) : (
-                  <Badge className="bg-red-100 text-red-800">
-                    ⚠ {t('hiddenProfile')}
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-          {!isEditing ? (
+        {/* HEADER */}
+        <div className="mb-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('myProfile')}</h1>
+              <p className="text-sm md:text-base text-gray-600">
+                {isProfessional ? t('manageYourProfile') : t('manageYourInformation')}
+              </p>
+            </div>
+            
+            {/* EDIT/SAVE BUTTONS - Sticky on mobile */}
             <div className="flex gap-2">
-              <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
-                {t('editProfile')}
-              </Button>
-              {!isProfessional && (
+              {!isEditing ? (
                 <Button 
-                  onClick={() => navigate(createPageUrl("PricingPlans"))} 
-                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => setIsEditing(true)} 
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 h-9 md:h-10"
                 >
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  {t('becomeFreelancer')}
+                  <Pencil className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">{t('editProfile')}</span>
                 </Button>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setIsEditing(false);
+                      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+                    }}
+                    className="h-9 md:h-10"
+                  >
+                    <X className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">{t('cancel')}</span>
+                  </Button>
+                  <Button 
+                    onClick={handleSave}
+                    size="sm"
+                    disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 h-9 md:h-10"
+                  >
+                    {updateProfileMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 md:mr-2" />
+                        <span className="hidden md:inline">{t('saveChanges')}</span>
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => {
-                setIsEditing(false);
-                queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-              }}>
-                {t('cancel')}
-              </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('saving')}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    {t('saveChanges')}
-                  </>
-                )}
-              </Button>
+          </div>
+
+          {/* VISIBILITY STATUS */}
+          {profile && (
+            <div className="flex flex-wrap gap-2">
+              {isProfileVisible ? (
+                <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  ✓ {t('visibleToClients')}
+                </Badge>
+              ) : (
+                <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
+                  <EyeOff className="w-3 h-3" />
+                  ⚠ {t('hiddenProfile')}
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -830,27 +754,29 @@ export default function MyProfilePage() {
           </Alert>
         )}
 
+        {/* CTA FOR NON-PROFESSIONALS */}
         {!isProfessional && user && (
           <Card className="mb-6 shadow-lg border-0 bg-gradient-to-r from-orange-50 to-orange-100">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-                    <Briefcase className="w-6 h-6 text-white" />
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900">{t('wantOfferServices')}</h3>
-                    <p className="text-sm text-gray-600">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-base md:text-lg text-gray-900">{t('wantOfferServices')}</h3>
+                    <p className="text-xs md:text-sm text-gray-600 mt-1">
                       {t('becomeProfessionalAppear')}
                     </p>
-                    <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-1 inline-block">
+                    <Link to={createPageUrl("DashboardProInfo")} className="text-blue-600 hover:text-blue-700 text-xs md:text-sm font-medium mt-2 inline-block">
                       Ver todo lo que incluye el Dashboard Pro →
                     </Link>
                   </div>
                 </div>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-orange-500 hover:bg-orange-600 flex-shrink-0"
+                  className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto"
+                  size="sm"
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
                   {t('viewPlans')}
@@ -860,60 +786,97 @@ export default function MyProfilePage() {
           </Card>
         )}
 
+        {/* PROFILE COMPLETENESS */}
         {isProfessional && profile && !isEditing && (
-          <ProfileCompleteness 
-            profile={profile} 
-            user={user}
-          />
+          <div className="mb-6">
+            <ProfileCompleteness profile={profile} user={user} />
+          </div>
         )}
 
-        <Tabs defaultValue={isProfessional ? "business" : "personal"} className="space-y-6">
-          {/* Tabs móvil: scroll horizontal */}
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-8' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
-              <TabsTrigger value="personal" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                <User className="w-4 h-4" />
-                {t('tabPersonal')}
-              </TabsTrigger>
-              {isProfessional && (
-                <>
-                  <TabsTrigger value="business" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Building2 className="w-4 h-4" />
-                    {t('tabProfile')}
-                  </TabsTrigger>
-                  <TabsTrigger value="skills" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Award className="w-4 h-4" />
-                    {t('tabSkills')}
-                  </TabsTrigger>
-                  <TabsTrigger value="services" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Briefcase className="w-4 h-4" />
-                    Servicios
-                  </TabsTrigger>
-                  <TabsTrigger value="portfolio" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Camera className="w-4 h-4" />
-                    {t('tabPortfolio')}
-                  </TabsTrigger>
-                  <TabsTrigger value="availability" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Clock className="w-4 h-4" />
-                    Disponibilidad
-                  </TabsTrigger>
-                  <TabsTrigger value="faq" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <BarChart3 className="w-4 h-4" />
-                    {t('tabFAQ')}
-                  </TabsTrigger>
-                  <TabsTrigger value="invoicing" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-100 transition-all">
-                    <Euro className="w-4 h-4" />
-                    {t('tabInvoicing')}
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
+        {/* TABS */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          {/* Tabs list - optimizado para móvil con scroll horizontal */}
+          <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-blue-50 -mx-3 px-3 pt-2 pb-3 md:mx-0 md:px-0 md:static">
+            <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
+              <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-4 lg:grid-cols-8' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
+                <TabsTrigger 
+                  value="personal" 
+                  className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('tabPersonal')}</span>
+                  <span className="sm:hidden">Personal</span>
+                </TabsTrigger>
+                
+                {isProfessional && (
+                  <>
+                    <TabsTrigger 
+                      value="business" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('tabProfile')}</span>
+                      <span className="sm:hidden">Negocio</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="skills" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Award className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('tabSkills')}</span>
+                      <span className="sm:hidden">Skills</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="services" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      <span className="hidden sm:inline">Servicios</span>
+                      <span className="sm:hidden">Servicios</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="portfolio" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('tabPortfolio')}</span>
+                      <span className="sm:hidden">Portfolio</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="availability" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Clock className="w-4 h-4" />
+                      <span className="hidden sm:inline">Disponibilidad</span>
+                      <span className="sm:hidden">Horario</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="faq" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('tabFAQ')}</span>
+                      <span className="sm:hidden">FAQ</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="invoicing" 
+                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                    >
+                      <Euro className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('tabInvoicing')}</span>
+                      <span className="sm:hidden">Factura</span>
+                    </TabsTrigger>
+                  </>
+                )}
+              </TabsList>
+            </div>
           </div>
 
+          {/* ==================== TAB: PERSONAL ==================== */}
           <TabsContent value="personal">
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-700" />
                   {t('personalInformation')}
                 </CardTitle>
@@ -923,47 +886,46 @@ export default function MyProfilePage() {
                   <ProfilePictureUpload
                     user={user}
                     currentPicture={user?.profile_picture}
-                    onUpdate={(newUrl) => {
-                      console.log('🔄 Foto actualizada, recargando usuario...');
-                      loadUser();
-                    }}
+                    onUpdate={(newUrl) => loadUser()}
                     size="lg"
                     allowedForClients={true}
                   />
                 </div>
 
                 <div>
-                  <Label>{t('email')}</Label>
-                  <Input value={user.email} disabled className="bg-gray-50" />
+                  <Label className="text-sm">{t('email')}</Label>
+                  <Input value={user.email} disabled className="bg-gray-50 mt-1" />
                 </div>
 
                 <div>
-                  <Label>{t('fullNameLabel')}</Label>
+                  <Label className="text-sm">{t('fullNameLabel')}</Label>
                   <Input
                     value={userData.full_name || ""}
                     onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
                     disabled={!isEditing}
+                    className="mt-1"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('phone')}</Label>
+                    <Label className="text-sm">{t('phone')}</Label>
                     <Input
                       value={userData.phone || ""}
                       onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
                       disabled={!isEditing}
                       placeholder="+34 612 345 678"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label>{t('city')}</Label>
+                    <Label className="text-sm">{t('city')}</Label>
                     <Select
                       value={userData.city || ""}
                       onValueChange={(value) => setUserData({ ...userData, city: value })}
                       disabled={!isEditing}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder={t('selectCityPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -976,17 +938,79 @@ export default function MyProfilePage() {
                 </div>
 
                 <div>
-                  <Label>{t('accountType')}</Label>
-                  <Badge className="bg-blue-100 text-blue-900">
-                    {isProfessional ? t('professional') : t('client')}
-                  </Badge>
+                  <Label className="text-sm">{t('accountType')}</Label>
+                  <div className="mt-1">
+                    <Badge className="bg-blue-100 text-blue-900">
+                      {isProfessional ? t('professional') : t('client')}
+                    </Badge>
+                  </div>
                 </div>
 
+                {/* VISIBILITY TOGGLE - SOLO PARA PROFESIONALES */}
+                {isProfessional && profile && subscriptionStatus?.isActive && (
+                  <div className="pt-4 mt-4 border-t border-gray-200">
+                    <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm">
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <Label className="text-base font-bold text-gray-900 mb-2 block">
+                              {t('manageAvailability')}
+                            </Label>
+                            <p className="text-xs md:text-sm text-gray-700 leading-relaxed">
+                              {profile.visible_en_busqueda 
+                                ? t('profileActiveVisible')
+                                : t('profilePausedHidden')}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={profile.visible_en_busqueda}
+                            onCheckedChange={(checked) => toggleVisibilityMutation.mutate(checked)}
+                            disabled={toggleVisibilityMutation.isPending}
+                            className="data-[state=checked]:bg-green-600 mt-1 flex-shrink-0"
+                          />
+                        </div>
+
+                        {profile.visible_en_busqueda ? (
+                          <div className="p-3 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs md:text-sm font-semibold text-green-900 mb-1">
+                                  {t('activeAndVisible')}
+                                </p>
+                                <p className="text-xs text-green-800">
+                                  {t('clientsCanSee')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs md:text-sm font-semibold text-amber-900 mb-1">
+                                  {t('profilePaused')}
+                                </p>
+                                <p className="text-xs text-amber-800">
+                                  {t('usefulIfBusy')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                {/* DELETE ACCOUNT */}
                 <div className="pt-6 border-t border-gray-200">
                   <Button
                     variant="destructive"
                     onClick={() => setShowDeleteDialog(true)}
                     className="w-full"
+                    size="sm"
                   >
                     Eliminar cuenta
                   </Button>
@@ -994,89 +1018,37 @@ export default function MyProfilePage() {
                     Esta acción es irreversible y eliminará todos tus datos
                   </p>
                 </div>
-
-                {isProfessional && profile && !loadingProfile && subscriptionStatus?.isActive && (
-                  <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <Label className="text-lg font-bold text-gray-900 mb-2 block">
-                            {t('manageAvailability')}
-                          </Label>
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {profile.visible_en_busqueda 
-                              ? t('profileActiveVisible')
-                              : t('profilePausedHidden')}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={profile.visible_en_busqueda}
-                          onCheckedChange={(checked) => toggleVisibilityMutation.mutate(checked)}
-                          disabled={toggleVisibilityMutation.isPending}
-                          className="data-[state=checked]:bg-green-600 mt-1"
-                        />
-                      </div>
-
-                      {profile.visible_en_busqueda ? (
-                        <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold text-green-900 mb-1">
-                                {t('activeAndVisible')}
-                              </p>
-                              <p className="text-xs text-green-800">
-                                {t('clientsCanSee')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold text-amber-900 mb-1">
-                                {t('profilePaused')}
-                              </p>
-                              <p className="text-xs text-amber-800">
-                                {t('usefulIfBusy')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* ==================== TAB: BUSINESS ==================== */}
           {isProfessional && (
             <TabsContent value="business">
-              <div className="space-y-6">
+              <div className="space-y-4">
+                {/* Identidad profesional */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-blue-700" />
                       {t('professionalIdentity')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('professionalNameRequired')}</Label>
+                      <Label className="text-sm">{t('professionalNameRequired')}</Label>
                       <Input
                         value={profileData.business_name}
                         onChange={(e) => setProfileData({ ...profileData, business_name: e.target.value })}
                         disabled={!isEditing}
                         placeholder="Tu Empresa S.L."
+                        className="mt-1"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 text-sm">
                           {profileData.cif_nif ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           NIF / CIF / NIE *
                         </Label>
@@ -1087,15 +1059,16 @@ export default function MyProfilePage() {
                             setProfileData({ ...profileData, cif_nif: value });
                           }}
                           disabled={!isEditing}
-                          placeholder="12345678A o B12345678"
+                          placeholder="12345678A"
                           maxLength={9}
+                          className="mt-1"
                         />
                         {isEditing && profileData.cif_nif && profileData.cif_nif.length > 0 && profileData.cif_nif.length < 8 && (
-                          <p className="text-xs text-amber-600 mt-1">El NIF/CIF debe tener al menos 8 caracteres</p>
+                          <p className="text-xs text-amber-600 mt-1">Mínimo 8 caracteres</p>
                         )}
                       </div>
                       <div>
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 text-sm">
                           {profileData.years_experience ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           {t('yearsExperience')}
                         </Label>
@@ -1107,12 +1080,13 @@ export default function MyProfilePage() {
                           placeholder="5"
                           min="0"
                           max="50"
+                          className="mt-1"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-sm">
                         {profileData.email_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         {t('emailContact')}
                       </Label>
@@ -1121,11 +1095,12 @@ export default function MyProfilePage() {
                         value={profileData.email_contacto}
                         onChange={(e) => setProfileData({ ...profileData, email_contacto: e.target.value })}
                         disabled={!isEditing}
+                        className="mt-1"
                       />
                     </div>
 
                     <div>
-                      <Label className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-sm">
                         {profileData.telefono_contacto ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         {t('phoneContact')}
                       </Label>
@@ -1134,28 +1109,29 @@ export default function MyProfilePage() {
                         onChange={(e) => setProfileData({ ...profileData, telefono_contacto: e.target.value })}
                         disabled={!isEditing}
                         placeholder="+34 612 345 678"
+                        className="mt-1"
                       />
                     </div>
 
-                    {/* Métodos de contacto visibles */}
+                    {/* Métodos de contacto */}
                     <div>
-                      <Label className="flex items-center gap-2 mb-3">
+                      <Label className="flex items-center gap-2 mb-3 text-sm">
                         <MessageSquare className="w-4 h-4 text-blue-600" />
                         {t('visibleContactMethods')}
                       </Label>
                       <p className="text-xs text-gray-500 mb-3">{t('selectHowClientsContact')}</p>
                       
-                      <div className="space-y-3">
-                        {/* Chat interno - siempre activo */}
+                      <div className="space-y-2">
+                        {/* Chat interno */}
                         <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <MessageSquare className="w-5 h-5 text-blue-600" />
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                             <div>
-                              <p className="font-medium text-gray-900">{t('internalChat')}</p>
+                              <p className="font-medium text-gray-900 text-xs md:text-sm">{t('internalChat')}</p>
                               <p className="text-xs text-gray-500">{t('alwaysActive')}</p>
                             </div>
                           </div>
-                          <CheckCircle className="w-5 h-5 text-blue-600" />
+                          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                         </div>
 
                         {/* WhatsApp */}
@@ -1180,28 +1156,28 @@ export default function MyProfilePage() {
                             }
                           }}
                           className={`flex items-center justify-between p-3 border rounded-lg transition-all ${
-                            isEditing ? 'cursor-pointer hover:bg-gray-50' : ''
+                            isEditing ? 'cursor-pointer hover:bg-gray-50 active:scale-98' : ''
                           } ${
                             profileData.metodos_contacto?.includes('whatsapp') 
                               ? 'bg-green-50 border-green-300' 
                               : 'bg-white border-gray-200'
                           } ${!profileData.telefono_contacto ? 'opacity-50' : ''}`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white fill-current">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 md:w-5 md:h-5 text-white fill-current">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                               </svg>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">WhatsApp</p>
+                              <p className="font-medium text-gray-900 text-xs md:text-sm">WhatsApp</p>
                               <p className="text-xs text-gray-500">{t('requiresPhone')}</p>
                             </div>
                           </div>
                           {profileData.metodos_contacto?.includes('whatsapp') ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 flex-shrink-0" />
                           ) : (
-                            <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                            <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-gray-300 rounded-full flex-shrink-0" />
                           )}
                         </div>
 
@@ -1227,33 +1203,33 @@ export default function MyProfilePage() {
                             }
                           }}
                           className={`flex items-center justify-between p-3 border rounded-lg transition-all ${
-                            isEditing ? 'cursor-pointer hover:bg-gray-50' : ''
+                            isEditing ? 'cursor-pointer hover:bg-gray-50 active:scale-98' : ''
                           } ${
                             profileData.metodos_contacto?.includes('telefono') 
                               ? 'bg-blue-50 border-blue-300' 
                               : 'bg-white border-gray-200'
                           } ${!profileData.telefono_contacto ? 'opacity-50' : ''}`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                              <Phone className="w-4 h-4 text-white" />
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Phone className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">{t('phoneCall')}</p>
+                              <p className="font-medium text-gray-900 text-xs md:text-sm">{t('phoneCall')}</p>
                               <p className="text-xs text-gray-500">{t('requiresPhone')}</p>
                             </div>
                           </div>
                           {profileData.metodos_contacto?.includes('telefono') ? (
-                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
                           ) : (
-                            <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                            <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-gray-300 rounded-full flex-shrink-0" />
                           )}
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <Label className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-sm">
                         {profileData.iban ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         {t('ibanForInvoices')}
                       </Label>
@@ -1263,22 +1239,21 @@ export default function MyProfilePage() {
                         disabled={!isEditing}
                         placeholder="ES91 2100 0418 4502 0005 1332"
                         maxLength={34}
+                        className="mt-1"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {t('ibanHelp')}
-                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{t('ibanHelp')}</p>
                     </div>
-
                   </CardContent>
                 </Card>
 
+                {/* Servicios y descripción */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{t('servicesAndDescription')}</CardTitle>
+                    <CardTitle className="text-base md:text-lg">{t('servicesAndDescription')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>{t('serviceCategory')}</Label>
+                      <Label className="text-sm">{t('serviceCategory')}</Label>
                       {!isEditing ? (
                         <div className="mt-2 flex items-center gap-2">
                           <CheckCircle className="w-5 h-5 text-green-600" />
@@ -1287,23 +1262,23 @@ export default function MyProfilePage() {
                           </Badge>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 gap-2 mt-2">
+                        <div className="grid grid-cols-1 gap-2 mt-2 max-h-[50vh] overflow-y-auto pr-1">
                           {categories.map((cat) => (
                             <div
                               key={cat.id}
                               onClick={() => selectCategory(cat.name)}
-                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer active:scale-98 ${
                                 profileData.categories.includes(cat.name)
                                   ? "border-blue-600 bg-blue-50"
                                   : "border-gray-200 hover:bg-gray-50"
                               }`}
                             >
                               {profileData.categories.includes(cat.name) ? (
-                                <CheckCircle className="w-5 h-5 text-blue-600" />
+                                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
                               ) : (
-                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full flex-shrink-0" />
                               )}
-                              <span className="text-sm">{t(cat.name) || cat.name}</span>
+                              <span className="text-xs md:text-sm">{t(cat.name) || cat.name}</span>
                             </div>
                           ))}
                         </div>
@@ -1312,23 +1287,24 @@ export default function MyProfilePage() {
 
                     {profileData.categories.includes("Otro tipo de servicio profesional") && (
                       <div>
-                        <Label>{t('specifyYourService')}</Label>
+                        <Label className="text-sm">{t('specifyYourService')}</Label>
                         <Input
                           value={profileData.activity_other}
                           onChange={(e) => setProfileData({ ...profileData, activity_other: e.target.value })}
                           disabled={!isEditing}
                           placeholder={t('specifyServicePlaceholder')}
+                          className="mt-1"
                         />
                       </div>
                     )}
 
                     <div>
-                      <Label>{t('servicesDescription')}</Label>
+                      <Label className="text-sm">{t('servicesDescription')}</Label>
                       {!isEditing && profileData.descripcion_corta ? (
                         <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                           <div className="flex items-start gap-2">
                             <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-700">{profileData.descripcion_corta}</p>
+                            <p className="text-xs md:text-sm text-gray-700">{profileData.descripcion_corta}</p>
                           </div>
                         </div>
                       ) : (
@@ -1363,9 +1339,10 @@ export default function MyProfilePage() {
                   </CardContent>
                 </Card>
 
+                {/* Ubicación */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-blue-700" />
                       {t('locationLabel')}
                     </CardTitle>
@@ -1373,7 +1350,7 @@ export default function MyProfilePage() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 text-sm">
                           {profileData.provincia ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           {t('province')}
                         </Label>
@@ -1386,7 +1363,7 @@ export default function MyProfilePage() {
                           })}
                           disabled={!isEditing}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="mt-1">
                             <SelectValue placeholder={t('selectProvincePlaceholder')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
@@ -1398,7 +1375,7 @@ export default function MyProfilePage() {
                       </div>
 
                       <div>
-                        <Label className="flex items-center gap-2">
+                        <Label className="flex items-center gap-2 text-sm">
                           {profileData.ciudad ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           {t('city')}
                         </Label>
@@ -1407,7 +1384,7 @@ export default function MyProfilePage() {
                           onValueChange={(value) => setProfileData({ ...profileData, ciudad: value })}
                           disabled={!isEditing || !profileData.provincia}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="mt-1">
                             <SelectValue placeholder={profileData.provincia ? t('selectCityPlaceholder') : t('firstChooseProvince')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
@@ -1418,23 +1395,20 @@ export default function MyProfilePage() {
                         </Select>
                       </div>
                     </div>
-
-
-
-
                   </CardContent>
                 </Card>
 
+                {/* Tarifas y pagos */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
                       <Euro className="w-5 h-5 text-blue-700" />
                       {t('ratesAndPayments')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-sm">
                         {profileData.tarifa_base ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         {t('baseRateOptionalLabel')}
                       </Label>
@@ -1445,6 +1419,7 @@ export default function MyProfilePage() {
                         disabled={!isEditing}
                         placeholder="35"
                         min="0"
+                        className="mt-1"
                       />
                       
                       {isEditing && (
@@ -1464,7 +1439,7 @@ export default function MyProfilePage() {
                     </div>
 
                     <div>
-                      <Label className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-sm">
                         {profileData.formas_pago.length > 0 ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                         {t('acceptedPaymentMethodsLabel')}
                       </Label>
@@ -1483,18 +1458,18 @@ export default function MyProfilePage() {
                             <div
                               key={forma}
                               onClick={() => toggleFormaPago(forma)}
-                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-all cursor-pointer active:scale-98 ${
                                 profileData.formas_pago.includes(forma)
                                   ? "border-purple-600 bg-purple-50"
                                   : "border-gray-200 hover:bg-gray-50"
                               }`}
                             >
                               {profileData.formas_pago.includes(forma) ? (
-                                <CheckCircle className="w-5 h-5 text-purple-600" />
+                                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-purple-600 flex-shrink-0" />
                               ) : (
-                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                                <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-gray-300 rounded-full flex-shrink-0" />
                               )}
-                              <span className="text-sm">{t(forma.toLowerCase())}</span>
+                              <span className="text-xs md:text-sm">{t(forma.toLowerCase())}</span>
                             </div>
                           ))}
                         </div>
@@ -1502,12 +1477,11 @@ export default function MyProfilePage() {
                     </div>
                   </CardContent>
                 </Card>
-
-
               </div>
             </TabsContent>
           )}
 
+          {/* ==================== TAB: SKILLS ==================== */}
           {isProfessional && (
             <TabsContent value="skills">
               <SkillsSection
@@ -1522,6 +1496,7 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
 
+          {/* ==================== TAB: SERVICES ==================== */}
           {isProfessional && (
             <TabsContent value="services">
               <ServicesSection
@@ -1532,10 +1507,11 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
 
+          {/* ==================== TAB: PORTFOLIO ==================== */}
           {isProfessional && (
             <TabsContent value="portfolio">
-              <div className="space-y-6">
-                {/* Portfolio de trabajos con descripciones */}
+              <div className="space-y-4">
+                {/* Portfolio de trabajos */}
                 <PortfolioSection
                   portfolioItems={profileData.portfolio_items || []}
                   isEditing={isEditing}
@@ -1543,123 +1519,97 @@ export default function MyProfilePage() {
                   categories={categories.map(c => c.name)}
                 />
 
-                {/* Galería simple de fotos */}
+                {/* Galería de fotos */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
                       <Camera className="w-5 h-5 text-blue-700" />
                       {t('photoGalleryTitle')} ({profileData.photos.length}/10)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">{t('additionalWorkPhotos')}</p>
+                    <p className="text-xs md:text-sm text-gray-600">{t('additionalWorkPhotos')}</p>
 
-                  {isEditing && profileData.photos.length < 10 && (
-                    <label className="cursor-pointer block">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={handlePhotoUpload}
-                          disabled={uploadingPhoto}
-                        />
-                        {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">{t('clickToAddPhotos').replace('{count}', profileData.photos.length)}</p>
-                            <p className="text-xs text-gray-500 mt-1">{t('selectMultiple')}</p>
-                          </>
-                        )}
-                      </div>
-                    </label>
-                  )}
+                    {isEditing && profileData.photos.length < 10 && (
+                      <label className="cursor-pointer block">
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 md:p-8 text-center hover:border-blue-500 transition-colors active:scale-98">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handlePhotoUpload}
+                            disabled={uploadingPhoto}
+                          />
+                          {uploadingPhoto ? (
+                            <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-700" />
+                          ) : (
+                            <>
+                              <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-gray-400" />
+                              <p className="text-xs md:text-sm text-gray-600">{t('clickToAddPhotos').replace('{count}', profileData.photos.length)}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('selectMultiple')}</p>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    )}
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {profileData.photos.map((photo, idx) => (
-                      <div key={idx} className="relative group">
-                        <img
-                          src={photo}
-                          alt={t('photoNumber').replace('{number}', idx + 1)}
-                          className="w-full h-32 object-cover rounded-lg shadow-md"
-                        />
-                        {isEditing && (
-                          <button
-                            onClick={() => removePhoto(idx)}
-                            className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                        {idx === 0 && (
-                          <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
-                            {t('mainPhotoLabel')}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                      {profileData.photos.map((photo, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={photo}
+                            alt={t('photoNumber').replace('{number}', idx + 1)}
+                            className="w-full h-24 md:h-32 object-cover rounded-lg shadow-md"
+                          />
+                          {isEditing && (
+                            <button
+                              onClick={() => removePhoto(idx)}
+                              className="absolute top-1 right-1 md:top-2 md:right-2 bg-red-500 text-white p-1 md:p-1.5 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-lg active:scale-90"
+                            >
+                              <X className="w-3 h-3 md:w-4 md:h-4" />
+                            </button>
+                          )}
+                          {idx === 0 && (
+                            <div className="absolute bottom-1 left-1 md:bottom-2 md:left-2 bg-blue-600 text-white text-xs px-2 py-0.5 md:py-1 rounded font-semibold">
+                              {t('mainPhotoLabel')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
-                  </Card>
+                </Card>
 
-                  <Card className="shadow-sm border-0 bg-white">
+                {/* Redes sociales */}
+                <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-blue-700" />
-                    {t('socialNetworksLabel')}
-                  </CardTitle>
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-700" />
+                      {t('socialNetworksLabel')}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label className="flex items-center gap-2 text-xs text-gray-600">
-                        {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                        {t('sitioWeb')}
-                      </Label>
-                      {!isEditing && profileData.website ? (
-                        <a 
-                          href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
-                        >
-                          <p className="text-sm text-blue-700 truncate flex items-center gap-2">
-                            <Globe className="w-4 h-4" />
-                            {profileData.website}
-                          </p>
-                        </a>
-                      ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.website ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          {t('sitioWeb')}
+                        </Label>
                         <Input
                           value={profileData.website}
                           onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
                           disabled={!isEditing}
                           placeholder="https://tuweb.com"
-                          className="h-10"
+                          className="h-10 mt-1"
                         />
-                      )}
-                    </div>
+                      </div>
 
-                    <div>
-                      <Label className="flex items-center gap-2 text-xs text-gray-600">
-                        {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                        Instagram
-                      </Label>
-                      {!isEditing && profileData.social_links?.instagram ? (
-                        <a 
-                          href={profileData.social_links.instagram.startsWith('http') ? profileData.social_links.instagram : `https://instagram.com/${profileData.social_links.instagram.replace('@', '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-2 rounded-lg border border-pink-200 bg-pink-50 hover:bg-pink-100 transition-colors"
-                        >
-                          <p className="text-sm text-pink-700 truncate flex items-center gap-2">
-                            <Instagram className="w-4 h-4" />
-                            {profileData.social_links.instagram}
-                          </p>
-                        </a>
-                      ) : (
+                      <div>
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.instagram ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          Instagram
+                        </Label>
                         <Input
                           value={profileData.social_links.instagram}
                           onChange={(e) => setProfileData({ 
@@ -1667,30 +1617,16 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, instagram: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://instagram.com/tuperfil"
-                          className="h-10"
+                          placeholder="@tuperfil"
+                          className="h-10 mt-1"
                         />
-                      )}
-                    </div>
+                      </div>
 
-                    <div>
-                      <Label className="flex items-center gap-2 text-xs text-gray-600">
-                        {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                        Facebook
-                      </Label>
-                      {!isEditing && profileData.social_links?.facebook ? (
-                        <a 
-                          href={profileData.social_links.facebook.startsWith('http') ? profileData.social_links.facebook : `https://facebook.com/${profileData.social_links.facebook}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors"
-                        >
-                          <p className="text-sm text-blue-700 truncate flex items-center gap-2">
-                            <Facebook className="w-4 h-4" />
-                            {profileData.social_links.facebook}
-                          </p>
-                        </a>
-                      ) : (
+                      <div>
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.facebook ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          Facebook
+                        </Label>
                         <Input
                           value={profileData.social_links.facebook}
                           onChange={(e) => setProfileData({ 
@@ -1698,30 +1634,16 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, facebook: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://facebook.com/tupagina"
-                          className="h-10"
+                          placeholder="tupagina"
+                          className="h-10 mt-1"
                         />
-                      )}
-                    </div>
+                      </div>
 
-                    <div>
-                      <Label className="flex items-center gap-2 text-xs text-gray-600">
-                        {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
-                        TikTok
-                      </Label>
-                      {!isEditing && profileData.social_links?.tiktok ? (
-                        <a 
-                          href={profileData.social_links.tiktok.startsWith('http') ? profileData.social_links.tiktok : `https://tiktok.com/@${profileData.social_links.tiktok.replace('@', '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                        >
-                          <p className="text-sm text-gray-700 truncate flex items-center gap-2">
-                            <Music className="w-4 h-4" />
-                            {profileData.social_links.tiktok}
-                          </p>
-                        </a>
-                      ) : (
+                      <div>
+                        <Label className="flex items-center gap-2 text-xs text-gray-600">
+                          {profileData.social_links?.tiktok ? <CheckCircle className="w-3 h-3 text-green-600" /> : <div className="w-3 h-3" />}
+                          TikTok
+                        </Label>
                         <Input
                           value={profileData.social_links.tiktok}
                           onChange={(e) => setProfileData({ 
@@ -1729,18 +1651,18 @@ export default function MyProfilePage() {
                             social_links: { ...profileData.social_links, tiktok: e.target.value }
                           })}
                           disabled={!isEditing}
-                          placeholder="https://tiktok.com/@tuperfil"
-                          className="h-10"
+                          placeholder="@tuperfil"
+                          className="h-10 mt-1"
                         />
-                      )}
+                      </div>
                     </div>
-                  </div>
                   </CardContent>
-                  </Card>
-                  </div>
-                  </TabsContent>
+                </Card>
+              </div>
+            </TabsContent>
           )}
 
+          {/* ==================== TAB: AVAILABILITY ==================== */}
           {isProfessional && (
             <TabsContent value="availability">
               <AvailabilityCalendar
@@ -1754,6 +1676,7 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
 
+          {/* ==================== TAB: FAQ ==================== */}
           {isProfessional && (
             <TabsContent value="faq">
               <FAQSection
@@ -1764,6 +1687,7 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
 
+          {/* ==================== TAB: INVOICING ==================== */}
           {isProfessional && (
             <TabsContent value="invoicing">
               <InvoicingSettingsForm
@@ -1773,17 +1697,16 @@ export default function MyProfilePage() {
             </TabsContent>
           )}
         </Tabs>
-
-
       </div>
 
+      {/* DELETE ACCOUNT DIALOG */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar tu cuenta?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-sm">
               Esta acción es permanente e irreversible. Se eliminarán:
-              <ul className="list-disc list-inside mt-2 space-y-1">
+              <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
                 <li>Tu perfil profesional completo</li>
                 <li>Todos tus mensajes y conversaciones</li>
                 <li>Tu historial de clientes y trabajos</li>
