@@ -94,29 +94,68 @@ const CITY_COORDS = {
   "Albacete": [38.9943, -1.8585]
 };
 
+// Normalizar nombres de ciudad para mejor coincidencia
+const normalizeCityName = (city) => {
+  if (!city) return "";
+  return city
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quitar acentos
+    .replace(/[^a-z0-9\s]/g, "") // quitar caracteres especiales
+    .trim();
+};
+
+// Crear mapa normalizado de coordenadas
+const NORMALIZED_COORDS = {};
+Object.entries(CITY_COORDS).forEach(([city, coords]) => {
+  NORMALIZED_COORDS[normalizeCityName(city)] = coords;
+});
+
 export default function MapView({ profiles, onProfileClick }) {
   const mapRef = useRef(null);
+
+  // Función para buscar coordenadas de una ciudad
+  const findCoords = (ciudad) => {
+    if (!ciudad) return null;
+    
+    // Buscar coincidencia exacta normalizada
+    const normalized = normalizeCityName(ciudad);
+    if (NORMALIZED_COORDS[normalized]) {
+      return NORMALIZED_COORDS[normalized];
+    }
+    
+    // Buscar coincidencia parcial (por si la ciudad incluye más texto)
+    for (const [key, coords] of Object.entries(NORMALIZED_COORDS)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        return coords;
+      }
+    }
+    
+    return null;
+  };
 
   // Agrupar por ciudad para añadir offset a coordenadas
   const cityGroups = {};
   profiles.forEach(p => {
-    if (p.ciudad && CITY_COORDS[p.ciudad]) {
-      if (!cityGroups[p.ciudad]) cityGroups[p.ciudad] = [];
-      cityGroups[p.ciudad].push(p);
+    const coords = findCoords(p.ciudad);
+    if (coords) {
+      const cityKey = normalizeCityName(p.ciudad);
+      if (!cityGroups[cityKey]) cityGroups[cityKey] = { coords, profiles: [] };
+      cityGroups[cityKey].profiles.push(p);
     }
   });
 
   // Añadir offset a profesionales en la misma ciudad para evitar superposición
   const profilesWithCoords = [];
-  Object.entries(cityGroups).forEach(([ciudad, cityProfiles]) => {
+  Object.entries(cityGroups).forEach(([cityKey, { coords, profiles: cityProfiles }]) => {
     cityProfiles.forEach((p, index) => {
-      const baseCoords = CITY_COORDS[ciudad];
-      // Añadir pequeño offset aleatorio (0.01 grados ≈ 1km)
-      const offsetLat = (Math.random() - 0.5) * 0.02 * (index + 1) * 0.3;
-      const offsetLng = (Math.random() - 0.5) * 0.02 * (index + 1) * 0.3;
+      // Añadir pequeño offset (0.01 grados ≈ 1km)
+      const angle = (index / cityProfiles.length) * 2 * Math.PI;
+      const distance = 0.015 + (index * 0.005);
+      const offsetLat = Math.cos(angle) * distance;
+      const offsetLng = Math.sin(angle) * distance;
       profilesWithCoords.push({
         ...p,
-        coords: [baseCoords[0] + offsetLat, baseCoords[1] + offsetLng]
+        coords: [coords[0] + offsetLat, coords[1] + offsetLng]
       });
     });
   });
