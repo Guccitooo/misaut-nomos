@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -32,15 +32,16 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Footer from "@/components/ui/Footer";
-import CookieBanner from "@/components/ui/CookieBanner";
+
+// Lazy load componentes no críticos
+const Footer = lazy(() => import("@/components/ui/Footer"));
+const CookieBanner = lazy(() => import("@/components/ui/CookieBanner"));
+const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
+const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
+const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
+const PageTransitions = lazy(() => import("@/components/ui/PageTransitions"));
+
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
-import ScrollToTop from "@/components/ui/ScrollToTop";
-import NotificationCenter from "@/components/notifications/NotificationCenter";
-import OptimizedImage from "@/components/ui/OptimizedImage";
-// import AIAssistantButton from "@/components/chat/AIAssistantButton";
-import WebsiteSchema from "@/components/seo/WebsiteSchema";
-import PageTransitions from "@/components/ui/PageTransitions";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -63,9 +64,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
 
   useEffect(() => {
-    if (window.gtag) {
-      return;
-    }
+    if (window.gtag) return;
 
     let analyticsLoaded = false;
 
@@ -73,33 +72,27 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       if (analyticsLoaded) return;
       analyticsLoaded = true;
 
-      // Google Analytics (GA4) - con defer
+      // Cargar solo cuando el usuario lo consiente
+      const consentGiven = sessionStorage.getItem('analytics_consent') === 'true';
+      if (!consentGiven) return;
+
       const scriptGA = document.createElement('script');
       scriptGA.src = 'https://www.googletagmanager.com/gtag/js?id=G-P9DN7YN239';
-      scriptGA.async = false;
-      scriptGA.defer = true;
+      scriptGA.async = true;
       document.head.appendChild(scriptGA);
 
-      // Google Ads - con defer
       const scriptAds = document.createElement('script');
       scriptAds.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17763802205';
-      scriptAds.async = false;
-      scriptAds.defer = true;
+      scriptAds.async = true;
       document.head.appendChild(scriptAds);
 
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        window.dataLayer.push(arguments);
-      }
+      function gtag() { window.dataLayer.push(arguments); }
       window.gtag = gtag;
 
       gtag('consent', 'default', {
-        'analytics_storage': 'denied',
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'functionality_storage': 'granted',
-        'security_storage': 'granted'
+        'analytics_storage': 'granted',
+        'ad_storage': 'granted',
       });
 
       gtag('js', new Date());
@@ -107,21 +100,23 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       gtag('config', 'AW-17763802205');
     };
 
-    // Cargar después de primera interacción del usuario
-    const events = ['mousedown', 'touchstart', 'keydown', 'scroll'];
-    const onFirstInteraction = () => {
+    // Cargar solo después de interacción significativa
+    const onInteraction = () => {
       loadAnalytics();
-      events.forEach(event => window.removeEventListener(event, onFirstInteraction));
+      window.removeEventListener('click', onInteraction);
+      window.removeEventListener('scroll', onInteraction, { passive: true });
     };
 
-    events.forEach(event => window.addEventListener(event, onFirstInteraction, { passive: true, once: true }));
+    window.addEventListener('click', onInteraction, { once: true });
+    window.addEventListener('scroll', onInteraction, { passive: true, once: true });
 
-    // Fallback: cargar después de 5 segundos si no hay interacción
-    const fallbackTimer = setTimeout(loadAnalytics, 5000);
+    // Fallback después de 10 segundos (más tiempo)
+    const timer = setTimeout(loadAnalytics, 10000);
 
     return () => {
-      clearTimeout(fallbackTimer);
-      events.forEach(event => window.removeEventListener(event, onFirstInteraction));
+      clearTimeout(timer);
+      window.removeEventListener('click', onInteraction);
+      window.removeEventListener('scroll', onInteraction);
     };
   }, []);
 
@@ -179,18 +174,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
   const loadUser = React.useCallback(async () => {
     try {
-      // Detectar si es post-pago o post-onboarding
       const urlParams = new URLSearchParams(window.location.search);
       const isPostPayment = urlParams.get('session_id') || 
                             urlParams.get('onboarding') || 
                             location.pathname.includes('PaymentSuccess') ||
                             location.pathname.includes('SubscriptionManagement');
 
-      // Cache de 30 segundos - NO usar cache si viene de pago/onboarding
+      // Cache extendido a 60 segundos
       const cached = sessionStorage.getItem('current_user');
       if (cached && !isPostPayment) {
         const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 30000) {
+        if (Date.now() - timestamp < 60000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
           setLoadingUser(false);
@@ -201,14 +195,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       const currentUser = await base44.auth.me();
 
       if (currentUser) {
-        // Verificar perfil profesional
         const profiles = await base44.entities.ProfessionalProfile.filter({
           user_id: currentUser.id
         });
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
 
-        // Solo cachear si no es post-pago
         if (!isPostPayment) {
           sessionStorage.setItem('current_user', JSON.stringify({
             user: currentUser,
@@ -234,11 +226,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     if (!user?.id) return;
 
     try {
-      // Cache de 2 minutos para mensajes no leídos
+      // Cache extendido a 5 minutos
       const cached = sessionStorage.getItem('unread_count');
       if (cached) {
         const { count, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 120000) {
+        if (Date.now() - timestamp < 300000) {
           setUnreadCount(count);
           return;
         }
@@ -771,8 +763,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         `}
       </style>
 
-      <ScrollToTop />
-
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
@@ -1184,7 +1174,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </Link>
                   <div className="flex items-center gap-2">
-                    {user && <NotificationCenter user={user} />}
+                    {user && (
+                      <Suspense fallback={<div className="w-9 h-9" />}>
+                        <NotificationCenter user={user} />
+                      </Suspense>
+                    )}
                     <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                       <button
                         onClick={() => changeLanguage('es')}
@@ -1219,13 +1213,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
                 }>
-                  <PageTransitions>
-                    {children}
-                  </PageTransitions>
+                  <Suspense fallback={<div />}>
+                    <PageTransitions>
+                      {children}
+                    </PageTransitions>
+                  </Suspense>
                 </Suspense>
               </div>
 
-              <Footer />
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
 
               {shouldShowSidebar() && (
                 <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">
@@ -1257,9 +1255,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             </main>
           </div>
 
-          <CookieBanner />
-          {/* <AIAssistantButton /> */}
-          <WebsiteSchema />
+          <Suspense fallback={null}>
+            <CookieBanner />
+          </Suspense>
+          <Suspense fallback={null}>
+            <WebsiteSchema />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ScrollToTop />
+          </Suspense>
           </div>
           </SidebarProvider>
     </>

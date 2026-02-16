@@ -14,6 +14,11 @@
   * {
     font-family: inherit;
   }
+  
+  /* Optimización contenido offscreen */
+  img:not([loading="eager"]) {
+    content-visibility: auto;
+  }
 }
 
 @layer base {
@@ -310,13 +315,28 @@ a:hover {
 
 /* Optimización de LCP - hints para navegador */
 img[fetchpriority="high"] {
-  content-visibility: auto;
+  content-visibility: visible;
 }
 
 /* Prevenir CLS (Cumulative Layout Shift) */
 img {
   height: auto;
   max-width: 100%;
+}
+
+/* Reducir peso de animaciones complejas en móvil */
+@media (max-width: 768px) {
+  * {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 }
 
 /* Optimización de fuentes - font-display swap */
@@ -348,6 +368,25 @@ main, [role="main"], .flex-1 {
 /* Skeleton con altura mínima */
 .skeleton {
   min-height: 48px;
+}
+
+/* Will-change solo en elementos que lo necesiten */
+button:active,
+a:active {
+  will-change: transform;
+}
+
+/* Optimización rendering */
+.card-grid {
+  contain: layout;
+}
+
+/* Reducir complejidad visual en bajo rendimiento */
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
+  }
 }
 
 /* ✨ MOBILE OPTIMIZATIONS */
