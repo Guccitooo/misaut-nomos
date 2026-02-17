@@ -67,7 +67,10 @@ export default function CalendarPage() {
     due_time: '',
     priority: 'medium',
     category: 'work',
-    related_client_id: ''
+    related_client_id: '',
+    is_recurring: false,
+    recurrence_pattern: 'none',
+    recurrence_end_date: ''
   });
 
   useEffect(() => {
@@ -341,7 +344,10 @@ export default function CalendarPage() {
         due_time: task.due_time || '',
         priority: task.priority || 'medium',
         category: task.category || 'work',
-        related_client_id: task.related_client_id || ''
+        related_client_id: task.related_client_id || '',
+        is_recurring: task.is_recurring || false,
+        recurrence_pattern: task.recurrence_pattern || 'none',
+        recurrence_end_date: task.recurrence_end_date || ''
       });
     } else {
       setEditingTask(null);
@@ -352,7 +358,10 @@ export default function CalendarPage() {
         due_time: '',
         priority: 'medium',
         category: 'work',
-        related_client_id: ''
+        related_client_id: '',
+        is_recurring: false,
+        recurrence_pattern: 'none',
+        recurrence_end_date: ''
       });
     }
     setShowTaskDialog(true);
@@ -368,7 +377,10 @@ export default function CalendarPage() {
       due_time: '',
       priority: 'medium',
       category: 'work',
-      related_client_id: ''
+      related_client_id: '',
+      is_recurring: false,
+      recurrence_pattern: 'none',
+      recurrence_end_date: ''
     });
   };
 
@@ -879,6 +891,40 @@ END:VEVENT
                 </Select>
               </div>
             </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Repetir tarea</label>
+              <Select
+                value={taskForm.recurrence_pattern || 'none'}
+                onValueChange={(v) => setTaskForm(f => ({ 
+                  ...f, 
+                  recurrence_pattern: v,
+                  is_recurring: v !== 'none'
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No repetir</SelectItem>
+                  <SelectItem value="daily">Diariamente</SelectItem>
+                  <SelectItem value="weekly">Semanalmente</SelectItem>
+                  <SelectItem value="biweekly">Cada 2 semanas</SelectItem>
+                  <SelectItem value="monthly">Mensualmente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {taskForm.recurrence_pattern && taskForm.recurrence_pattern !== 'none' && (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Finalizar repetición</label>
+                <Input
+                  type="date"
+                  value={taskForm.recurrence_end_date || ''}
+                  onChange={(e) => setTaskForm(f => ({ ...f, recurrence_end_date: e.target.value }))}
+                  min={taskForm.due_date}
+                />
+                <p className="text-xs text-gray-500 mt-1">Déjalo vacío para repetir indefinidamente</p>
+              </div>
+            )}
             {clients.length > 0 && (
               <div>
                 <label className="text-sm font-medium mb-1 block">Cliente relacionado</label>
