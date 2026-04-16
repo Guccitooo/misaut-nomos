@@ -778,15 +778,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeClient')}
                           </Button>
-                        </Link>
-                      )}
-                      {!user || user.user_type !== 'professionnel' ? (
-                        <Link to={createPageUrl("PricingPlans")}>
+                          </Link>
+                          )}
+                          {!user || user.user_type !== 'professionnel' ? (
+                          <Link to={createPageUrl("PricingPlans")}>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                             <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('becomeFreelancer')}
+                            {t('becomeFreelancer')} · 7 días gratis
                           </Button>
-                        </Link>
+                          </Link>
                       ) : null}
                       <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                         <button

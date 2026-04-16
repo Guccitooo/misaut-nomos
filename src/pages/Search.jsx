@@ -504,8 +504,11 @@ export default function SearchPage() {
                   <span style={{ color: '#fbbf24' }}>que necesitas</span>
                 </h1>
                 <p className="text-blue-200 text-lg mb-8 max-w-xl mx-auto">
-                  Contacto directo, sin intermediarios. Más de 2.400 profesionales en toda España.
+                  La nueva forma de encontrar autónomos de confianza en España.
                 </p>
+                <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-400/40 text-green-200 text-xs px-4 py-1.5 rounded-full mb-6 font-medium">
+                  🚀 Plataforma recién lanzada · Sé de los primeros
+                </div>
 
                 {/* Barra de búsqueda hero */}
                 <div className="max-w-2xl mx-auto">
@@ -528,19 +531,19 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="flex items-center justify-center gap-8 mt-8 text-sm">
+                {/* Props de valor reales */}
+                <div className="flex items-center justify-center gap-6 mt-6 text-sm flex-wrap">
                   <div className="flex items-center gap-2 text-white/80">
-                    <Users className="w-4 h-4 text-green-300" />
-                    <span><strong className="text-white">2.400+</strong> profesionales</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
-                    <span><strong className="text-white">4.8</strong> valoración media</span>
+                    <MessageSquare className="w-4 h-4 text-green-300" />
+                    <span><strong className="text-white">Contacto directo</strong></span>
                   </div>
                   <div className="flex items-center gap-2 text-white/80">
                     <Shield className="w-4 h-4 text-blue-300" />
-                    <span><strong className="text-white">Gratis</strong> para clientes</span>
+                    <span><strong className="text-white">Sin comisiones</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/80">
+                    <Users className="w-4 h-4 text-yellow-300" />
+                    <span><strong className="text-white">Verificados</strong></span>
                   </div>
                 </div>
               </div>
@@ -577,7 +580,7 @@ export default function SearchPage() {
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
                   className="bg-green-500 hover:bg-green-400 text-white font-bold px-5 h-9 rounded-xl shadow-lg text-sm flex-shrink-0"
                 >
-                  Empezar gratis · 60 días
+                  Empezar gratis · 7 días
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
@@ -751,7 +754,7 @@ export default function SearchPage() {
                     <p className="text-blue-100 mb-5 text-sm">Únete gratis y consigue clientes en tu zona</p>
                     <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
                       className="bg-white text-blue-700 hover:bg-blue-50 h-11 px-6 font-bold rounded-xl">
-                      Empezar gratis · 60 días
+                      Empezar gratis · 7 días
                     </Button>
                   </div>
                 </Card>
@@ -801,14 +804,17 @@ export default function SearchPage() {
             <div className="mt-14 rounded-3xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}>
               <div className="p-8 md:p-12 text-white text-center">
                 <span className="inline-block bg-green-500 text-white text-xs font-bold px-4 py-1.5 rounded-full mb-5 shadow">
-                  🎁 60 días completamente gratis
+                  🚀 Plataforma recién lanzada · 7 días gratis
                 </span>
                 <h3 className="text-3xl md:text-4xl font-extrabold mb-3">
                   ¿Eres autónomo?<br />
                   <span style={{ color: '#fbbf24' }}>Aparece aquí hoy</span>
                 </h3>
-                <p className="text-blue-200 mb-8 text-base max-w-lg mx-auto">
-                  Más de 2.400 profesionales ya reciben clientes a través de MisAutónomos. Sin comisiones, contacto directo.
+                <p className="text-blue-200 mb-3 text-base max-w-lg mx-auto">
+                  El nuevo directorio de autónomos de España — sin intermediarios, sin comisiones.
+                </p>
+                <p className="text-blue-300 mb-8 text-sm max-w-md mx-auto">
+                  Sé de los primeros en unirte y posiciónate antes que tu competencia.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
@@ -816,7 +822,7 @@ export default function SearchPage() {
                     className="bg-green-500 hover:bg-green-400 text-white h-13 px-10 text-base font-bold shadow-xl rounded-2xl"
                     style={{ height: '52px' }}
                   >
-                    <Briefcase className="w-5 h-5 mr-2" />Empezar gratis — 60 días
+                    <Briefcase className="w-5 h-5 mr-2" />Empezar gratis — 7 días
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("Home"))}

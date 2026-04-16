@@ -49,7 +49,7 @@ const PLAN_FEATURES = {
 const FAQS = [
   {
     q: "¿Cuándo se cobra el plan?",
-    a: "Tienes 60 días completamente gratis. No se te cobra nada hasta que termine ese período. Después, el cobro es mensual automático el mismo día de cada mes.",
+    a: "Tienes 7 días completamente gratis. No se te cobra nada hasta que termine ese período. Después, el cobro es mensual automático el mismo día de cada mes.",
   },
   {
     q: "¿Puedo cancelar en cualquier momento?",
@@ -61,7 +61,7 @@ const FAQS = [
   },
   {
     q: "¿Qué pasa si no cancelo y expira el período gratis?",
-    a: "Al finalizar los 60 días gratuitos, si no has cancelado, se activará el cobro automático del plan elegido. Te avisaremos por email antes de que termine el período gratuito.",
+    a: "Al finalizar los 7 días gratuitos, si no has cancelado, se activará el cobro automático del plan elegido. Te avisaremos por email antes de que termine el período gratuito.",
   },
 ];
 
@@ -190,9 +190,9 @@ export default function PricingPlansPage() {
   return (
     <>
       <SEOHead
-        title="Planes y Precios - MisAutónomos | 60 Días Gratis"
-        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 60 días gratis. Sin permanencia. Sin comisiones."
-        keywords="planes autónomos, precios profesionales, 60 días gratis, publicidad incluida, plan visibilidad"
+        title="Planes y Precios - MisAutónomos | 7 Días Gratis"
+        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 7 días gratis. Sin permanencia. Sin comisiones."
+        keywords="planes autónomos, precios profesionales, 7 días gratis, publicidad incluida, plan visibilidad"
       />
       <SubscriptionProductSchema plans={plans} />
 
@@ -202,7 +202,7 @@ export default function PricingPlansPage() {
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-center py-3 px-4">
           <p className="text-sm font-semibold flex items-center justify-center gap-2">
             <Gift className="w-4 h-4 flex-shrink-0" />
-            Oferta de lanzamiento — <strong>60 días gratis</strong> sin tarjeta de crédito &nbsp;·&nbsp; Plazas limitadas
+            Oferta de lanzamiento — <strong>7 días gratis</strong> sin tarjeta de crédito &nbsp;·&nbsp; Plazas limitadas
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export default function PricingPlansPage() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
               <Sparkles className="w-4 h-4" />
-              60 días gratis · Sin tarjeta · Sin permanencia
+              7 días gratis · Sin tarjeta · Sin permanencia
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3 leading-tight">
               Empieza a recibir clientes<br className="hidden md:block" /> <span className="text-blue-700">hoy mismo</span>
@@ -230,16 +230,16 @@ export default function PricingPlansPage() {
           {/* ── Social proof ── */}
           <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm">
             <div className="flex items-center gap-2 text-gray-600">
-              <Users className="w-5 h-5 text-blue-600" />
-              <span><strong className="text-gray-900">2.400+</strong> autónomos en España</span>
+              <Briefcase className="w-5 h-5 text-blue-600" />
+              <span><strong className="text-gray-900">Contacto directo</strong> con clientes</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
-              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-              <span><strong className="text-gray-900">4.8/5</strong> valoración media</span>
+              <Shield className="w-5 h-5 text-green-600" />
+              <span><strong className="text-gray-900">Sin comisiones</strong> por trabajo</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
-              <Zap className="w-5 h-5 text-green-600" />
-              <span><strong className="text-gray-900">1.800+</strong> trabajos completados este mes</span>
+              <Zap className="w-5 h-5 text-yellow-500" />
+              <span><strong className="text-gray-900">Verificados</strong> · Nueva plataforma</span>
             </div>
           </div>
 
@@ -295,7 +295,7 @@ export default function PricingPlansPage() {
                         <span className="text-5xl font-extrabold text-gray-900">{plan.precio}€</span>
                         <span className="text-gray-500 text-base mb-2">/mes</span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Los primeros 60 días son gratis</p>
+                      <p className="text-xs text-gray-400 mt-1">Los primeros 7 días son gratis</p>
                     </div>
 
                     {/* CTA */}
@@ -324,7 +324,7 @@ export default function PricingPlansPage() {
                         {isLoading ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</>
                         ) : (
-                          <>Empezar gratis 60 días →</>
+                          <>Empezar gratis 7 días →</>
                         )}
                       </Button>
                     )}
@@ -422,7 +422,7 @@ export default function PricingPlansPage() {
 
           {/* Legal */}
           <p className="text-xs text-gray-400 text-center max-w-2xl mx-auto">
-            Los primeros 60 días son gratis. Si no cancelas antes, se cobra automáticamente el plan elegido. 
+            Los primeros 7 días son gratis. Si no cancelas antes, se cobra automáticamente el plan elegido. 
             Plan Ads+: gestión publicitaria incluida en Instagram, Facebook y TikTok. Resultados sujetos a demanda local.
           </p>
         </div>
@@ -440,7 +440,7 @@ export default function PricingPlansPage() {
             }}
             disabled={isProcessing}
           >
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Empezar gratis 60 días →"}
+            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Empezar gratis 7 días →"}
           </Button>
           <p className="text-xs text-center text-gray-400 mt-1">Sin tarjeta · Sin permanencia · Cancela cuando quieras</p>
         </div>
