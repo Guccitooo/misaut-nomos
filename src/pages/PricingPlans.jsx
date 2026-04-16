@@ -1,446 +1,450 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Loader2, Gift, ArrowLeft, Zap, TrendingUp, Crown, Info, Shield, Star, Users, Clock, ArrowRight, Briefcase, Sparkles } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  CheckCircle, XCircle, Loader2, ArrowLeft, Shield, Star, Users,
+  Briefcase, TrendingUp, Sparkles, ChevronDown, ChevronUp, Zap, Gift
+} from "lucide-react";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import SocialProof from "../components/pricing/SocialProof";
-import Testimonials from "../components/pricing/Testimonials";
-import UrgencyBanner from "../components/pricing/UrgencyBanner";
-import PsychologicalPrice from "../components/pricing/PsychologicalPrice";
 
+// ─── Features con includes/excludes por plan ────────────────────────────────
+const PLAN_FEATURES = {
+  plan_visibility: {
+    includes: [
+      "Perfil visible en búsquedas de clientes",
+      "Ficha pública completa con fotos y servicios",
+      "Contacto directo: WhatsApp y llamadas",
+      "Zona de cobertura geográfica",
+      "Valoraciones y reseñas de clientes",
+      "Edición ilimitada del perfil",
+    ],
+    excludes: [
+      "Dashboard Pro de gestión",
+      "Presupuestos y facturación",
+      "Campañas publicitarias en redes sociales",
+      "CRM de clientes y proyectos",
+    ],
+  },
+  plan_adsplus: {
+    includes: [
+      "Todo lo incluido en Plan Visibilidad",
+      "Dashboard Pro: gestión completa",
+      "Presupuestos y facturación automática",
+      "CRM de clientes, proyectos y tareas",
+      "Campañas en Instagram, Facebook y TikTok",
+      "Inversión publicitaria gestionada por nuestro equipo",
+      "Resumen de rendimiento de campañas",
+      "Soporte prioritario",
+    ],
+    excludes: [],
+  },
+};
+
+// ─── FAQ ─────────────────────────────────────────────────────────────────────
+const FAQS = [
+  {
+    q: "¿Cuándo se cobra el plan?",
+    a: "Tienes 60 días completamente gratis. No se te cobra nada hasta que termine ese período. Después, el cobro es mensual automático el mismo día de cada mes.",
+  },
+  {
+    q: "¿Puedo cancelar en cualquier momento?",
+    a: "Sí, sin permanencia ni penalizaciones. Cancelas desde tu panel en un clic y no se te cobra el siguiente mes. Mantienes el acceso hasta el final del período pagado.",
+  },
+  {
+    q: "¿Hay comisiones por cada cliente o trabajo?",
+    a: "No. Pagas solo la cuota mensual fija. Los clientes contactan directamente contigo y los acuerdos económicos son 100% entre tú y el cliente. Nosotros no cobramos comisión.",
+  },
+  {
+    q: "¿Qué pasa si no cancelo y expira el período gratis?",
+    a: "Al finalizar los 60 días gratuitos, si no has cancelado, se activará el cobro automático del plan elegido. Te avisaremos por email antes de que termine el período gratuito.",
+  },
+];
 
 export default function PricingPlansPage() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
+  const [stickyVisible, setStickyVisible] = useState(false);
 
   const canceled = searchParams.get("canceled");
 
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
-    queryKey: ['subscriptionPlans'],
+    queryKey: ["subscriptionPlans"],
     queryFn: async () => {
       const allPlans = await base44.entities.SubscriptionPlan.list();
-      
-      // Solo Plan Visibilidad (13€) y Plan Ads+ (33€)
-      const activePlans = allPlans.filter(p => 
-        p.plan_id === 'plan_visibility' || p.plan_id === 'plan_adsplus'
-      );
-      
-      return activePlans.sort((a, b) => a.precio - b.precio);
+      return allPlans
+        .filter((p) => p.plan_id === "plan_visibility" || p.plan_id === "plan_adsplus")
+        .sort((a, b) => a.precio - b.precio);
     },
     staleTime: 1000 * 60 * 10,
-    gcTime: 1000 * 60 * 30,
   });
 
   const { data: currentSubscription } = useQuery({
-    queryKey: ['currentSubscription', user?.id],
+    queryKey: ["currentSubscription", user?.id],
     queryFn: async () => {
       if (!user) return null;
       const subs = await base44.entities.Subscription.filter({ user_id: user.id });
-      if (subs.length === 0) return null;
-      
+      if (!subs.length) return null;
       const sub = subs[0];
-      const today = new Date();
-      const expiration = new Date(sub.fecha_expiracion);
-      
-      // Solo retornar si está realmente activa
-      if ((sub.estado === 'activo' || sub.estado === 'en_prueba') && expiration >= today) {
-        return sub;
-      }
-      return null;
+      const isActive =
+        (sub.estado === "activo" || sub.estado === "en_prueba") &&
+        new Date(sub.fecha_expiracion) >= new Date();
+      return isActive ? sub : null;
     },
     enabled: !!user,
     staleTime: 1000 * 30,
   });
 
-  useEffect(() => {
-    loadUser();
-  }, []);
+  useEffect(() => { loadUser(); }, []);
 
   useEffect(() => {
-    if (canceled) {
-      toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", {
-        duration: 5000
-      });
-    }
+    if (canceled) toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", { duration: 5000 });
   }, [canceled]);
 
   useEffect(() => {
     if (!user || plans.length === 0) return;
-
-    const pendingPlan = localStorage.getItem('pending_plan_selection');
+    const pendingPlan = localStorage.getItem("pending_plan_selection");
     if (pendingPlan) {
       try {
         const planData = JSON.parse(pendingPlan);
-        localStorage.removeItem('pending_plan_selection');
-        
-        const fullPlan = plans.find(p => p.plan_id === planData.plan_id);
-        
-        if (fullPlan) {
-          handleSelectPlan(fullPlan);
-        }
-      } catch (error) {
-        localStorage.removeItem('pending_plan_selection');
+        localStorage.removeItem("pending_plan_selection");
+        const fullPlan = plans.find((p) => p.plan_id === planData.plan_id);
+        if (fullPlan) handleSelectPlan(fullPlan);
+      } catch {
+        localStorage.removeItem("pending_plan_selection");
       }
     }
   }, [user, plans]);
 
+  // Sticky button aparece al hacer scroll
+  useEffect(() => {
+    const onScroll = () => setStickyVisible(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
+    try { setUser(await base44.auth.me()); } catch { setUser(null); }
   };
 
   const handleSelectPlan = async (plan) => {
-    // 🔥 BLOQUEAR SI YA TIENE SUSCRIPCIÓN ACTIVA
     if (currentSubscription && user) {
       toast.error('Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.');
       navigate(createPageUrl("SubscriptionManagement"));
       return;
     }
-
     if (!user) {
-      localStorage.setItem('pending_plan_selection', JSON.stringify({
-        plan_id: plan.plan_id,
-        precio: plan.precio,
-        timestamp: Date.now()
-      }));
-      
+      localStorage.setItem("pending_plan_selection", JSON.stringify({ plan_id: plan.plan_id, precio: plan.precio, timestamp: Date.now() }));
       base44.auth.redirectToLogin(window.location.href);
       return;
     }
-
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
-
     try {
-      console.log('🛒 Creando sesión de checkout para plan:', plan.plan_id);
-      
-      const response = await base44.functions.invoke('createCheckoutSession', {
+      const response = await base44.functions.invoke("createCheckoutSession", {
         planId: plan.plan_id,
         planPrice: plan.precio,
-        isReactivation: false
+        isReactivation: false,
       });
-
-      console.log('📦 Respuesta del servidor:', response);
-
       if (response.data?.error) {
-        // Si el error indica suscripción duplicada, redirigir
-        if (response.data.redirect) {
-          toast.error(response.data.error);
-          navigate(response.data.redirect);
-          return;
-        }
+        if (response.data.redirect) { toast.error(response.data.error); navigate(response.data.redirect); return; }
         throw new Error(response.data.error);
       }
-
       if (response.data?.url) {
-        console.log('✅ Redirigiendo a Stripe:', response.data.url);
-        // Redirección inmediata sin timeout
         window.location.href = response.data.url;
       } else if (response.data?.sessionId) {
-        console.log('✅ Session ID recibido, redirigiendo...');
-        // Fallback: usar sessionId si no hay URL directa
         window.location.href = `https://checkout.stripe.com/pay/${response.data.sessionId}`;
       } else {
-        console.error('❌ Sin URL en respuesta:', response);
-        throw new Error('No se pudo crear la sesión de pago');
+        throw new Error("No se pudo crear la sesión de pago");
       }
     } catch (err) {
-      console.error('❌ Error en handleSelectPlan:', err);
       toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
       setIsProcessing(false);
       setSelectedPlan(null);
     }
   };
 
-  const handleGoBack = () => {
-    navigate(createPageUrl("Search"));
-  };
+  const adsPlus = plans.find((p) => p.plan_id === "plan_adsplus");
+  const visibilidad = plans.find((p) => p.plan_id === "plan_visibility");
 
-  const getPlanIcon = (planId) => {
-    if (planId === 'plan_visibility') return <Briefcase className="w-10 h-10" />;
-    if (planId === 'plan_adsplus') return <TrendingUp className="w-10 h-10" />;
-    return <CheckCircle className="w-10 h-10" />;
-  };
-
-  const getPlanBadge = (planId) => {
-    if (planId === 'plan_adsplus') {
-      return { text: "⭐ MÁS CLIENTES", color: "bg-gradient-to-r from-yellow-500 to-orange-500" };
-    }
-    return null;
-  };
-
-  const getPlanFeatures = (planId) => {
-    if (planId === 'plan_visibility') {
-      return [
-        'Perfil visible en búsquedas de MisAutónomos',
-        'Ficha pública profesional con servicios y zona',
-        'Contacto directo con clientes (WhatsApp o llamada)',
-        'Gestión básica del perfil',
-        'Edición de servicios, fotos y descripción',
-      ];
-    }
-    
-    if (planId === 'plan_adsplus') {
-      return [
-        'Todo lo incluido en el Plan Visibilidad',
-        'Dashboard Pro de gestión profesional',
-        'Recepción y gestión de clientes desde el panel',
-        'Creación y envío de presupuestos al cliente',
-        'Conversión de presupuestos en clientes',
-        'Emisión automática de facturas',
-        'Historial de clientes y trabajos',
-        'Campañas de captación en Instagram, Facebook y TikTok',
-        'Gestión e inversión publicitaria incluida',
-        'Resumen de campañas y rendimiento en el dashboard',
-      ];
-    }
-    
-    return [];
-  };
+  // Ahorro anual simulado para anchoring
+  const annualSavingAdsPlus = adsPlus ? Math.round(adsPlus.precio * 2) : 66;
+  const annualSavingVisibilidad = visibilidad ? Math.round(visibilidad.precio * 2) : 26;
 
   if (loadingPlans) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-      </div>
-    );
-  }
-
-  if (!loadingPlans && plans.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
-        <div className="text-center">
-          <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('noPlansAvailable')}</h2>
-          <p className="text-gray-600 mb-4">{t('plansBeingConfigured')}</p>
-          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
-            {t('reloadPage')}
-          </Button>
-        </div>
       </div>
     );
   }
 
   return (
     <>
-      <SEOHead 
-        title="Planes y Precios - MisAutónomos | 7 Días Gratis"
-        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 7 días gratis. Sin permanencia."
-        keywords="planes autónomos, precios profesionales, 7 días gratis, publicidad incluida, plan visibilidad"
+      <SEOHead
+        title="Planes y Precios - MisAutónomos | 60 Días Gratis"
+        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 60 días gratis. Sin permanencia. Sin comisiones."
+        keywords="planes autónomos, precios profesionales, 60 días gratis, publicidad incluida, plan visibilidad"
       />
       <SubscriptionProductSchema plans={plans} />
-      
-      <div className="min-h-screen bg-white">
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <Button
-            variant="ghost"
-            onClick={handleGoBack}
-            className="mb-6 hover:bg-blue-50"
-            aria-label={t('back')}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('back')}
+
+      <div className="min-h-screen bg-gray-50">
+
+        {/* ── Banner urgencia ── */}
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-center py-3 px-4">
+          <p className="text-sm font-semibold flex items-center justify-center gap-2">
+            <Gift className="w-4 h-4 flex-shrink-0" />
+            Oferta de lanzamiento — <strong>60 días gratis</strong> sin tarjeta de crédito &nbsp;·&nbsp; Plazas limitadas
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 py-10">
+
+          {/* Volver */}
+          <Button variant="ghost" onClick={() => navigate(createPageUrl("Search"))} className="mb-6 hover:bg-blue-50 -ml-2">
+            <ArrowLeft className="w-4 h-4 mr-2" />Volver
           </Button>
 
-          {/* Hero Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4 shadow-lg">
+          {/* ── Hero ── */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
               <Sparkles className="w-4 h-4" />
-              PRUEBA GRATIS 7 DÍAS - Sin tarjeta
+              60 días gratis · Sin tarjeta · Sin permanencia
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">
-              Empieza a recibir clientes <span className="text-blue-600">hoy mismo</span>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3 leading-tight">
+              Empieza a recibir clientes<br className="hidden md:block" /> <span className="text-blue-700">hoy mismo</span>
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Sin permanencia. Cancela cuando quieras. Más de 1,800 trabajos completados este mes.
+            <p className="text-lg text-gray-500 max-w-xl mx-auto">
+              Sin comisiones. Contacto directo con tus clientes. Cancela cuando quieras.
             </p>
           </div>
 
-          <SocialProof profilesCount={plans.length > 0 ? 247 : 0} />
-          <UrgencyBanner />
+          {/* ── Social proof ── */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users className="w-5 h-5 text-blue-600" />
+              <span><strong className="text-gray-900">2.400+</strong> autónomos en España</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+              <span><strong className="text-gray-900">4.8/5</strong> valoración media</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Zap className="w-5 h-5 text-green-600" />
+              <span><strong className="text-gray-900">1.800+</strong> trabajos completados este mes</span>
+            </div>
+          </div>
 
-          {canceled && (
-            <Alert className="mb-6 max-w-2xl mx-auto bg-blue-50 border-blue-200">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                {t('paymentCanceled')}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Plan cards estilo Apple/Stripe */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+          {/* ── Tarjetas de planes ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
             {plans.map((plan) => {
-              const badge = getPlanBadge(plan.plan_id);
+              const features = PLAN_FEATURES[plan.plan_id] || { includes: [], excludes: [] };
+              const isPopular = plan.plan_id === "plan_adsplus";
               const isCurrentPlan = currentSubscription?.plan_id === plan.plan_id;
+              const annualSaving = plan.plan_id === "plan_adsplus" ? annualSavingAdsPlus : annualSavingVisibilidad;
+              const isLoading = isProcessing && selectedPlan === plan.plan_id;
 
               return (
-                <Card 
+                <div
                   key={plan.plan_id}
-                  className={`relative bg-white border transition-all duration-200 ${
-                    isCurrentPlan ? 'border-green-400 shadow-lg' : 'border-gray-200 hover:shadow-sm'
+                  className={`relative rounded-2xl bg-white flex flex-col overflow-hidden transition-shadow duration-200 ${
+                    isPopular
+                      ? "border-2 border-blue-600 shadow-2xl ring-4 ring-blue-100"
+                      : "border border-gray-200 shadow-md hover:shadow-lg"
                   }`}
-                  style={{ borderRadius: '12px', boxShadow: isCurrentPlan ? '0 4px 12px rgba(34,197,94,0.15)' : '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
+                  {/* Badge */}
+                  {isPopular && !isCurrentPlan && (
+                    <div className="bg-blue-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
+                      ⭐ Más elegido · Mayor retorno
+                    </div>
+                  )}
                   {isCurrentPlan && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-green-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
-                        ✓ Tu plan actual
-                      </span>
-                    </div>
-                  )}
-                  {!isCurrentPlan && badge && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className={`${badge.color} text-white text-xs font-medium px-4 py-1 rounded-full`}>
-                        {badge.text}
-                      </span>
+                    <div className="bg-green-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
+                      ✓ Tu plan actual
                     </div>
                   )}
 
-                  <CardContent className="p-10">
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                        {plan.nombre}
-                      </h3>
-
-                      <PsychologicalPrice monthlyPrice={plan.precio} />
-                      
-                      <p className="text-sm text-gray-500 mt-3">
-                        {plan.plan_id === 'plan_visibility' 
-                          ? 'Aparece en MisAutónomos y empieza a recibir clientes'
-                          : 'Visibilidad + captación activa de clientes desde el Dashboard Pro'}
-                      </p>
+                  <div className="p-7 flex flex-col flex-1">
+                    {/* Nombre + anchoring */}
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2 mb-1">
+                        {plan.plan_id === "plan_visibility"
+                          ? <Briefcase className="w-5 h-5 text-blue-600" />
+                          : <TrendingUp className="w-5 h-5 text-blue-600" />}
+                        <h2 className="text-lg font-bold text-gray-900">{plan.nombre}</h2>
+                      </div>
+                      {/* Anchoring: ahorro anual */}
+                      <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full mt-1">
+                        <Gift className="w-3.5 h-3.5" />
+                        Ahorra {annualSaving}€ vs precio sin oferta
+                      </div>
                     </div>
 
-                    <ul className="space-y-3 mb-8 text-sm text-gray-700">
-                      {getPlanFeatures(plan.plan_id).map((feature, idx) => (
-                        <li key={idx} className="flex items-center gap-3">
-                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {/* Precio */}
+                    <div className="mb-6">
+                      <div className="flex items-end gap-1">
+                        <span className="text-5xl font-extrabold text-gray-900">{plan.precio}€</span>
+                        <span className="text-gray-500 text-base mb-2">/mes</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Los primeros 60 días son gratis</p>
+                    </div>
 
+                    {/* CTA */}
                     {isCurrentPlan ? (
-                      <Button
-                        className="w-full h-11 text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-default"
-                        style={{ borderRadius: '8px' }}
-                        disabled
-                        aria-label="Plan actual"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Tu plan actual
+                      <Button disabled className="w-full h-12 text-base font-bold bg-green-600 text-white rounded-xl mb-6 cursor-default">
+                        <CheckCircle className="w-5 h-5 mr-2" />Tu plan actual
                       </Button>
                     ) : currentSubscription ? (
                       <Button
-                        className="w-full h-11 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                        style={{ borderRadius: '8px' }}
+                        className="w-full h-12 text-base font-bold bg-blue-700 hover:bg-blue-600 text-white rounded-xl mb-6"
                         onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                        aria-label="Gestionar suscripción"
                       >
                         Gestionar suscripción
                       </Button>
                     ) : (
                       <Button
-                        className="w-full h-11 text-sm font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors"
-                        style={{ borderRadius: '8px' }}
+                        className={`w-full h-12 text-base font-bold rounded-xl mb-6 ${
+                          isPopular
+                            ? "bg-green-600 hover:bg-green-500 text-white shadow-lg"
+                            : "bg-blue-700 hover:bg-blue-600 text-white"
+                        }`}
                         onClick={() => handleSelectPlan(plan)}
-                        disabled={isProcessing && selectedPlan === plan.plan_id}
-                        aria-label={`Seleccionar plan ${plan.nombre}`}
+                        disabled={isLoading}
+                        id={isPopular ? "cta-popular" : undefined}
                       >
-                        {isProcessing && selectedPlan === plan.plan_id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Procesando...
-                          </>
+                        {isLoading ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</>
                         ) : (
-                          'Empezar ahora'
+                          <>Empezar gratis 60 días →</>
                         )}
                       </Button>
                     )}
-                  </CardContent>
-                </Card>
+
+                    {/* Features incluidas */}
+                    <ul className="space-y-2.5 mb-4">
+                      {features.includes.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Features excluidas */}
+                    {features.excludes.length > 0 && (
+                      <ul className="space-y-2 mt-2">
+                        {features.excludes.map((f, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+                            <XCircle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
 
-
-
-
-
-          <Testimonials />
-
-          {/* Garantía de satisfacción */}
-          <div className="max-w-3xl mx-auto mb-12 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-white" />
+          {/* ── Sin permanencia / Garantía ── */}
+          <div className="max-w-3xl mx-auto mb-12 bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
+            <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <Shield className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Garantía de devolución 30 días
-            </h3>
-            <p className="text-gray-700 leading-relaxed">
-              Si no recibes ningún contacto de cliente en tus primeros 30 días, 
-              <strong className="text-green-700"> te devolvemos el 100% de tu dinero</strong>. 
-              Sin preguntas ni letra pequeña.
-            </p>
-          </div>
-
-          {/* Sección de exclusividad */}
-          <div className="max-w-3xl mx-auto mb-16">
-            <div className="border-t border-gray-200 pt-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
-                <div>
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-full border border-gray-300 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <p className="text-sm text-gray-900 font-medium mb-1">
-                    Plazas limitadas
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Solo 10 profesionales por ciudad/categoría
-                  </p>
-                </div>
-                <div>
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-full border border-gray-300 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <p className="text-sm text-gray-900 font-medium mb-1">
-                    Garantía de calidad
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Expulsión automática si baja la calidad
-                  </p>
-                </div>
-              </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Sin permanencia — cancela cuando quieras</h3>
+              <p className="text-gray-600 text-sm">
+                No hay contratos ni letra pequeña. Si no recibes ningún contacto de cliente en los primeros 30 días, 
+                <strong className="text-green-700"> te devolvemos el dinero</strong>. Sin preguntas.
+              </p>
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto text-center">
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Los primeros 7 días son gratis. Si no cancelas antes, se cobrará automáticamente según el plan elegido. 
-              Plan Ads+: Incluye gestión completa de clientes, presupuestos, facturación + inversión publicitaria en Instagram, Facebook y TikTok. 
-              Campañas gestionadas por nuestro equipo. Resultados sujetos a demanda local.
-            </p>
+          {/* ── Testimonios rápidos ── */}
+          <div className="max-w-3xl mx-auto mb-12">
+            <h3 className="text-center text-lg font-bold text-gray-700 mb-6">Lo que dicen nuestros autónomos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { name: "Carlos M.", role: "Electricista · Madrid", text: "En la primera semana ya tenía 3 presupuestos pedidos. Merece la pena.", stars: 5 },
+                { name: "Laura G.", role: "Nutricionista · Barcelona", text: "Contacto directo, sin comisiones. Por fin una plataforma honesta.", stars: 5 },
+                { name: "Javier P.", role: "Fontanero · Sevilla", text: "Con el plan Ads+ multipliqué por 4 mis contactos en un mes.", stars: 5 },
+              ].map((t, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <div className="flex gap-0.5 mb-2">
+                    {Array.from({ length: t.stars }).map((_, j) => (
+                      <Star key={j} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-700 italic mb-3">"{t.text}"</p>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">{t.name}</p>
+                    <p className="text-xs text-gray-500">{t.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* ── FAQ de precios ── */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-6">Preguntas frecuentes sobre el pago</h3>
+            <div className="space-y-3">
+              {FAQS.map((faq, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-5 py-4 text-left font-semibold text-gray-900 text-sm hover:bg-gray-50 transition-colors"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  >
+                    <span>{faq.q}</span>
+                    {openFaq === i
+                      ? <ChevronUp className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      : <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />}
+                  </button>
+                  {openFaq === i && (
+                    <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Legal */}
+          <p className="text-xs text-gray-400 text-center max-w-2xl mx-auto">
+            Los primeros 60 días son gratis. Si no cancelas antes, se cobra automáticamente el plan elegido. 
+            Plan Ads+: gestión publicitaria incluida en Instagram, Facebook y TikTok. Resultados sujetos a demanda local.
+          </p>
         </div>
       </div>
+
+      {/* ── Sticky CTA móvil ── */}
+      {stickyVisible && !currentSubscription && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 px-4 py-3 shadow-2xl">
+          <Button
+            className="w-full h-12 bg-green-600 hover:bg-green-500 text-white font-bold text-base rounded-xl shadow-lg"
+            onClick={() => {
+              const btn = document.getElementById("cta-popular");
+              if (btn) btn.click();
+              else if (plans[1]) handleSelectPlan(plans[1]);
+            }}
+            disabled={isProcessing}
+          >
+            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Empezar gratis 60 días →"}
+          </Button>
+          <p className="text-xs text-center text-gray-400 mt-1">Sin tarjeta · Sin permanencia · Cancela cuando quieras</p>
+        </div>
+      )}
     </>
   );
 }
