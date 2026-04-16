@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -432,7 +432,7 @@ export default function SearchPage() {
     refetchOnWindowFocus: false,
   });
 
-  const filteredProfiles = React.useMemo(() => {
+  const filteredProfiles = useMemo(() => {
     const filtered = profiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm || 
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -450,7 +450,7 @@ export default function SearchPage() {
     return filtered.sort(() => Math.random() - 0.5);
   }, [profiles, debouncedSearchTerm, filters]);
 
-  const availableCities = React.useMemo(() => {
+  const availableCities = useMemo(() => {
     if (filters.provincia === "all") return [];
     return CIUDADES_POR_PROVINCIA[filters.provincia] || [];
   }, [filters.provincia]);
