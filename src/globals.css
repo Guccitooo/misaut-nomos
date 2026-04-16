@@ -400,13 +400,34 @@ button, a, [role="button"] {
 @media (max-width: 768px) {
   button, a[role="button"], [role="button"] {
     min-height: 44px;
-    min-width: 44px;
     touch-action: manipulation;
   }
-  
-  input, select, textarea {
+
+  /* iOS: prevenir zoom automático en inputs */
+  input, select, textarea, [contenteditable] {
     font-size: 16px !important;
+  }
+
+  /* Padding táctil generoso */
+  input, select, textarea {
     padding: 12px !important;
+  }
+
+  /* Texto base mínimo 16px en móvil */
+  body {
+    font-size: 16px;
+  }
+
+  /* Sin hover states en móvil */
+  button:hover, a:hover, [role="button"]:hover {
+    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+
+  /* Bottom nav padding para barra autónomo */
+  .pb-mobile-bottom {
+    padding-bottom: 130px;
   }
 }
 

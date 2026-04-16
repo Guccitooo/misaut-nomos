@@ -144,44 +144,84 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
   return (
     <>
+      {/* Mobile: horizontal compact card */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm sm:hidden" onClick={onClick} style={{ cursor: 'pointer' }}>
+        <div className="flex gap-3 p-3">
+          {/* Foto */}
+          <div className="flex-shrink-0 relative">
+            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+              {photoUrl ? (
+                <img src={photoUrl} alt={profile.business_name} className="object-cover w-full h-full" width="64" height="64" loading="lazy" onError={e => { e.target.style.display='none'; }} />
+              ) : (
+                <span className="text-white font-bold text-xl">{profile.business_name?.charAt(0)?.toUpperCase() || "P"}</span>
+              )}
+            </div>
+            {isNew && <span className="absolute -top-1 -right-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold" style={{ fontSize: '10px' }}>Nuevo</span>}
+          </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-bold text-gray-900 truncate" style={{ fontSize: '15px' }}>{profile.business_name}</h3>
+              <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} style={{ width: '36px', height: '36px', flexShrink: 0, touchAction: 'manipulation' }} className="flex items-center justify-center">
+                <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+              </button>
+            </div>
+            {profile.categories?.length > 0 && (
+              <p className="text-blue-600 font-medium truncate" style={{ fontSize: '13px' }}>{profile.categories[0]}</p>
+            )}
+            <div className="flex items-center gap-1 text-gray-400" style={{ fontSize: '12px' }}>
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{profile.ciudad || profile.provincia}</span>
+              {profile.average_rating > 0 && (
+                <>
+                  <span>·</span>
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span className="font-bold text-gray-700">{profile.average_rating.toFixed(1)}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Botón contactar full-width */}
+        <div className="px-3 pb-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!currentUserId) { base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`); return; }
+              const conversationId = [currentUserId, profile.user_id].sort().join('_');
+              navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
+            }}
+            className="w-full bg-blue-600 text-white font-semibold rounded-xl active:bg-blue-700"
+            style={{ height: '44px', fontSize: '15px', touchAction: 'manipulation' }}
+          >
+            Contactar
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop: card completa original */}
       <Card
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col group cursor-pointer"
+        className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex-col group cursor-pointer hidden sm:flex"
         style={{ minHeight: '300px', transition: 'box-shadow 0.2s, transform 0.2s' }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(59,130,246,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
       >
-        {/* Header con imagen de fondo */}
-        <div
-          className="relative h-20 bg-gradient-to-br from-blue-600 to-blue-800 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' }}
-        >
-          {/* Badges */}
+        <div className="relative h-20 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' }}>
           <div className="absolute top-2 left-2 flex gap-1">
             {isQuickResponder && (
               <span className="inline-flex items-center gap-1 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium shadow">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                Rápido
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />Rápido
               </span>
             )}
-            {isNew && (
-              <span className="text-xs bg-white/20 text-white backdrop-blur-sm px-2 py-0.5 rounded-full font-medium border border-white/30">Nuevo</span>
-            )}
+            {isNew && <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium border border-white/30">Nuevo</span>}
           </div>
-          {/* Favorito */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-              isFavorite ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/40 backdrop-blur-sm'
-            }`}
-          >
+          <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center ${isFavorite ? 'bg-red-500 text-white' : 'bg-white/20 text-white backdrop-blur-sm'}`}>
             <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
           </button>
-
-          {/* Avatar flotante */}
           <div className="absolute -bottom-7 left-4">
-            <div className="w-14 h-14 rounded-2xl border-3 border-white shadow-lg overflow-hidden bg-white flex items-center justify-center" style={{ border: '3px solid white' }}>
+            <div className="w-14 h-14 rounded-2xl shadow-lg overflow-hidden bg-white" style={{ border: '3px solid white' }}>
               {photoUrl ? (
-                <img src={photoUrl} alt={profile.business_name} className="object-cover object-center w-full h-full" width="56" height="56" loading="lazy" onError={e => { e.target.style.display='none'; }} />
+                <img src={photoUrl} alt={profile.business_name} className="object-cover w-full h-full" width="56" height="56" loading="lazy" onError={e => { e.target.style.display='none'; }} />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-xl">
                   {profile.business_name?.charAt(0)?.toUpperCase() || "P"}
@@ -190,16 +230,9 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             </div>
           </div>
         </div>
-
         <CardContent className="p-4 pt-9 flex flex-col flex-1">
-          {/* Nombre y categoría */}
           <div className="mb-2">
-            <h3
-              className="text-sm font-bold text-gray-900 truncate hover:text-blue-600 transition-colors leading-tight"
-              onClick={onClick}
-            >
-              {profile.business_name}
-            </h3>
+            <h3 className="text-sm font-bold text-gray-900 truncate leading-tight" onClick={onClick}>{profile.business_name}</h3>
             {profile.categories?.length > 0 && (
               <div className="flex items-center gap-1 mt-0.5">
                 <CategoryIcon className="w-3 h-3 text-blue-500 flex-shrink-0" />
@@ -211,8 +244,6 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
               <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
             </div>
           </div>
-
-          {/* Descripción */}
           <div className="flex-1 mb-3">
             {displayProfile.descripcion_corta ? (
               <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{displayProfile.descripcion_corta}</p>
@@ -220,69 +251,36 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
               <p className="text-xs text-gray-300 italic">Sin descripción</p>
             )}
           </div>
-
-          {/* Rating y precio */}
           <div className="flex items-center justify-between mb-3">
             {profile.average_rating > 0 ? (
               <div className="flex items-center gap-1">
-                <div className="flex">
-                  {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={`w-3 h-3 ${i <= Math.round(profile.average_rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-gray-200'}`} />
-                  ))}
-                </div>
+                <div className="flex">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3 h-3 ${i <= Math.round(profile.average_rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-gray-200'}`} />)}</div>
                 <span className="text-xs font-bold text-gray-800">{profile.average_rating.toFixed(1)}</span>
                 <span className="text-xs text-gray-400">({profile.total_reviews})</span>
               </div>
-            ) : (
-              <span className="text-xs text-gray-300">Sin valoraciones</span>
-            )}
-            {profile.tarifa_base > 0 && (
-              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg">
-                {profile.tarifa_base}€/h
-              </span>
-            )}
+            ) : <span className="text-xs text-gray-300">Sin valoraciones</span>}
+            {profile.tarifa_base > 0 && <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg">{profile.tarifa_base}€/h</span>}
           </div>
-
-          {/* Botones de acción */}
           <div className="flex items-center gap-1.5 mt-auto">
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                if (!currentUserId) {
-                  base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
-                  return;
-                }
+                if (!currentUserId) { base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`); return; }
                 const conversationId = [currentUserId, profile.user_id].sort().join('_');
                 navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
               }}
               className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-sm"
             >
-              <MessageSquare className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-              <span className="truncate">Contactar</span>
+              <MessageSquare className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span className="truncate">Contactar</span>
             </Button>
-            <Button
-              onClick={onClick}
-              variant="outline"
-              size="sm"
-              className="h-9 border-gray-200 hover:border-blue-300 hover:text-blue-600 rounded-xl text-xs px-2.5 flex-shrink-0"
-            >
-              Ver
-            </Button>
+            <Button onClick={onClick} variant="outline" size="sm" className="h-9 border-gray-200 hover:border-blue-300 rounded-xl text-xs px-2.5 flex-shrink-0">Ver</Button>
             {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <button
-                onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }}
-                className="w-9 h-9 min-w-[36px] flex items-center justify-center rounded-full border border-green-200 bg-white hover:bg-green-50 transition-colors flex-shrink-0"
-                title="Contactar por WhatsApp"
-              >
+              <button onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }} className="w-9 h-9 flex items-center justify-center rounded-full border border-green-200 bg-white" title="WhatsApp">
                 <MessageCircle className="w-4 h-4 text-green-600" />
               </button>
             )}
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-              <button
-                onClick={(e) => { e.stopPropagation(); handleCall(); }}
-                className="w-9 h-9 min-w-[36px] flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition-colors flex-shrink-0"
-                title="Llamar por teléfono"
-              >
+              <button onClick={(e) => { e.stopPropagation(); handleCall(); }} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white" title="Llamar">
                 <Phone className="w-4 h-4 text-gray-500" />
               </button>
             )}
@@ -481,7 +479,7 @@ export default function SearchPage() {
         { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" }
       ]} />
 
-      <div className="min-h-screen" style={{ background: '#f8fafc' }}>
+      <div className="min-h-screen" style={{ background: '#f8fafc', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
         {/* ── HERO ── solo para visitantes no registrados */}
         {!user && !loadingUser && (
@@ -493,26 +491,23 @@ export default function SearchPage() {
               <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-blue-400/10 rounded-full" />
             </div>
 
-            <div className="relative max-w-5xl mx-auto px-4 py-14 md:py-20">
-              <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white text-sm px-4 py-1.5 rounded-full mb-5 border border-white/20">
-                  <Shield className="w-4 h-4 text-green-300" />
-                  <span>Profesionales verificados · 100% gratis para clientes</span>
+            <div className="relative max-w-5xl mx-auto px-4 py-10 md:py-20">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-white/10 text-white text-xs px-3 py-1.5 rounded-full mb-4 border border-white/20">
+                  <Shield className="w-3.5 h-3.5 text-green-300" />
+                  <span>Profesionales verificados · 100% gratis</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+                <h1 className="font-extrabold text-white leading-tight mb-3" style={{ fontSize: 'clamp(1.75rem, 6vw, 3.5rem)' }}>
                   Encuentra el autónomo<br />
                   <span style={{ color: '#fbbf24' }}>que necesitas</span>
                 </h1>
-                <p className="text-blue-200 text-lg mb-8 max-w-xl mx-auto">
-                  La nueva forma de encontrar autónomos de confianza en España.
+                <p className="text-blue-200 mb-6 max-w-xl mx-auto" style={{ fontSize: 'clamp(0.95rem, 3vw, 1.125rem)' }}>
+                  Contacta gratis con profesionales en España.
                 </p>
-                <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-400/40 text-green-200 text-xs px-4 py-1.5 rounded-full mb-6 font-medium">
-                  🚀 Plataforma recién lanzada · Sé de los primeros
-                </div>
 
-                {/* Barra de búsqueda hero */}
+                {/* Barra de búsqueda hero — apilada en móvil */}
                 <div className="max-w-2xl mx-auto">
-                  <div className="bg-white rounded-2xl shadow-2xl p-2 flex gap-2">
+                  <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2">
                     <div className="flex-1">
                       <SearchAutocomplete
                         value={searchTerm}
@@ -523,16 +518,17 @@ export default function SearchPage() {
                     </div>
                     <Button
                       onClick={() => document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-10 rounded-xl font-semibold flex-shrink-0"
+                      className="bg-blue-600 text-white rounded-xl font-semibold w-full md:w-auto md:px-6"
+                      style={{ height: '48px', fontSize: '16px', touchAction: 'manipulation' }}
                     >
-                      <SearchIcon className="w-4 h-4 mr-1.5" />
+                      <SearchIcon className="w-4 h-4 mr-2" />
                       Buscar
                     </Button>
                   </div>
                 </div>
 
-                {/* Props de valor reales */}
-                <div className="flex items-center justify-center gap-6 mt-6 text-sm flex-wrap">
+                {/* Props de valor — ocultos en móvil para simplificar */}
+                <div className="hidden md:flex items-center justify-center gap-6 mt-6 text-sm flex-wrap">
                   <div className="flex items-center gap-2 text-white/80">
                     <MessageSquare className="w-4 h-4 text-green-300" />
                     <span><strong className="text-white">Contacto directo</strong></span>
@@ -548,21 +544,21 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              {/* Categorías rápidas — scroll horizontal en móvil */}
+              {/* Categorías rápidas — chips scroll horizontal en móvil */}
               <div>
-                <p className="text-white/60 text-sm text-center mb-4">Explorar por categoría</p>
-                <div className="flex gap-2 overflow-x-auto pb-2 md:flex-wrap md:justify-center scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  {QUICK_CATEGORIES.map(({ name, icon: Icon, color }) => (
+                <p className="text-white/60 text-sm text-center mb-3">Explorar por categoría</p>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', flexWrap: 'nowrap' }}>
+                  {QUICK_CATEGORIES.map(({ name, icon: Icon }) => (
                     <button
                       key={name}
                       onClick={() => {
                         setFilters(f => ({ ...f, category: name }));
                         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white border border-white/20 backdrop-blur-sm transition-all hover:scale-105 hover:border-white/40 flex-shrink-0 min-h-[44px]"
-                      style={{ background: 'rgba(255,255,255,0.1)' }}
+                      className="flex items-center gap-2 text-white border border-white/20 flex-shrink-0 active:bg-white/20"
+                      style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 16px', fontSize: '14px', fontWeight: 500, minHeight: '44px', touchAction: 'manipulation', whiteSpace: 'nowrap' }}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-4 h-4 flex-shrink-0" />
                       {name}
                     </button>
                   ))}
@@ -570,20 +566,32 @@ export default function SearchPage() {
               </div>
             </div>
 
-            {/* CTA autónomo - franja inferior */}
-            <div className="border-t border-white/10 bg-white/5 backdrop-blur-sm py-3 px-4">
+            {/* CTA autónomo — barra fija en móvil, inline en desktop */}
+            <div className="border-t border-white/10 bg-white/5 py-3 px-4 hidden md:block">
               <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
                 <p className="text-white/80 text-sm">
                   🚀 <strong className="text-white">¿Eres autónomo?</strong> Consigue clientes desde hoy
                 </p>
                 <Button
                   onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-green-500 hover:bg-green-400 text-white font-bold px-5 h-9 rounded-xl shadow-lg text-sm flex-shrink-0"
+                  className="bg-green-500 text-white font-bold px-5 h-9 rounded-xl shadow-lg text-sm flex-shrink-0"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   Empezar gratis · 7 días
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
+            </div>
+            {/* Barra fija autónomo — solo móvil */}
+            <div className="md:hidden" style={{ position: 'fixed', bottom: '64px', left: 0, right: 0, zIndex: 20, background: 'linear-gradient(90deg, #15803d, #16a34a)', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <button
+                onClick={() => navigate(createPageUrl("PricingPlans"))}
+                className="w-full flex items-center justify-between text-white"
+                style={{ padding: '12px 20px', fontSize: '14px', fontWeight: 600, touchAction: 'manipulation' }}
+              >
+                <span>🚀 <strong>¿Eres autónomo?</strong> Empieza gratis · 7 días</span>
+                <ChevronRight className="w-5 h-5 flex-shrink-0" />
+              </button>
             </div>
           </div>
         )}
@@ -785,7 +793,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', paddingRight: '16px' }}>
+                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <ProfileCard
                         key={profile.id}

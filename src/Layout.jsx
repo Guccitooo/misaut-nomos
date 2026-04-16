@@ -571,168 +571,120 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
             {mobileMenuOpen && (
               <>
-                <div 
-                  className="mobile-menu-overlay lg:hidden" 
+                {/* Overlay */}
+                <div
                   onClick={() => setMobileMenuOpen(false)}
-                  role="presentation"
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 40 }}
                   aria-hidden="true"
                 />
-                <nav className="mobile-menu lg:hidden" role="dialog" aria-label="Menú de navegación">
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="font-bold text-lg">Menú</h2>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                {/* Menú lateral */}
+                <nav
+                  style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: '80%', maxWidth: '320px', background: '#fff', zIndex: 50, overflowY: 'auto', boxShadow: '10px 0 40px rgba(0,0,0,0.2)' }}
+                  role="dialog"
+                  aria-label="Menú de navegación"
+                >
+                  {/* Header menú */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <img src={LOGO_URL} alt="" className="w-8 h-8 rounded" width="32" height="32" />
+                      <span className="font-bold text-gray-900">MisAutónomos</span>
+                    </div>
+                    <button
                       onClick={() => setMobileMenuOpen(false)}
+                      style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
+                      className="flex items-center justify-center rounded-lg"
                       aria-label="Cerrar menú"
                     >
-                      <X className="w-5 h-5" aria-hidden="true" />
-                    </Button>
+                      <X className="w-5 h-5 text-gray-600" />
+                    </button>
                   </div>
-                  
-                  <div className="p-3">
+
+                  <div className="p-4 space-y-1">
+                    {/* Usuario logueado: perfil + nav */}
                     {user && (
-                      <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-lg">
-                        <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden">
+                      <div className="flex items-center gap-3 p-3 mb-3 bg-blue-50 rounded-xl">
+                        <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden flex-shrink-0">
                           {getProfilePicture() ? (
-                            <AvatarImage src={getProfilePicture()} alt={`Foto de perfil de ${getDisplayName()}`} className="object-cover object-center w-full h-full" />
+                            <AvatarImage src={getProfilePicture()} alt={getDisplayName()} className="object-cover w-full h-full" />
                           ) : (
                             <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
                               {getDisplayName().charAt(0).toUpperCase()}
                             </AvatarFallback>
                           )}
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm truncate">
-                            {getDisplayName()}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {isProfessional ? t('professional') : t('client')}
-                          </p>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">{getDisplayName()}</p>
+                          <p className="text-xs text-gray-500">{isProfessional ? t('professional') : t('client')}</p>
                         </div>
                       </div>
-                      )}
+                    )}
 
-                      {user && navigationItems.map((item) => (
+                    {user && navigationItems.map((item) => (
                       <Link
                         key={item.title}
                         to={item.url}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                          location.pathname === item.url
-                            ? 'bg-blue-600 text-white'
-                            : 'hover:bg-gray-100'
-                        }`}
+                        className={`flex items-center gap-3 rounded-xl mb-1 ${location.pathname === item.url ? 'bg-blue-600 text-white' : 'text-gray-700 active:bg-gray-100'}`}
+                        style={{ padding: '12px 16px', fontSize: '16px', touchAction: 'manipulation' }}
                         aria-label={item.title}
                       >
-                        <item.icon className="w-5 h-5" aria-hidden="true" />
+                        <item.icon className="w-5 h-5 flex-shrink-0" />
                         <span className="font-medium flex-1">{item.title}</span>
                         {item.badge && (
-                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
-                            {item.badge}
-                          </span>
+                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">{item.badge}</span>
                         )}
                       </Link>
-                      ))}
+                    ))}
 
-                      {!user && (
+                    {/* No logueado: opciones de registro */}
+                    {!user && (
                       <>
                         <Link
                           to={createPageUrl("Search")}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                            location.pathname === createPageUrl("Search")
-                              ? 'bg-blue-600 text-white'
-                              : 'hover:bg-gray-100'
-                          }`}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
+                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
                         >
-                          <SearchIcon className="w-5 h-5" />
-                          <span className="font-medium flex-1">{t('searchFreelancers')}</span>
+                          <SearchIcon className="w-5 h-5 text-blue-600" />
+                          <span className="font-semibold">Buscar autónomo</span>
+                        </Link>
+                        <Link
+                          to={createPageUrl("ClientOnboarding")}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
+                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
+                        >
+                          <User className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold">Soy cliente</span>
                         </Link>
                         <Link
                           to={createPageUrl("PricingPlans")}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                            location.pathname === createPageUrl("PricingPlans")
-                              ? 'bg-blue-600 text-white'
-                              : 'hover:bg-gray-100'
-                          }`}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
+                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
                         >
-                          <CreditCard className="w-5 h-5" />
-                          <span className="font-medium flex-1">{t('becomeFreelancer')}</span>
+                          <Briefcase className="w-5 h-5 text-blue-600" />
+                          <span className="font-semibold">Hazte autónomo · 7 días gratis</span>
                         </Link>
-                        <Link
-                          to={createPageUrl("FAQ")}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                            location.pathname === createPageUrl("FAQ")
-                              ? 'bg-blue-600 text-white'
-                              : 'hover:bg-gray-100'
-                          }`}
-                        >
-                          <MessageSquare className="w-5 h-5" />
-                          <span className="font-medium flex-1">{t('faq')}</span>
-                        </Link>
+                        <div className="pt-3 space-y-2">
+                          <button
+                            onClick={() => { handleLogin(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center justify-center gap-2 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 active:bg-gray-50"
+                            style={{ padding: '14px', fontSize: '16px', touchAction: 'manipulation' }}
+                          >
+                            <User className="w-5 h-5" />
+                            Iniciar sesión
+                          </button>
+                        </div>
                       </>
-                      )}
+                    )}
 
-                      <div className="mt-4 mb-4 px-2">
-                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                        <button
-                          onClick={() => changeLanguage('es')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex-1 ${
-                            language === 'es'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="Español"
-                        >
-                          ES
-                        </button>
-                        <button
-                          onClick={() => changeLanguage('en')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex-1 ${
-                            language === 'en'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="English"
-                        >
-                          EN
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {!user ? (
-                      <div className="mt-4 space-y-2">
-                        <Button
-                          variant="outline"
-                          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-                          onClick={handleLogin}
-                          aria-label={t('login')}
-                        >
-                          <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('login')}
-                        </Button>
-                        <Link to={createPageUrl("ClientOnboarding")} className="block">
-                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
-                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Soy cliente
-                          </Button>
-                        </Link>
-                          <Link to={createPageUrl("PricingPlans")} className="block">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                            <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('becomeFreelancer')}
-                          </Button>
-                        </Link>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-full mt-4 hover:bg-red-50 hover:text-red-600"
+                    {/* Cerrar sesión */}
+                    {user && (
+                      <button
                         onClick={handleLogout}
-                        aria-label={t('logout')}
+                        className="w-full flex items-center gap-3 rounded-xl text-red-600 active:bg-red-50 mt-4"
+                        style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
                       >
-                        <LogOut className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                        <LogOut className="w-5 h-5" />
+                        <span className="font-medium">Cerrar sesión</span>
+                      </button>
                     )}
                   </div>
                 </nav>
@@ -828,68 +780,38 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 lg:hidden sticky top-0 z-20 will-change-transform" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem' }}>
+              <header className="bg-white border-b border-gray-200 lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
                 <div className="flex items-center justify-between">
-                  {/* Izquierda: hamburguesa o back */}
-                  {window.history.length > 1 && location.pathname !== createPageUrl("Search") ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.history.back()}
-                      className="hover:bg-gray-100 min-w-[44px] min-h-[44px]"
-                      aria-label="Volver"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setMobileMenuOpen(true)}
-                      className="hover:bg-gray-100 min-w-[44px] min-h-[44px]"
-                      aria-label="Abrir menú"
-                    >
-                      <Menu className="w-6 h-6" aria-hidden="true" />
-                    </Button>
-                  )}
+                  {/* Izquierda: siempre hamburguesa */}
+                  <button
+                    onClick={() => setMobileMenuOpen(true)}
+                    className="flex items-center justify-center rounded-lg"
+                    style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
+                    aria-label="Abrir menú"
+                  >
+                    <Menu className="w-6 h-6 text-gray-700" />
+                  </button>
 
                   {/* Centro: logo */}
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-2">
-                    <img
-                      src={LOGO_URL}
-                      alt="Logo MisAutónomos"
-                      className="w-8 h-8 rounded"
-                      width="32"
-                      height="32"
-                      loading="eager"
-                      fetchpriority="high"
-                      decoding="async"
-                    />
-                    <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
+                  <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
+                    <img src={LOGO_URL} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchpriority="high" decoding="async" />
+                    <span className="font-bold text-lg text-gray-900">MisAutónomos</span>
                   </Link>
 
-                  {/* Derecha: notificaciones (si logueado) o vacío */}
-                  <div className="min-w-[44px] flex justify-end">
+                  {/* Derecha: notificaciones o vacío */}
+                  <div style={{ width: '44px', height: '44px' }} className="flex items-center justify-end">
                     {user ? (
                       <Suspense fallback={<div className="w-9 h-9" />}>
                         <NotificationCenter user={user} />
                       </Suspense>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => base44.auth.redirectToLogin()}
-                        className="text-xs text-blue-600 font-semibold min-h-[44px] px-2"
-                        aria-label="Entrar"
-                      >
-                        Entrar
-                      </Button>
+                      <div />
                     )}
                   </div>
                 </div>
               </header>
 
-              <div className={`flex-1 overflow-auto ${shouldShowSidebar() ? 'main-content-with-bottom-nav' : ''}`}>
+              <div className="flex-1 overflow-auto" style={{ paddingBottom: '64px' }}>
                 <Suspense fallback={
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -907,33 +829,64 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </Suspense>
               </div>
 
-              {shouldShowSidebar() && (
-                <nav className="mobile-bottom-nav lg:hidden" role="navigation" aria-label="Navegación principal">
-                  {navigationItems.slice(0, 4).map((item) => (
+              {/* Bottom nav móvil — siempre visible en móvil */}
+              <nav
+                className="lg:hidden"
+                role="navigation"
+                aria-label="Navegación principal"
+                style={{
+                  position: 'fixed', bottom: 0, left: 0, right: 0,
+                  background: '#fff', borderTop: '2px solid #E5E7EB',
+                  display: 'grid', gridTemplateColumns: user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+                  padding: '8px 0', paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+                  zIndex: 30, boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
+                }}
+              >
+                {user ? (
+                  <>
+                    {[
+                      { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
+                      { title: 'Mensajes', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Favoritos', url: createPageUrl("Favorites"), icon: Heart },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                    ].map((item) => (
+                      <Link
+                        key={item.title}
+                        to={item.url}
+                        className={`mobile-bottom-nav-item ${location.pathname === item.url ? 'active' : ''}`}
+                        aria-label={item.title}
+                        aria-current={location.pathname === item.url ? 'page' : undefined}
+                        style={{ touchAction: 'manipulation' }}
+                      >
+                        <item.icon className="w-6 h-6" />
+                        <span>{item.title}</span>
+                        {item.badge && <span className="mobile-bottom-nav-badge">{item.badge}</span>}
+                      </Link>
+                    ))}
+                  </>
+                ) : (
+                  <>
                     <Link
-                      key={item.title}
-                      to={item.url}
-                      onClick={(e) => {
-                        if (location.pathname === item.url) {
-                          e.preventDefault();
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }
-                      }}
-                      className={`mobile-bottom-nav-item ${
-                        location.pathname === item.url ? 'active' : ''
-                      }`}
-                      aria-label={item.title}
-                      aria-current={location.pathname === item.url ? 'page' : undefined}
+                      to={createPageUrl("Search")}
+                      className={`mobile-bottom-nav-item ${location.pathname === createPageUrl("Search") ? 'active' : ''}`}
+                      aria-label="Buscar"
+                      style={{ touchAction: 'manipulation' }}
                     >
-                      <item.icon className="w-6 h-6" aria-hidden="true" />
-                      <span>{item.title.split(' ')[0]}</span>
-                      {item.badge && (
-                        <span className="mobile-bottom-nav-badge" aria-label={`${item.badge} ${t('unread')}`}>{item.badge}</span>
-                      )}
+                      <SearchIcon className="w-6 h-6" />
+                      <span>Buscar</span>
                     </Link>
-                  ))}
-                </nav>
-              )}
+                    <Link
+                      to={createPageUrl("UserTypeSelection")}
+                      className="mobile-bottom-nav-item"
+                      aria-label="Unirse"
+                      style={{ touchAction: 'manipulation' }}
+                    >
+                      <Briefcase className="w-6 h-6" />
+                      <span>Unirse</span>
+                    </Link>
+                  </>
+                )}
+              </nav>
             </main>
           </div>
 
