@@ -157,14 +157,15 @@ export default function CookieBanner() {
       )}
 
       {showBanner && (
-        <div 
-          className="fixed bottom-0 left-0 right-0 z-[9999] flex justify-center px-4 pb-safe pointer-events-none"
-          style={{ 
-            opacity: showBanner ? 1 : 0,
-            transition: 'opacity 150ms ease-in-out',
-            marginBottom: 'env(safe-area-inset-bottom, 16px)'
-          }}
-        >
+         <div 
+           className="cookie-banner fixed bottom-0 left-0 right-0 z-[9999] flex justify-center px-4 pb-safe pointer-events-none"
+           style={{ 
+             opacity: showBanner ? 1 : 0,
+             transition: 'opacity 150ms ease-in-out',
+             marginBottom: 'env(safe-area-inset-bottom, 16px)',
+             paddingBottom: 'max(10px, env(safe-area-inset-bottom, 16px))'
+           }}
+         >
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 max-w-2xl w-full pointer-events-auto" style={{ minHeight: '180px' }}>
             <div className="text-center mb-4">
               <h3 className="text-lg font-bold text-gray-900 mb-2">

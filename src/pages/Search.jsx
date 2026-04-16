@@ -32,7 +32,10 @@ import {
   Shield,
   ChevronRight,
   SlidersHorizontal,
-  X
+  X,
+  Palette,
+  Sprout,
+  Lightbulb
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,7 +125,9 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             <img 
               src={photoUrl}
               alt={profile.business_name}
-              className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm"
+              width="48"
+              height="48"
+              className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm flex-shrink-0"
               onError={(e) => { e.style.display='none'; e.nextElementSibling?.classList.remove('hidden'); }}
             />
           ) : null}
@@ -231,6 +236,18 @@ export default function SearchPage() {
     }
   };
 
+  // CATEGORÍAS HARDCODEADAS — sin fetch, renderan inmediatamente para LCP
+  const QUICK_CATEGORIES_HARDCODED = [
+    { name: 'Electricista', icon: Zap },
+    { name: 'Fontanero', icon: Wrench },
+    { name: 'Pintor', icon: Palette },
+    { name: 'Albañil / Reformas', icon: Hammer },
+    { name: 'Jardinero', icon: Sprout },
+    { name: 'Autónomo de limpieza', icon: Sparkles },
+    { name: 'Cerrajero', icon: Key },
+    { name: 'Carpintero', icon: Lightbulb },
+  ];
+
   const FALLBACK_CATEGORIES = [
     "Abogado", "Albañil / Reformas", "Asesoría o gestoría", "Autónomo de limpieza",
     "Carpintero", "Cerrajero", "Climatización / Calefacción", "Electricista",
@@ -239,18 +256,9 @@ export default function SearchPage() {
     "Persianas y toldos", "Pintor", "Transportista"
   ].map((name, idx) => ({ id: `fallback_${idx}`, name }));
 
-  const { data: categories = [], isLoading: loadingCategories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      try {
-        const cats = await base44.entities.ServiceCategory.list();
-        if (cats?.length > 0) return cats.filter(c => c.name).sort((a, b) => a.name.localeCompare(b.name, 'es'));
-        return FALLBACK_CATEGORIES;
-      } catch { return FALLBACK_CATEGORIES; }
-    },
-    initialData: FALLBACK_CATEGORIES,
-    staleTime: Infinity, gcTime: Infinity, refetchOnWindowFocus: false, refetchOnMount: false,
-  });
+  // NO hacer fetch de categorías — usar FALLBACK_CATEGORIES directamente
+  const categories = FALLBACK_CATEGORIES;
+  const loadingCategories = false;
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
@@ -417,7 +425,7 @@ export default function SearchPage() {
               <div>
                 <p className="text-white/60 text-sm text-center mb-3">Explorar por categoría</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', flexWrap: 'nowrap' }}>
-                  {QUICK_CATEGORIES.map(({ name, icon: Icon }) => (
+                  {QUICK_CATEGORIES_HARDCODED.map(({ name, icon: Icon }) => (
                     <button
                       key={name}
                       onClick={() => {
