@@ -82,7 +82,8 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId }) => {
+// CAMBIO: React.memo evita re-renders cuando el padre actualiza estado no relacionado
+const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -287,7 +288,7 @@ const ProfileCard = ({ profile, onClick, onToggleFavorite, isFavorite, professio
       </Dialog>
     </>
   );
-};
+});
 
 export default function SearchPage() {
   const navigate = useNavigate();

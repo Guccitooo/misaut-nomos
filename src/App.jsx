@@ -10,6 +10,14 @@ import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { Suspense } from 'react';
+
+// Spinner reutilizable para Suspense boundaries de páginas lazy
+const PageLoader = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-white/60">
+    <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+  </div>
+);
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -46,15 +54,18 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <LayoutWrapper currentPageName={mainPageKey}>
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        {Object.entries(Pages).map(([path, Page]) => (
-          <Route key={path} path={`/${path}`} element={<Page />} />
-        ))}
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-    </LayoutWrapper>
+    {/* Suspense boundary: captura todas las páginas lazy-loaded */}
+    <Suspense fallback={<PageLoader />}>
+      <LayoutWrapper currentPageName={mainPageKey}>
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          {Object.entries(Pages).map(([path, Page]) => (
+            <Route key={path} path={`/${path}`} element={<Page />} />
+          ))}
+          <Route path="*" element={<PageNotFound />} />
+        </Routes>
+      </LayoutWrapper>
+    </Suspense>
   );
 };
 
