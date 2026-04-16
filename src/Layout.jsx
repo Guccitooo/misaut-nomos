@@ -385,11 +385,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const isProfessional = React.useMemo(() => {
     if (!user) return false;
     // Es profesional si user_type es professionnel (después del pago)
-    if (user.user_type === "professionnel") return true;
-    // O si tiene perfil profesional
-    if (professionalProfile && professionalProfile.user_id === user.id) return true;
-    return false;
-  }, [user, professionalProfile]);
+    return user.user_type === "professionnel";
+  }, [user]);
 
   const handleLogout = () => {
     // Limpiar cache de sesión
@@ -439,10 +436,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return user?.profile_picture || null;
   };
 
-  // Menú específico según rol
+  // Menú específico según user_type (NO role)
   const navigationItems = [];
 
-  if (isProfessional) {
+  if (user?.user_type === "professionnel") {
     // MENÚ PARA AUTÓNOMOS — solo lo útil
     navigationItems.push(
       {
@@ -482,7 +479,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         icon: CreditCard,
       },
     );
-  } else {
+  } else if (user?.user_type === "client") {
     // MENÚ PARA CLIENTES
     navigationItems.push(
       {
