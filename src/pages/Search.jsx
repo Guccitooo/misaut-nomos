@@ -78,9 +78,35 @@ const QUICK_CATEGORIES = [
   { name: "Carpintero", icon: Hammer, color: "from-amber-500 to-yellow-500" },
 ];
 
-const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId }) => {
+const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId, currentUser }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  const handleContactDirect = async (e) => {
+    e.stopPropagation();
+    if (!currentUserId) {
+      sessionStorage.setItem('pending_chat_action', JSON.stringify({ action: 'open_chat', professionalId: profile.user_id }));
+      base44.auth.redirectToLogin('/messages');
+      return;
+    }
+    const conversationId = [currentUserId, profile.user_id].sort().join('_');
+    try {
+      const existing = await base44.entities.Message.filter({ conversation_id: conversationId }, '-created_date', 1);
+      if (!existing || existing.length === 0) {
+        await base44.entities.Message.create({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          recipient_id: profile.user_id,
+          content: "Hola, me interesa tu servicio. ¿Podemos hablar?",
+          professional_name: profile.business_name || "Profesional",
+          client_name: currentUser?.full_name || currentUser?.email || "",
+          is_read: false,
+          attachments: [],
+        });
+      }
+    } catch {}
+    navigate(`/messages?conv=${conversationId}`);
+  };
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
@@ -145,9 +171,12 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   return (
     <>
       {/* Mobile: horizontal compact card */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm sm:hidden" onClick={onClick} style={{ cursor: 'pointer' }}>
+      <div
+        className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm sm:hidden active:shadow-md transition-shadow"
+        onClick={onClick}
+        style={{ cursor: 'pointer' }}
+      >
         <div className="flex gap-3 p-3">
-          {/* Foto */}
           <div className="flex-shrink-0 relative">
             <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
               {photoUrl ? (
@@ -158,7 +187,6 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             </div>
             {isNew && <span className="absolute -top-1 -right-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold" style={{ fontSize: '10px' }}>Nuevo</span>}
           </div>
-          {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-bold text-gray-900 truncate" style={{ fontSize: '15px' }}>{profile.business_name}</h3>
@@ -182,28 +210,30 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             </div>
           </div>
         </div>
-        {/* Botón contactar full-width */}
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-3 flex gap-2">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!currentUserId) { base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`); return; }
-              const conversationId = [currentUserId, profile.user_id].sort().join('_');
-              navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-            }}
-            className="w-full bg-blue-600 text-white font-semibold rounded-xl active:bg-blue-700"
+            onClick={handleContactDirect}
+            className="flex-1 bg-blue-600 text-white font-semibold rounded-xl active:bg-blue-700 flex items-center justify-center gap-1.5"
             style={{ height: '44px', fontSize: '15px', touchAction: 'manipulation' }}
           >
-            Contactar
+            <MessageSquare className="w-4 h-4" />Contactar
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            className="h-11 px-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium flex items-center gap-1"
+            style={{ touchAction: 'manipulation' }}
+          >
+            Ver perfil <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Desktop: card completa original */}
+      {/* Desktop: card completa */}
       <Card
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex-col group cursor-pointer hidden sm:flex"
-        style={{ minHeight: '300px', transition: 'box-shadow 0.2s, transform 0.2s' }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(59,130,246,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+        className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex-col group cursor-pointer hidden sm:flex hover:border-blue-200"
+        style={{ minHeight: '300px', transition: 'box-shadow 0.2s, transform 0.2s, border-color 0.2s' }}
+        onClick={onClick}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(59,130,246,0.18)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
       >
         <div className="relative h-20 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' }}>
@@ -232,7 +262,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
         </div>
         <CardContent className="p-4 pt-9 flex flex-col flex-1">
           <div className="mb-2">
-            <h3 className="text-sm font-bold text-gray-900 truncate leading-tight" onClick={onClick}>{profile.business_name}</h3>
+            <h3 className="text-sm font-bold text-gray-900 truncate leading-tight">{profile.business_name}</h3>
             {profile.categories?.length > 0 && (
               <div className="flex items-center gap-1 mt-0.5">
                 <CategoryIcon className="w-3 h-3 text-blue-500 flex-shrink-0" />
@@ -263,17 +293,18 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
           </div>
           <div className="flex items-center gap-1.5 mt-auto">
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!currentUserId) { base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`); return; }
-                const conversationId = [currentUserId, profile.user_id].sort().join('_');
-                navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-              }}
+              onClick={handleContactDirect}
               className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-sm"
             >
               <MessageSquare className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span className="truncate">Contactar</span>
             </Button>
-            <Button onClick={onClick} variant="outline" size="sm" className="h-9 border-gray-200 hover:border-blue-300 rounded-xl text-xs px-2.5 flex-shrink-0">Ver</Button>
+            <Button
+              onClick={(e) => { e.stopPropagation(); onClick(); }}
+              variant="outline" size="sm"
+              className="h-9 border-gray-200 hover:border-blue-300 rounded-xl text-xs px-2.5 flex-shrink-0 flex items-center gap-1"
+            >
+              Ver perfil <ChevronRight className="w-3 h-3" />
+            </Button>
             {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
               <button onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }} className="w-9 h-9 flex items-center justify-center rounded-full border border-green-200 bg-white" title="WhatsApp">
                 <MessageCircle className="w-4 h-4 text-green-600" />
@@ -767,6 +798,7 @@ export default function SearchPage() {
                         isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                         professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                         currentUserId={user?.id}
+                        currentUser={user}
                       />
                     ))}
                   </div>
@@ -803,6 +835,7 @@ export default function SearchPage() {
                         isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                         professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                         currentUserId={user?.id}
+                        currentUser={user}
                       />
                     ))}
                   </div>
