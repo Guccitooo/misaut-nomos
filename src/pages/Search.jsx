@@ -884,12 +884,11 @@ export default function SearchPage() {
                     <Briefcase className="w-5 h-5 mr-2" />Empezar gratis — 7 días
                   </Button>
                   <Button
-                    onClick={() => navigate(createPageUrl("Home"))}
-                    variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 px-8 text-base rounded-2xl"
+                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="bg-white text-blue-900 hover:bg-gray-100 px-8 text-base font-semibold rounded-2xl border-0"
                     style={{ height: '52px' }}
                   >
-                    Saber más →
+                    Saber más
                   </Button>
                 </div>
               </div>

@@ -120,8 +120,8 @@ export default function Footer() {
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-500 text-center sm:text-left">
-            © 2025 <span className="text-gray-400 font-medium">MisAutónomos</span>. Todos los derechos reservados.
-          </p>
+             © 2026 <span className="text-gray-400 font-medium">MisAutónomos</span>. Todos los derechos reservados.
+           </p>
           <p className="text-xs text-gray-600">Tu autónomo de confianza</p>
         </div>
       </div>
