@@ -120,83 +120,24 @@ Deno.serve(async (req) => {
         // 8. Enviar email de confirmación
         await base44.asServiceRole.integrations.Core.SendEmail({
             to: email,
-            subject: '✅ Tu prueba gratuita ha sido activada - Misautónomos',
-            body: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 60px; height: 60px; background: white; border-radius: 16px; display: inline-block; line-height: 60px; font-size: 32px; margin-bottom: 15px; }
-    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
-    .content { padding: 40px 30px; }
-    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
-    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
-    .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 25px; margin: 25px 0; border-radius: 8px; }
-    .success-box h3 { color: #065f46; margin: 0 0 15px 0; font-size: 20px; }
-    .success-box p { color: #047857; margin: 5px 0; }
-    .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 8px; }
-    .warning p { color: #92400e; margin: 0; font-weight: 500; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
-    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
-    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
-    .footer a { color: #60a5fa; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">🎁</div>
-      <h1>¡Prueba activada!</h1>
-    </div>
-    
-    <div class="content">
-      <p class="greeting">Hola ${targetUser.full_name || targetUser.email},</p>
-      
-      <p class="message">
-        Tu periodo de prueba gratuito de <strong>7 días</strong> ha sido activado correctamente en Misautónomos.
-      </p>
-      
-      <div class="success-box">
-        <h3>✅ Tu perfil ya está activo</h3>
-        <p>📍 Visible en las búsquedas de clientes</p>
-        <p>💬 Listo para recibir contactos</p>
-        <p>⏰ Prueba finaliza: ${trialEnd.toLocaleDateString('es-ES')}</p>
-      </div>
-      
-      <div class="warning">
-        <p>
-          <strong>⚠️ IMPORTANTE:</strong> Al finalizar los 7 días de prueba, tu suscripción se renovará automáticamente al plan mensual (49€/mes) a menos que canceles antes.
-        </p>
-      </div>
-      
-      <p class="message">
-        Puedes cancelar tu suscripción en cualquier momento desde tu panel de usuario sin compromiso.
-      </p>
-      
-      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
-        Si tienes alguna pregunta, contacta con nosotros:<br/>
-        <a href="mailto:soporte@autonomosmil.es" style="color: #3b82f6; text-decoration: none;">soporte@autonomosmil.es</a>
-      </p>
-    </div>
-    
-    <div class="footer">
-      <strong>Equipo Misautónomos</strong>
-      <p class="tagline">Tu autónomo de confianza</p>
-      <p>
-        <a href="mailto:soporte@autonomosmil.es">soporte@autonomosmil.es</a><br/>
-        <a href="https://autonomosmil.es">autonomosmil.es</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-            `,
-            from_name: 'Misautónomos'
+            subject: '✅ Tu prueba gratuita ha sido activada - milautonomos',
+            body: `Hola ${targetUser.full_name || ''},
+
+Tu periodo de prueba gratuito de 7 días ha sido activado correctamente.
+
+Ahora tu perfil es visible en las búsquedas y puedes empezar a recibir contactos de clientes.
+
+⚠️ IMPORTANTE: Al finalizar los 7 días de prueba, tu suscripción se renovará automáticamente al plan mensual (49€/mes) a menos que canceles antes.
+
+El periodo de prueba finaliza el: ${trialEnd.toLocaleDateString('es-ES')}
+
+Puedes cancelar en cualquier momento desde tu panel de usuario.
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Gracias,
+Equipo milautonomos`,
+            from_name: 'milautonomos'
         });
 
         console.log('✅ Email de confirmación enviado');

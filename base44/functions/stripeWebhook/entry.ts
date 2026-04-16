@@ -1,60 +1,32 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import Stripe from 'npm:stripe@17.5.0';
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.10.0';
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
-// ✅ HELPER: Verificar si suscripción está activa
-const isSubscriptionActive = (status, endDate) => {
+// ✅ HELPER: Verificar si suscripción está activa (fuente única de verdad)
+const isSubscriptionActive = (subscriptionStatus, endDate) => {
     const today = new Date();
     const expirationDate = new Date(endDate * 1000);
     
-    if (status === 'active' || status === 'trialing') {
+    const validStates = ["active", "trialing"];
+    
+    // Si está en un estado válido y no ha expirado
+    if (validStates.includes(subscriptionStatus)) {
         return expirationDate >= today;
     }
     
-    if (status === 'canceled') {
+    // Si está cancelado pero aún tiene tiempo
+    if (subscriptionStatus === "canceled") {
         return expirationDate >= today;
     }
     
     return false;
 };
 
-// ✅ HELPER: Calcular estado del perfil según Stripe
-const calculateProfileStatus = (stripeStatus, endDate) => {
-    if (stripeStatus === 'active') {
-        return {
-            estado: 'activo',
-            visible_en_busqueda: true,
-            estado_perfil: 'activo'
-        };
-    }
-    
-    if (stripeStatus === 'trialing') {
-        return {
-            estado: 'en_prueba',
-            visible_en_busqueda: true,
-            estado_perfil: 'activo'
-        };
-    }
-    
-    if (stripeStatus === 'canceled' && isSubscriptionActive(stripeStatus, endDate)) {
-        return {
-            estado: 'cancelado',
-            visible_en_busqueda: true,
-            estado_perfil: 'activo'
-        };
-    }
-    
-    return {
-        estado: 'finalizada',
-        visible_en_busqueda: false,
-        estado_perfil: 'inactivo'
-    };
-};
-
 Deno.serve(async (req) => {
-    console.log('🔔 ========== STRIPE WEBHOOK ==========');
+    console.log('🔔 ========== WEBHOOK STRIPE RECIBIDO ==========');
     console.log('⏰ Timestamp:', new Date().toISOString());
     
     try {
@@ -63,6 +35,9 @@ Deno.serve(async (req) => {
         const body = await req.text();
         const signature = req.headers.get('stripe-signature');
         
+        console.log('📝 Body length:', body.length);
+        console.log('🔏 Signature present:', !!signature);
+        
         if (!signature) {
             console.error('❌ Sin firma de Stripe');
             return Response.json({ error: 'Missing signature' }, { status: 400 });
@@ -70,722 +45,374 @@ Deno.serve(async (req) => {
 
         let event;
         try {
-            event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+            event = await stripe.webhooks.constructEventAsync(
+                body,
+                signature,
+                webhookSecret
+            );
             console.log('✅ Evento verificado:', event.type);
+            console.log('🆔 Event ID:', event.id);
         } catch (err) {
             console.error('❌ Error verificando firma:', err.message);
             return Response.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
-        // ✅ MANEJAR CHECKOUT COMPLETADO (momento clave)
-        if (event.type === 'checkout.session.completed') {
-            const session = event.data.object;
-            console.log('\n🎉 ========== CHECKOUT COMPLETADO ==========');
-            console.log('📧 Customer:', session.customer);
-            console.log('📧 Email:', session.customer_email);
-            console.log('💳 Subscription:', session.subscription);
-            console.log('📊 Metadata:', JSON.stringify(session.metadata));
+        const subscription = event.data.object;
+        const metadata = subscription.metadata || {};
+        const email = metadata.email || subscription.customer_email;
 
-            const metadata = session.metadata || {};
-            let userId = metadata.user_id;
-            let userEmail = metadata.user_email || session.customer_email;
-            const planId = metadata.plan_id || 'plan_monthly_trial';
+        console.log('📧 Email del usuario:', email);
+        console.log('📊 Metadata completo:', JSON.stringify(metadata, null, 2));
+        console.log('📊 Status Stripe:', subscription.status);
+        console.log('📊 Subscription ID:', subscription.id);
+        console.log('📊 Customer ID:', subscription.customer);
 
-            // ✅ Si no hay userId en metadata, buscar por email
-            if (!userId && userEmail) {
-                console.log('🔍 Buscando usuario por email:', userEmail);
-                const users = await base44.asServiceRole.entities.User.filter({ email: userEmail });
-                if (users.length > 0) {
+        // ✅ FUNCIÓN HELPER: Calcular estado del perfil
+        const calculateProfileStatus = (subscriptionStatus, endDate) => {
+            console.log('🔍 Calculando estado:', {
+                subscriptionStatus,
+                endDate: new Date(endDate * 1000).toISOString(),
+                isActive: isSubscriptionActive(subscriptionStatus, endDate)
+            });
+            
+            // 🟢 Activo con pago
+            if (subscriptionStatus === 'active') {
+                return {
+                    estado: 'activo',
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    mensaje: 'Suscripción activa'
+                };
+            }
+            
+            // 🟡 En periodo de prueba
+            if (subscriptionStatus === 'trialing') {
+                return {
+                    estado: 'en_prueba',
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    mensaje: 'Periodo de prueba activo'
+                };
+            }
+            
+            // ⚪ Cancelado pero con tiempo restante
+            if (subscriptionStatus === 'canceled' && isSubscriptionActive(subscriptionStatus, endDate)) {
+                return {
+                    estado: 'cancelado',
+                    visible_en_busqueda: true,
+                    estado_perfil: 'activo',
+                    mensaje: 'Cancelado - activo hasta fin de periodo'
+                };
+            }
+            
+            // 🔴 Expirado
+            return {
+                estado: 'finalizada',
+                visible_en_busqueda: false,
+                estado_perfil: 'inactivo',
+                mensaje: 'Suscripción finalizada'
+            };
+        };
+
+        // ✅ MANEJAR TODOS LOS EVENTOS DE STRIPE
+        switch (event.type) {
+            case 'customer.subscription.created':
+            case 'checkout.session.completed': {
+                console.log('\n🎉 ========== NUEVA SUSCRIPCIÓN ==========');
+                
+                if (!email) {
+                    console.error('❌ Sin email en metadata');
+                    console.log('📋 Metadata disponible:', metadata);
+                    console.log('📋 Customer email:', subscription.customer_email);
+                    return Response.json({ error: 'Missing email' }, { status: 400 });
+                }
+
+                console.log('1️⃣ Buscando/creando usuario...');
+                let users = await base44.asServiceRole.entities.User.filter({ email });
+                let userId;
+
+                if (users.length === 0) {
+                    console.log('➕ Creando nuevo usuario...');
+                    try {
+                        const newUser = await base44.asServiceRole.entities.User.create({
+                            email,
+                            full_name: metadata.fullName || email.split('@')[0],
+                            phone: metadata.phone || '',
+                            city: metadata.address || '',
+                            user_type: 'professionnel',
+                            subscription_status: subscription.status === 'trialing' ? 'en_prueba' : 'activo'
+                        });
+                        userId = newUser.id;
+                        console.log('✅ Usuario creado:', userId);
+                    } catch (createError) {
+                        console.error('❌ Error creando usuario:', createError);
+                        throw createError; // Re-throw to be caught by the main try-catch
+                    }
+                } else {
                     userId = users[0].id;
-                    console.log('✅ Usuario encontrado por email:', userId);
+                    console.log('✅ Usuario encontrado:', userId);
+                    
+                    // ✅ ACTUALIZAR USUARIO CON ESTADO NORMALIZADO
+                    try {
+                        await base44.asServiceRole.entities.User.update(userId, {
+                            user_type: 'professionnel',
+                            subscription_status: subscription.status === 'trialing' ? 'en_prueba' : 'activo'
+                        });
+                        console.log('✅ Usuario actualizado a profesional');
+                    } catch (updateError) {
+                        console.error('❌ Error actualizando usuario:', updateError);
+                        // Log the error but continue as the user exists and we need to proceed with subscription/profile updates.
+                    }
                 }
-            }
 
-            if (!userId || !userEmail) {
-                console.error('❌ Faltan datos: userId=', userId, 'email=', userEmail);
-                return Response.json({ error: 'Missing user data' }, { status: 400 });
-            }
+                console.log('2️⃣ Calculando estado del perfil...');
+                const profileStatus = calculateProfileStatus(
+                    subscription.status,
+                    subscription.current_period_end
+                );
 
-            // ✅ OBTENER SUSCRIPCIÓN DE STRIPE (fuente de verdad)
-            let stripeSubscription;
-            try {
-                stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
-                console.log('✅ Suscripción Stripe obtenida:', stripeSubscription.id);
-                console.log('📊 Status Stripe:', stripeSubscription.status);
-                console.log('📊 Customer ID:', stripeSubscription.customer);
-            } catch (stripeErr) {
-                console.error('❌ Error obteniendo suscripción de Stripe:', stripeErr.message);
-                return Response.json({ error: 'Stripe subscription not found' }, { status: 400 });
-            }
+                console.log('📋 Estado calculado:', profileStatus);
 
-            // ✅ CALCULAR ESTADO BASADO EN STRIPE
-            const profileStatus = calculateProfileStatus(
-                stripeSubscription.status,
-                stripeSubscription.current_period_end
-            );
-
-            console.log('📋 Estado calculado:', profileStatus);
-
-            // ✅ OBTENER PLAN
-            const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: planId });
-            const plan = plans[0] || { nombre: 'Plan Mensual', precio: 33, duracion_dias: 30 };
-
-            // ✅ CALCULAR FECHA DE EXPIRACIÓN CORRECTA
-            let fechaExpiracion;
-            if (stripeSubscription.status === 'trialing') {
-                // Durante trial: fecha_expiracion = fin del trial (7 días)
-                fechaExpiracion = new Date(stripeSubscription.current_period_end * 1000).toISOString();
-            } else {
-                // Sin trial o después del trial: calcular según duración del plan
-                const startDate = new Date(stripeSubscription.current_period_start * 1000);
-                const planDuration = plan.duracion_dias || 30;
-                fechaExpiracion = new Date(startDate.getTime() + planDuration * 24 * 60 * 60 * 1000).toISOString();
-            }
-
-            // ✅ ACTUALIZAR/CREAR SUSCRIPCIÓN EN BD
-            const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: userId });
-            
-            const subscriptionData = {
-                user_id: userId,
-                plan_id: planId,
-                plan_nombre: plan.nombre,
-                plan_precio: plan.precio,
-                fecha_inicio: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                fecha_expiracion: fechaExpiracion,
-                estado: profileStatus.estado,
-                renovacion_automatica: !stripeSubscription.cancel_at_period_end,
-                metodo_pago: 'stripe',
-                stripe_subscription_id: stripeSubscription.id,
-                stripe_customer_id: stripeSubscription.customer
-            };
-
-            console.log('💾 Guardando suscripción:', subscriptionData);
-
-            if (existingSubs.length > 0) {
-                await base44.asServiceRole.entities.Subscription.update(existingSubs[0].id, subscriptionData);
-                console.log('✅ Suscripción actualizada ID:', existingSubs[0].id);
-            } else {
-                await base44.asServiceRole.entities.Subscription.create(subscriptionData);
-                console.log('✅ Suscripción creada');
-            }
-
-            // ✅ ACTUALIZAR USUARIO - CRÍTICO: Cambiar a profesional
-            const userUpdateData = {
-                user_type: 'professionnel',  // ✅ SIEMPRE cambiar a profesional al pagar
-                subscription_status: profileStatus.estado,
-                subscription_start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString().split('T')[0],
-                subscription_end_date: new Date(stripeSubscription.current_period_end * 1000).toISOString().split('T')[0]
-            };
-
-            if (stripeSubscription.status === 'trialing' || metadata.trial_offered === 'true') {
-                userUpdateData.has_used_trial = true;
-            }
-
-            console.log('📝 Actualizando usuario con:', userUpdateData);
-            await base44.asServiceRole.entities.User.update(userId, userUpdateData);
-            console.log('✅ Usuario actualizado a user_type: professionnel');
-
-            // ✅ ACTUALIZAR O CREAR PERFIL PROFESIONAL
-            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
-            if (profiles.length > 0) {
-                const existingProfile = profiles[0];
-                
-                // 🔥 REGLA CRÍTICA: Si onboarding completo + pago OK = VISIBLE
-                const shouldBeVisible = existingProfile.onboarding_completed === true;
-                
-                await base44.asServiceRole.entities.ProfessionalProfile.update(existingProfile.id, {
-                    visible_en_busqueda: shouldBeVisible,
-                    estado_perfil: 'activo'
+                console.log('3️⃣ Buscando plan...');
+                const planId = metadata.planId || 'plan_monthly_trial';
+                const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
+                    plan_id: planId
                 });
-                
-                console.log(`🔥 PERFIL ${shouldBeVisible ? 'VISIBLE ✅' : 'OCULTO ⏳'} | onboarding=${existingProfile.onboarding_completed} | pago=OK`);
-            } else {
-                // Crear perfil básico (oculto hasta completar onboarding)
-                await base44.asServiceRole.entities.ProfessionalProfile.create({
+                const plan = plans[0];
+
+                if (!plan) {
+                    console.error('❌ Plan no encontrado:', planId);
+                    return Response.json({ error: 'Plan not found' }, { status: 404 });
+                }
+
+                console.log('💼 Plan encontrado:', plan.nombre);
+
+                console.log('4️⃣ Creando/actualizando suscripción...');
+                const existingSubs = await base44.asServiceRole.entities.Subscription.filter({
+                    user_id: userId
+                });
+
+                // ✅ CRÍTICO: Renovación automática TRUE si NO está explícitamente cancelado
+                const subscriptionData = {
                     user_id: userId,
-                    business_name: userEmail.split('@')[0],
-                    email_contacto: userEmail,
-                    visible_en_busqueda: false,
-                    estado_perfil: 'pendiente',
-                    onboarding_completed: false,
-                    categories: [],
-                    photos: [],
-                    formas_pago: [],
-                    metodos_contacto: ['chat_interno']
-                });
-                console.log('⏳ Perfil creado OCULTO - Esperando onboarding');
-            }
-
-            // ✅ ENVIAR EMAIL DE BIENVENIDA
-            const isTrialing = stripeSubscription.status === 'trialing';
-            const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
-            const renewalDate = new Date(stripeSubscription.current_period_end * 1000).toLocaleDateString('es-ES', { 
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-            });
-
-            await base44.asServiceRole.integrations.Core.SendEmail({
-                to: userEmail,
-                subject: isTrialing 
-                    ? `🎉 ¡Bienvenido a MisAutónomos! Tu prueba de 7 días ha comenzado`
-                    : `✅ ¡Tu suscripción a MisAutónomos está activa!`,
-                body: `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; }
-    .header { background: linear-gradient(135deg, #059669, #10b981); padding: 40px; text-align: center; border-radius: 16px 16px 0 0; }
-    .header h1 { color: white; margin: 0; font-size: 24px; }
-    .content { padding: 40px; }
-    .highlight { background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .highlight h3 { color: #047857; margin: 0 0 8px 0; }
-    .cta { text-align: center; margin: 30px 0; }
-    .button { display: inline-block; background: #f97316; color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: bold; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; }
-    .footer a { color: #60a5fa; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="${LOGO_URL}" alt="MisAutónomos" style="width: 64px; height: 64px; border-radius: 12px; margin-bottom: 16px;" />
-      <h1>${isTrialing ? '🎉 ¡Bienvenido!' : '✅ ¡Suscripción activa!'}</h1>
-    </div>
-    <div class="content">
-      <p style="font-size: 18px; color: #1f2937;">¡Hola!</p>
-      <div class="highlight">
-        <h3>${isTrialing ? '🎁 7 días GRATIS' : '✅ Pago confirmado'}</h3>
-        <p style="color: #065f46; margin: 0;">${isTrialing 
-          ? 'Tu cuenta está activa. Tienes 7 días para probar todas las funcionalidades.' 
-          : 'Tu suscripción está activa y tu perfil es visible para clientes.'}</p>
-      </div>
-      <p><strong>Plan:</strong> ${plan.nombre}</p>
-      <p><strong>${isTrialing ? 'Fecha de cobro:' : 'Próxima renovación:'}</strong> ${renewalDate}</p>
-      <p><strong>ID Stripe:</strong> ${stripeSubscription.id}</p>
-      <div class="cta">
-        <a href="https://misautonomos.es/ProfileOnboarding" class="button">Completar mi perfil →</a>
-      </div>
-      ${isTrialing ? '<p style="font-size: 13px; color: #6b7280; text-align: center;">Puedes cancelar en cualquier momento antes de que termine la prueba.</p>' : ''}
-    </div>
-    <div class="footer">
-      <strong style="color: #fff;">MisAutónomos</strong><br/>
-      <a href="https://misautonomos.es">misautonomos.es</a> · <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a>
-    </div>
-  </div>
-</body>
-</html>`,
-                from_name: "MisAutónomos"
-            });
-
-            console.log('📧 Email de bienvenida enviado');
-
-            // ========== NOTIFICACIÓN SLACK (Venta) ==========
-            try {
-                const accessToken = await base44.asServiceRole.connectors.getAccessToken("slack");
-                
-                // Mensaje de venta
-                const saleMessage = {
-                    blocks: [
-                        {
-                            type: "header",
-                            text: {
-                                type: "plain_text",
-                                text: "🎉 Nueva suscripción recibida",
-                                emoji: true
-                            }
-                        },
-                        {
-                            type: "section",
-                            fields: [
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Importe:*\n${(plan.precio || 0).toFixed(2)} EUR`
-                                },
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Cliente:*\n${userEmail.split('@')[0]}`
-                                },
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Email:*\n${userEmail}`
-                                },
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Producto:*\n${plan.nombre || 'Suscripción'}`
-                                }
-                            ]
-                        },
-                        {
-                            type: "context",
-                            elements: [
-                                {
-                                    type: "mrkdwn",
-                                    text: `📅 ${new Date().toLocaleString('es-ES')}`
-                                }
-                            ]
-                        }
-                    ]
+                    plan_id: planId,
+                    plan_nombre: plan.nombre,
+                    plan_precio: plan.precio,
+                    fecha_inicio: new Date(subscription.current_period_start * 1000).toISOString(),
+                    fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
+                    estado: profileStatus.estado,
+                    renovacion_automatica: subscription.cancel_at_period_end === false,
+                    metodo_pago: 'stripe',
+                    stripe_subscription_id: subscription.id,
+                    stripe_customer_id: subscription.customer
                 };
 
-                // Obtener canales
-                const channelsResponse = await fetch('https://slack.com/api/conversations.list?types=public_channel&limit=100', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const channelsData = await channelsResponse.json();
-                
-                if (channelsData.ok && channelsData.channels) {
-                    const channels = channelsData.channels;
-                    const targetChannel = channels.find(c => c.name === 'ventas') ||
-                                          channels.find(c => c.name === 'sales') ||
-                                          channels.find(c => c.name === 'general') ||
-                                          channels[0];
+                console.log('💳 Datos de suscripción:', subscriptionData);
 
-                    if (targetChannel) {
-                        await fetch('https://slack.com/api/chat.postMessage', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ 
-                                channel: targetChannel.id, 
-                                ...saleMessage 
-                            })
-                        });
-                        console.log('📱 Notificación Slack venta enviada a', targetChannel.name);
-                    }
-                }
-            } catch (slackError) {
-                console.error('⚠️ Error Slack venta:', slackError.message);
-            }
-
-            // ========== NOTIFICACIÓN SLACK (Nuevo profesional) ==========
-            try {
-                const accessToken = await base44.asServiceRole.connectors.getAccessToken("slack");
-                
-                const clientMessage = {
-                    blocks: [
-                        {
-                            type: "header",
-                            text: {
-                                type: "plain_text",
-                                text: "👨‍💼 Nuevo Profesional registrado",
-                                emoji: true
-                            }
-                        },
-                        {
-                            type: "section",
-                            fields: [
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Nombre:*\n${userEmail.split('@')[0]}`
-                                },
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Email:*\n${userEmail}`
-                                },
-                                {
-                                    type: "mrkdwn",
-                                    text: `*Plan:*\n${plan.nombre}`
-                                }
-                            ]
-                        },
-                        {
-                            type: "context",
-                            elements: [
-                                {
-                                    type: "mrkdwn",
-                                    text: `📅 ${new Date().toLocaleString('es-ES')}`
-                                }
-                            ]
-                        }
-                    ]
-                };
-
-                const channelsResponse = await fetch('https://slack.com/api/conversations.list?types=public_channel&limit=100', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const channelsData = await channelsResponse.json();
-                
-                if (channelsData.ok && channelsData.channels) {
-                    const channels = channelsData.channels;
-                    const targetChannel = channels.find(c => c.name === 'clientes') ||
-                                          channels.find(c => c.name === 'ventas') ||
-                                          channels.find(c => c.name === 'general') ||
-                                          channels[0];
-
-                    if (targetChannel) {
-                        await fetch('https://slack.com/api/chat.postMessage', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ 
-                                channel: targetChannel.id, 
-                                ...clientMessage 
-                            })
-                        });
-                        console.log('📱 Notificación Slack nuevo profesional enviada a', targetChannel.name);
-                    }
-                }
-            } catch (slackError) {
-                console.error('⚠️ Error Slack cliente:', slackError.message);
-            }
-            
-            // 🔥 REGISTRAR PAGO INICIAL (checkout completado)
-            const paymentAmount = session.amount_total ? session.amount_total / 100 : plan.precio;
-            await base44.asServiceRole.entities.PaymentRecord.create({
-                user_id: userId,
-                user_email: userEmail,
-                stripe_invoice_id: session.invoice || 'checkout-' + session.id,
-                stripe_subscription_id: session.subscription,
-                stripe_payment_intent_id: session.payment_intent,
-                amount: paymentAmount,
-                currency: session.currency?.toUpperCase() || 'EUR',
-                plan_id: planId,
-                plan_nombre: plan.nombre,
-                payment_date: new Date(session.created * 1000).toISOString(),
-                period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-                status: 'succeeded',
-                is_trial: stripeSubscription.status === 'trialing',
-                metadata: {
-                    session_id: session.id,
-                    mode: session.mode
-                }
-            });
-            console.log('💾 Pago inicial registrado en PaymentRecord');
-            
-            // ✅ VERIFICACIÓN FINAL CRÍTICA: Forzar visibilidad si onboarding completo
-            setTimeout(async () => {
                 try {
-                    const finalProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
-                    if (finalProfiles.length > 0) {
-                        const profile = finalProfiles[0];
-                        if (profile.onboarding_completed === true && profile.visible_en_busqueda !== true) {
-                            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                                visible_en_busqueda: true,
-                                estado_perfil: 'activo'
-                            });
-                            console.log('🔥 FORZADO FINAL: Perfil visible (onboarding completo + pago OK)');
-                        }
+                    if (existingSubs.length > 0) {
+                        console.log('🔄 Actualizando suscripción existente ID:', existingSubs[0].id);
+                        await base44.asServiceRole.entities.Subscription.update(
+                            existingSubs[0].id,
+                            subscriptionData
+                        );
+                    } else {
+                        console.log('➕ Creando nueva suscripción...');
+                        await base44.asServiceRole.entities.Subscription.create(subscriptionData);
                     }
-                } catch (err) {
-                    console.error('Error en verificación final:', err.message);
+                    console.log('✅ Suscripción guardada correctamente');
+                } catch (subError) {
+                    console.error('❌ Error guardando suscripción:', subError);
+                    throw subError; // Re-throw to be caught by the main try-catch
                 }
-            }, 2000); // Esperar 2 segundos para asegurar que todo se procesó
-            
-            console.log('✅ ========== CHECKOUT PROCESADO ==========');
-            return Response.json({ received: true, processed: true });
-        }
 
-        // ✅ SUSCRIPCIÓN ACTUALIZADA
-        if (event.type === 'customer.subscription.updated') {
-            const subscription = event.data.object;
-            console.log('\n🔄 ========== SUSCRIPCIÓN ACTUALIZADA ==========');
-            console.log('📊 ID:', subscription.id);
-            console.log('📊 Status:', subscription.status);
-
-            const subs = await base44.asServiceRole.entities.Subscription.filter({
-                stripe_subscription_id: subscription.id
-            });
-
-            if (subs.length === 0) {
-                console.log('⚠️ Suscripción no encontrada en BD');
-                return Response.json({ received: true });
-            }
-
-            const dbSub = subs[0];
-            const profileStatus = calculateProfileStatus(subscription.status, subscription.current_period_end);
-
-            await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                estado: profileStatus.estado,
-                fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
-                renovacion_automatica: !subscription.cancel_at_period_end
-            });
-
-            // 🔥 NO tocar visibilidad en actualizaciones - se controla solo por PAGOS
-            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
-            if (profiles.length > 0 && !profiles[0].onboarding_completed) {
-                // Solo actualizar si no completó onboarding (mantener oculto)
-                await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
-                    estado_perfil: profileStatus.estado_perfil
+                console.log('5️⃣ Actualizando perfil profesional si existe...');
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: userId
                 });
+
+                if (profiles.length > 0) {
+                    console.log('🔄 Actualizando perfil existente ID:', profiles[0].id);
+                    try {
+                        await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                            visible_en_busqueda: profileStatus.visible_en_busqueda,
+                            estado_perfil: profileStatus.estado_perfil
+                        });
+                        console.log(`✅ Perfil actualizado - Visible: ${profileStatus.visible_en_busqueda}`);
+                    } catch (profileError) {
+                        console.error('❌ Error actualizando perfil:', profileError);
+                        // Log the error but continue, as the subscription is already handled.
+                    }
+                } else {
+                    console.log('ℹ️ Perfil aún no existe (se creará en onboarding)');
+                }
+
+                console.log('✅ ========== SUSCRIPCIÓN PROCESADA ==========');
+                console.log(`📊 Estado final: ${profileStatus.mensaje}`);
+                console.log(`📧 Usuario: ${email}`);
+                console.log(`🆔 User ID: ${userId}`);
+                console.log(`💳 Subscription ID: ${subscription.id}`);
+                break;
             }
 
-            // Actualizar usuario
-            await base44.asServiceRole.entities.User.update(dbSub.user_id, {
-                subscription_status: profileStatus.estado
-            });
+            case 'customer.subscription.updated': {
+                console.log('\n🔄 ========== SUSCRIPCIÓN ACTUALIZADA ==========');
+                
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: subscription.id
+                });
 
-            console.log('✅ Suscripción actualizada:', profileStatus.estado);
-            return Response.json({ received: true, processed: true });
-        }
+                if (subs.length === 0) {
+                    console.log('⚠️ Suscripción no encontrada en BD');
+                    return Response.json({ received: true });
+                }
 
-        // ✅ SUSCRIPCIÓN ELIMINADA (cuando expira cancel_at_period_end)
-        if (event.type === 'customer.subscription.deleted') {
-            const subscription = event.data.object;
-            console.log('\n🔴 ========== SUSCRIPCIÓN ELIMINADA ==========');
+                const dbSub = subs[0];
+                const profileStatus = calculateProfileStatus(
+                    subscription.status,
+                    subscription.current_period_end
+                );
 
-            const subs = await base44.asServiceRole.entities.Subscription.filter({
-                stripe_subscription_id: subscription.id
-            });
+                console.log('📋 Nuevo estado:', profileStatus);
 
-            if (subs.length > 0) {
+                // Actualizar suscripción
+                await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                    estado: profileStatus.estado,
+                    fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
+                    renovacion_automatica: subscription.cancel_at_period_end === false
+                });
+
+                console.log('💳 Renovación automática:', subscription.cancel_at_period_end === false);
+
+                // Actualizar perfil
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: dbSub.user_id
+                });
+
+                if (profiles.length > 0) {
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: profileStatus.visible_en_busqueda,
+                        estado_perfil: profileStatus.estado_perfil
+                    });
+                    console.log(`✅ Visibilidad actualizada: ${profileStatus.visible_en_busqueda}`);
+                }
+
+                // Actualizar estado del usuario
+                await base44.asServiceRole.entities.User.update(dbSub.user_id, {
+                    subscription_status: profileStatus.estado
+                });
+
+                console.log('✅ Suscripción actualizada:', profileStatus.mensaje);
+                break;
+            }
+
+            case 'customer.subscription.trial_will_end': {
+                console.log('⏰ Trial terminará pronto (3 días antes)');
+                break;
+            }
+
+            case 'customer.subscription.deleted': {
+                console.log('\n🔴 ========== SUSCRIPCIÓN ELIMINADA/EXPIRADA ==========');
+                
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: subscription.id
+                });
+
+                if (subs.length === 0) {
+                    console.log('⚠️ Suscripción no encontrada en BD');
+                    return Response.json({ received: true });
+                }
+
                 const dbSub = subs[0];
                 
-                // 🔥 MARCAR COMO FINALIZADA
+                // Marcar como finalizada
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
                     estado: 'finalizada',
                     renovacion_automatica: false
                 });
 
-                // 🔥 OCULTAR PERFIL
-                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
+                // ✅ OCULTAR PERFIL INMEDIATAMENTE
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: dbSub.user_id
+                });
+
                 if (profiles.length > 0) {
                     await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
                         visible_en_busqueda: false,
                         estado_perfil: 'inactivo'
                     });
-                    console.log('✅ Perfil oculto tras expiración');
+                    console.log('❌ Perfil ocultado de búsquedas');
                 }
 
-                // 🔥 ACTUALIZAR USUARIO
+                // Actualizar usuario
                 await base44.asServiceRole.entities.User.update(dbSub.user_id, {
                     subscription_status: 'finalizada'
                 });
 
-                // 🔥 EMAIL DE EXPIRACIÓN
-                const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
-                if (users.length > 0) {
-                    const user = users[0];
-                    const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
-                    
-                    await base44.asServiceRole.integrations.Core.SendEmail({
-                        to: user.email,
-                        subject: '⏰ Tu suscripción ha expirado - MisAutónomos',
-                        body: `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; }
-    .header { background: #64748b; padding: 40px; text-align: center; border-radius: 16px 16px 0 0; }
-    .header h1 { color: white; margin: 0; font-size: 24px; }
-    .content { padding: 40px; }
-    .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-    .cta { text-align: center; margin: 30px 0; }
-    .button { display: inline-block; background: #3b82f6; color: white; padding: 16px 40px; text-decoration: none; border-radius: 10px; font-weight: bold; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; font-size: 13px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="${LOGO_URL}" style="width: 64px; height: 64px; border-radius: 12px; margin-bottom: 16px;" />
-      <h1>⏰ Suscripción expirada</h1>
-    </div>
-    <div class="content">
-      <p>Hola <strong>${user.full_name || 'Profesional'}</strong>,</p>
-      
-      <div class="warning">
-        <p style="color: #92400e; margin: 0;"><strong>Tu suscripción ha expirado</strong></p>
-        <p style="color: #78350f; margin: 8px 0 0 0;">Tu perfil ya no es visible en las búsquedas.</p>
-      </div>
-
-      <p>Para volver a aparecer y recibir contactos de clientes, reactiva tu suscripción:</p>
-
-      <div class="cta">
-        <a href="https://misautonomos.es/PricingPlans" class="button">Reactivar suscripción →</a>
-      </div>
-
-      <p style="font-size: 13px; color: #64748b; text-align: center;">
-        ¿Dudas? <a href="mailto:soporte@misautonomos.es" style="color: #3b82f6;">soporte@misautonomos.es</a>
-      </p>
-    </div>
-    <div class="footer">
-      <strong style="color: #fff;">MisAutónomos</strong>
-    </div>
-  </div>
-</body>
-</html>`,
-                        from_name: "MisAutónomos"
-                    });
-                    console.log('📧 Email de expiración enviado');
+                // ✅ Ejecutar limpieza automática
+                console.log('🧹 Ejecutando limpieza automática...');
+                try {
+                    await base44.asServiceRole.functions.invoke('cleanOrphanData');
+                } catch (cleanupError) {
+                    console.log('⚠️ Error en limpieza automática:', cleanupError.message);
                 }
 
                 console.log('✅ Suscripción finalizada y perfil oculto');
+                break;
             }
 
-            return Response.json({ received: true, processed: true });
-        }
-
-        // ✅ PAGO EXITOSO - Activar perfil cuando el pago se confirma
-        if (event.type === 'invoice.payment_succeeded') {
-            const invoice = event.data.object;
-            console.log('\n✅ ========== PAGO EXITOSO ==========');
-            console.log('💰 Importe:', invoice.amount_paid / 100, invoice.currency.toUpperCase());
-
-            if (invoice.subscription) {
-                const subs = await base44.asServiceRole.entities.Subscription.filter({
-                    stripe_subscription_id: invoice.subscription
-                });
-
-                if (subs.length > 0) {
-                    const dbSub = subs[0];
-                    
-                    // Obtener suscripción de Stripe para fechas actualizadas
-                    const stripeSubscription = await stripe.subscriptions.retrieve(invoice.subscription);
-                    const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ plan_id: dbSub.plan_id });
-                    const plan = plans[0] || { nombre: 'Plan', precio: invoice.amount_paid / 100 };
-                    
-                    // 🔥 REGISTRAR PAGO EN PaymentRecord
-                    await base44.asServiceRole.entities.PaymentRecord.create({
-                        user_id: dbSub.user_id,
-                        user_email: invoice.customer_email || dbSub.user_id,
-                        stripe_invoice_id: invoice.id,
-                        stripe_subscription_id: invoice.subscription,
-                        stripe_payment_intent_id: invoice.payment_intent,
-                        amount: invoice.amount_paid / 100,
-                        currency: invoice.currency.toUpperCase(),
-                        plan_id: dbSub.plan_id,
-                        plan_nombre: plan.nombre,
-                        payment_date: new Date(invoice.created * 1000).toISOString(),
-                        period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                        period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-                        status: 'succeeded',
-                        is_trial: stripeSubscription.status === 'trialing',
-                        metadata: {
-                            invoice_number: invoice.number,
-                            attempt_count: invoice.attempt_count
-                        }
-                    });
-                    console.log('💾 Pago registrado en PaymentRecord');
-                    
-                    // Actualizar suscripción con nuevo periodo
-                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                        estado: 'activo',
-                        fecha_expiracion: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-                        fecha_ultima_renovacion: new Date().toISOString(),
-                        renovacion_automatica: !stripeSubscription.cancel_at_period_end
-                    });
-
-                    // 🔥 ACTIVAR PERFIL INMEDIATAMENTE tras pago exitoso
-                    const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: dbSub.user_id });
-                    if (profiles.length > 0) {
-                        const profile = profiles[0];
-                        // Si onboarding completo, FORZAR visibilidad
-                        if (profile.onboarding_completed === true) {
-                            await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
-                                visible_en_busqueda: true,
-                                estado_perfil: 'activo'
-                            });
-                            console.log('🔥 Perfil ACTIVADO tras pago exitoso (onboarding completo)');
-                        } else {
-                            console.log('⏳ Esperando onboarding para activar perfil');
-                        }
-                    }
-
-                    // Actualizar usuario
-                    await base44.asServiceRole.entities.User.update(dbSub.user_id, {
-                        subscription_status: 'activo'
-                    });
-
-                    console.log('✅ Suscripción renovada y pago registrado');
+            case 'invoice.payment_failed': {
+                console.log('❌ Pago fallido');
+                
+                if (!subscription?.id) {
+                    console.log('⚠️ Sin ID de suscripción en invoice');
+                    return Response.json({ received: true });
                 }
-            }
 
-            return Response.json({ received: true, processed: true });
-        }
-
-        // ⚠️ PAGO FALLIDO - Marcar pero dar 5 días de gracia
-        if (event.type === 'invoice.payment_failed') {
-            const invoice = event.data.object;
-            console.log('\n❌ ========== PAGO FALLIDO ==========');
-            console.log('💳 Intento:', invoice.attempt_count);
-
-            if (invoice.subscription) {
                 const subs = await base44.asServiceRole.entities.Subscription.filter({
-                    stripe_subscription_id: invoice.subscription
+                    stripe_subscription_id: subscription.id
                 });
 
                 if (subs.length > 0) {
                     const dbSub = subs[0];
                     
-                    // Calcular fecha de gracia (5 días desde ahora)
-                    const gracePeriodEnd = new Date();
-                    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 5);
-                    
-                    // Actualizar suscripción con fecha de gracia
-                    await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                        estado: 'activo', // Mantener activo durante gracia
-                        fecha_expiracion: gracePeriodEnd.toISOString(),
-                        renovacion_automatica: true // Stripe seguirá intentando
-                    });
-
-                    console.log(`⏳ Período de gracia activado hasta ${gracePeriodEnd.toISOString()}`);
-
-                    // Enviar email de aviso
-                    const users = await base44.asServiceRole.entities.User.filter({ id: dbSub.user_id });
-                    if (users.length > 0) {
-                        const user = users[0];
-                        const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
-                        
-                        await base44.asServiceRole.integrations.Core.SendEmail({
-                            to: user.email,
-                            subject: `⚠️ Problema con tu pago - MisAutónomos`,
-                            body: `
-<!DOCTYPE html>
-<html>
-<head><style>body{font-family:Arial;background:#f8fafc}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px}.header{background:#ef4444;padding:30px;text-align:center;border-radius:16px 16px 0 0}.header h1{color:#fff;margin:0}.content{padding:30px}.error{background:#fef2f2;border-left:4px solid #ef4444;padding:16px;margin:20px 0}.grace{background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;margin:20px 0}.button{display:inline-block;background:#ef4444;color:#fff;padding:14px 30px;text-decoration:none;border-radius:8px;font-weight:bold}</style></head>
-<body>
-<div class="container">
-  <div class="header"><img src="${LOGO_URL}" style="width:50px;height:50px;border-radius:10px;margin-bottom:10px"/><h1>⚠️ Problema con tu pago</h1></div>
-  <div class="content">
-    <div class="error"><p><strong>No hemos podido cobrar tu suscripción.</strong></p></div>
-    <div class="grace"><p><strong>⏳ Tu perfil seguirá visible durante 5 días</strong></p><p>Tienes tiempo para actualizar tu método de pago. Después de 5 días, tu perfil se ocultará automáticamente.</p></div>
-    <p><strong>Posibles causas:</strong></p>
-    <ul>
-      <li>Tarjeta caducada</li>
-      <li>Fondos insuficientes</li>
-      <li>Bloqueo del banco</li>
-    </ul>
-    <p style="text-align:center;margin:30px 0"><a href="https://misautonomos.es/SubscriptionManagement" class="button">Actualizar método de pago →</a></p>
-    <p style="font-size:13px;color:#666;text-align:center">Fecha límite: <strong>${gracePeriodEnd.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>
-    <p style="font-size:13px;color:#666;text-align:center">¿Problemas? <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a></p>
-  </div>
-</div>
-</body>
-</html>`,
-                            from_name: "MisAutónomos"
+                    // Si ya expiró, ocultar
+                    if (!isSubscriptionActive(subscription.status, subscription.current_period_end)) {
+                        await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                            estado: 'finalizada'
                         });
-                        console.log('📧 Email de pago fallido enviado (5 días de gracia)');
+
+                        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                            user_id: dbSub.user_id
+                        });
+
+                        if (profiles.length > 0) {
+                            await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                                visible_en_busqueda: false,
+                                estado_perfil: 'inactivo'
+                            });
+                            console.log('❌ Perfil ocultado por fallo de pago');
+                        }
                     }
                 }
+
+                console.log('⚠️ Pago fallido procesado');
+                break;
             }
 
-            return Response.json({ received: true, processed: true });
+            default:
+                console.log('ℹ️ Evento no manejado:', event.type);
         }
 
-        // ✅ MÉTODO DE PAGO ACTUALIZADO
-        if (event.type === 'customer.updated' || event.type === 'payment_method.attached') {
-            console.log('\n💳 ========== MÉTODO DE PAGO ACTUALIZADO ==========');
-            console.log('📊 Tipo:', event.type);
-            console.log('✅ El cliente ha actualizado su método de pago en el portal');
-            return Response.json({ received: true, processed: true });
-        }
-
-        console.log('ℹ️ Evento no manejado:', event.type);
-        return Response.json({ received: true });
+        return Response.json({ received: true, processed: true });
 
     } catch (error) {
-        console.error('❌ ERROR WEBHOOK:', error.message);
+        console.error('❌ ========== ERROR EN WEBHOOK ==========');
+        console.error('❌ Message:', error.message);
         console.error('❌ Stack:', error.stack);
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ 
+            error: error.message,
+            stack: error.stack 
+        }, { status: 500 });
     }
 });

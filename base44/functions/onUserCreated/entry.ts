@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
     const userName = user.full_name || user.email.split('@')[0];
 
     // Email de bienvenida para CLIENTES
+    const emailTimeout = AbortSignal.timeout(30000);
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: user.email,
       subject: "¡Bienvenido a MisAutónomos! Tu cuenta está lista",

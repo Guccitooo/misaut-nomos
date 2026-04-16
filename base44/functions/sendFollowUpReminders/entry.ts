@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
                         }
                     }
                     
-                    // Enviar email de recordatorio
+                    // Enviar email de recordatorio (timeout 30s)
+                    const emailAbort = AbortSignal.timeout(30000);
                     await base44.asServiceRole.integrations.Core.SendEmail({
                         to: user.email,
                         subject: `📋 Recordatorio: ${reminder.message}`,

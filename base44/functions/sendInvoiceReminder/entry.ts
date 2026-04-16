@@ -190,7 +190,8 @@ Deno.serve(async (req) => {
       `;
     }
 
-    await base44.integrations.Core.SendEmail({
+    // Timeout 30s + usar serviceRole para consistencia
+    await base44.asServiceRole.integrations.Core.SendEmail({
       to: invoice.client_email,
       subject,
       body
