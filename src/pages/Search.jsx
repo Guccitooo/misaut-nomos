@@ -112,10 +112,10 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   return (
     <div 
       onClick={onClick}
-      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all overflow-hidden"
+      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all overflow-hidden flex flex-col h-full"
     >
       {/* Header azul PEQUEÑO — 48px */}
-      <div className="h-12 bg-gradient-to-r from-blue-600 to-blue-500 relative">
+      <div className="h-12 bg-gradient-to-r from-blue-600 to-blue-500 relative flex-shrink-0">
         {/* Avatar pegado AL BORDE INFERIOR */}
         <div className="absolute -bottom-6 left-3">
           {photoUrl ? (
@@ -138,12 +138,12 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
         )}
       </div>
 
-      {/* Contenido */}
-      <div className="pt-8 px-3 pb-3">
+      {/* Contenido — flex-1 para que se expanda */}
+      <div className="pt-8 px-3 pb-3 flex flex-col flex-1">
         <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
         <p className="text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
         <p className="text-gray-400 text-xs mt-0.5 truncate">📍 {profile.ciudad}, {profile.provincia}</p>
-        <p className="text-gray-600 text-xs mt-1.5 line-clamp-2 leading-relaxed">{profile.descripcion_corta}</p>
+        <p className="text-gray-600 text-xs mt-1.5 line-clamp-2 min-h-[2.5rem] leading-relaxed">{profile.descripcion_corta}</p>
         
         {/* Estrellas */}
         {profile.average_rating > 0 && (
@@ -153,8 +153,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
           </div>
         )}
 
-        {/* Botones compactos */}
-        <div className="flex gap-1.5 mt-3" onClick={e => e.stopPropagation()}>
+        {/* Botones compactos — siempre al fondo */}
+        <div className="flex gap-1.5 mt-auto pt-2" onClick={e => e.stopPropagation()}>
           <button
             onClick={handleContactDirect}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
@@ -661,7 +661,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
+                  <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <ProfileCard
                         key={profile.id}
