@@ -432,7 +432,7 @@ export default function PricingPlansPage() {
       {stickyVisible && !currentSubscription && (
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 px-4 py-3 shadow-2xl">
           <Button
-            className="w-full h-12 bg-green-600 hover:bg-green-500 text-white font-bold text-base rounded-xl shadow-lg"
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl shadow-lg"
             onClick={() => {
               const btn = document.getElementById("cta-popular");
               if (btn) btn.click();

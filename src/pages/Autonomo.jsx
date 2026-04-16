@@ -218,10 +218,14 @@ export default function AutonomoPage() {
   }, [profile?.user_id, user]);
 
   const trackProfileView = async () => {
+    // Fix #6: validate professional_id is real (not "system" or empty)
+    const pid = profile.user_id;
+    if (!pid || pid === 'system' || pid.length < 5) return;
+
     try {
       const today = new Date().toISOString().split('T')[0];
       const metrics = await base44.entities.ProfileMetrics.filter({
-        professional_id: profile.user_id,
+        professional_id: pid,
         date: today
       });
 
@@ -231,13 +235,13 @@ export default function AutonomoPage() {
         });
       } else {
         await base44.entities.ProfileMetrics.create({
-          professional_id: profile.user_id,
+          professional_id: pid,
           date: today,
           profile_views: 1
         });
       }
     } catch (error) {
-      console.error('Error tracking view:', error);
+      // silent — metrics are non-critical
     }
   };
 
@@ -782,15 +786,15 @@ export default function AutonomoPage() {
               <h3 className="text-sm font-bold text-gray-900 mb-3">{t('workGalleryTitle') || 'Galería de trabajos'}</h3>
               <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
                 {profile.photos.map((photo, idx) => (
-                  <div 
-                    key={idx} 
-                    className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                    onClick={() => {
-                      setSelectedImage(photo);
-                      setSelectedImageIndex(idx);
-                    }}
-                  >
-                    <img src={photo} alt={`Trabajo ${idx + 1}`} className="w-full h-full object-cover" />
+                <div 
+                  key={idx} 
+                  className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                  onClick={() => {
+                    setSelectedImage(photo);
+                    setSelectedImageIndex(idx);
+                  }}
+                >
+                  <img src={photo} alt={`Trabajo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                   </div>
                 ))}
               </div>

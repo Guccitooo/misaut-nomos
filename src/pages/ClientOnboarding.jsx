@@ -308,11 +308,10 @@ export default function ClientOnboardingPage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("✅ " + t('welcomeToMisAutonomos')); // Using t() for translation
+      toast.success("✅ ¡Cuenta creada! Ya puedes buscar profesionales");
       localStorage.removeItem('client_onboarding_pending');
-      setTimeout(() => {
-        navigate(createPageUrl("Search"));
-      }, 1000);
+      // Fix #10: redirect immediately to Search, no intermediate welcome page
+      navigate(createPageUrl("Search"));
     },
     onError: (error) => {
       console.error("Error completing onboarding:", error);

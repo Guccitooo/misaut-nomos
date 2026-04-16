@@ -399,8 +399,9 @@ export default function ProfileOnboardingPage() {
 
       // ✅ ACTIVACIÓN AUTOMÁTICA: Si tiene suscripción, activar perfil AHORA
       if (shouldBeVisible || hasActiveSubscription) {
-        toast.success("¡Perfil completado y publicado! Ya eres visible para clientes.", {
-          duration: 3000
+        // Fix #14: welcome notification after completing onboarding
+        toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", {
+          duration: 5000
         });
         
         // Forzar activación del perfil si existe suscripción

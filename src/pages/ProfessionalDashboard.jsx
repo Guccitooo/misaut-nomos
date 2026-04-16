@@ -53,18 +53,21 @@ export default function ProfessionalDashboardPage() {
     queryKey: ['clientContacts', user?.id],
     queryFn: () => base44.entities.ClientContact.filter({ professional_id: user.id }),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs', user?.id],
     queryFn: () => base44.entities.Job.filter({ professional_id: user.id }),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', user?.id],
     queryFn: () => base44.entities.Invoice.filter({ professional_id: user.id }),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: profile } = useQuery({
@@ -74,12 +77,18 @@ export default function ProfessionalDashboardPage() {
       return profiles[0] || null;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: metrics = [] } = useQuery({
     queryKey: ['profileMetrics', user?.id],
-    queryFn: () => base44.entities.ProfileMetrics.filter({ professional_id: user.id }),
+    queryFn: async () => {
+      // Fix #6: filter out "system" metrics entries
+      const all = await base44.entities.ProfileMetrics.filter({ professional_id: user.id });
+      return all.filter(m => m.professional_id && m.professional_id !== 'system');
+    },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   if (loading) return <Loader />;

@@ -42,7 +42,7 @@ export default function FinalCTASection() {
             Únete ahora —
             <br />
             <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-              Los primeros 60 días son gratis
+              Los primeros 7 días son gratis
             </span>
           </h2>
 
@@ -56,7 +56,7 @@ export default function FinalCTASection() {
               className="group h-14 px-10 text-lg font-bold bg-gradient-to-r from-emerald-400 to-green-400 hover:from-emerald-300 hover:to-green-300 text-gray-900 rounded-2xl shadow-[0_15px_50px_-10px_rgba(52,211,153,0.6)] hover:scale-[1.03] transition-all"
             >
               <Briefcase className="w-5 h-5 mr-2 group-hover:rotate-6 transition-transform" />
-              Empezar 60 días gratis
+              Empezar 7 días gratis
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Search"))}
@@ -78,7 +78,7 @@ export default function FinalCTASection() {
           </div>
 
           <p className="mt-8 text-white/50 text-sm">
-            Ya somos +2.400 autónomos en toda España. ¿Te unes?
+            Los primeros 7 días son totalmente gratis. Sin tarjeta de crédito.
           </p>
         </motion.div>
       </div>

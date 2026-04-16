@@ -72,20 +72,44 @@ function MetricCard({ type, value, suffix = "", trend, index = 0 }) {
   );
 }
 
+// Fix #13: motivational tips when metrics are zero
+const TIPS = [
+  "Añade fotos de tus trabajos para destacar",
+  "Completa tu descripción con palabras clave",
+  "Activa WhatsApp para más contactos",
+  "Comparte tu perfil en redes sociales",
+];
+
 export default function ProMetrics({ views = 0, contacts = 0, rating = 0, totalReviews = 0, conversion = 0 }) {
   const conversionPct = views > 0 ? Math.round((contacts / views) * 100) : 0;
+  const allZero = views === 0 && contacts === 0 && rating === 0;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-      <MetricCard type="views" value={views.toLocaleString("es-ES")} index={0} />
-      <MetricCard type="contacts" value={contacts.toLocaleString("es-ES")} index={1} />
-      <MetricCard
-        type="rating"
-        value={rating > 0 ? rating.toFixed(1) : "—"}
-        suffix={totalReviews > 0 ? `(${totalReviews})` : ""}
-        index={2}
-      />
-      <MetricCard type="conversion" value={conversion || conversionPct} suffix="%" index={3} />
+    <div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <MetricCard type="views" value={views.toLocaleString("es-ES")} index={0} />
+        <MetricCard type="contacts" value={contacts.toLocaleString("es-ES")} index={1} />
+        <MetricCard
+          type="rating"
+          value={rating > 0 ? rating.toFixed(1) : "—"}
+          suffix={totalReviews > 0 ? `(${totalReviews})` : ""}
+          index={2}
+        />
+        <MetricCard type="conversion" value={conversion || conversionPct} suffix="%" index={3} />
+      </div>
+      {allZero && (
+        <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <p className="text-sm font-semibold text-blue-800 mb-2">🚀 Tips para mejorar tu visibilidad:</p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {TIPS.map((tip, i) => (
+              <li key={i} className="flex items-center gap-2 text-xs text-blue-700">
+                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

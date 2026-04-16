@@ -181,7 +181,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
           <div className="absolute -bottom-7 left-4">
             <div className="w-14 h-14 rounded-2xl border-3 border-white shadow-lg overflow-hidden bg-white flex items-center justify-center" style={{ border: '3px solid white' }}>
               {photoUrl ? (
-                <img src={photoUrl} alt={profile.business_name} className="object-cover object-center w-full h-full" width="56" height="56" loading="lazy" />
+                <img src={photoUrl} alt={profile.business_name} className="object-cover object-center w-full h-full" width="56" height="56" loading="lazy" onError={e => { e.target.style.display='none'; }} />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-xl">
                   {profile.business_name?.charAt(0)?.toUpperCase() || "P"}
@@ -729,25 +729,43 @@ export default function SearchPage() {
 
           {/* Sin resultados */}
           {!isInitialLoading && filteredProfiles.length === 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-10 text-center border-0 shadow-sm rounded-2xl bg-white">
+            <div className="space-y-4">
+              <Card className="p-8 text-center border-0 shadow-sm rounded-2xl bg-white">
                 <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <SearchIcon className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Sin resultados</h3>
-                <p className="text-sm text-gray-500">Prueba con otros filtros o categorías</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Sin resultados exactos</h3>
+                <p className="text-sm text-gray-500 mb-4">No encontramos profesionales con esos filtros exactos</p>
                 {hasActiveFilters && (
                   <Button
-                    variant="outline"
-                    className="mt-4"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => setFilters({ category: "all", provincia: "all", ciudad: "all", minRating: 0, availability: "all" })}
                   >
-                    Limpiar filtros
+                    Ver todos los profesionales
                   </Button>
                 )}
               </Card>
+              {/* Fix #11: Show related suggestions when no results */}
+              {profiles.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-3 font-medium">Quizás te interesen estos profesionales:</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                    {profiles.slice(0, 4).map((profile) => (
+                      <ProfileCard
+                        key={profile.id}
+                        profile={profile}
+                        onClick={() => handleViewProfile(profile)}
+                        onToggleFavorite={() => handleToggleFavorite(profile)}
+                        isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                        professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                        currentUserId={user?.id}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {(!user || user.user_type === "client") && (
-                <Card className="p-10 text-center border-0 shadow-xl rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
+                <Card className="p-8 text-center border-0 shadow-xl rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
                   <div className="text-white">
                     <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-80" />
                     <h3 className="text-xl font-bold mb-2">¿Eres profesional?</h3>
