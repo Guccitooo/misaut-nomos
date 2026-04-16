@@ -712,10 +712,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                         <Link to={createPageUrl("ClientOnboarding")} className="block">
                           <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
-                            <Search className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Buscar autónomo
+                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Soy cliente
                           </Button>
-                          </Link>
+                        </Link>
                           <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                             <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -773,13 +773,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                       )}
                       {!user && (
-                        <Link to={createPageUrl("Search")}>
+                        <Link to={createPageUrl("ClientOnboarding")}>
                           <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
-                            <Search className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Buscar autónomo
+                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Soy cliente
                           </Button>
-                          </Link>
-                          )}
+                        </Link>
+                      )}
                           {!user || user.user_type !== 'professionnel' ? (
                           <Link to={createPageUrl("PricingPlans")}>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
