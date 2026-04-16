@@ -42,6 +42,7 @@ import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, Breadcrum
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
+import { ActionButtonsProfile } from "../components/profile/ActionButtons";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
@@ -571,49 +572,19 @@ export default function AutonomoPage() {
               </Button>
             </div>
 
-            {/* BOTONES CONTACTO — orden: Chat (azul) | WhatsApp (verde) | Llamar (gris) */}
-            <div className="flex gap-2">
-              {showChat && (
-                <Button
-                  onClick={handleStartChat}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold"
-                >
-                  <MessageSquare className="w-4 h-4 mr-1.5" />
-                  Chat directo
-                </Button>
-              )}
-              {showWhatsApp && (
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      base44.auth.redirectToLogin(window.location.href);
-                      return;
-                    }
-                    handleWhatsAppClick();
-                  }}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white h-10 text-sm font-semibold"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1.5" />
-                  WhatsApp
-                </Button>
-              )}
-              {showPhone && (
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      base44.auth.redirectToLogin(window.location.href);
-                      return;
-                    }
-                    handlePhoneClick();
-                  }}
-                  variant="outline"
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200 h-10 text-sm font-semibold"
-                >
-                  <Phone className="w-4 h-4 mr-1.5" />
-                  Llamar
-                </Button>
-              )}
-            </div>
+            {/* BOTONES CONTACTO CON ICONOS SVG */}
+            <ActionButtonsProfile
+              profile={profile}
+              onChat={handleStartChat}
+              onWhatsApp={handleWhatsAppClick}
+              onCall={() => {
+                if (!user) {
+                  base44.auth.redirectToLogin(window.location.href);
+                  return;
+                }
+                handlePhoneClick();
+              }}
+            />
           </Card>
 
           {/* DESCRIPCIÓN */}

@@ -49,6 +49,7 @@ import SearchAutocomplete from "../components/search/SearchAutocomplete";
 import SearchFilters from "../components/search/SearchFilters";
 import MapView from "../components/search/MapView";
 import SavedSearches from "../components/search/SavedSearches";
+import { ActionButtonsCard } from "../components/profile/ActionButtons";
 
 function slugify(text) {
   if (!text) return '';
@@ -192,33 +193,18 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       <div className="pt-10 px-4 pb-2">
         <h3 className="font-bold text-gray-900 text-base truncate">{profile.business_name}</h3>
         <p className="text-blue-600 text-sm">{profile.categories?.[0]}</p>
-        <p className="text-gray-500 text-xs mt-1">📍 {profile.ciudad}, {profile.provincia}</p>
+        <p className="text-gray-500 text-xs mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" />{profile.ciudad}, {profile.provincia}</p>
         <p className="text-gray-600 text-sm mt-2 line-clamp-2">{profile.descripcion_corta}</p>
         {profile.tarifa_base > 0 && <p className="text-blue-600 font-semibold text-sm mt-1">{profile.tarifa_base}€/h</p>}
       </div>
       
       {/* Botones — stopPropagation para no ir al perfil */}
-      <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
-        <button 
-          onClick={handleContactDirect}
-          className="flex-1 bg-blue-600 text-white rounded-xl py-2 text-sm font-medium flex items-center justify-center gap-1"
-        >💬 Contactar</button>
-        {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-          <a 
-            href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-            target="_blank"
-            onClick={e => e.stopPropagation()}
-            className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-white text-lg"
-          >📱</a>
-        )}
-        {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-          <a 
-            href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
-            onClick={e => e.stopPropagation()}
-            className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-700 text-lg"
-          >📞</a>
-        )}
-      </div>
+      <ActionButtonsCard 
+        profile={profile}
+        onChat={handleContactDirect}
+        onWhatsApp={() => {}}
+        onCall={() => {}}
+      />
     </div>
   );
   });
