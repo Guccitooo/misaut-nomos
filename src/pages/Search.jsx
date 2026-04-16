@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { differenceInDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -147,8 +148,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   // Badge "Responde rápido" si tiene reseñas recientes o rating alto
   const isQuickResponder = profile.average_rating >= 4.5 && profile.total_reviews >= 3;
   // "Nuevo" solo si el perfil se creó hace menos de 30 días
-  const profileAge = profile.created_date ? (Date.now() - new Date(profile.created_date).getTime()) / (1000 * 60 * 60 * 24) : 999;
-  const isNew = profileAge < 30;
+  const createdAt = profile.created_at || profile.created_date;
+  const isNew = createdAt ? differenceInDays(new Date(), new Date(createdAt)) <= 30 : false;
 
   return (
     <>
@@ -188,7 +189,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
                     decoding="async"
                   />
                 ) : (
-                  <AvatarFallback className="bg-blue-600 text-white font-bold text-lg">
+                  <AvatarFallback className="bg-blue-600 text-white font-semibold text-lg">
                     {profile.business_name?.charAt(0)?.toUpperCase() || "P"}
                   </AvatarFallback>
                 );
@@ -704,7 +705,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pr-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pr-4 w-full">
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <div key={profile.id}>
                         <ProfileCard

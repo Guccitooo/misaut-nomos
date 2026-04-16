@@ -428,6 +428,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     );
   }
 
+  console.log('DEBUG USER ROLE:', JSON.stringify({ role: user?.role, email: user?.email, id: user?.id }));
+
   if (user?.role === "admin") {
     navigationItems.push(
       {
