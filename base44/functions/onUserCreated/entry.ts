@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       </ul>
       
       <div class="cta">
-        <a href="https://misautonomos.es/Search" class="button">
+        <a href="https://misautonomos.es/buscar" class="button">
           Buscar autónomos ahora →
         </a>
       </div>
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
       <div class="promo-section">
         <h4>🔧 ¿Eres profesional autónomo?</h4>
         <p>Únete a MisAutónomos y empieza a recibir clientes. 60 días gratis sin compromiso.</p>
-        <a href="https://misautonomos.es/PricingPlans" class="button-orange">
+        <a href="https://misautonomos.es/precios" class="button-orange">
           Suscribirme como autónomo →
         </a>
       </div>
@@ -123,9 +123,9 @@ Deno.serve(async (req) => {
         <a href="https://misautonomos.es">misautonomos.es</a>
       </p>
       <div class="footer-links">
-        <a href="https://misautonomos.es/HelpCenter">Centro de ayuda</a>
-        <a href="https://misautonomos.es/PrivacyPolicy">Privacidad</a>
-        <a href="https://misautonomos.es/TermsConditions">Términos</a>
+        <a href="https://misautonomos.es/ayuda">Centro de ayuda</a>
+        <a href="https://misautonomos.es/privacidad">Privacidad</a>
+        <a href="https://misautonomos.es/terminos">Términos</a>
       </div>
       <p style="margin-top: 16px; font-size: 12px; color: #6b7280;">
         © ${new Date().getFullYear()} MisAutónomos. Todos los derechos reservados.

@@ -432,8 +432,9 @@ export default function SearchPage() {
   }, [filters.provincia]);
 
   const handleViewProfile = (profile) => {
+    // URL SEO-friendly: /autonomo/:slug
     const slug = profile.slug_publico || slugify(profile.business_name);
-    navigate(createPageUrl("Autonomo") + `?slug=${slug}`);
+    navigate(createPageUrl("Autonomo") + `/${slug}`);
   };
 
   const handleToggleFavorite = async (profile) => {
@@ -471,7 +472,7 @@ export default function SearchPage() {
       <ServiceSchema categories={categories.map(c => c.name)} location={filters.provincia !== "all" ? filters.provincia : "España"} />
       <BreadcrumbSchema items={[
         { name: "Inicio", url: "https://misautonomos.es" },
-        { name: "Buscar Profesionales", url: "https://misautonomos.es/Search" }
+        { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" }
       ]} />
 
       <div className="min-h-screen" style={{ background: '#f8fafc' }}>

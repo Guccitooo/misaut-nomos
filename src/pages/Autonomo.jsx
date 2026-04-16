@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +71,7 @@ function cleanOldSlug(slug) {
 
 export default function AutonomoPage() {
   const navigate = useNavigate();
+  const params = useParams();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -80,9 +81,9 @@ export default function AutonomoPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  // Leer slug de query params
+  // Leer slug de path param (:slug) o fallback a query param (?slug=xxx)
   const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get("slug");
+  const slug = params.slug || urlParams.get("slug");
 
   // Redirigir a búsqueda si no hay slug
   useEffect(() => {
@@ -166,8 +167,8 @@ export default function AutonomoPage() {
   // Redirigir automáticamente a slug limpio si es diferente
   useEffect(() => {
     if (redirectSlug && redirectSlug !== slug && profile) {
-      // Actualizar URL sin recargar la página (redirección 301 conceptual)
-      const newUrl = createPageUrl("Autonomo") + `?slug=${redirectSlug}`;
+      // Actualizar URL a la forma SEO-friendly con path param
+      const newUrl = createPageUrl("Autonomo") + `/${redirectSlug}`;
       window.history.replaceState({}, '', newUrl);
     }
   }, [redirectSlug, slug, profile]);
@@ -385,7 +386,7 @@ export default function AutonomoPage() {
   
   // SEO optimizado
   const canonicalSlug = profile.slug_publico || slugify(profile.business_name);
-  const canonicalUrl = `https://misautonomos.es/Autonomo?slug=${canonicalSlug}`;
+  const canonicalUrl = `https://misautonomos.es/autonomo/${canonicalSlug}`;
 
   // Título SEO optimizado (máx 60 caracteres ideal)
   const categoryName = profile.categories?.[0] || 'Profesional';
@@ -420,8 +421,8 @@ export default function AutonomoPage() {
   // Breadcrumb items para SEO
   const breadcrumbItems = [
     { name: "Inicio", url: "https://misautonomos.es" },
-    { name: "Buscar Profesionales", url: "https://misautonomos.es/Search" },
-    { name: categoryName, url: `https://misautonomos.es/Categoria?name=${slugify(categoryName)}` },
+    { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" },
+    { name: categoryName, url: `https://misautonomos.es/categoria/${slugify(categoryName)}` },
     { name: profile.business_name, url: canonicalUrl }
   ];
 

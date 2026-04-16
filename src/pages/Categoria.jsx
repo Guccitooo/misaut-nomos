@@ -128,8 +128,9 @@ export default function CategoriaPage() {
   };
 
   const handleViewProfile = (profile) => {
+    // URL SEO-friendly con path param: /autonomo/:slug
     const slug = profile.slug_publico || slugify(profile.business_name);
-    navigate(`${createPageUrl("Autonomo")}?slug=${slug}`);
+    navigate(`${createPageUrl("Autonomo")}/${slug}`);
   };
 
   const handleToggleFavorite = async (profile) => {
@@ -158,8 +159,8 @@ export default function CategoriaPage() {
 
   // SEO
   const canonicalUrl = ciudadName 
-    ? `https://misautonomos.es/Categoria?name=${categorySlug}&ciudad=${slugify(ciudadName)}`
-    : `https://misautonomos.es/Categoria?name=${categorySlug}`;
+    ? `https://misautonomos.es/categoria/${categorySlug}?ciudad=${slugify(ciudadName)}`
+    : `https://misautonomos.es/categoria/${categorySlug}`;
   
   const seoTitle = ciudadName 
     ? `${categoryName || 'Profesionales'} en ${ciudadName} - MisAutónomos`

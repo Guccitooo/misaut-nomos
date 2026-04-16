@@ -130,10 +130,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }, [location.pathname, currentPageName]);
 
   const hideBottomBarRoutes = [
-    createPageUrl("UserTypeSelection"),
-    createPageUrl("ProfileOnboarding"),
-    createPageUrl("ClientOnboarding"),
-    createPageUrl("Onboarding")
+    createPageUrl("UserTypeSelection"),    // /registro
+    createPageUrl("ProfileOnboarding"),   // /completar-perfil
+    createPageUrl("ClientOnboarding"),    // /registro-cliente
+    createPageUrl("Onboarding"),          // /bienvenida
   ];
 
   const shouldShowSidebar = () => {
@@ -159,6 +159,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     if (loadingUser || !user) return;
     
     const isOnboardingRoute = location.pathname === createPageUrl("ProfileOnboarding") || 
+                              location.pathname.startsWith(createPageUrl("ProfileOnboarding")) ||
                               location.pathname === createPageUrl("PricingPlans") ||
                               location.pathname === createPageUrl("SubscriptionManagement") ||
                               location.pathname === createPageUrl("PaymentSuccess");
