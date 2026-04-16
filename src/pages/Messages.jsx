@@ -943,7 +943,8 @@ export default function MessagesPage() {
 
                   <Button type="button" variant="ghost" size="icon"
                     className="h-10 w-10 rounded-xl flex-shrink-0 text-gray-500 hover:text-gray-700"
-                    onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}>
+                    onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
+                    aria-label="Adjuntar archivo">
                     {uploadingFile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
                   </Button>
 
@@ -958,13 +959,15 @@ export default function MessagesPage() {
                   {isRecording ? (
                     <Button type="button"
                       onMouseUp={stopRecording} onTouchEnd={stopRecording}
-                      className="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-white animate-pulse flex-shrink-0 text-xs font-semibold">
+                      className="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-white animate-pulse flex-shrink-0 text-xs font-semibold"
+                      aria-label={`Detener grabación - ${recordingSeconds} segundos`}>
                       ⏹ {recordingSeconds}s
                     </Button>
                   ) : (
                     <Button type="button"
                       onMouseDown={startRecording} onTouchStart={startRecording}
-                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0">
+                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0"
+                      aria-label="Grabar mensaje de voz">
                       🎤
                     </Button>
                   )}

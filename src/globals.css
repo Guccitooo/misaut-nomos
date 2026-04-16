@@ -354,6 +354,102 @@ a:active {
   will-change: transform;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   FIX CLS (Cumulative Layout Shift) — Dimensiones fijas previenen reflow
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Avatares — siempre reservar espacio exacto */
+.avatar-placeholder,
+[data-avatar] {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
+}
+
+.avatar-lg {
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  min-height: 96px;
+  flex-shrink: 0;
+}
+
+/* Cards de profesional — altura mínima fija */
+.professional-card {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Skeleton loaders — mismas dimensiones que contenido real */
+.skeleton {
+  min-height: 48px;
+  contain: layout style;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 9999px;
+}
+
+/* Imágenes — dimensiones explícitas o aspect-ratio */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Header — altura fija para no causar reflow */
+header,
+nav,
+[role="banner"] {
+  height: 64px;
+  min-height: 64px;
+}
+
+/* Bottom nav móvil — altura fija */
+.mobile-bottom-nav {
+  height: 56px;
+  min-height: 56px;
+}
+
+/* Botones — altura mínima accesible */
+button,
+a[role="button"],
+[role="button"] {
+  min-height: 44px;
+}
+
+/* Texto — prevent FOUT (Flash of Unstyled Text) */
+@font-face {
+  font-family: -apple-system;
+  font-display: swap;
+}
+
+/* Preload del contenido crítico */
+[data-critical] {
+  content-visibility: visible;
+}
+
+/* Lazy load del contenido fuera de viewport */
+[data-lazy] {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
+}
+
 /* Optimización rendering */
 .card-grid {
   contain: layout;

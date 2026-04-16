@@ -11,7 +11,21 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { AppProvider } from '@/lib/AppContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { Suspense } from 'react';
+import { Suspense, lazy, React } from 'react';
+
+// Lazy load de páginas pesadas (admin, invoicing, CRM)
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminPayments = lazy(() => import('./pages/AdminPayments'));
+const AdminTickets = lazy(() => import('./pages/AdminTickets'));
+const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
+const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
+const Invoices = lazy(() => import('./pages/Invoices'));
+const MisClientes = lazy(() => import('./pages/MisClientes'));
+const CRMAutomations = lazy(() => import('./pages/CRMAutomations'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Jobs = lazy(() => import('./pages/Jobs'));
 
 // Spinner reutilizable para Suspense boundaries de páginas lazy
 const PageLoader = () => (
@@ -148,33 +162,33 @@ const AuthenticatedApp = () => {
           {/* Importante: /dashboard/info va ANTES que /dashboard para que matchee primero */}
           <Route path="/dashboard/info" element={<Pages.DashboardProInfo />} />
           <Route path="/dashboard" element={<Pages.ProfessionalDashboard />} />
-          <Route path="/mis-clientes" element={<Pages.MisClientes />} />
+          <Route path="/mis-clientes" element={<Suspense fallback={<PageLoader />}><MisClientes /></Suspense>} />
           <Route path="/visibilidad" element={<Pages.MiVisibilidad />} />
           <Route path="/perfil" element={<Pages.ProfessionalProfile />} />
           <Route path="/perfil/:slug" element={<Pages.ProfessionalProfile />} />
           <Route path="/completar-perfil" element={<Pages.ProfileOnboarding />} />
-          <Route path="/proyectos" element={<Pages.Projects />} />
-          <Route path="/proyectos/:id" element={<Pages.ProjectDetail />} />
-          <Route path="/calendario" element={<Pages.Calendar />} />
-          <Route path="/facturas" element={<Pages.Invoices />} />
+          <Route path="/proyectos" element={<Suspense fallback={<PageLoader />}><Projects /></Suspense>} />
+          <Route path="/proyectos/:id" element={<Suspense fallback={<PageLoader />}><ProjectDetail /></Suspense>} />
+          <Route path="/calendario" element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
+          <Route path="/facturas" element={<Suspense fallback={<PageLoader />}><Invoices /></Suspense>} />
           <Route path="/pagar" element={<Pages.PayInvoice />} />
           <Route path="/pagar/:id" element={<Pages.PayInvoice />} />
           {/* /clientes/:id ANTES que /clientes para que matchee primero */}
           <Route path="/clientes/:id" element={<Pages.ClientDetail />} />
-          <Route path="/clientes" element={<Pages.MisClientes />} />
-          <Route path="/automatizaciones" element={<Pages.CRMAutomations />} />
-          <Route path="/trabajos" element={<Pages.Jobs />} />
+          <Route path="/clientes" element={<Suspense fallback={<PageLoader />}><MisClientes /></Suspense>} />
+          <Route path="/automatizaciones" element={<Suspense fallback={<PageLoader />}><CRMAutomations /></Suspense>} />
+          <Route path="/trabajos" element={<Suspense fallback={<PageLoader />}><Jobs /></Suspense>} />
           <Route path="/suscripcion" element={<Pages.SubscriptionManagement />} />
           <Route path="/pago-exitoso" element={<Pages.PaymentSuccess />} />
           <Route path="/bienvenida" element={<Pages.Onboarding />} />
 
           {/* ===== RUTAS ADMIN ===== */}
           {/* Subrutas admin ANTES que /admin para matchear primero */}
-          <Route path="/admin/pagos" element={<Pages.AdminPayments />} />
-          <Route path="/admin/soporte" element={<Pages.AdminTickets />} />
-          <Route path="/admin/faq" element={<Pages.AdminFAQ />} />
-          <Route path="/admin/mensajes" element={<Pages.AdminMessagesStats />} />
-          <Route path="/admin" element={<Pages.AdminDashboard />} />
+          <Route path="/admin/pagos" element={<Suspense fallback={<PageLoader />}><AdminPayments /></Suspense>} />
+          <Route path="/admin/soporte" element={<Suspense fallback={<PageLoader />}><AdminTickets /></Suspense>} />
+          <Route path="/admin/faq" element={<Suspense fallback={<PageLoader />}><AdminFAQ /></Suspense>} />
+          <Route path="/admin/mensajes" element={<Suspense fallback={<PageLoader />}><AdminMessagesStats /></Suspense>} />
+          <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
 
           {/* ===== REDIRECTS desde URLs ANTIGUAS (PascalCase → español) ===== */}
           {/* El componente LegacyRedirect detecta la URL vieja y redirige con <Navigate replace>. */}
