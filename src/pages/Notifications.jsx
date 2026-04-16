@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Bell, Check, CheckCheck, Trash2, Mail, Star, AlertCircle, Info, Loader2, Settings, FileText, Clock, MessageSquare, Calendar } from "lucide-react";
+import { Bell, Check, CheckCheck, CheckSquare, Trash2, Mail, Star, AlertCircle, Info, Loader2, Settings, FileText, Clock, MessageSquare, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";

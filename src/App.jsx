@@ -54,7 +54,6 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    {/* Suspense boundary: captura todas las páginas lazy-loaded */}
     <Suspense fallback={<PageLoader />}>
       <LayoutWrapper currentPageName={mainPageKey}>
         <Routes>

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export default function PerformanceMonitor() {
   useEffect(() => {
     // Solo en desarrollo o si está habilitado
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.MODE !== 'production') {
       // Monitorear Web Vitals
       if ('web-vital' in window) {
         const reportWebVital = (metric) => {
