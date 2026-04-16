@@ -149,11 +149,30 @@ export default function MessagesPage() {
     if (!user) return;
     try {
       const [sent, received] = await Promise.all([
-        base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 100),
-        base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 100)
+        base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 200),
+        base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 200)
       ]);
-      const merged = [...sent, ...received].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      setAllMessages(merged);
+      const allMsgs = [...sent, ...received];
+      
+      // Agrupar por conversation_id, quedarse con el más reciente de cada uno
+      const conversationsMap = {};
+      allMsgs.forEach(msg => {
+        const convId = msg.conversation_id;
+        if (!convId) return;
+        if (!conversationsMap[convId] || new Date(msg.created_date) > new Date(conversationsMap[convId].created_date)) {
+          conversationsMap[convId] = msg;
+        }
+      });
+      
+      // Obtener todos los mensajes de las conversaciones activas
+      const activeConvIds = Object.keys(conversationsMap);
+      let allConvMessages = [];
+      for (const convId of activeConvIds) {
+        const msgs = await base44.entities.Message.filter({ conversation_id: convId }, 'created_date', 100);
+        allConvMessages = [...allConvMessages, ...msgs];
+      }
+      
+      setAllMessages(allConvMessages);
     } catch {}
   }, [user]);
 
@@ -226,12 +245,37 @@ export default function MessagesPage() {
 
   // ─── Auto-select conversation from URL ───────────────────────────────────
   useEffect(() => {
-    if (!selectedConvId || !conversations.length) return;
+    if (!selectedConvId || loadingMessages) return;
+
     const conv = conversations.find(c => c.conversationId === selectedConvId);
     if (conv && !selectedOtherUserId) {
       setSelectedOtherUserId(conv.otherUserId);
+      return;
     }
-  }, [conversations, selectedConvId]);
+
+    // Si la conversación no está en la lista pero tenemos ?conv=XXXX,
+    // hacer fetch directo de mensajes con ese conversation_id
+    if (!conv && !selectedOtherUserId) {
+      const loadConversationFromUrl = async () => {
+        try {
+          const msgs = await base44.entities.Message.filter({ conversation_id: selectedConvId }, 'created_date', 100);
+          if (msgs.length > 0) {
+            const firstMsg = msgs[0];
+            const otherUserId = firstMsg.sender_id === user.id ? firstMsg.recipient_id : firstMsg.sender_id;
+            setSelectedOtherUserId(otherUserId);
+            setAllMessages(prev => {
+              const existing = prev.filter(m => m.conversation_id === selectedConvId);
+              if (existing.length === 0) {
+                return [...prev, ...msgs];
+              }
+              return prev;
+            });
+          }
+        } catch {}
+      };
+      loadConversationFromUrl();
+    }
+  }, [conversations, selectedConvId, loadingMessages, user]);
 
   // ─── Current conversation messages ────────────────────────────────────────
   const currentMessages = useMemo(() => {
