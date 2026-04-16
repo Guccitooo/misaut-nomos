@@ -169,155 +169,59 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
 
   return (
-    <>
-      {/* Mobile: horizontal compact card */}
-      <div
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm sm:hidden active:shadow-md transition-shadow"
-        onClick={onClick}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className="flex gap-3 p-3">
-          <div className="flex-shrink-0 relative">
-            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-              {photoUrl ? (
-                <img src={photoUrl} alt={profile.business_name} className="object-cover w-full h-full" width="64" height="64" loading="lazy" onError={e => { e.target.style.display='none'; }} />
-              ) : (
-                <span className="text-white font-bold text-xl">{profile.business_name?.charAt(0)?.toUpperCase() || "P"}</span>
-              )}
-            </div>
-            {isNew && <span className="absolute -top-1 -right-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold" style={{ fontSize: '10px' }}>Nuevo</span>}
+    <div 
+      onClick={onClick}
+      className="cursor-pointer hover:shadow-lg transition-shadow bg-white rounded-2xl overflow-hidden border border-gray-100"
+    >
+      {/* Header azul con foto */}
+      <div className="bg-gradient-to-br from-blue-500 to-blue-700 h-24 relative">
+        <div className="absolute -bottom-8 left-4">
+          <img 
+            src={photoUrl} 
+            alt={profile.business_name}
+            className="w-16 h-16 rounded-full border-4 border-white object-cover bg-blue-400"
+            onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+          />
+          <div className="w-16 h-16 rounded-full border-4 border-white bg-blue-500 hidden items-center justify-center text-white text-xl font-bold">
+            {profile.business_name?.[0]?.toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="font-bold text-gray-900 truncate" style={{ fontSize: '15px' }}>{profile.business_name}</h3>
-              <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} style={{ width: '36px', height: '36px', flexShrink: 0, touchAction: 'manipulation' }} className="flex items-center justify-center">
-                <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
-              </button>
-            </div>
-            {profile.categories?.length > 0 && (
-              <p className="text-blue-600 font-medium truncate" style={{ fontSize: '13px' }}>{profile.categories[0]}</p>
-            )}
-            <div className="flex items-center gap-1 text-gray-400" style={{ fontSize: '12px' }}>
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{profile.ciudad || profile.provincia}</span>
-              {profile.average_rating > 0 && (
-                <>
-                  <span>·</span>
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="font-bold text-gray-700">{profile.average_rating.toFixed(1)}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="px-3 pb-3 flex gap-2">
-          <button
-            onClick={handleContactDirect}
-            className="flex-1 bg-blue-600 text-white font-semibold rounded-xl active:bg-blue-700 flex items-center justify-center gap-1.5"
-            style={{ height: '44px', fontSize: '15px', touchAction: 'manipulation' }}
-          >
-            <MessageSquare className="w-4 h-4" />Contactar
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="h-11 px-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium flex items-center gap-1"
-            style={{ touchAction: 'manipulation' }}
-          >
-            Ver perfil <ChevronRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
-
-      {/* Desktop: card completa */}
-      <Card
-        className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex-col group cursor-pointer hidden sm:flex hover:border-blue-200"
-        style={{ minHeight: '300px', transition: 'box-shadow 0.2s, transform 0.2s, border-color 0.2s' }}
-        onClick={onClick}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(59,130,246,0.18)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
-      >
-        <div className="relative h-20 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' }}>
-          <div className="absolute top-2 left-2 flex gap-1">
-            {isQuickResponder && (
-              <span className="inline-flex items-center gap-1 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium shadow">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />Rápido
-              </span>
-            )}
-            {isNew && <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium border border-white/30">Nuevo</span>}
-          </div>
-          <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center ${isFavorite ? 'bg-red-500 text-white' : 'bg-white/20 text-white backdrop-blur-sm'}`}>
-            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-          </button>
-          <div className="absolute -bottom-7 left-4">
-            <div className="w-14 h-14 rounded-2xl shadow-lg overflow-hidden bg-white" style={{ border: '3px solid white' }}>
-              {photoUrl ? (
-                <img src={photoUrl} alt={profile.business_name} className="object-cover w-full h-full" width="56" height="56" loading="lazy" onError={e => { e.target.style.display='none'; }} />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-xl">
-                  {profile.business_name?.charAt(0)?.toUpperCase() || "P"}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        <CardContent className="p-4 pt-9 flex flex-col flex-1">
-          <div className="mb-2">
-            <h3 className="text-sm font-bold text-gray-900 truncate leading-tight">{profile.business_name}</h3>
-            {profile.categories?.length > 0 && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <CategoryIcon className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                <span className="text-xs text-blue-600 font-medium truncate">{t(profile.categories[0]) || profile.categories[0]}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
-            </div>
-          </div>
-          <div className="flex-1 mb-3">
-            {displayProfile.descripcion_corta ? (
-              <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{displayProfile.descripcion_corta}</p>
-            ) : (
-              <p className="text-xs text-gray-300 italic">Sin descripción</p>
-            )}
-          </div>
-          <div className="flex items-center justify-between mb-3">
-            {profile.average_rating > 0 ? (
-              <div className="flex items-center gap-1">
-                <div className="flex">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3 h-3 ${i <= Math.round(profile.average_rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-gray-200'}`} />)}</div>
-                <span className="text-xs font-bold text-gray-800">{profile.average_rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-400">({profile.total_reviews})</span>
-              </div>
-            ) : <span className="text-xs text-gray-300">Sin valoraciones</span>}
-            {profile.tarifa_base > 0 && <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg">{profile.tarifa_base}€/h</span>}
-          </div>
-          <div className="flex items-center gap-1.5 mt-auto">
-            <Button
-              onClick={handleContactDirect}
-              className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-sm"
-            >
-              <MessageSquare className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span className="truncate">Contactar</span>
-            </Button>
-            <Button
-              onClick={(e) => { e.stopPropagation(); onClick(); }}
-              variant="outline" size="sm"
-              className="h-9 border-gray-200 hover:border-blue-300 rounded-xl text-xs px-2.5 flex-shrink-0 flex items-center gap-1"
-            >
-              Ver perfil <ChevronRight className="w-3 h-3" />
-            </Button>
-            {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <button onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }} className="w-9 h-9 flex items-center justify-center rounded-full border border-green-200 bg-white" title="WhatsApp">
-                <MessageCircle className="w-4 h-4 text-green-600" />
-              </button>
-            )}
-            {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-              <button onClick={(e) => { e.stopPropagation(); handleCall(); }} className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white" title="Llamar">
-                <Phone className="w-4 h-4 text-gray-500" />
-              </button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      
+      {/* Info */}
+      <div className="pt-10 px-4 pb-2">
+        <h3 className="font-bold text-gray-900 text-base truncate">{profile.business_name}</h3>
+        <p className="text-blue-600 text-sm">{profile.categories?.[0]}</p>
+        <p className="text-gray-500 text-xs mt-1">📍 {profile.ciudad}, {profile.provincia}</p>
+        <p className="text-gray-600 text-sm mt-2 line-clamp-2">{profile.descripcion_corta}</p>
+        {profile.tarifa_base > 0 && <p className="text-blue-600 font-semibold text-sm mt-1">{profile.tarifa_base}€/h</p>}
+      </div>
+      
+      {/* Botones — stopPropagation para no ir al perfil */}
+      <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
+        <button 
+          onClick={handleContactDirect}
+          className="flex-1 bg-blue-600 text-white rounded-xl py-2 text-sm font-medium flex items-center justify-center gap-1"
+        >💬 Contactar</button>
+        {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
+          <a 
+            href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
+            target="_blank"
+            onClick={e => e.stopPropagation()}
+            className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-white text-lg"
+          >📱</a>
+        )}
+        {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
+          <a 
+            href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+            onClick={e => e.stopPropagation()}
+            className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-700 text-lg"
+          >📞</a>
+        )}
+      </div>
+    </div>
+  );
+}
 
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">

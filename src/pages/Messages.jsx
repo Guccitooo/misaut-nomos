@@ -100,6 +100,12 @@ export default function MessagesPage() {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const pollingRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const timerRef = useRef(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   const isProfessional = user?.user_type === "professionnel";
 
@@ -359,6 +365,56 @@ export default function MessagesPage() {
     }
     return "...";
   }, [selectedConvId, currentConv, profilesCache, selectedOtherUserId, currentMessages, user, isProfessional]);
+
+  // ─── Audio Recording ──────────────────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = e => chunksRef.current.push(e.data);
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
+    } catch {
+      toast.error("No se pudo acceder al micrófono");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!mediaRecorderRef.current) return;
+    clearInterval(timerRef.current);
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: blob });
+        const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
+        if (!otherUserId) return;
+
+        let profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName;
+        let clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email;
+
+        await base44.entities.Message.create({
+          conversation_id: selectedConvId,
+          sender_id: user.id,
+          recipient_id: otherUserId,
+          content: `🎤 Audio (${recordingSeconds}s)`,
+          professional_name: isProfessional ? (user.full_name || "") : profName,
+          client_name: !isProfessional ? clientName : "",
+          is_read: false,
+          attachments: [{ url: file_url, type: 'audio', name: `audio_${Date.now()}.webm`, size: blob.size }]
+        });
+        await loadMessages();
+        scrollToBottom(true);
+      } catch {
+        toast.error("Error al guardar audio");
+      }
+    };
+    setIsRecording(false);
+  };
 
   // ─── Send Message ─────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
@@ -713,7 +769,18 @@ export default function MessagesPage() {
 
                             {msg.attachments?.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-1">
-                                {msg.attachments.map((f, i) => <FileAttachment key={i} file={f} />)}
+                                {msg.attachments.map((f, i) => 
+                                  f.type === 'audio' ? (
+                                    <div key={i} className="flex items-center gap-2 bg-blue-50 rounded-xl p-2 min-w-32">
+                                      <button onClick={() => new Audio(f.url).play()} 
+                                        className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">▶</button>
+                                      <div className="flex-1 h-1 bg-blue-200 rounded"/>
+                                      <span className="text-xs text-gray-500">{f.name.match(/\d+/) ? f.name.match(/\d+/)[0] : '?'}s</span>
+                                    </div>
+                                  ) : (
+                                    <FileAttachment key={i} file={f} />
+                                  )
+                                )}
                               </div>
                             )}
 
@@ -798,6 +865,20 @@ export default function MessagesPage() {
                       className="h-10 w-10 rounded-xl flex-shrink-0 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowQuoteDialog(true)}>
                       <FileText className="w-4 h-4" />
+                    </Button>
+                  )}
+
+                  {isRecording ? (
+                    <Button type="button"
+                      onMouseUp={stopRecording} onTouchEnd={stopRecording}
+                      className="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-white animate-pulse flex-shrink-0 text-xs font-semibold">
+                      ⏹ {recordingSeconds}s
+                    </Button>
+                  ) : (
+                    <Button type="button"
+                      onMouseDown={startRecording} onTouchStart={startRecording}
+                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0">
+                      🎤
                     </Button>
                   )}
 

@@ -211,6 +211,13 @@ export default function ProfessionalProfilePage() {
     return cleaned;
   };
 
+  const formatPhoneForCall = (phone) => {
+    if (!phone) return null;
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (!cleaned.startsWith('+')) cleaned = '+34' + cleaned;
+    return cleaned;
+  };
+
   const handlePhoneClick = () => {
     trackContactClick();
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -502,68 +509,34 @@ export default function ProfessionalProfilePage() {
 
             {/* TELÉFONO VISIBLE */}
             {profile.telefono_contacto && (
-              <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <p className="text-xs text-gray-600 mb-1">Teléfono</p>
-                <p className="text-lg font-bold text-gray-900">📞 {profile.telefono_contacto}</p>
+              <div className="text-center my-3">
+                <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`} className="text-2xl font-bold text-gray-900 hover:text-blue-600">
+                  📞 {profile.telefono_contacto}
+                </a>
               </div>
             )}
 
             {/* BOTONES DE CONTACTO */}
-            <TooltipProvider>
-              <div className="flex gap-2 flex-wrap">
-                {showChat && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleStartChat}
-                        className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 h-9 text-sm"
-                      >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        Chat directo
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('sendDirectMessage')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {showWhatsApp && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleWhatsAppClick}
-                        className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700 h-9 text-sm text-white"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        WhatsApp
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('contactViaWhatsApp')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {showPhone && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        onClick={handlePhoneClick}
-                        variant="outline"
-                        className="flex-1 min-w-[120px] h-9 text-sm hover:bg-gray-100 hover:border-gray-400"
-                      >
-                        <Phone className="w-4 h-4 mr-1" />
-                        Llamar
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('callPhone')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </TooltipProvider>
+            <div className="flex gap-3 mt-4 flex-wrap">
+              {showChat && (
+                <button onClick={handleStartChat} className="flex-1 bg-blue-600 text-white rounded-2xl py-3 font-semibold">
+                  💬 Chat directo
+                </button>
+              )}
+              {showWhatsApp && (
+                <a href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}?text=Hola, te contacto desde MisAutónomos`}
+                   target="_blank"
+                   className="flex-1 bg-green-500 text-white rounded-2xl py-3 font-semibold text-center">
+                  WhatsApp
+                </a>
+              )}
+              {showPhone && (
+                <a href={`tel:${formatPhoneForCall(profile.telefono_contacto)}`}
+                   className="flex-1 bg-gray-100 text-gray-800 rounded-2xl py-3 font-semibold text-center">
+                  Llamar
+                </a>
+              )}
+            </div>
           </Card>
 
           {/* DESCRIPCIÓN E INFO */}
