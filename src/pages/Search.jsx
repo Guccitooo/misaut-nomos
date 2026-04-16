@@ -223,47 +223,6 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   );
 }
 
-      <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader className="text-center">
-            <DialogTitle>Número de teléfono</DialogTitle>
-            <DialogDescription>{profile.business_name}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-6 bg-blue-50 rounded-xl border border-blue-200 w-full text-center">
-              <p className="text-3xl font-bold text-blue-900">{profile.telefono_contacto}</p>
-            </div>
-            <Button onClick={() => copyToClipboard(profile.telefono_contacto)} variant="outline" className="w-full">
-              {copiedPhone ? <><Check className="w-4 h-4 mr-2 text-green-600" />Copiado</> : <><Copy className="w-4 h-4 mr-2" />Copiar número</>}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showWhatsAppModal} onOpenChange={setShowWhatsAppModal}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader className="text-center">
-            <DialogTitle className="flex items-center justify-center gap-2">
-              <MessageCircle className="w-6 h-6 text-green-600" />WhatsApp
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-6 bg-green-50 rounded-xl border border-green-200 w-full text-center">
-              <p className="text-3xl font-bold text-green-900">{profile.telefono_contacto}</p>
-            </div>
-            <Button onClick={() => {
-              window.open(`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`, '_blank');
-              setShowWhatsAppModal(false);
-            }} className="w-full bg-green-600 hover:bg-green-700 h-12">
-              <MessageCircle className="w-5 h-5 mr-2" />Abrir WhatsApp
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-});
-
 export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
