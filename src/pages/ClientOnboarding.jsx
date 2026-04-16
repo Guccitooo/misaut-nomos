@@ -2,198 +2,54 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CheckCircle, Loader2, AlertCircle, Search } from "lucide-react";
+import { Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import ModernCheckbox from "../components/ui/ModernCheckbox";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
 
 export default function ClientOnboardingPage() {
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [error, setError] = useState(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [touchedFields, setTouchedFields] = useState({});
 
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
-    telefono: "",
-    provincia: "",
-    ciudad: "",
-    servicios_buscados: [],
+    password: "",
     acepta_terminos: false,
   });
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['serviceCategories'],
-    queryFn: async () => {
-      const cats = await base44.entities.ServiceCategory.list();
-      return cats.map(c => c.name);
-    },
-    initialData: [],
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const serviciosDisponibles = categories.length > 0 ? categories : [
-    "Abogado",
-    "Albañil / Reformas",
-    "Asesoría o gestoría",
-    "Autónomo de limpieza",
-    "Carpintero",
-    "Cerrajero",
-    "Climatización / Calefacción",
-    "Electricista",
-    "Empresa multiservicios",
-    "Fontanero",
-    "Informático a domicilio / soporte IT",
-    "Instalador de aire acondicionado",
-    "Jardinero",
-    "Mantenimiento de piscinas",
-    "Mantenimiento general",
-    "Marketing digital / diseño web",
-    "Peluquería y estética a domicilio",
-    "Persianas y toldos",
-    "Pintor",
-    "Transportista"
-  ];
-
-  const provincias = [
-    "A Coruña", "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
-    "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ceuta",
-    "Ciudad Real", "Córdoba", "Cuenca", "Girona", "Granada", "Guadalajara", "Guipúzcoa",
-    "Huelva", "Huesca", "Jaén", "La Rioja", "Las Palmas", "León", "Lleida", "Lugo", "Madrid",
-    "Málaga", "Melilla", "Murcia", "Navarra", "Ourense", "Palencia", "Pontevedra", "Salamanca",
-    "Santa Cruz de Tenerife", "Segovia", "Sevilla", "Soria", "Tarragona", "Teruel", "Toledo",
-    "Valencia", "Valladolid", "Vizcaya", "Zamora", "Zaragoza"
-  ];
-
-  const ciudadesPorProvincia = {
-    "Madrid": ["Madrid", "Alcalá de Henares", "Móstoles", "Fuenlabrada", "Leganés", "Getafe", "Alcorcón", "Torrejón de Ardoz", "Parla", "Alcobendas", "San Sebastián de los Reyes", "Pozuelo de Alarcón", "Las Rozas", "Majadahonda", "Rivas-Vaciamadrid", "Coslada", "Valdemoro", "Collado Villalba", "Aranjuez", "Arganda del Rey", "Boadilla del Monte", "Pinto", "San Fernando de Henares", "Colmenar Viejo", "Galapagar"],
-    "Barcelona": ["Barcelona", "Hospitalet de Llobregat", "Badalona", "Terrassa", "Sabadell", "Mataró", "Santa Coloma de Gramenet", "Cornellà de Llobregat", "Sant Boi de Llobregat", "Rubí", "Manresa", "Vilanova i la Geltrú", "Viladecans", "Castelldefels", "El Prat de Llobregat", "Granollers", "Cerdanyola del Vallès", "Sant Cugat del Vallès", "Mollet del Vallès", "Esplugues de Llobregat", "Gavà", "Vic", "Sant Feliu de Llobregat", "Igualada", "Sitges"],
-    "Valencia": ["Valencia", "Gandía", "Torrent", "Paterna", "Sagunto", "Alzira", "Mislata", "Burjassot", "Catarroja", "Sueca", "Xirivella", "Manises", "Ontinyent", "Alaquàs", "Xàtiva", "Cullera", "Massamagrell", "Quart de Poblet", "Alfafar", "Requena"],
-    "Sevilla": ["Sevilla", "Dos Hermanas", "Alcalá de Guadaíra", "Utrera", "Mairena del Aljarafe", "Los Palacios", "Écija", "La Rinconada", "Camas", "Morón de la Frontera", "Carmona", "Lebrija", "San Juan de Aznalfarache", "Coria del Río", "Tomares", "Bormujos"],
-    "Málaga": ["Málaga", "Marbella", "Vélez-Málaga", "Fuengirola", "Mijas", "Torremolinos", "Estepona", "Benalmádena", "Rincón de la Victoria", "Antequera", "Ronda", "Alhaurín de la Torre", "Nerja", "Coín", "Alhaurín el Grande", "Manilva", "Torrox", "Cártama"],
-    "Alicante": ["Alicante", "Elche", "Torrevieja", "Orihuela", "Benidorm", "Alcoy", "Elda", "San Vicente del Raspeig", "Dénia", "Villena", "Santa Pola", "Petrer", "Calpe", "Altea", "Jávea", "Villajoyosa", "Ibi", "Campello", "Crevillente", "Novelda", "Aspe"],
-    "Murcia": ["Murcia", "Cartagena", "Lorca", "Molina de Segura", "Alcantarilla", "Yecla", "Águilas", "Torre-Pacheco", "San Javier", "Jumilla", "Totana", "Las Torres de Cotillas", "San Pedro del Pinatar", "Archena", "Caravaca de la Cruz", "Alhama de Murcia", "Mazarrón", "Cieza"],
-    "Zaragoza": ["Zaragoza", "Calatayud", "Utebo", "Ejea de los Caballeros", "Cuarte de Huerva", "Tarazona", "Caspe", "Zuera", "Alagón", "Borja"],
-    "Vizcaya": ["Bilbao", "Barakaldo", "Getxo", "Portugalete", "Santurtzi", "Basauri", "Leioa", "Galdakao", "Durango", "Sestao", "Erandio", "Bermeo", "Amorebieta", "Gernika"],
-    "A Coruña": ["A Coruña", "Santiago de Compostela", "Ferrol", "Narón", "Oleiros", "Arteixo", "Culleredo", "Carballo", "Betanzos", "Cambre", "Ames"],
-    "Las Palmas": ["Las Palmas de Gran Canaria", "Telde", "Santa Lucía", "Arucas", "Agüimes", "Ingenio", "San Bartolomé de Tirajana", "Puerto del Rosario", "Arrecife", "Mogán"],
-    "Granada": ["Granada", "Motril", "Almuñécar", "Baza", "Loja", "Armilla", "Guadix", "Maracena", "Atarfe", "Huétor Vega"],
-    "Cádiz": ["Cádiz", "Jerez de la Frontera", "Algeciras", "San Fernando", "El Puerto de Santa María", "Chiclana", "La Línea de la Concepción", "Sanlúcar de Barrameda", "Puerto Real", "Arcos de la Frontera", "Conil de la Frontera", "Barbate", "Rota"],
-    "Pontevedra": ["Vigo", "Pontevedra", "Vilagarcía de Arousa", "Redondela", "Cangas", "Marín", "O Porriño", "Sanxenxo", "Baiona", "Moaña", "Ponteareas", "Lalín"],
-    "Santa Cruz de Tenerife": ["Santa Cruz de Tenerife", "San Cristóbal de La Laguna", "Arona", "Adeje", "Granadilla de Abona", "Santa Cruz de La Palma", "Los Llanos de Aridane", "Puerto de la Cruz", "Los Realejos"],
-    "Baleares": ["Palma de Mallorca", "Calvià", "Manacor", "Llucmajor", "Ibiza", "Mahón", "Marratxí", "Inca", "Alcúdia", "Felanitx", "Ciutadella de Menorca", "Santa Eulalia del Río", "Pollensa"],
-    "Asturias": ["Oviedo", "Gijón", "Avilés", "Siero", "Mieres", "Langreo", "Castrillón", "Llanera", "Corvera", "Carreño", "Gozón", "Navia", "Villaviciosa", "Tineo"],
-    "Guipúzcoa": ["San Sebastián", "Irún", "Éibar", "Rentería", "Zarautz", "Mondragón", "Hernani", "Lasarte-Oria", "Hondarribia", "Beasain", "Andoain"],
-    "Tarragona": ["Tarragona", "Reus", "Tortosa", "El Vendrell", "Cambrils", "Valls", "Vila-seca", "Salou", "Amposta", "Calafell", "Roda de Berà"],
-    "Valladolid": ["Valladolid", "Medina del Campo", "Laguna de Duero", "Arroyo de la Encomienda", "Tudela de Duero", "Íscar", "Cigales", "Peñafiel"],
-    "Toledo": ["Toledo", "Talavera de la Reina", "Illescas", "Seseña", "Torrijos", "Yuncos", "Olías del Rey", "Sonseca", "Quintanar de la Orden"],
-    "Girona": ["Girona", "Figueres", "Lloret de Mar", "Blanes", "Salt", "Olot", "Palafrugell"],
-    "Lleida": ["Lleida", "Balaguer", "Tàrrega", "Mollerussa", "La Seu d'Urgell"],
-    "Cantabria": ["Santander", "Torrelavega", "Castro-Urdiales", "Camargo", "Piélagos", "El Astillero", "Santa Cruz de Bezana", "Laredo", "Santoña"],
-    "Castellón": ["Castellón de la Plana", "Vila-real", "Burriana", "Vinaròs", "Onda", "Benicàssim", "Nules", "Almassora", "Benicarló", "La Vall d'Uixó"],
-    "Badajoz": ["Badajoz", "Mérida", "Don Benito", "Almendralejo", "Villanueva de la Serena", "Zafra", "Montijo", "Villafranca de los Barros", "Olivenza"],
-    "Huelva": ["Huelva", "Lepe", "Almonte", "Moguer", "Ayamonte", "Isla Cristina", "Cartaya", "Punta Umbría", "Aljaraque"],
-    "Jaén": ["Jaén", "Linares", "Andújar", "Úbeda", "Martos", "Alcalá la Real", "Bailén", "Baeza", "Villacarrillo"],
-    "La Rioja": ["Logroño", "Calahorra", "Arnedo", "Haro", "Lardero"],
-    "Navarra": ["Pamplona", "Tudela", "Barañáin", "Burlada", "Estella", "Tafalla", "Zizur Mayor"],
-    "Álava": ["Vitoria-Gasteiz", "Llodio", "Amurrio"],
-    "Almería": ["Almería", "Roquetas de Mar", "El Ejido", "Vícar", "Níjar", "Adra", "Huércal-Overa"],
-    "Ávila": ["Ávila", "Arévalo", "Arenas de San Pedro"],
-    "Burgos": ["Burgos", "Miranda de Ebro", "Aranda de Duero"],
-    "Cáceres": ["Cáceres", "Plasencia", "Navalmoral de la Mata"],
-    "Ciudad Real": ["Ciudad Real", "Puertollano", "Tomelloso", "Alcázar de San Juan", "Valdepeñas", "Manzanares", "Daimiel"],
-    "Córdoba": ["Córdoba", "Lucena", "Puente Genil", "Montilla", "Priego de Córdoba", "Cabra", "Baena", "Palma del Río", "Pozoblanco", "Peñarroya-Pueblonuevo"],
-    "Cuenca": ["Cuenca", "Tarancón", "Quintanar del Rey"],
-    "Guadalajara": ["Guadalajara", "Azuqueca de Henares", "Alovera"],
-    "Huesca": ["Huesca", "Monzón", "Barbastro", "Jaca"],
-    "León": ["León", "Ponferrada", "San Andrés del Rabanedo", "Villaquilambre", "Astorga", "La Bañeza", "Valencia de Don Juan", "Villablino"],
-    "Lugo": ["Lugo", "Monforte de Lemos", "Viveiro"],
-    "Ourense": ["Ourense", "Verín", "O Barco de Valdeorras"],
-    "Palencia": ["Palencia", "Guardo", "Aguilar de Campoo"],
-    "Salamanca": ["Salamanca", "Béjar", "Ciudad Rodrigo"],
-    "Segovia": ["Segovia", "Cuéllar", "San Ildefonso"],
-    "Soria": ["Soria", "Almazán", "El Burgo de Osma"],
-    "Teruel": ["Teruel", "Alcañiz", "Andorra"],
-    "Zamora": ["Zamora", "Benavente", "Toro"],
-    "Ceuta": ["Ceuta"],
-    "Melilla": ["Melilla"]
-  };
 
   useEffect(() => {
     loadUser();
   }, []);
-
-  useEffect(() => {
-    if (user && !completeOnboardingMutation.isPending) {
-      const savedFormData = localStorage.getItem('client_onboarding_pending');
-      if (savedFormData) {
-        try {
-          const parsedData = JSON.parse(savedFormData);
-          console.log('📋 Datos guardados encontrados, procesando...');
-          
-          localStorage.removeItem('client_onboarding_pending');
-          
-          completeOnboardingMutation.mutate(parsedData);
-          
-          toast.info(t('completingRegistration'), { duration: 2000 });
-        } catch (error) {
-          console.error('Error procesando datos guardados:', error);
-          localStorage.removeItem('client_onboarding_pending');
-          navigate(createPageUrl("Search"));
-        }
-      }
-    }
-  }, [user]);
 
   const loadUser = async () => {
     setIsLoadingUser(true);
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-
       if (currentUser) {
-        setFormData(prev => ({
-          ...prev,
-          nombre: currentUser.full_name || prev.nombre,
-          email: currentUser.email || prev.email,
-          telefono: currentUser.phone || prev.telefono,
-          ciudad: currentUser.city || prev.ciudad,
-        }));
-
         if (currentUser.user_type === "client") {
           navigate(createPageUrl("Search"));
           return;
         }
-
         if (currentUser.user_type === "professionnel") {
-          setError(t('alreadyProfessionalAccount'));
-          setTimeout(() => {
-            navigate(createPageUrl("MyProfile"));
-          }, 3000);
+          navigate(createPageUrl("MyProfile"));
+          return;
         }
+        // Usuario autenticado sin tipo → pre-rellenar y completar directamente
+        setFormData(prev => ({
+          ...prev,
+          nombre: currentUser.full_name || "",
+          email: currentUser.email || "",
+        }));
       }
-    } catch (error) {
-      console.error("Error loading user:", error);
+    } catch {
       setUser(null);
     } finally {
       setIsLoadingUser(false);
@@ -205,678 +61,282 @@ export default function ClientOnboardingPage() {
       await base44.auth.updateMe({
         user_type: "client",
         full_name: data.nombre,
-        phone: data.telefono,
-        city: data.ciudad
       });
 
-      await base44.integrations.Core.SendEmail({
+      // Email de bienvenida (no bloqueante)
+      base44.integrations.Core.SendEmail({
         to: data.email,
         subject: "¡Bienvenido a MisAutónomos!",
-        body: `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 20px; text-align: center; }
-    .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: white; border-radius: 16px; padding: 12px; }
-    .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
-    .header p { color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px; }
-    .content { padding: 40px 30px; }
-    .greeting { font-size: 20px; color: #1f2937; margin-bottom: 20px; font-weight: 600; }
-    .message { color: #4b5563; line-height: 1.8; font-size: 16px; margin-bottom: 25px; }
-    .benefits { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 25px; margin: 30px 0; border-radius: 8px; }
-    .benefits h3 { color: #1e40af; margin: 0 0 15px 0; font-size: 18px; }
-    .benefits ul { margin: 0; padding-left: 20px; color: #4b5563; }
-    .benefits li { margin-bottom: 10px; }
-    .check { color: #10b981; font-weight: bold; }
-    .cta { text-align: center; margin: 35px 0; }
-    .button { display: inline-block; background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
-    .services { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; }
-    .services h4 { color: #1f2937; margin: 0 0 10px 0; font-size: 16px; }
-    .services p { color: #6b7280; margin: 0; font-size: 14px; }
-    .footer { background: #1f2937; color: #9ca3af; padding: 40px 30px; text-align: center; font-size: 14px; line-height: 1.8; }
-    .footer strong { color: #ffffff; display: block; margin-bottom: 5px; font-size: 18px; }
-    .footer .tagline { color: #60a5fa; margin-bottom: 15px; font-style: italic; }
-    .footer a { color: #60a5fa; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png" alt="MisAutónomos" class="logo" />
-      <h1>MisAutónomos</h1>
-      <p>Tu autónomo de confianza</p>
-    </div>
-    
-    <div class="content">
-      <p class="greeting">¡Hola ${data.nombre}!</p>
-      
-      <p class="message">
-        Bienvenido a <strong>MisAutónomos</strong>, la plataforma que conecta clientes con los mejores profesionales autónomos de España.
-      </p>
-      
-      <p class="message">
-        Tu cuenta de cliente ha sido creada correctamente y ya puedes empezar a buscar profesionales en tu zona.
-      </p>
-      
-      <div class="benefits">
-        <h3>¿Qué puedes hacer ahora?</h3>
-        <ul>
-          <li><span class="check">✓</span> Buscar profesionales por categoría y ubicación</li>
-          <li><span class="check">✓</span> Ver perfiles completos con fotos y valoraciones</li>
-          <li><span class="check">✓</span> Contactar directamente con autónomos verificados</li>
-          <li><span class="check">✓</span> Chatear con ellos para coordinar trabajos</li>
-          <li><span class="check">✓</span> Dejar valoraciones después de contratar</li>
-        </ul>
-      </div>
-      
-      <div class="services">
-        <h4>Servicios que buscas:</h4>
-        <p>${data.servicios_buscados.join(', ')}</p>
-      </div>
-      
-      <div class="cta">
-        <a href="https://misautonomos.es/Search" class="button">
-          Buscar Profesionales Ahora →
-        </a>
-      </div>
-      
-      <p class="message" style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center;">
-        <strong>Todo esto de forma 100% GRATUITA.</strong> No tienes que pagar nada para usar MisAutónomos como cliente.
-      </p>
-    </div>
-    
-    <div class="footer">
-      <strong>MisAutónomos</strong>
-      <p class="tagline">Tu autónomo de confianza</p>
-      <p>
-        <a href="mailto:soporte@misautonomos.es">soporte@misautonomos.es</a><br/>
-        <a href="https://misautonomos.es">misautonomos.es</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-        `,
+        body: `<p>Hola ${data.nombre}, tu cuenta ha sido creada. ¡Ya puedes buscar profesionales!</p>`,
         from_name: "MisAutónomos"
-      });
+      }).catch(() => {});
 
       return data;
     },
     onSuccess: () => {
-      toast.success("✅ ¡Cuenta creada! Ya puedes buscar profesionales");
-      localStorage.removeItem('client_onboarding_pending');
-      // Fix #10: redirect immediately to Search, no intermediate welcome page
+      toast.success("¡Bienvenido! Ya puedes contactar autónomos 🎉");
       navigate(createPageUrl("Search"));
     },
     onError: (error) => {
-      console.error("Error completing onboarding:", error);
-      setError(t('errorCompletingRegistration') + ": " + error.message); // Using t() for translation
-      toast.error(t('errorCompletingRegistration')); // Using t() for translation
-      localStorage.removeItem('client_onboarding_pending');
+      setFieldErrors({ general: "Error al crear la cuenta: " + error.message });
     }
   });
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePhone = (phone) => {
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 9;
-  };
-
-  const validateName = (name) => {
-    const trimmed = name.trim();
-    const words = trimmed.split(/\s+/);
-    return words.length >= 2 && trimmed.length >= 4;
-  };
-
-  const validateField = (field, value) => {
+  const validate = () => {
     const errors = {};
-    
-    switch(field) {
-      case 'nombre':
-        if (!validateName(value)) {
-          errors.nombre = language === 'es' 
-            ? 'Introduce nombre y apellido (mínimo 2 palabras)'
-            : 'Enter first and last name (minimum 2 words)';
-        }
-        break;
-      case 'email':
-        if (!validateEmail(value)) {
-          errors.email = language === 'es'
-            ? 'El email no es válido. Revisa el formato.'
-            : 'Invalid email format. Please check.';
-        }
-        break;
-      case 'telefono':
-        if (!validatePhone(value)) {
-          errors.telefono = language === 'es'
-            ? 'Introduce un número de teléfono válido (9 dígitos)'
-            : 'Enter a valid phone number (9 digits)';
-        }
-        break;
+    if (!formData.nombre.trim() || formData.nombre.trim().length < 2) {
+      errors.nombre = "Introduce tu nombre";
     }
-    
-    setFieldErrors(prev => ({...prev, ...errors}));
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleBlur = (field) => {
-    setTouchedFields(prev => ({...prev, [field]: true}));
-    validateField(field, formData[field]);
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Email no válido";
+    }
+    if (!user && formData.password.length < 6) {
+      errors.password = "La contraseña debe tener al menos 6 caracteres";
+    }
+    if (!formData.acepta_terminos) {
+      errors.terminos = "Debes aceptar los términos";
+    }
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    
-    const errors = {};
+    setFieldErrors({});
 
-    if (!validateName(formData.nombre)) {
-      errors.nombre = language === 'es' 
-        ? 'Introduce nombre y apellido (mínimo 2 palabras)'
-        : 'Enter first and last name (minimum 2 words)';
-    }
-
-    if (!validateEmail(formData.email)) {
-      errors.email = language === 'es'
-        ? 'El email no es válido. Revisa el formato.'
-        : 'Invalid email format. Please check.';
-    }
-
-    if (!validatePhone(formData.telefono)) {
-      errors.telefono = language === 'es'
-        ? 'Introduce un número de teléfono válido (9 dígitos)'
-        : 'Enter a valid phone number (9 digits)';
-    }
-
-    if (!formData.provincia) {
-      errors.provincia = language === 'es' ? 'Selecciona una provincia' : 'Select a province';
-    }
-
-    if (!formData.ciudad) {
-      errors.ciudad = language === 'es' ? 'Selecciona una ciudad' : 'Select a city';
-    }
-
-    if (formData.servicios_buscados.length === 0) {
-      errors.servicios = language === 'es' ? 'Selecciona al menos un servicio' : 'Select at least one service';
-    }
-
-    if (!formData.acepta_terminos) {
-      errors.terminos = language === 'es' 
-        ? 'Debes aceptar los términos y condiciones'
-        : 'You must accept the terms and conditions';
-    }
-
+    const errors = validate();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      setTouchedFields({
-        nombre: true,
-        email: true,
-        telefono: true,
-        provincia: true,
-        ciudad: true,
-        servicios: true,
-        terminos: true
-      });
-      
-      const firstError = Object.keys(errors)[0];
-      document.getElementById(firstError)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      toast.error(language === 'es' ? 'Por favor, corrige los errores del formulario' : 'Please fix the form errors');
       return;
     }
 
     if (!user) {
-      setIsRedirecting(true);
-      localStorage.setItem('client_onboarding_pending', JSON.stringify(formData));
-      
-      try {
-        await base44.auth.redirectToLogin(createPageUrl("Search"));
-      } catch (error) {
-        setError(language === 'es' ? 'Error en la redirección' : 'Redirection error');
-        setIsRedirecting(false);
-      }
-      
+      // Sin sesión → redirigir a login/registro
+      localStorage.setItem('client_onboarding_pending', JSON.stringify({ nombre: formData.nombre }));
+      base44.auth.redirectToLogin(createPageUrl("ClientOnboarding"));
       return;
     }
 
     completeOnboardingMutation.mutate(formData);
   };
 
-  const toggleServicio = (servicio) => {
-    const servicios = formData.servicios_buscados;
-    if (servicios.includes(servicio)) {
-      setFormData({
-        ...formData,
-        servicios_buscados: servicios.filter(s => s !== servicio)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        servicios_buscados: [...servicios, servicio]
-      });
-    }
-  };
-
-  if (isRedirecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md border-0 shadow-2xl">
-          <CardContent className="p-12 text-center">
-            <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {t('redirectingToRegistration')}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {t('savingYourData')}
-            </p>
-            <p className="text-sm text-gray-500">
-              {t('redirectInSeconds')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (isLoadingUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
-        <p className="ml-3 text-gray-600">{t('loading')}</p>
-      </div>
-    );
-  }
-
-  if (user?.user_type === "professionnel") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md border-0 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {t('alreadyProfessionalAccount')}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {t('cantCreateClientAccount')}
-            </p>
-            <p className="text-sm text-gray-500">
-              {t('redirectingToProfile')}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
     <>
-      <SEOHead 
-        title={`${t('createClientAccount')} - MisAutónomos`}
-        description="Crea tu cuenta gratuita como cliente en MisAutónomos y encuentra profesionales verificados cerca de ti"
+      <SEOHead
+        title="Crea tu cuenta gratis - MisAutónomos"
+        description="Encuentra y contacta autónomos en segundos. Registro gratuito."
         keywords="crear cuenta cliente, buscar autónomos, servicios profesionales España"
       />
-      
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-6 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {t('createClientAccount')}
+
+      {/* Fondo */}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
+        {/* Card / Sheet */}
+        <div
+          style={{
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.10)',
+            width: '100%',
+            maxWidth: '420px',
+            padding: '36px 32px',
+          }}
+        >
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
+              <UserPlus className="w-6 h-6 text-white" />
+            </div>
+            <h1 style={{ color: '#111827', fontSize: '22px', fontWeight: 700, margin: '0 0 6px' }}>
+              Crea tu cuenta gratis
             </h1>
-            <p className="text-sm text-gray-600">
-              {t('completeDataToSearch')}
+            <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>
+              Encuentra y contacta autónomos en segundos
             </p>
           </div>
 
-          <Card className="border-0 shadow-lg">
-            <CardContent className="p-6 md:p-8">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="nombre">{t('fullName')} *</Label>
-                    <Input
-                      id="nombre"
-                      value={formData.nombre}
-                      onChange={(e) => {
-                        setFormData({ ...formData, nombre: e.target.value });
-                        if (touchedFields.nombre) validateField('nombre', e.target.value);
-                      }}
-                      onBlur={() => handleBlur('nombre')}
-                      placeholder={t('fullNamePlaceholder')}
-                      maxLength={100}
-                      autoComplete="name"
-                      className={`h-11 mt-1 ${
-                        touchedFields.nombre 
-                          ? fieldErrors.nombre 
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
-                            : 'border-green-500 focus:border-green-500'
-                          : ''
-                      }`}
-                      required
-                      aria-required="true"
-                      aria-invalid={!!fieldErrors.nombre}
-                      aria-describedby={fieldErrors.nombre ? "nombre-error" : undefined}
-                    />
-                    {touchedFields.nombre && fieldErrors.nombre && (
-                      <p id="nombre-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                        <span>❗</span> {fieldErrors.nombre}
-                      </p>
-                    )}
-                  </div>
+          {/* Error general */}
+          {fieldErrors.general && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
+              <p style={{ color: '#DC2626', fontSize: '13px', margin: 0 }}>{fieldErrors.general}</p>
+            </div>
+          )}
 
-                  <div>
-                    <Label htmlFor="telefono">{t('phone')} *</Label>
-                    <Input
-                      id="telefono"
-                      type="tel"
-                      value={formData.telefono}
-                      onChange={(e) => {
-                        const cleaned = e.target.value.replace(/\D/g, '');
-                        setFormData({ ...formData, telefono: cleaned });
-                        if (touchedFields.telefono) validateField('telefono', cleaned);
-                      }}
-                      onBlur={() => handleBlur('telefono')}
-                      placeholder={t('contactPhonePlaceholder')}
-                      maxLength={15}
-                      autoComplete="tel"
-                      className={`h-11 mt-1 ${
-                        touchedFields.telefono 
-                          ? fieldErrors.telefono 
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
-                            : 'border-green-500 focus:border-green-500'
-                          : ''
-                      }`}
-                      required
-                      aria-required="true"
-                      aria-invalid={!!fieldErrors.telefono}
-                      aria-describedby={fieldErrors.telefono ? "telefono-error" : undefined}
-                    />
-                    {touchedFields.telefono && fieldErrors.telefono && (
-                      <p id="telefono-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                        <span>❗</span> {fieldErrors.telefono}
-                      </p>
-                    )}
-                  </div>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {/* Nombre */}
+            <div>
+              <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
+                Nombre
+              </label>
+              <Input
+                type="text"
+                placeholder="Tu nombre"
+                value={formData.nombre}
+                onChange={(e) => {
+                  setFormData({ ...formData, nombre: e.target.value });
+                  if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: null }));
+                }}
+                autoComplete="name"
+                style={{
+                  background: '#FFFFFF',
+                  border: fieldErrors.nombre ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '16px',
+                  color: '#1F2937',
+                  width: '100%',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {fieldErrors.nombre && (
+                <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px' }}>{fieldErrors.nombre}</p>
+              )}
+            </div>
 
-                <div>
-                  <Label htmlFor="email">{t('email')} *</Label>
+            {/* Email */}
+            <div>
+              <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
+                Email
+              </label>
+              <Input
+                type="email"
+                placeholder="tu@email.com"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: null }));
+                }}
+                autoComplete="email"
+                disabled={!!user}
+                style={{
+                  background: user ? '#F9FAFB' : '#FFFFFF',
+                  border: fieldErrors.email ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '16px',
+                  color: '#1F2937',
+                  width: '100%',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {fieldErrors.email && (
+                <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px' }}>{fieldErrors.email}</p>
+              )}
+            </div>
+
+            {/* Contraseña (solo si no está logueado) */}
+            {!user && (
+              <div>
+                <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
+                  Contraseña
+                </label>
+                <div style={{ position: 'relative' }}>
                   <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Mínimo 6 caracteres"
+                    value={formData.password}
                     onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      if (touchedFields.email) validateField('email', e.target.value);
+                      setFormData({ ...formData, password: e.target.value });
+                      if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: null }));
                     }}
-                    onBlur={() => handleBlur('email')}
-                    placeholder={t('contactEmailPlaceholder')}
-                    autoComplete="email"
-                    className={`h-11 mt-1 ${
-                      touchedFields.email 
-                        ? fieldErrors.email 
-                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
-                          : 'border-green-500 focus:border-green-500'
-                        : ''
-                    }`}
-                    required
-                    disabled={!!user}
-                    aria-required="true"
-                    aria-invalid={!!fieldErrors.email}
-                    aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                    autoComplete="new-password"
+                    style={{
+                      background: '#FFFFFF',
+                      border: fieldErrors.password ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
+                      borderRadius: '10px',
+                      padding: '12px 44px 12px 14px',
+                      fontSize: '16px',
+                      color: '#1F2937',
+                      width: '100%',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  {touchedFields.email && fieldErrors.email && (
-                    <p id="email-error" className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                      <span>❗</span> {fieldErrors.email}
-                    </p>
-                  )}
-                  {user && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t('emailCantChange')}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="provincia">{t('province')} *</Label>
-                    <Select
-                      value={formData.provincia}
-                      onValueChange={(value) => {
-                        setFormData({
-                          ...formData,
-                          provincia: value,
-                          ciudad: ""
-                        });
-                        setFieldErrors(prev => {
-                          const {provincia, ciudad, ...rest} = prev;
-                          return rest;
-                        });
-                      }}
-                    >
-                      <SelectTrigger id="provincia" className="h-11 mt-1" aria-required="true">
-                        <SelectValue placeholder={t('selectYourProvince')} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {provincias.map((prov) => (
-                          <SelectItem key={prov} value={prov}>
-                            {prov}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {touchedFields.provincia && fieldErrors.provincia && (
-                      <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                        <span>❗</span> {fieldErrors.provincia}
-                      </p>
-                    )}
-                  </div>
-
-                  {formData.provincia && (
-                    <div>
-                      <Label htmlFor="ciudad">{t('city')} *</Label>
-                      <Select
-                        value={formData.ciudad}
-                        onValueChange={(value) => {
-                          setFormData({
-                            ...formData,
-                            ciudad: value
-                          });
-                          setFieldErrors(prev => {
-                            const {ciudad, ...rest} = prev;
-                            return rest;
-                          });
-                        }}
-                      >
-                        <SelectTrigger id="ciudad" className="h-11 mt-1" aria-required="true">
-                          <SelectValue placeholder={t('selectYourCity')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
-                          {ciudadesPorProvincia[formData.provincia]?.length > 0 ? (
-                            ciudadesPorProvincia[formData.provincia].map((ciudad) => (
-                              <SelectItem key={ciudad} value={ciudad}>
-                                {ciudad}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value={formData.provincia}>
-                              {formData.provincia}
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {touchedFields.ciudad && fieldErrors.ciudad && (
-                        <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                          <span>❗</span> {fieldErrors.ciudad}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label>{t('whatServicesLooking')}</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2" role="group" aria-label="Servicios buscados">
-                    {serviciosDisponibles.map((servicio) => (
-                      <div
-                        key={servicio}
-                        onClick={() => {
-                          toggleServicio(servicio);
-                          setFieldErrors(prev => {
-                            const {servicios, ...rest} = prev;
-                            return rest;
-                          });
-                        }}
-                        className={`p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
-                          formData.servicios_buscados.includes(servicio)
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300"
-                        }`}
-                        role="checkbox"
-                        aria-checked={formData.servicios_buscados.includes(servicio)}
-                        tabIndex={0}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleServicio(servicio);
-                          }
-                        }}
-                      >
-                        <p className="text-xs font-medium text-center">{t(servicio)}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    {formData.servicios_buscados.length} {formData.servicios_buscados.length === 1 ? t('selected') : t('selectedPlural')}
-                  </p>
-                  {touchedFields.servicios && fieldErrors.servicios && (
-                    <p className="text-red-600 text-xs mt-1 flex items-center gap-1 animate-shake">
-                      <span>❗</span> {fieldErrors.servicios}
-                    </p>
-                  )}
-                </div>
-
-                <div className={`border-2 rounded-xl p-4 transition-colors ${
-                  fieldErrors.terminos ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
-                }`}>
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="acepta_terminos_client"
-                      checked={formData.acepta_terminos}
-                      onChange={(e) => {
-                        setFormData({ ...formData, acepta_terminos: e.target.checked });
-                        setFieldErrors(prev => {
-                          const {terminos, ...rest} = prev;
-                          return rest;
-                        });
-                      }}
-                      className="w-5 h-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                    <label htmlFor="acepta_terminos_client" className="text-sm text-gray-800 leading-relaxed cursor-pointer">
-                      {language === 'es' ? (
-                        <>
-                          He leído y acepto los{' '}
-                          <Link 
-                            to={createPageUrl("TermsConditions")}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                          >
-                            Términos y Condiciones
-                          </Link>
-                          , la{' '}
-                          <Link 
-                            to={createPageUrl("PrivacyPolicy")}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                          >
-                            Política de Privacidad
-                          </Link>
-                          {' '}y el Tratamiento de Datos.
-                        </>
-                      ) : (
-                        <>
-                          I have read and accept the{' '}
-                          <Link 
-                            to={createPageUrl("TermsConditions")}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                          >
-                            Terms and Conditions
-                          </Link>
-                          , the{' '}
-                          <Link 
-                            to={createPageUrl("PrivacyPolicy")}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
-                          >
-                            Privacy Policy
-                          </Link>
-                          {' '}and Data Processing.
-                        </>
-                      )}
-                    </label>
-                  </div>
-                  {touchedFields.terminos && fieldErrors.terminos && (
-                    <p className="text-red-600 text-xs mt-2 ml-8 flex items-center gap-1 animate-shake">
-                      <span>❗</span> {fieldErrors.terminos}
-                    </p>
-                  )}
-                </div>
-
-                <div className="sticky bottom-0 left-0 right-0 bg-white pt-4 pb-2 -mx-6 md:-mx-8 px-6 md:px-8 border-t border-gray-100 mt-6">
-                  <Button
-                    type="submit"
-                    className="w-full h-14 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
-                    disabled={completeOnboardingMutation.isPending || isRedirecting}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px',
+                    }}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    {completeOnboardingMutation.isPending || isRedirecting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        {isRedirecting ? t('redirecting') : t('creatingAccount')}
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        {!user ? t('createMyClientAccount') : t('completeRegistration')}
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-center text-gray-500 mt-2">
-                    ✅ {t('freeNoHiddenCosts')}
-                  </p>
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+                {fieldErrors.password && (
+                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px' }}>{fieldErrors.password}</p>
+                )}
+              </div>
+            )}
 
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <p className="text-xs font-semibold text-gray-900">{t('freeBenefit')}</p>
+            {/* Términos */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <input
+                type="checkbox"
+                id="acepta_terminos_client"
+                checked={formData.acepta_terminos}
+                onChange={(e) => {
+                  setFormData({ ...formData, acepta_terminos: e.target.checked });
+                  if (fieldErrors.terminos) setFieldErrors(prev => ({ ...prev, terminos: null }));
+                }}
+                style={{ width: '16px', height: '16px', marginTop: '2px', flexShrink: 0, accentColor: '#2563EB' }}
+              />
+              <label htmlFor="acepta_terminos_client" style={{ fontSize: '13px', color: '#6B7280', lineHeight: '1.5', cursor: 'pointer' }}>
+                Acepto los{' '}
+                <Link to="/terminos" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>Términos</Link>
+                {' '}y la{' '}
+                <Link to="/privacidad" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>Política de Privacidad</Link>
+              </label>
             </div>
-            <div className="text-center">
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <p className="text-xs font-semibold text-gray-900">{t('verifiedProfessionals')}</p>
-            </div>
-            <div className="text-center">
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <p className="text-xs font-semibold text-gray-900">{t('directChat')}</p>
-            </div>
-          </div>
+            {fieldErrors.terminos && (
+              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '-8px' }}>{fieldErrors.terminos}</p>
+            )}
+
+            {/* Botón principal */}
+            <Button
+              type="submit"
+              disabled={completeOnboardingMutation.isPending}
+              style={{
+                width: '100%',
+                height: '52px',
+                background: '#2563EB',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                marginTop: '8px',
+              }}
+            >
+              {completeOnboardingMutation.isPending ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando cuenta...</>
+              ) : (
+                'Crear cuenta gratis'
+              )}
+            </Button>
+          </form>
+
+          {/* Link a login */}
+          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6B7280' }}>
+            ¿Ya tienes cuenta?{' '}
+            <button
+              onClick={() => base44.auth.redirectToLogin(createPageUrl("Search"))}
+              style={{ color: '#2563EB', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px', padding: 0 }}
+            >
+              Inicia sesión
+            </button>
+          </p>
         </div>
       </div>
     </>
