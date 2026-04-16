@@ -156,3 +156,25 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* =============================================
+   MICRO-INTERACCIONES GLOBALES
+   ============================================= */
+
+/* Cards con hover suave (complementa globals.css) */
+.profile-card {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.profile-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px -16px rgba(0,0,0,0.15);
+}
+@media (max-width: 768px) {
+  .profile-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .profile-card:active {
+    transform: scale(0.98);
+  }
+}
