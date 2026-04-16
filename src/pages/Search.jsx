@@ -153,7 +153,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
   return (
     <>
-      <Card className="bg-white hover:shadow-xl transition-all duration-200 border border-gray-100 rounded-2xl overflow-hidden h-full flex flex-col profile-card group" style={{ minHeight: '240px' }}>
+      <Card className="bg-white hover:shadow-xl transition-all duration-200 border border-gray-100 rounded-2xl overflow-hidden flex flex-col profile-card group" style={{ minHeight: '280px' }}>
         <CardContent className="p-4 flex flex-col flex-1">
           {/* Badges superiores */}
           <div className="flex justify-between items-start mb-3">
@@ -237,7 +237,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             </div>
           </div>
 
-          <div className="flex gap-1.5 mt-auto pt-1">
+          <div className="flex gap-1.5 mt-auto pt-2">
             <Button
               onClick={() => {
                 if (!currentUserId) {
@@ -705,7 +705,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pr-4 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full" style={{ paddingRight: '16px' }}>
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <div key={profile.id}>
                         <ProfileCard
