@@ -43,6 +43,8 @@ import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import { ActionButtonsProfile } from "../components/profile/ActionButtons";
+import { generateSlug, isSlugDirty } from "../utils/slugUtils";
+import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
@@ -105,51 +107,46 @@ export default function AutonomoPage() {
     }
   };
 
-  // Buscar perfil por slug con soporte de redirección de slugs antiguos
+  // Buscar perfil por slug con soporte de redirección de slugs sucios
   const { data: profileData, isLoading: loadingProfile } = useQuery({
     queryKey: ['autonomoBySlug', slug],
     queryFn: async () => {
       if (!slug) return { profile: null, redirect: null };
       
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const cleanedInputSlug = slugify(slug); // Limpiar el slug de entrada
+      const cleanedInputSlug = generateSlug(slug); // Limpiar el slug de entrada
       
-      // 1. Buscar por slug_publico exacto (slug ya migrado)
+      // 1. Buscar por slug_publico exacto
       let found = allProfiles.find(p => p.slug_publico === slug);
-      if (found) return { profile: found, redirect: null };
+      if (found && !isSlugDirty(found.slug_publico)) {
+        return { profile: found, redirect: null };
+      }
       
-      // 2. Buscar por slug limpio (sin acentos/IDs) 
+      // 2. Buscar por slug limpio (sin tildes/guiones dobles/espacios)
       found = allProfiles.find(p => p.slug_publico === cleanedInputSlug);
       if (found) {
-        // Redirigir al slug correcto
         return { profile: found, redirect: found.slug_publico };
       }
       
       // 3. Buscar por slug generado del nombre actual
-      found = allProfiles.find(p => slugify(p.business_name) === cleanedInputSlug);
+      found = allProfiles.find(p => generateSlug(p.business_name) === cleanedInputSlug);
       if (found) {
-        return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
-      }
-      
-      // 4. Buscar slugs antiguos con IDs (ej: juan-perez-5e8405 → juan-perez)
-      const baseSlugFromInput = cleanOldSlug(slug);
-      if (baseSlugFromInput !== cleanedInputSlug) {
-        found = allProfiles.find(p => {
-          const profileBaseSlug = slugify(p.business_name);
-          return profileBaseSlug === baseSlugFromInput;
-        });
-        if (found) {
-          return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
+        const cleanSlug = generateSlug(found.business_name);
+        // Si el slug_publico está sucio, devolverlo limpio
+        if (found.slug_publico && isSlugDirty(found.slug_publico)) {
+          return { profile: found, redirect: cleanSlug };
         }
+        return { profile: found, redirect: found.slug_publico || cleanSlug };
       }
       
-      // 5. Búsqueda flexible por coincidencia parcial (último recurso)
+      // 4. Búsqueda flexible por coincidencia parcial
       found = allProfiles.find(p => {
-        const nameSlug = slugify(p.business_name);
+        const nameSlug = generateSlug(p.business_name);
         return nameSlug.startsWith(cleanedInputSlug) || cleanedInputSlug.startsWith(nameSlug);
       });
       if (found) {
-        return { profile: found, redirect: found.slug_publico || slugify(found.business_name) };
+        const cleanSlug = generateSlug(found.business_name);
+        return { profile: found, redirect: found.slug_publico || cleanSlug };
       }
       
       return { profile: null, redirect: null };
@@ -407,8 +404,8 @@ export default function AutonomoPage() {
   // Usar perfil traducido para SEO y display
   const displayProfile = translatedProfile || profile;
   
-  // SEO optimizado
-  const canonicalSlug = profile.slug_publico || slugify(profile.business_name);
+  // SEO optimizado — usar slug limpio
+  const canonicalSlug = profile.slug_publico || generateSlug(profile.business_name);
   const canonicalUrl = `https://misautonomos.es/autonomo/${canonicalSlug}`;
 
   // Título SEO optimizado (máx 60 caracteres ideal)
@@ -445,7 +442,7 @@ export default function AutonomoPage() {
   const breadcrumbItems = [
     { name: "Inicio", url: "https://misautonomos.es" },
     { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" },
-    { name: categoryName, url: `https://misautonomos.es/categoria/${slugify(categoryName)}` },
+    { name: categoryName, url: `https://misautonomos.es/categoria/${generateSlug(categoryName)}` },
     { name: profile.business_name, url: canonicalUrl }
   ];
 

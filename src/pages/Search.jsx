@@ -50,14 +50,7 @@ import SearchFilters from "../components/search/SearchFilters";
 import MapView from "../components/search/MapView";
 import SavedSearches from "../components/search/SavedSearches";
 import { ActionButtonsCard } from "../components/profile/ActionButtons";
-
-function slugify(text) {
-  if (!text) return '';
-  return text.toString().toLowerCase().trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/ñ/g, 'n').replace(/ç/g, 'c')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-');
-}
+import { generateSlug } from "../utils/slugUtils";
 
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -317,8 +310,8 @@ export default function SearchPage() {
 
   const handleViewProfile = (profile) => {
     // URL SEO-friendly: /autonomo/:slug
-    const slug = profile.slug_publico || slugify(profile.business_name);
-    navigate(createPageUrl("Autonomo") + `/${slug}`);
+    const slug = profile.slug_publico || generateSlug(profile.business_name);
+    navigate(`/autonomo/${slug}`);
   };
 
   const handleToggleFavorite = async (profile) => {
