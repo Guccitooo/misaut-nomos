@@ -919,7 +919,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </div>
 
               {shouldShowSidebar() && (
-                <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">
+                <nav className="mobile-bottom-nav lg:hidden" role="navigation" aria-label="Navegación principal">
                   {navigationItems.slice(0, 4).map((item) => (
                     <Link
                       key={item.title}

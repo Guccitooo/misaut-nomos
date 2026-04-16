@@ -579,11 +579,11 @@ export default function SearchPage() {
         )}
 
         {/* ── CONTENIDO PRINCIPAL ── */}
-        <div className="max-w-7xl mx-auto px-4 py-5" id="results-section">
+        <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible" id="results-section">
 
           {/* Barra de búsqueda (para usuarios logueados) */}
           {user && (
-            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100" style={{ position: 'relative', zIndex: 10 }}>
               <div className="flex gap-2 mb-3">
                 <div className="flex-1">
                   <SearchAutocomplete
@@ -617,7 +617,7 @@ export default function SearchPage() {
 
           {/* Filtros visita sin login — siempre visible pero compacto */}
           {!user && (
-            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100" style={{ position: 'relative', zIndex: 10 }}>
               <div className="flex gap-2 items-center flex-wrap">
                 <Button
                   variant="outline"
@@ -757,7 +757,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', paddingRight: '16px' }}>
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <ProfileCard
                         key={profile.id}
