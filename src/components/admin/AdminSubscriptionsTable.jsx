@@ -1,0 +1,103 @@
+import React, { useState, useMemo } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle } from "lucide-react";
+import { differenceInDays } from "date-fns";
+
+const STATUS_FILTERS = ["todos", "activo", "en_prueba", "expirado", "cancelado"];
+
+function getStatusBadge(estado) {
+  const map = {
+    activo: "bg-green-100 text-green-700",
+    en_prueba: "bg-blue-100 text-blue-700",
+    expirado: "bg-red-100 text-red-700",
+    cancelado: "bg-gray-100 text-gray-600",
+    suspendu: "bg-yellow-100 text-yellow-700",
+  };
+  return <Badge className={map[estado] || "bg-gray-100 text-gray-600"}>{estado}</Badge>;
+}
+
+export default function AdminSubscriptionsTable({ subscriptions, users }) {
+  const [filter, setFilter] = useState("todos");
+
+  const filtered = useMemo(() => {
+    return subscriptions.filter(s => filter === "todos" || s.estado === filter);
+  }, [subscriptions, filter]);
+
+  const expiringSoon = subscriptions.filter(s => {
+    if (s.estado !== "activo" && s.estado !== "en_prueba") return false;
+    try {
+      const days = differenceInDays(new Date(s.fecha_expiracion), new Date());
+      return days >= 0 && days <= 7;
+    } catch { return false; }
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-gray-900">💳 Suscripciones</h2>
+        {expiringSoon.length > 0 && (
+          <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 text-xs px-3 py-1.5 rounded-lg font-semibold">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {expiringSoon.length} expiran en 7 días
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {STATUS_FILTERS.map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${filter === f ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          >
+            {f === "todos" ? "Todos" : f}
+          </button>
+        ))}
+      </div>
+
+      <Card className="border-0 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Usuario</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Plan</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Precio</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Inicio</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Expiración</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map(sub => {
+                const userEmail = users.find(u => u.id === sub.user_id)?.email || sub.user_id;
+                let expiresInDays = null;
+                try { expiresInDays = differenceInDays(new Date(sub.fecha_expiracion), new Date()); } catch {}
+                const expiringSoon = expiresInDays !== null && expiresInDays >= 0 && expiresInDays <= 7 && (sub.estado === "activo" || sub.estado === "en_prueba");
+
+                return (
+                  <tr key={sub.id} className={`hover:bg-gray-50 ${expiringSoon ? "bg-orange-50" : ""}`}>
+                    <td className="px-4 py-3 text-xs text-gray-700">{userEmail}</td>
+                    <td className="px-4 py-3 text-xs font-medium text-gray-900">{sub.plan_nombre}</td>
+                    <td className="px-4 py-3 text-xs text-gray-600">{sub.plan_precio ? `${sub.plan_precio}€/mes` : "—"}</td>
+                    <td className="px-4 py-3">{getStatusBadge(sub.estado)}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{new Date(sub.fecha_inicio).toLocaleDateString("es-ES")}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-xs ${expiringSoon ? "text-orange-600 font-semibold" : "text-gray-500"}`}>
+                          {new Date(sub.fecha_expiracion).toLocaleDateString("es-ES")}
+                        </span>
+                        {expiringSoon && <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
