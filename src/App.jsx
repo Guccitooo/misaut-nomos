@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { AppProvider } from '@/lib/AppContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { Suspense } from 'react';
 
@@ -189,14 +190,16 @@ function App() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <NavigationTracker />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-        <VisualEditAgent />
-      </QueryClientProvider>
+      <AppProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <NavigationTracker />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+          <VisualEditAgent />
+        </QueryClientProvider>
+      </AppProvider>
     </AuthProvider>
   )
 }

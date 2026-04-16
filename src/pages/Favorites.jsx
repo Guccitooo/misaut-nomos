@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useAppData } from "@/lib/AppContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageSquare, Loader2, Star, X, MapPin } from "lucide-react";
@@ -17,21 +18,7 @@ export default function FavoritesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useLanguage();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error("Error loading user:", error);
-      base44.auth.redirectToLogin();
-    }
-  };
+  const { user } = useAppData();
 
   const { data: rawFavorites = [], isLoading: isLoadingFavorites } = useQuery({
     queryKey: ['favorites', user?.id],
@@ -40,37 +27,36 @@ export default function FavoritesPage() {
       return base44.entities.Favorite.filter({ client_id: user.id });
     },
     enabled: !!user?.id,
-    initialData: [],
+    staleTime: 60000,
   });
 
-  const professionalIds = rawFavorites.map(fav => fav.professional_id);
+  const professionalIds = useMemo(() => rawFavorites.map(fav => fav.professional_id), [rawFavorites]);
 
-  const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ['favoriteProfessionalProfiles', professionalIds],
+  const { data: profilesData = {}, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ['favoriteProfessionalsData', professionalIds.join(',')],
     queryFn: async () => {
-      if (professionalIds.length === 0) return [];
-      const allProfiles = await base44.entities.ProfessionalProfile.list();
-      return allProfiles.filter(p => professionalIds.includes(p.user_id));
+      if (professionalIds.length === 0) return { profiles: [], users: [] };
+      const [profiles, users] = await Promise.all([
+        base44.entities.ProfessionalProfile.filter({}).then(all => 
+          all.filter(p => professionalIds.includes(p.user_id))
+        ),
+        base44.entities.User.filter({}).then(all => 
+          all.filter(u => professionalIds.includes(u.id))
+        )
+      ]);
+      return { profiles, users };
     },
     enabled: professionalIds.length > 0,
-    initialData: [],
+    staleTime: 60000,
   });
 
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['favoriteUsers', professionalIds],
-    queryFn: async () => {
-      if (professionalIds.length === 0) return [];
-      const allUsers = await base44.entities.User.list();
-      return allUsers.filter(u => professionalIds.includes(u.id));
-    },
-    enabled: professionalIds.length > 0,
-    initialData: [],
-  });
+  const isInitialLoading = isLoadingFavorites || isLoadingProfiles;
 
-  const isInitialLoading = !user || isLoadingFavorites || isLoadingProfiles || isLoadingUsers;
+  const { profiles = [], users = [] } = profilesData;
 
-  const displayFavorites = rawFavorites.filter(fav =>
-    profiles.some(p => p.user_id === fav.professional_id)
+  const displayFavorites = useMemo(() => 
+    rawFavorites.filter(fav => profiles.some(p => p.user_id === fav.professional_id)),
+    [rawFavorites, profiles]
   );
 
   const handleRemoveFavorite = async (favoriteId) => {
@@ -87,21 +73,9 @@ export default function FavoritesPage() {
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${professionalId}`);
   };
 
-  if (isInitialLoading) {
-    return (
-      <>
-        <SEOHead
-          title={`${t('myFavorites')} - MisAutónomos`}
-          description="Gestiona tus profesionales favoritos guardados"
-        />
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600 font-medium">Cargando favoritos...</p>
-          </div>
-        </div>
-      </>
-    );
+  if (!user) {
+    base44.auth.redirectToLogin();
+    return null;
   }
 
   return (

@@ -46,6 +46,121 @@ import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher"
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
+// Sidebar optimizado con memo
+const SidebarContent = React.memo(function SidebarContent({ navigationItems, location, user, isProfessional, unreadCount, language, onChangeLanguage, onLogout }) {
+  return (
+    <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
+      <SidebarHeader className="border-b border-gray-100 p-6">
+        <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
+          <img
+            src={LOGO_URL}
+            alt="Logo MisAutónomos"
+            className="w-12 h-12 rounded-lg"
+            width="48"
+            height="48"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+          <div>
+            <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
+            <p className="text-xs text-gray-500">Plataforma de autónomos</p>
+          </div>
+        </Link>
+      </SidebarHeader>
+      
+      <SidebarContent className="p-3">
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild 
+                    className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
+                      location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
+                    }`}
+                  >
+                    <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
+                      <item.icon className="w-5 h-5" aria-hidden="true" />
+                      <span className="font-medium">{item.title}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} unread`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-gray-100 p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 px-2">
+            <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden">
+              {user?.profile_picture ? (
+                <AvatarImage src={user.profile_picture} alt="Profile" className="object-cover object-center w-full h-full" />
+              ) : (
+                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                  {user?.full_name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 text-sm truncate">
+                {user?.full_name || 'Usuario'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {isProfessional ? 'Profesional' : 'Cliente'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 px-2">
+            <div className="flex gap-1 bg-gray-100 rounded-md p-1 flex-1">
+              <button
+                onClick={() => onChangeLanguage('es')}
+                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                  language === 'es'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                aria-label="Español"
+              >
+                ES
+              </button>
+              <button
+                onClick={() => onChangeLanguage('en')}
+                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                  language === 'en'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                aria-label="English"
+              >
+                EN
+              </button>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors flex-shrink-0"
+              onClick={onLogout}
+              aria-label="Logout"
+            >
+              <LogOut className="w-4 h-4 text-gray-600" aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+});
+
 const LayoutContent = React.memo(function LayoutContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -441,115 +556,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
           <div className="flex flex-1">
             {user && shouldShowSidebar() && (
-              <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
-                <SidebarHeader className="border-b border-gray-100 p-6">
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
-                  <img
-                    src={LOGO_URL}
-                    alt="Logo MisAutónomos"
-                    className="w-12 h-12 rounded-lg"
-                    width="48"
-                    height="48"
-                    loading="eager"
-                    fetchpriority="high"
-                    decoding="async"
-                  />
-                    <div>
-                      <h2 className="font-bold text-xl text-gray-900">MisAutónomos</h2>
-                      <p className="text-xs text-gray-500">{t('tagline')}</p>
-                    </div>
-                  </Link>
-                </SidebarHeader>
-                
-                <SidebarContent className="p-3">
-                  <SidebarGroup>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {navigationItems.map((item) => (
-                          <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton 
-                              asChild 
-                              className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
-                                location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
-                              }`}
-                            >
-                              <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
-                                <item.icon className="w-5 h-5" aria-hidden="true" />
-                                <span className="font-medium">{item.title}</span>
-                                {item.badge && (
-                                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} ${t('unread')}`}>
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                </SidebarContent>
-
-                <SidebarFooter className="border-t border-gray-100 p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 px-2">
-                      <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden">
-                        {getProfilePicture() ? (
-                          <AvatarImage src={getProfilePicture()} alt={`Foto de perfil de ${getDisplayName()}`} className="object-cover object-center w-full h-full" />
-                        ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                            {getDisplayName().charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
-                          {getDisplayName()}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {isProfessional ? t('professional') : t('client')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 px-2">
-                      <div className="flex gap-1 bg-gray-100 rounded-md p-1 flex-1">
-                        <button
-                          onClick={() => changeLanguage('es')}
-                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                            language === 'es'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="Español"
-                        >
-                          ES
-                        </button>
-                        <button
-                          onClick={() => changeLanguage('en')}
-                          className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                            language === 'en'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="English"
-                        >
-                          EN
-                        </button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors flex-shrink-0"
-                        onClick={handleLogout}
-                        aria-label={t('logout')}
-                      >
-                        <LogOut className="w-4 h-4 text-gray-600" aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </div>
-                </SidebarFooter>
-              </Sidebar>
+              <SidebarContent 
+                navigationItems={navigationItems}
+                location={location}
+                user={user}
+                isProfessional={isProfessional}
+                unreadCount={unreadCount}
+                language={language}
+                onChangeLanguage={changeLanguage}
+                onLogout={handleLogout}
+              />
             )}
 
             {mobileMenuOpen && (
@@ -794,12 +810,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </div>
               </header>
 
-              <div className="flex-1 overflow-auto pb-16 md:pb-0">
-                <Suspense fallback={
-                  <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  </div>
-                }>
+              <div className="flex-1 overflow-auto pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
+                <Suspense fallback={null}>
                   <PageTransitions>
                     {children}
                   </PageTransitions>
