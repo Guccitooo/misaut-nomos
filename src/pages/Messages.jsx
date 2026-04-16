@@ -129,6 +129,46 @@ export default function MessagesPage() {
     base44.auth.me().then(setUser).catch(() => base44.auth.redirectToLogin());
   }, []);
 
+  // ─── Handle pending chat action after login ───────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const pending = sessionStorage.getItem('pending_chat_action');
+      if (!pending) return;
+      const { action, professionalId } = JSON.parse(pending);
+      sessionStorage.removeItem('pending_chat_action');
+      if (action === 'open_chat' && professionalId) {
+        const conversationId = [user.id, professionalId].sort().join('_');
+        // Crear mensaje inicial si no existe
+        base44.entities.Message.filter({ conversation_id: conversationId }, '-created_date', 1)
+          .then(async (existing) => {
+            if (!existing || existing.length === 0) {
+              // Buscar datos del profesional para nombres
+              const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: professionalId });
+              const prof = profiles[0];
+              await base44.entities.Message.create({
+                conversation_id: conversationId,
+                sender_id: user.id,
+                recipient_id: professionalId,
+                content: "👋 Hola, me interesa tu servicio",
+                professional_name: prof?.business_name || "",
+                client_name: user.full_name || user.email || "",
+                is_read: false,
+              });
+            }
+            setSelectedConversation(conversationId);
+            setSelectedProfessionalId(professionalId);
+            setSearchParams({ conversation: conversationId, professional: professionalId }, { replace: true });
+          })
+          .catch(() => {
+            setSelectedConversation(conversationId);
+            setSelectedProfessionalId(professionalId);
+            setSearchParams({ conversation: conversationId, professional: professionalId }, { replace: true });
+          });
+      }
+    } catch {}
+  }, [user]);
+
   useEffect(() => {
     if (selectedConversation) {
       isInitialLoadRef.current = true;
@@ -426,7 +466,7 @@ export default function MessagesPage() {
     if ((!newMessage.trim() && !attachments.length) || !selectedConversation || sendingMessage) return;
     setSendingMessage(true);
     try {
-      const otherUserId = selectedProfessionalId || conversations[selectedConversation]?.otherUserId;
+      const otherUserId = conversations[selectedConversation]?.otherUserId || selectedProfessionalId;
       if (!otherUserId) throw new Error('Sin destinatario');
 
       // Nombres desde los mensajes existentes o perfil
@@ -546,9 +586,10 @@ export default function MessagesPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   const selectedConvData = conversations[selectedConversation];
+  const resolvedOtherUserId = selectedConvData?.otherUserId || selectedProfessionalId;
   const otherName = selectedConvData
-    ? (selectedConvData.otherUserName || getDisplayName(selectedConvData.otherUserId))
-    : "";
+    ? (selectedConvData.otherUserName || getDisplayName(resolvedOtherUserId))
+    : getDisplayName(resolvedOtherUserId) || (otherUserData?.user_type === "professionnel" ? otherUserData?.profile?.business_name : otherUserData?.full_name) || "...";
   const otherPhoto = selectedConvData?.otherUserPhoto
     || (otherUserData?.user_type === "professionnel" ? otherUserData?.profile?.imagen_principal : null)
     || otherUserData?.profile_picture;
@@ -656,7 +697,7 @@ export default function MessagesPage() {
 
         {/* ── Columna derecha: Chat ── */}
         <div className={`flex-1 flex flex-col bg-gray-50 min-w-0 ${!selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ minHeight: 0 }}>
-          {selectedConversation && selectedConvData ? (
+          {selectedConversation && (selectedConvData || selectedProfessionalId) ? (
             <>
               {/* Chat Header */}
               <div className="bg-white border-b border-gray-200 px-3 md:px-5 py-3 flex-shrink-0 shadow-sm">

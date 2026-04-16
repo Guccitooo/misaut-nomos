@@ -276,10 +276,33 @@ export default function AutonomoPage() {
 
   const handleStartChat = async () => {
     if (!user) {
-      base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
+      // Guardar acción pendiente para después del login
+      sessionStorage.setItem('pending_chat_action', JSON.stringify({ action: 'open_chat', professionalId: profile.user_id }));
+      base44.auth.redirectToLogin(window.location.href);
       return;
     }
+
     const conversationId = [user.id, profile.user_id].sort().join('_');
+
+    // Buscar si ya existe un mensaje con este conversation_id
+    try {
+      const existing = await base44.entities.Message.filter({ conversation_id: conversationId }, '-created_date', 1);
+      if (!existing || existing.length === 0) {
+        // Crear mensaje inicial
+        await base44.entities.Message.create({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          recipient_id: profile.user_id,
+          content: "👋 Hola, me interesa tu servicio",
+          professional_name: profile.business_name || "",
+          client_name: user.full_name || user.email || "",
+          is_read: false,
+        });
+      }
+    } catch (err) {
+      // Si falla, navegar igual — el chat puede funcionar sin mensaje inicial
+    }
+
     navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
   };
 
@@ -556,14 +579,7 @@ export default function AutonomoPage() {
             <div className="flex gap-2">
               {showChat && (
                 <Button
-                  onClick={() => {
-                    if (!user) {
-                      base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
-                      return;
-                    }
-                    const conversationId = [user.id, profile.user_id].sort().join('_');
-                    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-                  }}
+                  onClick={handleStartChat}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold"
                 >
                   <MessageSquare className="w-4 h-4 mr-1.5" />
