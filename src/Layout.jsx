@@ -429,21 +429,23 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }
 
   if (user?.role === "admin") {
-    navigationItems.push({
-      title: t('administration'),
-      url: createPageUrl("AdminDashboard"),
-      icon: LayoutDashboard,
-    });
-    navigationItems.push({
-      title: "💰 Pagos",
-      url: createPageUrl("AdminPayments"),
-      icon: CreditCard,
-    });
-    navigationItems.push({
-      title: "Admin Tickets",
-      url: createPageUrl("AdminTickets"),
-      icon: MessageSquare,
-    });
+    navigationItems.push(
+      {
+        title: t('administration'),
+        url: createPageUrl("AdminDashboard"),
+        icon: LayoutDashboard,
+      },
+      {
+        title: "💰 Pagos",
+        url: createPageUrl("AdminPayments"),
+        icon: CreditCard,
+      },
+      {
+        title: "Admin Tickets",
+        url: createPageUrl("AdminTickets"),
+        icon: MessageSquare,
+      }
+    );
   }
 
   // CAMBIO: bloque <style> eliminado — todas estas reglas ya existen en globals.css.
@@ -905,11 +907,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     </PageTransitions>
                   </Suspense>
                 </Suspense>
-              </div>
 
-              <Suspense fallback={null}>
-                <Footer />
-              </Suspense>
+                {/* Footer solo para usuarios no logueados */}
+                {!user && (
+                  <Suspense fallback={null}>
+                    <Footer />
+                  </Suspense>
+                )}
+              </div>
 
               {shouldShowSidebar() && (
                 <nav className="mobile-bottom-nav" role="navigation" aria-label="Navegación principal">

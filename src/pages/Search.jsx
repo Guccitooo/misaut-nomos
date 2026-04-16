@@ -146,7 +146,9 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
   // Badge "Responde rápido" si tiene reseñas recientes o rating alto
   const isQuickResponder = profile.average_rating >= 4.5 && profile.total_reviews >= 3;
-  const isNew = !profile.total_reviews || profile.total_reviews === 0;
+  // "Nuevo" solo si el perfil se creó hace menos de 30 días
+  const profileAge = profile.created_date ? (Date.now() - new Date(profile.created_date).getTime()) / (1000 * 60 * 60 * 24) : 999;
+  const isNew = profileAge < 30;
 
   return (
     <>
@@ -186,8 +188,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
                     decoding="async"
                   />
                 ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-lg rounded-xl">
-                    {profile.business_name?.charAt(0) || "P"}
+                  <AvatarFallback className="bg-blue-600 text-white font-bold text-lg">
+                    {profile.business_name?.charAt(0)?.toUpperCase() || "P"}
                   </AvatarFallback>
                 );
               })()}
@@ -702,7 +704,7 @@ export default function SearchPage() {
             <>
               {viewMode === "grid" ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pr-1">
                     {filteredProfiles.slice(0, displayLimit).map((profile) => (
                       <div key={profile.id}>
                         <ProfileCard
