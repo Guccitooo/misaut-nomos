@@ -797,7 +797,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </div>
               </header>
 
-              <div className="flex-1 overflow-auto" style={{ paddingBottom: '64px' }}>
+              <div className="flex-1 overflow-auto pb-16 md:pb-0">
                 <Suspense fallback={
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -813,17 +813,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </Suspense>
               </div>
 
-              {/* Bottom nav móvil — siempre visible en móvil */}
+              {/* Bottom nav móvil — solo visible en móvil (< 768px) */}
               <nav
-                className="lg:hidden"
+                className="mobile-bottom-nav"
                 role="navigation"
                 aria-label="Navegación principal"
                 style={{
-                  position: 'fixed', bottom: 0, left: 0, right: 0,
-                  background: '#fff', borderTop: '2px solid #E5E7EB',
-                  display: 'grid', gridTemplateColumns: (user && isProfessional) ? 'repeat(5, 1fr)' : user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
-                  padding: '8px 0', paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
-                  zIndex: 30, boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
+                  gridTemplateColumns: (user && isProfessional) ? 'repeat(5, 1fr)' : user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
                 }}
               >
                 {user ? (

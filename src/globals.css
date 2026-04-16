@@ -488,13 +488,12 @@ html, body {
   }
 }
 
-@media (min-width: 1024px) {
-  .mobile-bottom-nav {
-    display: none !important;
-  }
+/* Bottom nav: oculto por defecto, solo visible en móvil (< 768px) */
+.mobile-bottom-nav {
+  display: none !important;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .mobile-bottom-nav {
     display: grid !important;
     position: fixed;
@@ -503,21 +502,10 @@ html, body {
     right: 0;
     background: #FFFFFF !important;
     border-top: 2px solid #E5E7EB !important;
-    grid-template-columns: repeat(4, 1fr);
     padding: 8px 0;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
     z-index: 30;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  .main-content-with-bottom-nav {
-    padding-bottom: 80px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .main-content-with-bottom-nav {
-    padding-bottom: 0 !important;
   }
 }
 
