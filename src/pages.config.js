@@ -20,6 +20,8 @@ const CRM                = lazy(() => import('./pages/CRM'));
 const CRMAutomations     = lazy(() => import('./pages/CRMAutomations'));
 const Invoices           = lazy(() => import('./pages/Invoices'));
 const Jobs               = lazy(() => import('./pages/Jobs'));
+const MisClientes        = lazy(() => import('./pages/MisClientes'));
+const MiVisibilidad      = lazy(() => import('./pages/MiVisibilidad'));
 const Presupuestos       = lazy(() => import('./pages/Presupuestos'));
 const ProfessionalDashboard = lazy(() => import('./pages/ProfessionalDashboard'));
 const Projects           = lazy(() => import('./pages/Projects'));
@@ -80,6 +82,8 @@ export const PAGES = {
     "Home": Home,
     "Invoices": Invoices,
     "Jobs": Jobs,
+    "MisClientes": MisClientes,
+    "MiVisibilidad": MiVisibilidad,
     "LegalNotice": LegalNotice,
     "Messages": Messages,
     "MyProfile": MyProfile,

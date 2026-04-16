@@ -61,7 +61,7 @@ const LEGACY_REDIRECTS = {
   '/calendar': '/calendario',
   '/invoices': '/facturas',
   '/payinvoice': '/pagar',
-  '/crm': '/clientes',
+  '/crm': '/mis-clientes',
   '/crmautomations': '/automatizaciones',
   '/clientdetail': '/clientes',
   '/jobs': '/trabajos',
@@ -147,6 +147,8 @@ const AuthenticatedApp = () => {
           {/* Importante: /dashboard/info va ANTES que /dashboard para que matchee primero */}
           <Route path="/dashboard/info" element={<Pages.DashboardProInfo />} />
           <Route path="/dashboard" element={<Pages.ProfessionalDashboard />} />
+          <Route path="/mis-clientes" element={<Pages.MisClientes />} />
+          <Route path="/visibilidad" element={<Pages.MiVisibilidad />} />
           <Route path="/perfil" element={<Pages.ProfessionalProfile />} />
           <Route path="/perfil/:slug" element={<Pages.ProfessionalProfile />} />
           <Route path="/completar-perfil" element={<Pages.ProfileOnboarding />} />
@@ -158,7 +160,7 @@ const AuthenticatedApp = () => {
           <Route path="/pagar/:id" element={<Pages.PayInvoice />} />
           {/* /clientes/:id ANTES que /clientes para que matchee primero */}
           <Route path="/clientes/:id" element={<Pages.ClientDetail />} />
-          <Route path="/clientes" element={<Pages.CRM />} />
+          <Route path="/clientes" element={<Pages.MisClientes />} />
           <Route path="/automatizaciones" element={<Pages.CRMAutomations />} />
           <Route path="/trabajos" element={<Pages.Jobs />} />
           <Route path="/suscripcion" element={<Pages.SubscriptionManagement />} />

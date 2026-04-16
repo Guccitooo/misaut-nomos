@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3, Download } from "lucide-react";
+import { Plus, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -320,24 +320,18 @@ export default function InvoicesPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate(createPageUrl("ProfessionalDashboard"))}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('back')}
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{t('invoices') || 'Facturas'}</h1>
-              <p className="text-gray-600 mt-1">{invoices.length} {t('invoicesTotal') || 'facturas totales'}</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900">{t('invoices') || 'Facturas'}</h1>
+            <p className="text-gray-500 text-sm mt-0.5">{invoices.length} {t('invoicesTotal') || 'facturas totales'}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowExportDialog(true)}>
+            <Button variant="outline" onClick={() => setShowExportDialog(true)} className="hidden sm:flex">
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
-            <Button onClick={() => { setEditingInvoice(null); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => { setEditingInvoice(null); setShowDialog(true); }} className="bg-blue-600 hover:bg-blue-700 rounded-xl">
               <Plus className="w-4 h-4 mr-2" />
-              {t('newInvoice') || 'Nueva factura'}
+              Nueva factura
             </Button>
           </div>
         </div>

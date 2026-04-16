@@ -13,10 +13,11 @@ import {
   LayoutDashboard,
   CreditCard,
   X,
-  Calendar,
   Search as SearchIcon,
   FileText,
-  FolderKanban
+  Users,
+  Eye,
+  Home
 } from "lucide-react";
 import {
   Sidebar,
@@ -328,12 +329,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const navigationItems = [];
 
   if (isProfessional) {
-    // MENÚ PARA AUTÓNOMOS
+    // MENÚ PARA AUTÓNOMOS — solo lo útil
     navigationItems.push(
       {
-        title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
-        icon: Search,
+        title: "Inicio",
+        url: createPageUrl("ProfessionalDashboard"),
+        icon: Home,
       },
       {
         title: t('messages'),
@@ -342,45 +343,30 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         badge: unreadCount > 0 ? unreadCount : null
       },
       {
-        title: "Dashboard Pro",
-        url: createPageUrl("ProfessionalDashboard"),
-        icon: LayoutDashboard,
+        title: "Mis clientes",
+        url: "/mis-clientes",
+        icon: Users,
       },
       {
-        title: "Proyectos",
-        url: createPageUrl("Projects"),
-        icon: FolderKanban,
-      },
-      {
-        title: t('calendar'),
-        url: createPageUrl("Calendar"),
-        icon: Calendar,
-      },
-      {
-        title: "Presupuestos",
-        url: createPageUrl("Presupuestos"),
+        title: "Facturas",
+        url: createPageUrl("Invoices"),
         icon: FileText,
       },
       {
-        title: t('favorites'),
-        url: createPageUrl("Favorites"),
-        icon: Heart,
+        title: "Mi visibilidad",
+        url: "/visibilidad",
+        icon: Eye,
       },
       {
-        title: t('myProfile'),
+        title: "Mi perfil",
         url: createPageUrl("MyProfile"),
         icon: User,
       },
       {
-        title: t('mySubscription'),
+        title: "Mi suscripción",
         url: createPageUrl("SubscriptionManagement"),
-        icon: Briefcase,
+        icon: CreditCard,
       },
-      {
-        title: t('supportTickets'),
-        url: createPageUrl("Tickets"),
-        icon: MessageSquare,
-      }
     );
   } else {
     // MENÚ PARA CLIENTES
@@ -837,19 +823,25 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 style={{
                   position: 'fixed', bottom: 0, left: 0, right: 0,
                   background: '#fff', borderTop: '2px solid #E5E7EB',
-                  display: 'grid', gridTemplateColumns: user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+                  display: 'grid', gridTemplateColumns: (user && isProfessional) ? 'repeat(5, 1fr)' : user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
                   padding: '8px 0', paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
                   zIndex: 30, boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
                 }}
               >
                 {user ? (
                   <>
-                    {[
+                    {(isProfessional ? [
+                      { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), icon: Home },
+                      { title: 'Mensajes', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Clientes', url: "/mis-clientes", icon: Users },
+                      { title: 'Facturas', url: createPageUrl("Invoices"), icon: FileText },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                    ] : [
                       { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
                       { title: 'Mensajes', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
                       { title: 'Favoritos', url: createPageUrl("Favorites"), icon: Heart },
                       { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
-                    ].map((item) => (
+                    ]).map((item) => (
                       <Link
                         key={item.title}
                         to={item.url}
