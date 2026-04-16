@@ -481,7 +481,7 @@ export default function SearchPage() {
         { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" }
       ]} />
 
-      <div style={{ background: '#f8fafc' }}>
+      <div className="min-h-screen" style={{ background: '#f8fafc' }}>
 
         {/* ── HERO ── solo para visitantes no registrados */}
         {!user && !loadingUser && (
@@ -548,10 +548,10 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              {/* Categorías rápidas */}
+              {/* Categorías rápidas — scroll horizontal en móvil */}
               <div>
                 <p className="text-white/60 text-sm text-center mb-4">Explorar por categoría</p>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-2 md:flex-wrap md:justify-center scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                   {QUICK_CATEGORIES.map(({ name, icon: Icon, color }) => (
                     <button
                       key={name}
@@ -559,7 +559,7 @@ export default function SearchPage() {
                         setFilters(f => ({ ...f, category: name }));
                         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white border border-white/20 backdrop-blur-sm transition-all hover:scale-105 hover:border-white/40`}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white border border-white/20 backdrop-blur-sm transition-all hover:scale-105 hover:border-white/40 flex-shrink-0 min-h-[44px]"
                       style={{ background: 'rgba(255,255,255,0.1)' }}
                     >
                       <Icon className="w-4 h-4" />
@@ -826,10 +826,11 @@ export default function SearchPage() {
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("Home"))}
-                    className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 text-base rounded-2xl"
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10 px-8 text-base rounded-2xl"
                     style={{ height: '52px' }}
                   >
-                    Ver cómo funciona →
+                    Saber más →
                   </Button>
                 </div>
               </div>
