@@ -144,26 +144,49 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
   const CategoryIcon = getCategoryIcon(profile.categories?.[0]);
 
+  // Badge "Responde rápido" si tiene reseñas recientes o rating alto
+  const isQuickResponder = profile.average_rating >= 4.5 && profile.total_reviews >= 3;
+  const isNew = !profile.total_reviews || profile.total_reviews === 0;
+
   return (
     <>
-      <Card className="bg-white hover:shadow-lg transition-all duration-200 border border-gray-100 rounded-xl overflow-hidden h-full flex flex-col profile-card" style={{ minHeight: '220px' }}>
+      <Card className="bg-white hover:shadow-xl transition-all duration-200 border border-gray-100 rounded-2xl overflow-hidden h-full flex flex-col profile-card group" style={{ minHeight: '240px' }}>
         <CardContent className="p-4 flex flex-col flex-1">
+          {/* Badges superiores */}
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex gap-1.5 flex-wrap">
+              {isQuickResponder && (
+                <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  Responde rápido
+                </span>
+              )}
+              {isNew && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Nuevo</span>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={onToggleFavorite}
+              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-7 w-7 flex-shrink-0 -mt-1 -mr-1`}>
+              <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
+
           <div className="flex items-start gap-3 mb-3">
-            <Avatar className="w-12 h-12 border border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden" onClick={onClick}>
+            <Avatar className="w-14 h-14 border-2 border-gray-100 cursor-pointer flex-shrink-0 overflow-hidden rounded-xl" onClick={onClick}>
               {(() => {
                 const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
                 return photoUrl ? (
                   <img
                     src={photoUrl}
                     alt={profile.business_name}
-                    className="object-cover object-center w-full h-full rounded-full"
-                    width="48"
-                    height="48"
+                    className="object-cover object-center w-full h-full"
+                    width="56"
+                    height="56"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold text-lg rounded-xl">
                     {profile.business_name?.charAt(0) || "P"}
                   </AvatarFallback>
                 );
@@ -171,47 +194,47 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors truncate leading-tight mb-1" onClick={onClick}>
+              <h3 className="text-sm font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors truncate leading-tight mb-1" onClick={onClick}>
                 {profile.business_name}
               </h3>
               {profile.categories && profile.categories.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-0.5 rounded-md w-fit">
+                <div className="flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md w-fit mb-1">
                   <CategoryIcon className="w-3 h-3" />
                   <span className="truncate">{t(profile.categories[0]) || profile.categories[0]}</span>
                 </div>
               )}
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <MapPin className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
+              </div>
             </div>
-
-            <Button variant="ghost" size="icon" onClick={onToggleFavorite}
-              className={`${isFavorite ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'} h-8 w-8 flex-shrink-0`}>
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-            </Button>
           </div>
 
           <div className="space-y-2 mb-3 flex-1">
-            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}</span>
-            </div>
             <div className="h-[2.5rem] overflow-hidden">
               {displayProfile.descripcion_corta && (
                 <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{displayProfile.descripcion_corta}</p>
               )}
             </div>
-            {profile.average_rating > 0 && (
-              <div className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-semibold text-gray-900">{profile.average_rating.toFixed(1)}</span>
-                <span className="text-xs text-gray-500">({profile.total_reviews})</span>
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              {profile.average_rating > 0 ? (
+                <div className="flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-bold text-gray-900">{profile.average_rating.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500">({profile.total_reviews} {profile.total_reviews === 1 ? 'opinión' : 'opiniones'})</span>
+                </div>
+              ) : (
+                <span className="text-xs text-gray-400">Sin valoraciones aún</span>
+              )}
+              {profile.tarifa_base > 0 && (
+                <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {profile.tarifa_base}€/h
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-1.5 mt-auto">
-            <Button onClick={onClick} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-medium rounded-lg px-2">
-              {t('viewProfile')}
-            </Button>
-
+          <div className="flex gap-1.5 mt-auto pt-1">
             <Button
               onClick={() => {
                 if (!currentUserId) {
@@ -221,28 +244,28 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
                 const conversationId = [currentUserId, profile.user_id].sort().join('_');
                 navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
               }}
-              variant="outline" size="icon"
-              className="h-9 w-9 border-gray-200 hover:bg-blue-50 hover:border-blue-300 rounded-lg flex-shrink-0"
-              title={t('sendDirectMessage')}>
-              <MessageSquare className="w-4 h-4 text-gray-700" />
+              className="flex-1 bg-blue-700 hover:bg-blue-600 text-white h-9 text-xs font-semibold rounded-lg"
+            >
+              <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+              Contactar
             </Button>
 
-            {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-              <Button 
-                onClick={handleCall}
-                variant="outline" 
-                size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" 
-                title={t('callPhone')}
-              >
-                <Phone className="w-4 h-4 text-gray-700" />
-              </Button>
-            )}
+            <Button onClick={onClick} variant="outline" size="sm"
+              className="h-9 border-gray-200 hover:bg-gray-50 rounded-lg text-xs px-3 flex-shrink-0">
+              {t('viewProfile') || 'Ver perfil'}
+            </Button>
 
             {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
               <Button onClick={handleWhatsApp} variant="outline" size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-green-50 rounded-lg flex-shrink-0" title={t('contactViaWhatsApp')}>
+                className="h-9 w-9 border-green-200 hover:bg-green-50 rounded-lg flex-shrink-0" title={t('contactViaWhatsApp')}>
                 <MessageCircle className="w-4 h-4 text-green-600" />
+              </Button>
+            )}
+
+            {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
+              <Button onClick={handleCall} variant="outline" size="icon"
+                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-lg flex-shrink-0" title={t('callPhone')}>
+                <Phone className="w-4 h-4 text-gray-600" />
               </Button>
             )}
           </div>
@@ -306,6 +329,7 @@ export default function SearchPage() {
   });
   const [displayLimit, setDisplayLimit] = useState(12);
   const [viewMode, setViewMode] = useState("grid"); // "grid" o "map"
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -464,6 +488,8 @@ export default function SearchPage() {
 
   const isInitialLoading = loadingProfiles || loadingCategories;
 
+  const totalResults = filteredProfiles.length;
+
   return (
     <>
       <SEOHead 
@@ -510,75 +536,88 @@ export default function SearchPage() {
       ]} />
 
       <div className="min-h-screen bg-gray-50">
-        {/* Hero visible solo si no hay usuario y ya se terminó de cargar */}
+        {/* Hero compacto para visitantes no registrados */}
         {!user && !loadingUser && (
-          <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-16 md:py-20 mb-8 overflow-hidden">
-            {/* Elementos decorativos de fondo */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
-              <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-400 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-            </div>
-
-            <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
+          <div className="bg-gradient-to-r from-blue-800 to-blue-700 text-white py-10 px-4">
+            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight drop-shadow-lg">
-                  {t('heroTitle')}
-                </h1>
-                <p className="text-xl md:text-2xl text-blue-50 mb-8 font-light max-w-3xl mx-auto">
-                  {t('heroSubtitle')}
-                </p>
-              </div>
-
-              {/* Stats destacadas */}
-              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-base md:text-lg mb-8">
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Users className="w-5 h-5 text-green-400" />
-                  <span className="font-bold">247+</span>
-                  <span className="text-blue-100">profesionales</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-bold">4.8</span>
-                  <span className="text-blue-100">valoración</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
-                  <span className="font-bold">1,840</span>
-                  <span className="text-blue-100">trabajos/mes</span>
+                <h1 className="text-2xl md:text-3xl font-bold mb-1">{t('heroTitle') || 'Encuentra el profesional que necesitas'}</h1>
+                <p className="text-blue-200 text-base">{t('heroSubtitle') || 'Autónomos verificados. Contacto directo. 100% gratis para clientes.'}</p>
+                <div className="flex items-center gap-4 mt-3 text-sm">
+                  <span className="flex items-center gap-1 text-green-300"><Users className="w-4 h-4" /> 2.400+ profesionales</span>
+                  <span className="flex items-center gap-1 text-yellow-300"><Star className="w-4 h-4 fill-yellow-300" /> 4.8 valoración</span>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
-                <Button onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-white hover:bg-gray-50 text-blue-700 h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl">
-                  <SearchIcon className="w-5 h-5 mr-2" />{t('imClient')}
-                </Button>
+              <div className="flex gap-3 flex-shrink-0">
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white h-14 px-8 text-lg font-semibold shadow-2xl flex-1 rounded-xl">
-                  <Briefcase className="w-5 h-5 mr-2" />{t('imFreelancer')}
+                  className="bg-green-500 hover:bg-green-400 text-white font-bold px-6 h-11 rounded-xl shadow-lg">
+                  <Briefcase className="w-4 h-4 mr-2" />Soy autónomo — 60 días gratis
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-6' : 'pb-6'} md:pb-10`} id="search-section">
-          <div className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="mb-3">
-              <SearchAutocomplete
-                value={searchTerm}
-                onChange={setSearchTerm}
-                onSelect={handleSelectFromAutocomplete}
-              />
+        <div className={`max-w-7xl mx-auto px-4 ${user ? 'py-4' : 'pb-6'} md:pb-10`} id="search-section">
+          {/* Barra de búsqueda pegajosa */}
+          <div className="mb-4 bg-white rounded-2xl p-4 shadow-md border border-gray-100 sticky top-16 z-10">
+            <div className="flex gap-2 mb-3">
+              <div className="flex-1">
+                <SearchAutocomplete
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSelect={handleSelectFromAutocomplete}
+                />
+              </div>
+              {/* Botón filtros en móvil */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="md:hidden flex items-center gap-1.5 border-gray-300 h-10 px-3 rounded-xl font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                Filtros
+                {(filters.category !== "all" || filters.provincia !== "all" || filters.minRating > 0) && (
+                  <span className="w-2 h-2 bg-blue-600 rounded-full ml-0.5" />
+                )}
+              </Button>
             </div>
             
-            <SearchFilters
-              filters={filters}
-              onFilterChange={setFilters}
-              availableCities={availableCities}
-              categories={categories}
-              provinces={PROVINCIAS}
-            />
+            {/* Filtros: siempre visibles en desktop, toggle en móvil */}
+            <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
+              <SearchFilters
+                filters={filters}
+                onFilterChange={setFilters}
+                availableCities={availableCities}
+                categories={categories}
+                provinces={PROVINCIAS}
+              />
+            </div>
+
+            {/* Chips de filtros activos (móvil) */}
+            {!showFilters && (filters.category !== "all" || filters.provincia !== "all" || filters.minRating > 0) && (
+              <div className="flex gap-2 flex-wrap mt-2 md:hidden">
+                {filters.category !== "all" && (
+                  <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                    {filters.category}
+                    <button onClick={() => setFilters(f => ({...f, category: "all"}))} className="ml-1 text-blue-500 hover:text-blue-700">✕</button>
+                  </span>
+                )}
+                {filters.provincia !== "all" && (
+                  <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                    {filters.provincia}
+                    <button onClick={() => setFilters(f => ({...f, provincia: "all", ciudad: "all"}))} className="ml-1 text-green-500 hover:text-green-700">✕</button>
+                  </span>
+                )}
+                {filters.minRating > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                    ★ {filters.minRating}+
+                    <button onClick={() => setFilters(f => ({...f, minRating: 0}))} className="ml-1 text-amber-500 hover:text-amber-700">✕</button>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <SavedSearches
@@ -588,35 +627,31 @@ export default function SearchPage() {
             onLoadSearch={(savedFilters) => setFilters(savedFilters)}
           />
 
-          <div className="mb-5 flex items-center justify-between" style={{ minHeight: '56px' }}>
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {isInitialLoading ? t('loading') : `${filteredProfiles.length} ${t('professionals')}`}
+              <h2 className="text-base font-bold text-gray-900">
+                {isInitialLoading ? (
+                  <span className="text-gray-400">Cargando...</span>
+                ) : (
+                  <><span className="text-blue-700">{filteredProfiles.length}</span> {t('professionals') || 'profesionales'}</>
+                )}
               </h2>
-              <p className="text-sm text-gray-600 mt-0.5">{t('verifiedProfessionals')}</p>
+              <p className="text-xs text-gray-500">{t('verifiedProfessionals') || 'Verificados · Contacto directo'}</p>
             </div>
             
             {!isInitialLoading && filteredProfiles.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "outline"}
-                  size="sm"
+              <div className="flex gap-1.5">
+                <Button variant={viewMode === "grid" ? "default" : "outline"} size="sm"
                   onClick={() => setViewMode("grid")}
-                  className={viewMode === "grid" ? "bg-blue-600" : ""}
-                >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className={`h-8 ${viewMode === "grid" ? "bg-blue-700" : ""}`}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  Lista
                 </Button>
-                <Button
-                  variant={viewMode === "map" ? "default" : "outline"}
-                  size="sm"
+                <Button variant={viewMode === "map" ? "default" : "outline"} size="sm"
                   onClick={() => setViewMode("map")}
-                  className={viewMode === "map" ? "bg-blue-600" : ""}
-                >
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Mapa
+                  className={`h-8 ${viewMode === "map" ? "bg-blue-700" : ""}`}>
+                  <MapPin className="w-3.5 h-3.5" />
                 </Button>
               </div>
             )}
@@ -704,14 +739,29 @@ export default function SearchPage() {
             </>
           )}
 
-          {!isInitialLoading && !loadingUser && filteredProfiles.length > 0 && (!user || user.user_type === "client") && (
-            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white shadow-lg">
-              <h3 className="text-2xl font-bold mb-2">{t('areYouProfessionalHere')}</h3>
-              <p className="text-blue-100 mb-5 text-lg">{t('getMoreClients')}</p>
-              <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
-                className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 text-base font-semibold shadow-xl rounded-xl">
-                <Briefcase className="w-5 h-5 mr-2" />{t('registerAsProfessional')}
-              </Button>
+          {!isInitialLoading && !loadingUser && (!user || user.user_type === "client") && (
+            <div className="mt-10 rounded-2xl overflow-hidden shadow-xl">
+              <div className="bg-gradient-to-r from-blue-800 to-blue-700 p-6 md:p-8 text-white text-center">
+                <div className="inline-block bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
+                  🎁 60 días completamente gratis
+                </div>
+                <h3 className="text-2xl md:text-3xl font-extrabold mb-2">
+                  {t('areYouProfessionalHere') || '¿Eres autónomo? Aparece aquí'}
+                </h3>
+                <p className="text-blue-200 mb-6 text-base max-w-lg mx-auto">
+                  Más de 2.400 profesionales ya reciben clientes a través de MisAutónomos. Sin comisiones, contacto directo.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    className="bg-green-500 hover:bg-green-400 text-white h-12 px-8 text-base font-bold shadow-xl rounded-xl">
+                    <Briefcase className="w-5 h-5 mr-2" />Empezar gratis 60 días
+                  </Button>
+                  <Button onClick={() => navigate(createPageUrl("Home"))}
+                    variant="outline" className="border-white/30 text-white hover:bg-white/10 h-12 px-6 text-base rounded-xl">
+                    Saber más →
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
