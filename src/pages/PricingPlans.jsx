@@ -76,16 +76,12 @@ export default function PricingPlansPage() {
 
   const canceled = searchParams.get("canceled");
 
-  const { data: plans = [], isLoading: loadingPlans } = useQuery({
-    queryKey: ["subscriptionPlans"],
-    queryFn: async () => {
-      const allPlans = await base44.entities.SubscriptionPlan.list();
-      return allPlans
-        .filter((p) => p.plan_id === "plan_visibility" || p.plan_id === "plan_adsplus")
-        .sort((a, b) => a.precio - b.precio);
-    },
-    staleTime: 1000 * 60 * 10,
-  });
+  // Planes estáticos hardcodeados — no cambian frecuentemente, evita fetch a BD
+  const plans = [
+    { plan_id: "plan_visibility", nombre: "Plan Visibilidad", precio: 13, duracion_dias: 30, stripe_price_id: "" },
+    { plan_id: "plan_adsplus", nombre: "Plan Ads+", precio: 33, duracion_dias: 30, stripe_price_id: "" },
+  ];
+  const loadingPlans = false;
 
   const { data: currentSubscription } = useQuery({
     queryKey: ["currentSubscription", user?.id],
@@ -103,7 +99,17 @@ export default function PricingPlansPage() {
     staleTime: 1000 * 30,
   });
 
-  useEffect(() => { loadUser(); }, []);
+  useEffect(() => {
+    // Reutilizar cache del layout
+    const cached = sessionStorage.getItem('current_user');
+    if (cached) {
+      try {
+        const { user: cachedUser, timestamp } = JSON.parse(cached);
+        if (cachedUser && Date.now() - timestamp < 300000) { setUser(cachedUser); return; }
+      } catch {}
+    }
+    loadUser();
+  }, []);
 
   useEffect(() => {
     if (canceled) toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", { duration: 5000 });
@@ -149,11 +155,17 @@ export default function PricingPlansPage() {
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
     try {
-      const response = await base44.functions.invoke("createCheckoutSession", {
-        planId: plan.plan_id,
-        planPrice: plan.precio,
-        isReactivation: false,
-      });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Tiempo de espera agotado. Inténtalo de nuevo.")), 10000)
+      );
+      const response = await Promise.race([
+        base44.functions.invoke("createCheckoutSession", {
+          planId: plan.plan_id,
+          planPrice: plan.precio,
+          isReactivation: false,
+        }),
+        timeoutPromise
+      ]);
       if (response.data?.error) {
         if (response.data.redirect) { toast.error(response.data.error); navigate(response.data.redirect); return; }
         throw new Error(response.data.error);

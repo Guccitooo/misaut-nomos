@@ -194,12 +194,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         }
       }
 
+      // Paralelizar auth + perfil en un solo round-trip
       const currentUser = await base44.auth.me();
 
       if (currentUser) {
-        const profiles = await base44.entities.ProfessionalProfile.filter({
-          user_id: currentUser.id
-        });
+        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
 
@@ -414,8 +413,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       }
     );
   }
-
-  console.log('DEBUG USER ROLE:', JSON.stringify({ role: user?.role, email: user?.email, id: user?.id }));
 
   if (user?.role === "admin") {
     navigationItems.push(

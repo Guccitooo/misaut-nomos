@@ -55,11 +55,19 @@ export default function ProfessionalDashboardPage() {
 
   const loadUser = async () => {
     try {
-      const u = await base44.auth.me();
-      if (!u || u.user_type !== 'professionnel') {
-        navigate(createPageUrl("Search"));
-        return;
+      // Reutilizar cache del layout para evitar doble fetch
+      const cached = sessionStorage.getItem('current_user');
+      if (cached) {
+        const { user: cachedUser, timestamp } = JSON.parse(cached);
+        if (cachedUser && Date.now() - timestamp < 300000) {
+          if (cachedUser.user_type !== 'professionnel') { navigate(createPageUrl("Search")); return; }
+          setUser(cachedUser);
+          setLoading(false);
+          return;
+        }
       }
+      const u = await base44.auth.me();
+      if (!u || u.user_type !== 'professionnel') { navigate(createPageUrl("Search")); return; }
       setUser(u);
     } catch {
       navigate(createPageUrl("Search"));
