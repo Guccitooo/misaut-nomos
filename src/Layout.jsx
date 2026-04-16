@@ -911,12 +911,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   </Suspense>
                 </Suspense>
 
-                {/* Footer solo si no hay usuario o no hay sidebar */}
-                {(!user || !shouldShowSidebar()) && (
-                  <Suspense fallback={null}>
-                    <Footer />
-                  </Suspense>
-                )}
+                <Suspense fallback={null}>
+                  <Footer />
+                </Suspense>
               </div>
 
               {shouldShowSidebar() && (

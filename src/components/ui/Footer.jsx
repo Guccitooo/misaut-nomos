@@ -1,246 +1,128 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Mail, MapPin, ChevronDown, ChevronUp, Globe, Instagram } from "lucide-react";
-import { useLanguage } from "./LanguageSwitcher";
+import { Mail, Instagram } from "lucide-react";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
+const FacebookIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+const LinkedInIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+);
+
+const socialLinks = [
+  { href: "https://www.instagram.com/misautonomos/", label: "Instagram", icon: Instagram, hoverClass: "hover:bg-pink-600" },
+  { href: "https://www.facebook.com/misautonomos", label: "Facebook", icon: FacebookIcon, hoverClass: "hover:bg-blue-600" },
+  { href: "https://www.linkedin.com/company/misautonomos", label: "LinkedIn", icon: LinkedInIcon, hoverClass: "hover:bg-blue-700" },
+  { href: "https://www.tiktok.com/@misautonomos", label: "TikTok", icon: TikTokIcon, hoverClass: "hover:bg-gray-950" },
+];
+
+const platformLinks = [
+  { label: "Sobre nosotros", to: createPageUrl("Home") },
+  { label: "Cómo funciona", to: createPageUrl("DashboardProInfo") },
+  { label: "Para autónomos", to: createPageUrl("PricingPlans") },
+  { label: "Para clientes", to: createPageUrl("ClientOnboarding") },
+  { label: "Centro de ayuda", to: createPageUrl("FAQ") },
+];
+
+const legalLinks = [
+  { label: "Política de privacidad", to: createPageUrl("PrivacyPolicy") },
+  { label: "Términos de uso", to: createPageUrl("TermsConditions") },
+  { label: "Política de cookies", to: createPageUrl("CookiePolicy") },
+  { label: "Aviso legal", to: createPageUrl("LegalNotice") },
+];
+
 export default function Footer() {
-  const [openSection, setOpenSection] = useState(null);
-  const { t } = useLanguage();
-
-  const toggleSection = (section) => {
-    setOpenSection(openSection === section ? null : section);
-  };
-
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      <div className="hidden md:block max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <img
-                src={LOGO_URL}
-                alt="MisAutónomos"
-                className="w-12 h-12 rounded-lg"
-                loading="lazy"
-              />
-              <h3 className="text-xl font-bold">MisAutónomos</h3>
+    <footer className="bg-slate-900 text-gray-300">
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-6 pt-14 pb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+
+          {/* Brand column */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 mb-4">
+              <img src={LOGO_URL} alt="MisAutónomos" className="w-11 h-11 rounded-xl" width="44" height="44" loading="lazy" />
+              <div>
+                <h3 className="text-white font-bold text-lg leading-tight">MisAutónomos</h3>
+                <p className="text-xs text-gray-400">Tu autónomo de confianza</p>
+              </div>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              {t('platformDescription')}
+            <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-xs">
+              La plataforma que conecta a clientes con profesionales autónomos verificados en toda España.
             </p>
-            <div className="flex gap-3 mt-4">
-              <a href="https://www.instagram.com/misautonomos/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-pink-600 rounded-lg flex items-center justify-center transition-colors" aria-label="Instagram">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="https://www.tiktok.com/@misautonomos" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-black rounded-lg flex items-center justify-center transition-colors" aria-label="TikTok">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                </svg>
-              </a>
+            <div className="flex gap-2.5">
+              {socialLinks.map(({ href, label, icon: Icon, hoverClass }) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                  className={`w-9 h-9 bg-slate-800 ${hoverClass} rounded-lg flex items-center justify-center transition-colors`}>
+                  <Icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
           </div>
 
+          {/* Platform links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">{t('navigation')}</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to={createPageUrl("Search")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('searchFreelancers')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("PricingPlans")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('becomeFreelancer')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("DashboardProInfo")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('dashboardProInfo') || 'Dashboard Pro'}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("FAQ")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('faq')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("HelpCenter")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('helpCenter')}
-                </Link>
-              </li>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Plataforma</h4>
+            <ul className="space-y-2.5">
+              {platformLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="text-sm text-gray-400 hover:text-white transition-colors">{label}</Link>
+                </li>
+              ))}
             </ul>
           </div>
 
+          {/* Legal links */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">{t('legal')}</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to={createPageUrl("TermsConditions")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('termsAndConditions')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("PrivacyPolicy")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('privacyPolicy')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("CookiePolicy")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('cookiePolicy')}
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("LegalNotice")} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                  {t('legalNotice')}
-                </Link>
-              </li>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Legal</h4>
+            <ul className="space-y-2.5">
+              {legalLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="text-sm text-gray-400 hover:text-white transition-colors">{label}</Link>
+                </li>
+              ))}
             </ul>
           </div>
 
+          {/* Contact */}
           <div>
-            <h4 className="font-semibold text-lg mb-4">{t('contact')}</h4>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Contacto</h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-2 text-sm text-gray-400">
-                <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="mailto:soporte@misautonomos.es" className="hover:text-blue-400 transition-colors">
-                  soporte@misautonomos.es
+              <li>
+                <a href="mailto:hola@misautonomos.com" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  hola@misautonomos.com
                 </a>
               </li>
-              <li className="flex items-start gap-2 text-sm text-gray-400">
-                <Globe className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">
-                  misautonomos.es
-                </a>
-              </li>
-              <li className="flex items-start gap-2 text-sm text-gray-400">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>España</span>
+              <li className="text-sm text-gray-500 pt-1">
+                Conectamos clientes con autónomos verificados en toda España. Contacto directo, sin comisiones.
               </li>
             </ul>
           </div>
         </div>
       </div>
 
-      <div className="md:hidden">
-        <div className="border-b border-gray-700">
-          <button
-            onClick={() => toggleSection('about')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <img src={LOGO_URL} alt="MisAutónomos" className="w-8 h-8 rounded" />
-              <span className="font-semibold">MisAutónomos</span>
-            </div>
-            {openSection === 'about' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-          {openSection === 'about' && (
-            <div className="px-6 pb-4 bg-gray-800/50">
-              <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                {t('platformDescription')}
-              </p>
-              <div className="flex gap-3">
-                <a href="https://www.instagram.com/misautonomos/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-pink-600 rounded-lg flex items-center justify-center transition-colors" aria-label="Instagram">
-                  <Instagram className="w-5 h-5" />
-                </a>
-                <a href="https://www.tiktok.com/@misautonomos" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-gray-700 hover:bg-black rounded-lg flex items-center justify-center transition-colors" aria-label="TikTok">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="border-b border-gray-700">
-          <button
-            onClick={() => toggleSection('navigation')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
-          >
-            <span className="font-semibold">{t('navigation')}</span>
-            {openSection === 'navigation' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-          {openSection === 'navigation' && (
-            <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
-              <Link to={createPageUrl("Search")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('searchFreelancers')}
-              </Link>
-              <Link to={createPageUrl("PricingPlans")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('becomeFreelancer')}
-              </Link>
-              <Link to={createPageUrl("DashboardProInfo")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('dashboardProInfo') || 'Dashboard Pro'}
-              </Link>
-              <Link to={createPageUrl("FAQ")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('faq')}
-              </Link>
-              <Link to={createPageUrl("HelpCenter")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('helpCenter')}
-              </Link>
-            </div>
-          )}
-        </div>
-
-        <div className="border-b border-gray-700">
-          <button
-            onClick={() => toggleSection('legal')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
-          >
-            <span className="font-semibold">{t('legal')}</span>
-            {openSection === 'legal' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-          {openSection === 'legal' && (
-            <div className="px-6 pb-4 bg-gray-800/50 space-y-2">
-              <Link to={createPageUrl("TermsConditions")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('termsAndConditions')}
-              </Link>
-              <Link to={createPageUrl("PrivacyPolicy")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('privacyPolicy')}
-              </Link>
-              <Link to={createPageUrl("CookiePolicy")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('cookiePolicy')}
-              </Link>
-              <Link to={createPageUrl("LegalNotice")} className="block text-gray-400 hover:text-blue-400 transition-colors text-sm py-2">
-                {t('legalNotice')}
-              </Link>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <button
-            onClick={() => toggleSection('contact')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800 transition-colors"
-          >
-            <span className="font-semibold">{t('contact')}</span>
-            {openSection === 'contact' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-          {openSection === 'contact' && (
-            <div className="px-6 pb-4 bg-gray-800/50 space-y-3">
-              <a href="mailto:soporte@misautonomos.es" className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                <Mail className="w-4 h-4" />
-                soporte@misautonomos.es
-              </a>
-              <a href="https://misautonomos.es" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                <Globe className="w-4 h-4" />
-                misautonomos.es
-              </a>
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <MapPin className="w-4 h-4" />
-                España
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="border-t border-gray-700 py-6 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-          <p className="text-center md:text-left">© 2025 <strong className="text-white">MisAutónomos</strong>. {t('allRightsReserved')}.</p>
-          <p className="text-xs">{t('tagline')}</p>
+      {/* Bottom bar */}
+      <div className="border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-gray-500 text-center sm:text-left">
+            © 2025 <span className="text-gray-400 font-medium">MisAutónomos</span>. Todos los derechos reservados.
+          </p>
+          <p className="text-xs text-gray-600">Tu autónomo de confianza</p>
         </div>
       </div>
     </footer>

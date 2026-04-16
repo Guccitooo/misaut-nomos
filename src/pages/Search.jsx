@@ -244,7 +244,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
           </div>
 
           {/* Botones de acción */}
-          <div className="flex gap-1.5 mt-auto">
+          <div className="flex items-center gap-1.5 mt-auto">
             <Button
               onClick={(e) => {
                 e.stopPropagation();
@@ -255,30 +255,36 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
                 const conversationId = [currentUserId, profile.user_id].sort().join('_');
                 navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
               }}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-sm"
+              className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-sm"
             >
-              <MessageSquare className="w-3.5 h-3.5 mr-1" />
-              Contactar
+              <MessageSquare className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+              <span className="truncate">Contactar</span>
             </Button>
             <Button
               onClick={onClick}
               variant="outline"
               size="sm"
-              className="h-9 border-gray-200 hover:border-blue-300 hover:text-blue-600 rounded-xl text-xs px-3 flex-shrink-0"
+              className="h-9 border-gray-200 hover:border-blue-300 hover:text-blue-600 rounded-xl text-xs px-2.5 flex-shrink-0"
             >
-              Ver perfil
+              Ver
             </Button>
             {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-              <Button onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }} variant="outline" size="icon"
-                className="h-9 w-9 border-green-200 hover:bg-green-50 text-green-600 rounded-xl flex-shrink-0">
-                <MessageCircle className="w-4 h-4" />
-              </Button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleWhatsApp(); }}
+                className="w-9 h-9 min-w-[36px] flex items-center justify-center rounded-full border border-green-200 bg-white hover:bg-green-50 transition-colors flex-shrink-0"
+                title="Contactar por WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4 text-green-600" />
+              </button>
             )}
             {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-              <Button onClick={(e) => { e.stopPropagation(); handleCall(); }} variant="outline" size="icon"
-                className="h-9 w-9 border-gray-200 hover:bg-gray-50 rounded-xl flex-shrink-0">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleCall(); }}
+                className="w-9 h-9 min-w-[36px] flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition-colors flex-shrink-0"
+                title="Llamar por teléfono"
+              >
                 <Phone className="w-4 h-4 text-gray-500" />
-              </Button>
+              </button>
             )}
           </div>
         </CardContent>
