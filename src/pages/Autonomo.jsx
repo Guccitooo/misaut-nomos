@@ -44,7 +44,6 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import { ActionButtonsProfile } from "../components/profile/ActionButtons";
 import { generateSlug, isSlugDirty } from "../utils/slugUtils";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
