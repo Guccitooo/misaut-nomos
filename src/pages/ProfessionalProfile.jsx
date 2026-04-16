@@ -500,36 +500,42 @@ export default function ProfessionalProfilePage() {
               </Button>
             </div>
 
+            {/* TELÉFONO VISIBLE */}
+            {profile.telefono_contacto && (
+              <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="text-xs text-gray-600 mb-1">Teléfono</p>
+                <p className="text-lg font-bold text-gray-900">📞 {profile.telefono_contacto}</p>
+              </div>
+            )}
+
             {/* BOTONES DE CONTACTO */}
             <TooltipProvider>
-              <div className="flex gap-2">
-                {showPhone && (
+              <div className="flex gap-2 flex-wrap">
+                {showChat && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        onClick={handlePhoneClick}
-                        variant="outline"
-                        className="flex-1 h-9 text-sm hover:bg-blue-50 hover:border-blue-600"
+                      <Button
+                        onClick={handleStartChat}
+                        className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 h-9 text-sm"
                       >
-                        <Phone className="w-4 h-4 mr-1" />
-                        {t('call')}
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        Chat directo
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{t('callPhone')}</p>
+                      <p>{t('sendDirectMessage')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
-                
+
                 {showWhatsApp && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         onClick={handleWhatsAppClick}
-                        variant="outline"
-                        className="flex-1 h-9 text-sm hover:bg-green-50 hover:border-green-600"
+                        className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700 h-9 text-sm text-white"
                       >
-                        <MessageCircle className="w-4 h-4 mr-1 text-green-600" />
+                        <MessageCircle className="w-4 h-4 mr-1" />
                         WhatsApp
                       </Button>
                     </TooltipTrigger>
@@ -538,20 +544,21 @@ export default function ProfessionalProfilePage() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                
-                {showChat && (
+
+                {showPhone && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleStartChat}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
+                      <Button 
+                        onClick={handlePhoneClick}
+                        variant="outline"
+                        className="flex-1 min-w-[120px] h-9 text-sm hover:bg-gray-100 hover:border-gray-400"
                       >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        {t('chat')}
+                        <Phone className="w-4 h-4 mr-1" />
+                        Llamar
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{t('sendDirectMessage')}</p>
+                      <p>{t('callPhone')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -585,6 +592,55 @@ export default function ProfessionalProfilePage() {
               </div>
             )}
           </Card>
+
+          {/* DISPONIBILIDAD */}
+          {(profile.horario_apertura || profile.ciudad) && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">📍 Disponibilidad y Zona</h3>
+              <div className="space-y-2 text-sm">
+                {profile.horario_apertura && profile.horario_cierre && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">🕐 Horario:</span>
+                    <span className="font-medium text-gray-900">{profile.horario_apertura} - {profile.horario_cierre}</span>
+                  </div>
+                )}
+                {profile.ciudad && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-600" />
+                    <span className="text-gray-600">Zona:</span>
+                    <span className="font-medium text-gray-900">{profile.ciudad}{profile.radio_servicio_km ? ` (hasta ${profile.radio_servicio_km} km)` : ''}</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* SERVICIOS OFRECIDOS */}
+          {profile.services_offered && profile.services_offered.length > 0 && (
+            <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">🔧 Servicios Ofrecidos</h3>
+              <div className="space-y-2">
+                {profile.services_offered.map((service, idx) => (
+                  <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{service.name}</p>
+                        {service.description && (
+                          <p className="text-xs text-gray-600 mt-1">{service.description}</p>
+                        )}
+                      </div>
+                      {service.price && (
+                        <span className="text-sm font-bold text-green-700 whitespace-nowrap">{service.price}</span>
+                      )}
+                    </div>
+                    {service.duration && (
+                      <p className="text-xs text-gray-500 mt-2">⏱ {service.duration} {service.unit || 'hora'}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* GALERÍA DE TRABAJOS */}
           {profile.photos && profile.photos.length > 0 && (
