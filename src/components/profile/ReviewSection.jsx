@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -326,7 +325,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => reportingReviewMutation.mutate(reportingReviewId)}
+              onClick={() => reportReviewMutation.mutate(reportingReviewId)}
               className="bg-red-600 hover:bg-red-700"
             >
               {t('reportReview')}

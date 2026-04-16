@@ -49,7 +49,7 @@ export default function FAQSection({
     setShowAddDialog(true);
   };
 
-  const useSuggestion = (suggestion) => {
+  const applySuggestion = (suggestion) => {
     setFormData({
       question: suggestion.q,
       answer: suggestion.a
@@ -177,7 +177,7 @@ export default function FAQSection({
                     {FAQ_SUGGESTIONS.slice(0, 4).map((s, idx) => (
                       <button
                         key={idx}
-                        onClick={() => useSuggestion(s)}
+                        onClick={() => applySuggestion(s)}
                         className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
                       >
                         {s.q.substring(0, 30)}...
