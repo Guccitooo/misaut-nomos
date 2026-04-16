@@ -481,7 +481,7 @@ export default function SearchPage() {
         { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" }
       ]} />
 
-      <div className="min-h-screen" style={{ background: '#f8fafc' }}>
+      <div style={{ background: '#f8fafc' }}>
 
         {/* ── HERO ── solo para visitantes no registrados */}
         {!user && !loadingUser && (
@@ -826,11 +826,10 @@ export default function SearchPage() {
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("Home"))}
-                    variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 px-8 text-base rounded-2xl"
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 text-base rounded-2xl"
                     style={{ height: '52px' }}
                   >
-                    Saber más →
+                    Ver cómo funciona →
                   </Button>
                 </div>
               </div>

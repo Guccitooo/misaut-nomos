@@ -712,11 +712,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                         <Link to={createPageUrl("ClientOnboarding")} className="block">
                           <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
-                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('becomeClient')}
+                            <Search className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Buscar autónomo
                           </Button>
-                        </Link>
-                        <Link to={createPageUrl("PricingPlans")} className="block">
+                          </Link>
+                          <Link to={createPageUrl("PricingPlans")} className="block">
                           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                             <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
                             {t('becomeFreelancer')}
@@ -773,10 +773,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Button>
                       )}
                       {!user && (
-                        <Link to={createPageUrl("ClientOnboarding")}>
+                        <Link to={createPageUrl("Search")}>
                           <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
-                            <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('becomeClient')}
+                            <Search className="w-4 h-4 mr-2" aria-hidden="true" />
+                            Buscar autónomo
                           </Button>
                           </Link>
                           )}
@@ -828,14 +828,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3 lg:hidden sticky top-0 z-20 will-change-transform" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+              <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 lg:hidden sticky top-0 z-20 will-change-transform" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem' }}>
                 <div className="flex items-center justify-between">
+                  {/* Izquierda: hamburguesa o back */}
                   {window.history.length > 1 && location.pathname !== createPageUrl("Search") ? (
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => window.history.back()}
-                      className="hover:bg-gray-100"
+                      className="hover:bg-gray-100 min-w-[44px] min-h-[44px]"
                       aria-label="Volver"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -845,12 +846,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       variant="ghost"
                       size="icon"
                       onClick={() => setMobileMenuOpen(true)}
-                      className="hover:bg-gray-100"
+                      className="hover:bg-gray-100 min-w-[44px] min-h-[44px]"
                       aria-label="Abrir menú"
                     >
                       <Menu className="w-6 h-6" aria-hidden="true" />
                     </Button>
                   )}
+
+                  {/* Centro: logo */}
                   <Link to={createPageUrl("Search")} className="flex items-center gap-2">
                     <img
                       src={LOGO_URL}
@@ -864,36 +867,24 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     />
                     <h1 className="font-bold text-lg text-gray-900">MisAutónomos</h1>
                   </Link>
-                  <div className="flex items-center gap-2">
-                    {user && (
+
+                  {/* Derecha: notificaciones (si logueado) o vacío */}
+                  <div className="min-w-[44px] flex justify-end">
+                    {user ? (
                       <Suspense fallback={<div className="w-9 h-9" />}>
                         <NotificationCenter user={user} />
                       </Suspense>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => base44.auth.redirectToLogin()}
+                        className="text-xs text-blue-600 font-semibold min-h-[44px] px-2"
+                        aria-label="Entrar"
+                      >
+                        Entrar
+                      </Button>
                     )}
-                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => changeLanguage('es')}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                          language === 'es'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        aria-label="Español"
-                      >
-                        ES
-                      </button>
-                      <button
-                        onClick={() => changeLanguage('en')}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                          language === 'en'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                        aria-label="English"
-                      >
-                        EN
-                      </button>
-                    </div>
                   </div>
                 </div>
               </header>
@@ -963,9 +954,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
-      <div id="app-scroll-container" style={{ overflow: 'hidden auto', height: '100vh' }}>
-        <LayoutContent children={children} currentPageName={currentPageName} />
-      </div>
+      <LayoutContent children={children} currentPageName={currentPageName} />
     </LanguageProvider>
   );
 }

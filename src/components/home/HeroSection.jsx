@@ -52,7 +52,7 @@ export default function HeroSection() {
         >
           <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-1.5 text-xs font-semibold rounded-full">
             <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-300" />
-            60 días gratis · Sin tarjeta · Sin permanencia
+            7 días gratis · Sin tarjeta · Sin permanencia
           </Badge>
         </motion.div>
 
@@ -107,11 +107,11 @@ export default function HeroSection() {
             Buscar profesional
           </Button>
           <Button
-            onClick={() => navigate(createPageUrl("PricingPlans"))}
+            onClick={() => navigate(createPageUrl("Search"))}
             className="group flex-1 h-14 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white font-bold text-base rounded-2xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transition-all hover:scale-[1.02]"
           >
-            <Briefcase className="w-5 h-5 mr-2 group-hover:rotate-6 transition-transform" />
-            Soy autónomo
+            <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+            Buscar autónomo
           </Button>
         </motion.div>
 
