@@ -40,7 +40,7 @@ const CookieBanner = lazy(() => import("@/components/ui/CookieBanner"));
 const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
-const PageTransitions = lazy(() => import("@/components/ui/PageTransitions"));
+import PageTransitions from "@/components/ui/PageTransitions";
 
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
@@ -803,11 +803,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                   </div>
                 }>
-                  <Suspense fallback={<div />}>
-                    <PageTransitions>
-                      {children}
-                    </PageTransitions>
-                  </Suspense>
+                  <PageTransitions>
+                    {children}
+                  </PageTransitions>
                 </Suspense>
 
                 <Suspense fallback={null}>
