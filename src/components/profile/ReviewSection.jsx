@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, MessageSquare, Flag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -26,16 +25,10 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
   const queryClient = useQueryClient();
   const { t } = useLanguage();
 
-  console.log('🎯 ReviewSection recibió:', {
-    reviews_count: reviews?.length || 0,
-    reviews_data: reviews,
-    professionalId,
-    currentUser: currentUser?.email
-  });
+
 
   const calculateDetailedStats = () => {
     if (!reviews || reviews.length === 0) {
-      console.log('⚠️ No hay reviews para calcular stats');
       return {
         overallAverageRating: 0,
         avgRapidez: 0,
@@ -64,7 +57,6 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
       avgPrecio: stats.precio_satisfaccion / count,
     };
 
-    console.log('📊 Stats calculadas:', calculatedStats);
     return calculatedStats;
   };
 
@@ -144,14 +136,12 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
 
   return (
     <>
-      <Card className="shadow-lg border-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-            {t('reviewsTitle')} ({reviews?.length || 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <div className="bg-white space-y-6">
+        <div className="flex items-center gap-2">
+          <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+          <span className="font-semibold text-gray-900">{t('reviewsTitle')} ({reviews?.length || 0})</span>
+        </div>
+        <div className="space-y-6">
           {reviews && reviews.length > 0 ? (
             <>
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100" role="region" aria-label="Resumen de valoraciones">
@@ -311,8 +301,8 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
               <p className="text-gray-600">{t('beFirstReview')}</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <AlertDialog open={!!reportingReviewId} onOpenChange={() => setReportingReviewId(null)}>
         <AlertDialogContent>

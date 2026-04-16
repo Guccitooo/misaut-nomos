@@ -41,7 +41,6 @@ import SEOHead from "../components/seo/SEOHead";
 import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
@@ -553,55 +552,56 @@ export default function AutonomoPage() {
               </Button>
             </div>
 
-            {/* BOTONES CONTACTO */}
-            <TooltipProvider>
-              <div className="flex gap-2">
-                {showPhone && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <a href={`tel:${profile.telefono_contacto?.replace(/[^\d+]/g, '').startsWith('+') ? profile.telefono_contacto.replace(/[^\d+]/g, '') : '+34' + profile.telefono_contacto.replace(/[^\d+]/g, '')}`} className="flex-1">
-                        <Button variant="outline" className="w-full h-9 text-sm hover:bg-blue-50">
-                          <Phone className="w-4 h-4 mr-1" />
-                          {t('call') || 'Llamar'}
-                        </Button>
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{t('callByPhone')}</p></TooltipContent>
-                  </Tooltip>
-                )}
-                
-                {showWhatsApp && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={handleWhatsAppClick} variant="outline" className="flex-1 h-9 text-sm hover:bg-green-50">
-                        <MessageCircle className="w-4 h-4 mr-1 text-green-600" />
-                        WhatsApp
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{t('contactByWhatsApp')}</p></TooltipContent>
-                  </Tooltip>
-                )}
-                
-                {showChat && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={() => {
-                        if (!user) {
-                          base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
-                          return;
-                        }
-                        const conversationId = [user.id, profile.user_id].sort().join('_');
-                        navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
-                      }} className="flex-1 bg-blue-600 hover:bg-blue-700 h-9 text-sm">
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        {t('chat') || 'Chat'}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{t('sendDirectMessageTooltip')}</p></TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </TooltipProvider>
+            {/* BOTONES CONTACTO — orden: Chat (azul) | WhatsApp (verde) | Llamar (gris) */}
+            <div className="flex gap-2">
+              {showChat && (
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      base44.auth.redirectToLogin(createPageUrl("Messages") + `?professional=${profile.user_id}`);
+                      return;
+                    }
+                    const conversationId = [user.id, profile.user_id].sort().join('_');
+                    navigate(createPageUrl("Messages") + `?conversation=${conversationId}&professional=${profile.user_id}`);
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold"
+                >
+                  <MessageSquare className="w-4 h-4 mr-1.5" />
+                  Chat directo
+                </Button>
+              )}
+              {showWhatsApp && (
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      base44.auth.redirectToLogin(window.location.href);
+                      return;
+                    }
+                    handleWhatsAppClick();
+                  }}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white h-10 text-sm font-semibold"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1.5" />
+                  WhatsApp
+                </Button>
+              )}
+              {showPhone && (
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      base44.auth.redirectToLogin(window.location.href);
+                      return;
+                    }
+                    handlePhoneClick();
+                  }}
+                  variant="outline"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200 h-10 text-sm font-semibold"
+                >
+                  <Phone className="w-4 h-4 mr-1.5" />
+                  Llamar
+                </Button>
+              )}
+            </div>
           </Card>
 
           {/* DESCRIPCIÓN */}
@@ -616,15 +616,15 @@ export default function AutonomoPage() {
             {(profile.years_experience > 0 || profile.tarifa_base > 0) && (
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100 mt-3">
                 {profile.years_experience > 0 && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
+                  <Badge className="bg-blue-50 text-blue-700 border-0 px-3 py-1.5 text-sm font-medium">
                     <Briefcase className="w-3.5 h-3.5 mr-1.5" />
                     {profile.years_experience} {t('yearsOfExperience')}
                   </Badge>
                 )}
                 {profile.tarifa_base > 0 && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                  <Badge className="bg-blue-50 text-blue-700 border-0 px-3 py-1.5 text-sm font-medium">
                     <Euro className="w-3.5 h-3.5 mr-1.5" />
-                    {profile.tarifa_base}€/{t('language') === 'en' ? 'hour' : 'hora'}
+                    desde {profile.tarifa_base}€/hora
                   </Badge>
                 )}
               </div>
@@ -784,7 +784,7 @@ export default function AutonomoPage() {
           {profile.photos && profile.photos.length > 0 && (
             <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3">{t('workGalleryTitle') || 'Galería de trabajos'}</h3>
-              <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {profile.photos.map((photo, idx) => (
                 <div 
                   key={idx} 
