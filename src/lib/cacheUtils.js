@@ -1,3 +1,5 @@
+import { base44 } from '@/api/base44Client';
+
 // Cachear datos en sessionStorage con TTL
 export const getFromCache = (key, ttlMs = 300000) => {
   try {
