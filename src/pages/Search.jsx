@@ -221,7 +221,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       </div>
     </div>
   );
-}
+  });
 
 export default function SearchPage() {
   const navigate = useNavigate();

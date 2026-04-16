@@ -497,11 +497,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         badge: unreadCount > 0 ? unreadCount : null
       },
       {
-        title: "Presupuestos",
-        url: createPageUrl("Presupuestos"),
-        icon: FileText,
-      },
-      {
         title: t('favorites'),
         url: createPageUrl("Favorites"),
         icon: Heart,
