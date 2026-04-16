@@ -82,6 +82,7 @@ export default function MessagesPage() {
   const [profilesCache, setProfilesCache] = useState({});
   const [professionalPhone, setProfessionalPhone] = useState(null);
   const [professionalHasWhatsapp, setProfessionalHasWhatsapp] = useState(false);
+  const [professionalSlug, setProfessionalSlug] = useState(null);
 
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -350,6 +351,7 @@ export default function MessagesPage() {
     if (!selectedOtherUserId) {
       setProfessionalPhone(null);
       setProfessionalHasWhatsapp(false);
+      setProfessionalSlug(null);
       return;
     }
     const loadProfessionalInfo = async () => {
@@ -358,6 +360,7 @@ export default function MessagesPage() {
         if (profiles[0]) {
           setProfessionalPhone(profiles[0].telefono_contacto || null);
           setProfessionalHasWhatsapp(profiles[0].metodos_contacto?.includes('whatsapp') || false);
+          setProfessionalSlug(profiles[0].slug_publico || null);
         }
       } catch {}
     };
@@ -404,36 +407,53 @@ export default function MessagesPage() {
     }
   };
 
-  const stopRecording = async () => {
-    if (!mediaRecorderRef.current) return;
+  const stopRecording = () => {
     clearInterval(timerRef.current);
-    mediaRecorderRef.current.stop();
-    mediaRecorderRef.current.onstop = async () => {
+    const mr = mediaRecorderRef.current;
+    if (!mr) return;
+    
+    mr.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-      try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: blob });
-        const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
-        if (!otherUserId) return;
+      const duration = recordingSeconds;
+      
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Audio = reader.result;
+        
+        try {
+          const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
+          if (!otherUserId) return;
 
-        let profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName;
-        let clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email;
+          let profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName;
+          let clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email;
 
-        await base44.entities.Message.create({
-          conversation_id: selectedConvId,
-          sender_id: user.id,
-          recipient_id: otherUserId,
-          content: `🎤 Audio (${recordingSeconds}s)`,
-          professional_name: isProfessional ? (user.full_name || "") : profName,
-          client_name: !isProfessional ? clientName : "",
-          is_read: false,
-          attachments: [{ url: file_url, type: 'audio', name: `audio_${Date.now()}.webm`, size: blob.size }]
-        });
-        await loadMessages();
-        scrollToBottom(true);
-      } catch {
-        toast.error("Error al guardar audio");
-      }
+          await base44.entities.Message.create({
+            conversation_id: selectedConvId,
+            sender_id: user.id,
+            recipient_id: otherUserId,
+            content: `Audio (${duration}s)`,
+            professional_name: isProfessional ? (user.full_name || "") : profName,
+            client_name: !isProfessional ? clientName : "",
+            is_read: false,
+            attachments: [{
+              url: base64Audio,
+              type: 'audio',
+              name: `audio_${Date.now()}.webm`,
+              size: blob.size,
+              duration: duration
+            }]
+          });
+          await loadMessages();
+          scrollToBottom(true);
+        } catch (err) {
+          toast.error("Error al enviar audio");
+        }
+      };
+      reader.readAsDataURL(blob);
     };
+    
+    mr.stop();
+    mr.stream.getTracks().forEach(track => track.stop());
     setIsRecording(false);
   };
 
@@ -713,69 +733,75 @@ export default function MessagesPage() {
         <div className={`flex-1 flex flex-col bg-gray-50 min-w-0 ${!selectedConvId ? 'hidden md:flex' : 'flex'}`} style={{ minHeight: 0 }}>
           {selectedConvId ? (
             <>
-              {/* Chat Header */}
-              <div className="bg-white border-b border-gray-200 px-3 md:px-5 py-3 flex-shrink-0 shadow-sm">
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 -ml-1 flex-shrink-0" onClick={handleBack}>
-                      <ArrowLeft className="w-5 h-5 text-gray-700" />
-                    </Button>
+              {/* Chat Header — Diseño compacto en una línea */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+                {/* Izquierda: avatar + nombre clickable + estado */}
+                <div 
+                  className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                  onClick={() => professionalSlug && navigate(`/autonomo/${professionalSlug}`)}
+                >
+                  <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 -ml-2 flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleBack(); }}>
+                    <ArrowLeft className="w-4 h-4 text-gray-700" />
+                  </Button>
 
-                    <Avatar className="w-10 h-10 flex-shrink-0">
-                      <AvatarFallback className="bg-blue-600 text-white font-bold">
-                        {(resolvedContactName || "?").charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm truncate">{resolvedContactName || "..."}</p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-                        En línea
-                      </p>
-                    </div>
+                  <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                    {(resolvedContactName || "?").charAt(0).toUpperCase()}
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {canLeaveReview() && (
-                      <Button onClick={() => setShowReviewDialog(true)} size="sm" className="bg-amber-500 hover:bg-amber-600 h-9">
-                        <Star className="w-3.5 h-3.5" />
-                        <span className="hidden md:inline ml-1.5 text-xs">Valorar</span>
-                      </Button>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold text-gray-900 text-sm truncate ${professionalSlug ? 'hover:text-blue-600 transition-colors' : ''}`}>
+                      {resolvedContactName || "..."}
+                    </h3>
+                    <span className="text-xs text-green-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                      En línea
+                    </span>
                   </div>
                 </div>
 
-                {/* Botones de contacto rápido del profesional */}
-                {professionalPhone && (
-                  <div className="flex items-center gap-2 pl-13">
-                    <span className="text-xs text-gray-600 font-medium hidden md:block">
+                {/* Derecha: teléfono + botones de contacto */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Número visible en desktop */}
+                  {professionalPhone && (
+                    <span className="text-sm font-medium text-gray-700 hidden md:block select-all">
                       {professionalPhone}
                     </span>
+                  )}
 
-                    {professionalHasWhatsapp && (
+                  {/* WhatsApp */}
+                  {professionalPhone && professionalHasWhatsapp && (
+                    <>
                       <a
-                        href={`https://wa.me/${professionalPhone.replace(/[\s\+\-\(\)]/g,'').replace(/^0{0,2}34/,'').replace(/^(?!34)/,'34')}?text=Hola, te escribo desde MisAutónomos`}
+                        href={`https://wa.me/${professionalPhone.replace(/[\s\+\-\(\)]/g,'').replace(/^0{0,2}34/,'').replace(/^(?!34)/,'34')}?text=Hola desde MisAutónomos`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-8 h-8 bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
-                        title="Abrir WhatsApp"
+                        className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center md:hidden"
                       >
-                        <svg viewBox="0 0 24 24" fill="white" width="16" height="16">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="white" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                       </a>
-                    )}
+                      <div className="w-8 h-8 bg-green-100 rounded-lg hidden md:flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" fill="#22c55e" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      </div>
+                    </>
+                  )}
 
+                  {/* Llamada */}
+                  {professionalPhone && (
                     <a
                       href={`tel:${professionalPhone}`}
-                      className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
-                      title={professionalPhone}
+                      className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center md:hidden"
                     >
-                      <Phone className="w-4 h-4 text-gray-600" />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" width="14" height="14"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .9h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.09a16 16 0 006.72 6.72l1.56-1.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                     </a>
-                  </div>
-                )}
+                  )}
+
+                  {canLeaveReview() && (
+                    <Button onClick={() => setShowReviewDialog(true)} size="sm" className="bg-amber-500 hover:bg-amber-600 h-8">
+                      <Star className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline ml-1 text-xs">Valorar</span>
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Messages */}
@@ -825,11 +851,18 @@ export default function MessagesPage() {
                               <div className="flex flex-wrap gap-1.5 mb-1">
                                 {msg.attachments.map((f, i) => 
                                   f.type === 'audio' ? (
-                                    <div key={i} className="flex items-center gap-2 bg-blue-50 rounded-xl p-2 min-w-32">
-                                      <button onClick={() => new Audio(f.url).play()} 
-                                        className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">▶</button>
-                                      <div className="flex-1 h-1 bg-blue-200 rounded"/>
-                                      <span className="text-xs text-gray-500">{f.name.match(/\d+/) ? f.name.match(/\d+/)[0] : '?'}s</span>
+                                    <div key={i} className="flex items-center gap-2 min-w-40 py-1">
+                                      <button 
+                                        onClick={() => {
+                                          const audio = new Audio(f.url);
+                                          audio.play();
+                                        }}
+                                        className="w-7 h-7 bg-white/30 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-white/50"
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M8 5v14l11-7z"/></svg>
+                                      </button>
+                                      <div className="flex-1 h-0.5 bg-white/40 rounded-full"/>
+                                      <span className="text-xs opacity-75">{f.duration || '?'}s</span>
                                     </div>
                                   ) : (
                                     <FileAttachment key={i} file={f} />
