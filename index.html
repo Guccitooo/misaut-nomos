@@ -21,6 +21,19 @@
 
     <!-- OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "e178adb2-38e8-4397-9239-833be611ed27",
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: { enable: false },
+          promptOptions: {
+            slidedown: { prompts: [] }
+          }
+        });
+      });
+    </script>
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />

@@ -21,7 +21,7 @@
 
 // Reemplazar YOUR_ONESIGNAL_APP_ID con el App ID real de OneSignal
 // Obtenible en: https://dashboard.onesignal.com > Settings > Keys & IDs
-export const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID';
+export const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
 
 // Eventos que disparan notificaciones
 export const NOTIFICATION_EVENTS = {

@@ -40,15 +40,24 @@ export default function NotificationPermissionBanner({ user }) {
 
   const handleActivate = async () => {
     try {
-      const granted = await requestPermission();
-      if (granted) {
-        toast({
-          title: "✓ Notificaciones activadas",
-          description: "Te avisaremos cuando tengas nueva actividad.",
-        });
-      }
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.Notifications.requestPermission();
+        if (OneSignal.Notifications.permission) {
+          await OneSignal.login(user.id);
+          await OneSignal.User.addTags({
+            user_type: user.user_type || 'unknown',
+            city: user.city || '',
+            subscription: user.subscription_status || 'none'
+          });
+          toast({
+            title: "✓ Notificaciones activadas",
+            description: "Te avisaremos cuando tengas nueva actividad.",
+          });
+        }
+      });
     } catch (err) {
-      console.error("Error solicitando permisos:", err);
+      console.error("Error OneSignal:", err);
     }
     localStorage.setItem(DISMISSED_KEY, "true");
     setShow(false);

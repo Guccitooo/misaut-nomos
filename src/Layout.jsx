@@ -336,13 +336,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
       setUser(currentUser);
 
-      // Asociar usuario con OneSignal para segmentación
+      // Re-asociar usuario con OneSignal si ya tenía notificaciones activadas
       if (currentUser) {
-        setUserId(currentUser.id);
-        setUserTags({
-          user_type: currentUser.user_type || 'unknown',
-          city: currentUser.city || '',
-          has_subscription: currentUser.subscription_status === 'activo' ? 'yes' : 'no'
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          const externalId = OneSignal.User.externalId;
+          if (!externalId || externalId !== currentUser.id) {
+            await OneSignal.login(currentUser.id);
+          }
         });
       }
     } catch (error) {
