@@ -685,3 +685,33 @@ html, body {
 html {
   scroll-behavior: auto;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FIX OVERFLOW MÓVIL — neutralizar sidebar offset de shadcn/ui
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* El SidebarProvider de shadcn aplica margin-left via CSS vars en el peer element */
+  [data-sidebar="sidebar"],
+  aside[data-state],
+  [data-slot="sidebar-wrapper"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Forzar el contenedor principal a ocupar todo el ancho */
+  #root > div,
+  #root > div > div {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+}
