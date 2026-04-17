@@ -1096,7 +1096,7 @@ export default function ProfileOnboardingPage() {
                       className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
                     />
                     <span className="text-sm text-gray-700 flex-1">
-                      Acepto los <a href="/terms" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> de uso de la plataforma
+                      Acepto los <a href="/terminos" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> de uso de la plataforma
                       {fieldErrors.acepta_terminos && (
                         <span className="block text-red-500 font-semibold mt-1">{fieldErrors.acepta_terminos}</span>
                       )}
@@ -1118,7 +1118,7 @@ export default function ProfileOnboardingPage() {
                       className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
                     />
                     <span className="text-sm text-gray-700 flex-1">
-                      Acepto la <a href="/privacy" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Política de Privacidad</a> y tratamiento de datos
+                      Acepto la <a href="/privacidad" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Política de Privacidad</a> y tratamiento de datos
                     </span>
                   </div>
 
