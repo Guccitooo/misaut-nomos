@@ -117,9 +117,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       onClick={onClick}
       className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full"
     >
-      {/* Header azul PEQUEÑO — 48px, sin overflow-hidden para que el avatar se vea */}
-      <div className="h-12 bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0">
-        {/* Precio arriba derecha */}
+      {/* Header azul PEQUEÑO — solo desktop */}
+      <div className="hidden md:block h-12 bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0">
         {profile.tarifa_base > 0 && (
           <div className="absolute top-2 right-2 bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
             {profile.tarifa_base}€/h
@@ -129,8 +128,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
       {/* Zona con avatar posicionado negativamente desde aquí */}
       <div className="relative px-3 flex flex-col flex-1">
-        {/* Avatar: -top-6 para que quede a caballo entre header y contenido */}
-        <div className="absolute -top-6 left-3">
+        {/* Avatar: solo desktop, a caballo entre header y contenido */}
+        <div className="hidden md:block absolute -top-6 left-3">
           {photoUrl ? (
             <img
               src={photoUrl}
@@ -146,10 +145,36 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
           </div>
         </div>
 
-      {/* Contenido — padding-top para no tapar el avatar */}
-      <div className="pt-8 pb-3 flex flex-col flex-1">
-        <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
-        <p className="text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
+        {/* Fila avatar+nombre — solo móvil */}
+        <div className="md:hidden flex items-center gap-3 pt-3 pb-1">
+          <div className="flex-shrink-0">
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={profile.business_name}
+                width="48"
+                height="48"
+                className="w-12 h-12 rounded-full object-cover"
+                onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+              />
+            ) : null}
+            <div className={`w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base ${photoUrl ? 'hidden' : ''}`}>
+              {profile.business_name?.[0]?.toUpperCase()}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+            <p className="text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
+          </div>
+          {profile.tarifa_base > 0 && (
+            <span className="text-sm font-semibold text-gray-700 flex-shrink-0">{profile.tarifa_base}€/h</span>
+          )}
+        </div>
+
+      {/* Contenido — padding-top para no tapar el avatar (desktop) */}
+      <div className="md:pt-8 pt-1 pb-3 flex flex-col flex-1">
+        <h3 className="hidden md:block font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+        <p className="hidden md:block text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
         <p className="text-gray-400 text-xs mt-0.5 truncate">📍 {profile.ciudad}, {profile.provincia}</p>
         <p className="text-gray-600 text-xs mt-1.5 line-clamp-2 min-h-[2.5rem] leading-relaxed">{profile.descripcion_corta}</p>
         
