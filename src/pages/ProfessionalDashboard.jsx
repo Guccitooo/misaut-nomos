@@ -1,255 +1,267 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  MessageSquare, Users, FileText, Eye, CreditCard,
-  ArrowRight, Plus, CheckCircle2, AlertCircle, Clock,
-  ExternalLink, Sparkles, TrendingUp, Circle
+  Eye, MessageSquare, FileText, Star, ArrowUp, ArrowDown,
+  AlertCircle, Clock, CheckCircle2, TrendingUp, User, Zap,
+  ChevronRight, CreditCard, ArrowRight
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 import SEOHead from "../components/seo/SEOHead";
 import PullToRefresh from "../components/ui/PullToRefresh";
 
-function computeProfilePct(profile) {
-  if (!profile) return 0;
-  const checks = [
-    !!(profile.business_name && profile.descripcion_corta),
-    !!profile.imagen_principal,
-    Array.isArray(profile.categories) && profile.categories.length > 0,
-    !!(profile.provincia && profile.ciudad),
-    !!(profile.description && profile.description.length > 80),
-    Array.isArray(profile.photos) && profile.photos.length >= 3,
-    Array.isArray(profile.services_offered) && profile.services_offered.length > 0,
-    Array.isArray(profile.metodos_contacto) && profile.metodos_contacto.length > 0,
-  ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+// ── Completitud de perfil ──────────────────────────────────────────────────
+const PROFILE_FIELDS = [
+  { key: "imagen_principal", label: "Foto de perfil", weight: 15 },
+  { key: "descripcion_corta", label: "Descripción corta", weight: 10 },
+  { key: "description", label: "Descripción completa", weight: 10 },
+  { key: "categories", label: "Categorías", weight: 10, check: v => v && v.length > 0 },
+  { key: "provincia", label: "Ubicación", weight: 10 },
+  { key: "telefono_contacto", label: "Teléfono", weight: 10 },
+  { key: "photos", label: "Fotos de trabajos (mín. 3)", weight: 15, check: v => v && v.length >= 3 },
+  { key: "services_offered", label: "Servicios ofrecidos", weight: 10, check: v => v && v.length > 0 },
+  { key: "years_experience", label: "Años de experiencia", weight: 10, check: v => v > 0 },
+];
+
+function computeCompleteness(profile) {
+  if (!profile) return { pct: 0, missing: [] };
+  const missing = [];
+  const pct = PROFILE_FIELDS.reduce((total, f) => {
+    const value = profile[f.key];
+    const done = f.check ? f.check(value) : !!value;
+    if (!done) missing.push(f.label);
+    return total + (done ? f.weight : 0);
+  }, 0);
+  return { pct, missing };
 }
 
-function computeMissingFields(profile) {
-  if (!profile) return [];
-  const items = [
-    { key: "basic", label: "Nombre y descripción corta", done: !!(profile.business_name && profile.descripcion_corta) },
-    { key: "photo", label: "Foto de perfil", done: !!profile.imagen_principal },
-    { key: "categories", label: "Categorías de servicio", done: Array.isArray(profile.categories) && profile.categories.length > 0 },
-    { key: "location", label: "Provincia y ciudad", done: !!(profile.provincia && profile.ciudad) },
-    { key: "description", label: "Descripción detallada", done: !!(profile.description && profile.description.length > 80) },
-    { key: "gallery", label: "Al menos 3 fotos de trabajos", done: Array.isArray(profile.photos) && profile.photos.length >= 3 },
-    { key: "services", label: "Servicios ofrecidos", done: Array.isArray(profile.services_offered) && profile.services_offered.length > 0 },
-    { key: "contact", label: "Métodos de contacto", done: Array.isArray(profile.metodos_contacto) && profile.metodos_contacto.length > 0 },
-  ];
-  return items.filter(i => !i.done).slice(0, 3);
+// ── Componentes auxiliares ─────────────────────────────────────────────────
+function MetricCard({ icon: Icon, iconColor, label, value, sub, badge, loading }) {
+  if (loading) return (
+    <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <Skeleton className="h-8 w-16 mb-2" />
+      <Skeleton className="h-4 w-24" />
+    </Card>
+  );
+  return (
+    <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+      <CardContent className="p-0">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconColor}`}>
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+          {badge}
+        </div>
+        <div className="text-3xl font-extrabold text-gray-900 mb-1">{value}</div>
+        <div className="text-sm text-gray-500">{label}</div>
+        {sub && <div className="mt-1">{sub}</div>}
+      </CardContent>
+    </Card>
+  );
 }
 
+function ProgressBar({ pct }) {
+  const color = pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-amber-400" : "bg-red-400";
+  return (
+    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+      <div
+        className={`h-full ${color} rounded-full transition-all duration-700`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+const STATUS_BADGE = {
+  pending: <Badge className="bg-amber-100 text-amber-700 border-amber-200">Pendiente</Badge>,
+  accepted: <Badge className="bg-green-100 text-green-700 border-green-200">Aceptado</Badge>,
+  rejected: <Badge className="bg-red-100 text-red-700 border-red-200">Rechazado</Badge>,
+  completed: <Badge className="bg-blue-100 text-blue-700 border-blue-200">Completado</Badge>,
+};
+
+// ── Página principal ───────────────────────────────────────────────────────
 export default function ProfessionalDashboardPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [data, setData] = useState(null);
 
-  useEffect(() => { loadUser(); }, []);
-
-  const loadUser = async () => {
+  const loadAll = async (skipCache = false) => {
     try {
-      // Reutilizar cache del layout para evitar doble fetch
-      const cached = sessionStorage.getItem('current_user');
-      if (cached) {
-        const { user: cachedUser, timestamp } = JSON.parse(cached);
-        if (cachedUser && Date.now() - timestamp < 300000) {
-          if (cachedUser.user_type !== 'professionnel') { navigate(createPageUrl("Search")); return; }
-          setUser(cachedUser);
-          setLoading(false);
-          return;
-        }
+      // Usuario
+      let currentUser = null;
+      const cached = sessionStorage.getItem("current_user");
+      if (cached && !skipCache) {
+        try {
+          const { user: cu, timestamp } = JSON.parse(cached);
+          if (cu && Date.now() - timestamp < 300000) currentUser = cu;
+        } catch {}
       }
-      const u = await base44.auth.me();
-      if (!u || u.user_type !== 'professionnel') { navigate(createPageUrl("Search")); return; }
-      setUser(u);
-    } catch {
+      if (!currentUser) currentUser = await base44.auth.me();
+      if (!currentUser || currentUser.user_type !== "professionnel") {
+        navigate(createPageUrl("Search")); return;
+      }
+      setUser(currentUser);
+
+      const now = new Date();
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split("T")[0];
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+      const [profile, allMetrics, allMessages, quoteRequests, reviews, subscriptions] = await Promise.all([
+        base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id }).then(r => r[0] || null),
+        base44.entities.ProfileMetrics.filter({ professional_id: currentUser.id }),
+        base44.entities.Message.filter({ recipient_id: currentUser.id }),
+        base44.entities.QuoteRequest.filter({ professional_id: currentUser.id }).catch(() => []),
+        base44.entities.Review.filter({ professional_id: currentUser.id }),
+        base44.entities.Subscription.filter({ user_id: currentUser.id }),
+      ]);
+
+      // Métricas de visitas
+      const thisMonthMetrics = allMetrics.filter(m => m.date >= thisMonthStart);
+      const lastMonthMetrics = allMetrics.filter(m => m.date >= lastMonthStart && m.date < thisMonthStart);
+      const thisMonthViews = thisMonthMetrics.reduce((s, m) => s + (m.profile_views || 0), 0);
+      const lastMonthViews = lastMonthMetrics.reduce((s, m) => s + (m.profile_views || 0), 0);
+      const viewsChange = lastMonthViews > 0 ? Math.round((thisMonthViews - lastMonthViews) / lastMonthViews * 100) : null;
+
+      // Mensajes este mes
+      const messagesThisMonth = allMessages.filter(m => m.created_date >= thisMonthStart + "T00:00:00");
+      const unreadMessages = allMessages.filter(m => !m.is_read);
+      const recentMessages = [...allMessages].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 5);
+
+      // Presupuestos
+      const quotesAccepted = quoteRequests.filter(q => q.status === "accepted").length;
+      const recentQuotes = [...quoteRequests].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 5);
+
+      // Reseñas
+      const avgRating = reviews.length > 0
+        ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1)
+        : null;
+
+      // Suscripción
+      const subscription = subscriptions[0] || null;
+
+      // Gráfico 30 días
+      const dailyViews = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        const dateStr = d.toISOString().split("T")[0];
+        const dayMetrics = allMetrics.filter(m => m.date === dateStr);
+        return {
+          date: d.getDate() + "/" + (d.getMonth() + 1),
+          visitas: dayMetrics.reduce((s, m) => s + (m.profile_views || 0), 0),
+        };
+      });
+
+      // Completitud
+      const { pct: completeness, missing: missingFields } = computeCompleteness(profile);
+
+      // Tips
+      const tips = [];
+      if (!profile?.imagen_principal) tips.push("📸 Añade una foto de perfil — los perfiles con foto reciben 3× más contactos");
+      if (!profile?.photos || profile.photos.length < 3) tips.push("🖼️ Sube al menos 3 fotos de tus trabajos para ganar credibilidad");
+      if (!profile?.descripcion_corta || profile.descripcion_corta.length < 100) tips.push("✍️ Amplía tu descripción para explicar mejor lo que ofreces");
+      if (reviews.length === 0) tips.push("⭐ Pide a tus clientes satisfechos que te dejen una reseña");
+      if (!profile?.metodos_contacto?.includes("whatsapp")) tips.push("💬 Activa WhatsApp para que te contacten directamente");
+      tips.push("⚡ Responde en menos de 1 hora — los clientes eligen al primero que contesta");
+
+      setData({
+        profile, subscription,
+        thisMonthViews, viewsChange,
+        messagesThisMonth: messagesThisMonth.length,
+        unreadMessages: unreadMessages.length,
+        recentMessages,
+        quoteRequests, quotesAccepted, recentQuotes,
+        reviews, avgRating,
+        dailyViews, completeness, missingFields,
+        tips: tips.slice(0, 3),
+      });
+    } catch (err) {
+      console.error(err);
       navigate(createPageUrl("Search"));
     } finally {
       setLoading(false);
     }
   };
 
-  const { data: messages = [] } = useQuery({
-    queryKey: ['unreadMessages', user?.id],
-    queryFn: () => base44.entities.Message.filter({ recipient_id: user.id, is_read: false }),
-    enabled: !!user,
-    staleTime: 60000,
-  });
-
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['clientContacts', user?.id],
-    queryFn: () => base44.entities.ClientContact.filter({ professional_id: user.id }),
-    enabled: !!user,
-    staleTime: 60000 * 5,
-  });
-
-  const { data: invoices = [] } = useQuery({
-    queryKey: ['invoices', user?.id],
-    queryFn: () => base44.entities.Invoice.filter({ professional_id: user.id }),
-    enabled: !!user,
-    staleTime: 60000 * 5,
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ['professionalProfile', user?.id],
-    queryFn: async () => {
-      const p = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-      return p[0] || null;
-    },
-    enabled: !!user,
-    staleTime: 60000 * 5,
-  });
-
-  const { data: subscription } = useQuery({
-    queryKey: ['subscription', user?.id],
-    queryFn: async () => {
-      const s = await base44.entities.Subscription.filter({ user_id: user.id });
-      return s[0] || null;
-    },
-    enabled: !!user,
-    staleTime: 60000 * 2,
-  });
-
-  const { data: metrics = [] } = useQuery({
-    queryKey: ['profileMetrics', user?.id],
-    queryFn: async () => {
-      const now = new Date();
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const all = await base44.entities.ProfileMetrics.filter({ professional_id: user.id });
-      return all.filter(m => m.professional_id && m.professional_id !== 'system' && m.date >= firstOfMonth);
-    },
-    enabled: !!user,
-    staleTime: 60000 * 5,
-  });
+  useEffect(() => { loadAll(); }, []);
 
   const handleRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
-    await queryClient.invalidateQueries({ queryKey: ['clientContacts'] });
-    await queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    await queryClient.invalidateQueries({ queryKey: ['profileMetrics'] });
-    await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    setLoading(true);
+    await loadAll(true);
   };
 
-  if (loading) {
+  if (loading || !user || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <Skeleton className="h-10 w-64 rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+          </div>
+          <Skeleton className="h-40 rounded-2xl" />
+          <div className="grid md:grid-cols-2 gap-6">
+            <Skeleton className="h-64 rounded-2xl" />
+            <Skeleton className="h-64 rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  const unreadCount = messages.length;
-  const monthViews = metrics.reduce((s, m) => s + (m.profile_views || 0), 0);
-  const clientCount = contacts.length;
-  const pendingInvoices = invoices.filter(i => i.status === 'sent').length;
-  const profilePct = computeProfilePct(profile);
-  const missingFields = computeMissingFields(profile);
+  const { profile, subscription, thisMonthViews, viewsChange, messagesThisMonth, unreadMessages,
+    recentMessages, quoteRequests, quotesAccepted, recentQuotes, reviews, avgRating,
+    dailyViews, completeness, missingFields, tips } = data;
 
-  // Suscripción
-  const hasActiveSub = subscription && (subscription.estado === 'activo' || subscription.estado === 'en_prueba');
+  const displayName = profile?.business_name?.split(" ")[0] || user.full_name?.split(" ")[0] || "Pro";
+
   const daysLeft = subscription?.fecha_expiracion
     ? Math.ceil((new Date(subscription.fecha_expiracion) - new Date()) / (1000 * 60 * 60 * 24))
     : 0;
-  const subExpiring = hasActiveSub && daysLeft <= 7;
+  const hasActiveSub = subscription && (subscription.estado === "activo" || subscription.estado === "en_prueba") && daysLeft > 0;
 
-  const hour = new Date().getHours();
-  const greeting = hour < 13 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
-  const displayName = profile?.business_name?.split(' ')[0] || user?.full_name?.split(' ')[0] || "Pro";
-
-  const statCards = [
-    {
-      label: "Mensajes sin leer",
-      value: unreadCount,
-      icon: MessageSquare,
-      color: "from-blue-500 to-cyan-500",
-      bg: "bg-blue-50",
-      textColor: "text-blue-700",
-      alert: unreadCount > 0,
-      action: () => navigate(createPageUrl("Messages")),
-      cta: unreadCount > 0 ? "Ver mensajes" : null,
-    },
-    {
-      label: "Vistas este mes",
-      value: monthViews,
-      icon: Eye,
-      color: "from-violet-500 to-purple-500",
-      bg: "bg-violet-50",
-      textColor: "text-violet-700",
-      action: () => navigate("/visibilidad"),
-      cta: null,
-    },
-    {
-      label: "Clientes guardados",
-      value: clientCount,
-      icon: Users,
-      color: "from-emerald-500 to-green-500",
-      bg: "bg-emerald-50",
-      textColor: "text-emerald-700",
-      action: () => navigate(createPageUrl("CRM")),
-      cta: null,
-    },
-    {
-      label: "Facturas pendientes",
-      value: pendingInvoices,
-      icon: FileText,
-      color: "from-amber-500 to-orange-500",
-      bg: "bg-amber-50",
-      textColor: "text-amber-700",
-      alert: pendingInvoices > 0,
-      action: () => navigate(createPageUrl("Invoices")),
-      cta: pendingInvoices > 0 ? "Ver facturas" : null,
-    },
-  ];
+  const barColor = completeness >= 80 ? "#22c55e" : completeness >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <SEOHead title="Inicio — MisAutónomos" noindex />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/20 p-4 md:p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6 pb-24 md:pb-8">
+        <div className="max-w-5xl mx-auto space-y-6">
 
-          {/* HEADER */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-            <p className="text-sm text-gray-500">{greeting}, {displayName} 👋</p>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-0.5">Tu panel</h1>
-          </motion.div>
+          {/* ── 1. HEADER ── */}
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+              ¡Hola, {displayName}! 👋
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">Este es el resumen de tu actividad en MisAutónomos</p>
+          </div>
 
-          {/* ALERTA SUSCRIPCIÓN */}
+          {/* Alerta suscripción */}
           {!hasActiveSub && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 md:p-5 text-white shadow-md"
-            >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-bold text-base">Tu perfil no es visible</p>
-                  <p className="text-sm text-amber-100 mt-0.5">Activa tu plan para aparecer en búsquedas y recibir clientes.</p>
-                </div>
-                <Button
-                  size="sm"
-                  className="bg-white text-amber-700 hover:bg-amber-50 font-semibold flex-shrink-0"
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
-                >
-                  Ver planes
-                </Button>
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 text-white flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-bold text-sm">Tu perfil no es visible</p>
+                <p className="text-xs text-amber-100">Activa tu plan para aparecer en búsquedas</p>
               </div>
-            </motion.div>
+              <Button size="sm" className="bg-white text-amber-700 hover:bg-amber-50 font-semibold flex-shrink-0"
+                onClick={() => navigate(createPageUrl("PricingPlans"))}>
+                Ver planes
+              </Button>
+            </div>
           )}
 
-          {hasActiveSub && subExpiring && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3"
-            >
+          {hasActiveSub && daysLeft <= 7 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
               <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-amber-900">Tu plan expira en {daysLeft} {daysLeft === 1 ? "día" : "días"}</p>
@@ -259,165 +271,264 @@ export default function ProfessionalDashboardPage() {
                 onClick={() => navigate(createPageUrl("SubscriptionManagement"))}>
                 Gestionar
               </Button>
-            </motion.div>
+            </div>
           )}
 
-          {/* STATS GRID */}
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            {statCards.map((card, i) => (
-              <motion.div
-                key={card.label}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.3 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <Card
-                  className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all cursor-pointer rounded-2xl bg-white group"
-                  onClick={card.action}
-                >
-                  <div className={`absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br ${card.color} rounded-full opacity-10 group-hover:opacity-20 transition-opacity`} />
-                  <CardContent className="relative p-4 md:p-5">
-                    <div className={`inline-flex w-9 h-9 rounded-xl bg-gradient-to-br ${card.color} items-center justify-center mb-3 shadow-sm`}>
-                      <card.icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <p className="text-3xl font-extrabold text-gray-900">{card.value}</p>
-                      {card.alert && card.value > 0 && (
-                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-gray-600 mt-0.5 leading-tight">{card.label}</p>
-                    {card.cta && (
-                      <p className={`text-xs font-semibold mt-1.5 ${card.textColor} flex items-center gap-0.5`}>
-                        {card.cta} <ArrowRight className="w-3 h-3" />
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+          {/* ── 2. GRID MÉTRICAS ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {/* Visitas */}
+            <MetricCard
+              icon={Eye} iconColor="bg-blue-600"
+              label="Visitas este mes"
+              value={thisMonthViews}
+              sub={viewsChange !== null ? (
+                <span className={`text-xs font-semibold flex items-center gap-0.5 ${viewsChange >= 0 ? "text-green-600" : "text-red-500"}`}>
+                  {viewsChange >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                  {Math.abs(viewsChange)}% vs mes anterior
+                </span>
+              ) : <span className="text-xs text-gray-400">Sin datos anteriores</span>}
+            />
+
+            {/* Mensajes */}
+            <MetricCard
+              icon={MessageSquare} iconColor="bg-emerald-500"
+              label="Mensajes este mes"
+              value={messagesThisMonth}
+              badge={unreadMessages > 0 ? (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                  {unreadMessages}
+                </span>
+              ) : null}
+              sub={unreadMessages > 0
+                ? <span className="text-xs text-red-500 font-medium cursor-pointer hover:underline" onClick={() => navigate(createPageUrl("Messages"))}>{unreadMessages} sin leer →</span>
+                : <span className="text-xs text-gray-400">Al día</span>}
+            />
+
+            {/* Presupuestos */}
+            <MetricCard
+              icon={FileText} iconColor="bg-violet-500"
+              label="Presupuestos"
+              value={quoteRequests.length}
+              sub={<span className="text-xs text-gray-500">{quotesAccepted} aceptados</span>}
+            />
+
+            {/* Valoración */}
+            <MetricCard
+              icon={Star} iconColor="bg-amber-400"
+              label="Valoración media"
+              value={avgRating || "—"}
+              sub={reviews.length > 0
+                ? <span className="text-xs text-gray-500">{reviews.length} {reviews.length === 1 ? "reseña" : "reseñas"}</span>
+                : <span className="text-xs text-gray-400">Sin reseñas aún</span>}
+              badge={avgRating ? (
+                <div className="flex gap-0.5">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`w-3 h-3 ${s <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
+                  ))}
+                </div>
+              ) : null}
+            />
           </div>
 
-          {/* COMPLETITUD DEL PERFIL */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <Card className="border-0 shadow-sm rounded-2xl bg-white overflow-hidden">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                        {profilePct === 100 ? "¡Perfil completo!" : "Completitud del perfil"}
-                      </span>
+          {/* ── 3. COMPLETITUD DEL PERFIL ── */}
+          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <CardContent className="p-0">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h2 className="font-bold text-gray-900">Estado de tu perfil</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {completeness === 100 ? "¡Tu perfil está completo y optimizado!" : "Un perfil completo recibe 5× más contactos"}
+                  </p>
+                </div>
+                <span className="text-3xl font-extrabold" style={{ color: barColor }}>{completeness}%</span>
+              </div>
+              <ProgressBar pct={completeness} />
+              {missingFields.length > 0 && (
+                <div className="mt-4 space-y-1.5">
+                  {missingFields.map(f => (
+                    <div key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                      <span>{f}</span>
                     </div>
-                    <p className="text-sm text-gray-500">
-                      {profilePct === 100
-                        ? "Tu perfil está optimizado"
-                        : "Un perfil completo recibe 5× más contactos"}
-                    </p>
+                  ))}
+                  <div className="mt-3">
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                      onClick={() => navigate(createPageUrl("MyProfile"))}>
+                      Completar mi perfil <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
                   </div>
-                  <span className="text-3xl font-extrabold text-gray-900">{profilePct}<span className="text-base text-gray-400">%</span></span>
                 </div>
+              )}
+            </CardContent>
+          </Card>
 
-                <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${profilePct}%` }}
-                    transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  />
+          {/* ── 4. ACTIVIDAD RECIENTE ── */}
+          <div className="grid md:grid-cols-2 gap-6">
+
+            {/* Últimos mensajes */}
+            <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-gray-900">Últimos mensajes</h2>
+                  <Button variant="ghost" size="sm" className="text-blue-600 text-xs"
+                    onClick={() => navigate(createPageUrl("Messages"))}>
+                    Ver todos →
+                  </Button>
                 </div>
+                {recentMessages.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Aún no tienes mensajes</p>
+                    <p className="text-xs mt-1">Comparte tu perfil para empezar a recibir contactos</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentMessages.map(msg => {
+                      const convId = msg.conversation_id;
+                      const senderName = msg.client_name || msg.sender_id?.slice(0, 8) || "Cliente";
+                      return (
+                        <div
+                          key={msg.id}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => navigate(createPageUrl("Messages") + `?conversation=${convId}`)}
+                        >
+                          <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-sm">
+                            {senderName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{senderName}</p>
+                              {!msg.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-1" />}
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{msg.content}</p>
+                          </div>
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">
+                            {formatDistanceToNow(new Date(msg.created_date), { locale: es, addSuffix: true })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-                {profilePct < 100 && missingFields.length > 0 && (
-                  <div className="space-y-1.5 mb-4">
-                    {missingFields.map(f => (
-                      <div key={f.key} className="flex items-center gap-2 text-sm text-gray-600">
-                        <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                        <span>{f.label}</span>
+            {/* Últimas solicitudes de presupuesto */}
+            <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-gray-900">Solicitudes de presupuesto</h2>
+                  <Button variant="ghost" size="sm" className="text-blue-600 text-xs"
+                    onClick={() => navigate(createPageUrl("QuoteRequests"))}>
+                    Ver todas →
+                  </Button>
+                </div>
+                {recentQuotes.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Sin solicitudes todavía</p>
+                    <p className="text-xs mt-1">Las solicitudes de tus clientes aparecerán aquí</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentQuotes.map(q => (
+                      <div key={q.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => navigate(createPageUrl("QuoteRequests"))}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{q.title || "Solicitud de presupuesto"}</p>
+                          <p className="text-xs text-gray-500">{q.client_name || "Cliente"}</p>
+                        </div>
+                        {STATUS_BADGE[q.status] || STATUS_BADGE.pending}
                       </div>
                     ))}
                   </div>
                 )}
-
-                <Button
-                  onClick={() => navigate(createPageUrl("MyProfile"))}
-                  className="w-full h-10 bg-gradient-to-r from-blue-600 to-blue-700 hover:opacity-95 text-white font-semibold rounded-xl"
-                >
-                  {profilePct === 100 ? "Editar mi perfil" : "Completar perfil"}
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          {/* ACCIONES RÁPIDAS */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
-            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Acciones rápidas</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                {
-                  label: "Ver mi perfil",
-                  icon: ExternalLink,
-                  color: "bg-blue-50 text-blue-700 hover:bg-blue-100",
-                  action: () => {
-                    const slug = profile?.slug_publico || user?.id;
-                    window.open(`/autonomo/${slug}`, '_blank');
-                  },
-                },
-                {
-                  label: "Nueva factura",
-                  icon: Plus,
-                  color: "bg-amber-50 text-amber-700 hover:bg-amber-100",
-                  action: () => navigate(createPageUrl("Invoices") + "?new=true"),
-                },
-                {
-                  label: "Ver mensajes",
-                  icon: MessageSquare,
-                  color: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-                  action: () => navigate(createPageUrl("Messages")),
-                  badge: unreadCount > 0 ? unreadCount : null,
-                },
-              ].map((a, i) => (
-                <button
-                  key={i}
-                  onClick={a.action}
-                  className={`relative flex flex-col items-center gap-2 py-4 px-2 rounded-2xl font-semibold text-xs transition-colors ${a.color}`}
-                >
-                  {a.badge && (
-                    <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                      {a.badge}
-                    </span>
-                  )}
-                  <a.icon className="w-5 h-5" />
-                  <span className="text-center leading-tight">{a.label}</span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ESTADO SUSCRIPCIÓN */}
-          {hasActiveSub && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-              <Card className="border-0 shadow-sm rounded-2xl bg-white cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(createPageUrl("SubscriptionManagement"))}>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${subscription.estado === 'en_prueba' ? 'bg-blue-100' : 'bg-green-100'}`}>
-                    <CreditCard className={`w-5 h-5 ${subscription.estado === 'en_prueba' ? 'text-blue-600' : 'text-green-600'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm">{subscription.plan_nombre}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {subscription.estado === 'en_prueba'
-                        ? `Prueba gratuita · ${daysLeft} días restantes`
-                        : `Activo · Renueva en ${daysLeft} días`}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                </CardContent>
-              </Card>
-            </motion.div>
+          {/* ── 5. CONSEJOS ── */}
+          {tips.length > 0 && (
+            <Card className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+              <CardContent className="p-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                  <h2 className="font-bold text-blue-900">Consejos para destacar</h2>
+                </div>
+                <div className="space-y-2">
+                  {tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-blue-800">
+                      <ChevronRight className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-500" />
+                      <span>{tip}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
+
+          {/* ── 6. SUSCRIPCIÓN ── */}
+          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(createPageUrl("SubscriptionManagement"))}>
+            <CardContent className="p-0 flex items-center gap-4">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${hasActiveSub ? "bg-green-100" : "bg-red-100"}`}>
+                <CreditCard className={`w-5 h-5 ${hasActiveSub ? "text-green-600" : "text-red-500"}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-gray-900 text-sm">{subscription?.plan_nombre || "Sin plan activo"}</p>
+                  {subscription && (
+                    <Badge className={
+                      subscription.estado === "en_prueba" ? "bg-blue-100 text-blue-700" :
+                      subscription.estado === "activo" ? "bg-green-100 text-green-700" :
+                      "bg-red-100 text-red-700"
+                    }>
+                      {subscription.estado === "en_prueba" ? "Prueba gratuita" :
+                       subscription.estado === "activo" ? "Activo" : "Expirado"}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {hasActiveSub
+                    ? (subscription.estado === "en_prueba"
+                      ? `${daysLeft} días de prueba restantes`
+                      : `Renueva en ${daysLeft} días`)
+                    : "Reactiva tu plan para aparecer en búsquedas"}
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            </CardContent>
+          </Card>
+
+          {/* ── 7. GRÁFICO VISITAS ── */}
+          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <CardContent className="p-0">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <h2 className="font-bold text-gray-900">Visitas a tu perfil — últimos 30 días</h2>
+              </div>
+              {dailyViews.every(d => d.visitas === 0) ? (
+                <div className="text-center py-10 text-gray-400">
+                  <TrendingUp className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Aún no hay visitas registradas</p>
+                  <p className="text-xs mt-1">Las visitas aparecerán aquí cuando los clientes vean tu perfil</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={dailyViews} barCategoryGap="30%">
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} interval={4} />
+                    <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 13 }}
+                      cursor={{ fill: "#eff6ff" }}
+                    />
+                    <Bar dataKey="visitas" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
         </div>
       </div>
