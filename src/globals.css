@@ -577,10 +577,10 @@ html, body {
   /* No afecta el layout del body */
 }
 
-/* ✨ BOTTOM NAV — reservar espacio en móvil */
+/* ✨ BOTTOM NAV — reservar espacio en móvil con safe area iOS */
 @media (max-width: 767px) {
-  main, [role="main"] {
-    padding-bottom: 56px; /* altura exacta del bottom nav */
+  main, [role="main"], .flex-1.overflow-auto {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
@@ -599,7 +599,8 @@ html, body {
     background: #FFFFFF !important;
     border-top: 2px solid #E5E7EB !important;
     padding: 8px 0;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
     z-index: 30;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
   }

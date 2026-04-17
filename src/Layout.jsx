@@ -41,6 +41,7 @@ const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
 import PageTransitions from "@/components/ui/PageTransitions";
+import MobileMenu from "@/components/layout/MobileMenu";
 
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
@@ -560,127 +561,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               />
             )}
 
-            {mobileMenuOpen && (
-              <>
-                {/* Overlay */}
-                <div
-                  onClick={() => setMobileMenuOpen(false)}
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 40 }}
-                  aria-hidden="true"
-                />
-                {/* Menú lateral */}
-                <nav
-                  style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: '80%', maxWidth: '320px', background: '#fff', zIndex: 50, overflowY: 'auto', boxShadow: '10px 0 40px rgba(0,0,0,0.2)' }}
-                  role="dialog"
-                  aria-label="Menú de navegación"
-                >
-                  {/* Header menú */}
-                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <img src={LOGO_URL} alt="" className="w-8 h-8 rounded" width="32" height="32" />
-                      <span className="font-bold text-gray-900">MisAutónomos</span>
-                    </div>
-                    <button
-                      onClick={() => setMobileMenuOpen(false)}
-                      style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
-                      className="flex items-center justify-center rounded-lg"
-                      aria-label="Cerrar menú"
-                    >
-                      <X className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </div>
-
-                  <div className="p-4 space-y-1">
-                    {/* Usuario logueado: perfil + nav */}
-                    {user && (
-                      <div className="flex items-center gap-3 p-3 mb-3 bg-blue-50 rounded-xl">
-                        <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden flex-shrink-0">
-                          {getProfilePicture() ? (
-                            <AvatarImage src={getProfilePicture()} alt={getDisplayName()} className="object-cover w-full h-full" />
-                          ) : (
-                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
-                              {getDisplayName().charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm truncate">{getDisplayName()}</p>
-                          <p className="text-xs text-gray-500">{isProfessional ? t('professional') : t('client')}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {user && navigationItems.map((item) => (
-                      <Link
-                        key={item.title}
-                        to={item.url}
-                        className={`flex items-center gap-3 rounded-xl mb-1 ${location.pathname === item.url ? 'bg-blue-600 text-white' : 'text-gray-700 active:bg-gray-100'}`}
-                        style={{ padding: '12px 16px', fontSize: '16px', touchAction: 'manipulation' }}
-                        aria-label={item.title}
-                      >
-                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium flex-1">{item.title}</span>
-                        {item.badge && (
-                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">{item.badge}</span>
-                        )}
-                      </Link>
-                    ))}
-
-                    {/* No logueado: opciones de registro */}
-                    {!user && (
-                      <>
-                        <Link
-                          to={createPageUrl("Search")}
-                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
-                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
-                        >
-                          <SearchIcon className="w-5 h-5 text-blue-600" />
-                          <span className="font-semibold">Buscar autónomo</span>
-                        </Link>
-                        <Link
-                          to={createPageUrl("ClientOnboarding")}
-                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
-                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
-                        >
-                          <User className="w-5 h-5 text-green-600" />
-                          <span className="font-semibold">Soy cliente</span>
-                        </Link>
-                        <Link
-                          to={createPageUrl("PricingPlans")}
-                          className="flex items-center gap-3 rounded-xl text-gray-700 active:bg-gray-100"
-                          style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
-                        >
-                          <Briefcase className="w-5 h-5 text-blue-600" />
-                          <span className="font-semibold">Hazte autónomo · 7 días gratis</span>
-                        </Link>
-                        <div className="pt-3 space-y-2">
-                          <button
-                            onClick={() => { handleLogin(); setMobileMenuOpen(false); }}
-                            className="w-full flex items-center justify-center gap-2 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 active:bg-gray-50"
-                            style={{ padding: '14px', fontSize: '16px', touchAction: 'manipulation' }}
-                          >
-                            <User className="w-5 h-5" />
-                            Iniciar sesión
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Cerrar sesión */}
-                    {user && (
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 rounded-xl text-red-600 active:bg-red-50 mt-4"
-                        style={{ padding: '14px 16px', fontSize: '16px', touchAction: 'manipulation' }}
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span className="font-medium">Cerrar sesión</span>
-                      </button>
-                    )}
-                  </div>
-                </nav>
-              </>
-            )}
+            <MobileMenu
+              isOpen={mobileMenuOpen}
+              onClose={() => setMobileMenuOpen(false)}
+              user={user}
+              isProfessional={isProfessional}
+              unreadCount={unreadCount}
+              displayName={getDisplayName()}
+              profilePicture={getProfilePicture()}
+              onLogin={handleLogin}
+              onLogout={handleLogout}
+            />
 
             <main className="flex-1 flex flex-col overflow-hidden">
               {!user && (
