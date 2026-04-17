@@ -26,9 +26,9 @@ export default function HeroSection() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0a1a3a] via-[#112763] to-[#1e3a8a] text-white" style={{maxWidth:'100%', width:'100%'}}>
-      {/* Orbes de color animados */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <section style={{overflow:'hidden', width:'100%', maxWidth:'100vw', position:'relative'}} className="bg-gradient-to-br from-[#0a1a3a] via-[#112763] to-[#1e3a8a] text-white">
+      {/* Orbes de color animados — contenidos estrictamente */}
+      <div style={{position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none'}}>
         <motion.div
           className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/20 blur-3xl"
           animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}
@@ -42,7 +42,7 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_50%)]" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 pt-14 md:pt-24 pb-20 md:pb-28">
+      <div className="relative w-full max-w-6xl mx-auto px-4 pt-14 md:pt-24 pb-20 md:pb-28" style={{boxSizing:'border-box'}}>
         {/* Badge top */}
         <motion.div
           variants={fadeUp}
@@ -50,8 +50,8 @@ export default function HeroSection() {
           animate="show"
           className="flex justify-center mb-6"
         >
-          <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-1.5 text-xs font-semibold rounded-full">
-            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-300" />
+          <Badge className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-1.5 text-xs font-semibold rounded-full max-w-full text-center">
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-300 flex-shrink-0" />
             7 días gratis · Sin tarjeta · Sin permanencia
           </Badge>
         </motion.div>
@@ -62,10 +62,11 @@ export default function HeroSection() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="text-center text-4xl sm:text-5xl md:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6"
+          className="text-center font-extrabold leading-tight tracking-tight mb-6 w-full"
+          style={{fontSize:'clamp(1.75rem, 8vw, 4.5rem)', wordBreak:'break-word', overflowWrap:'break-word'}}
         >
           Encuentra al{" "}
-          <span className="relative inline-block">
+          <span className="relative inline-block" style={{maxWidth:'100%'}}>
             <span className="relative z-10 bg-gradient-to-r from-cyan-300 via-blue-200 to-emerald-300 bg-clip-text text-transparent">
               autónomo perfecto
             </span>
@@ -86,7 +87,8 @@ export default function HeroSection() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="text-center text-lg md:text-xl text-blue-100/90 max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-center text-blue-100/90 mx-auto mb-10 leading-relaxed w-full"
+          style={{fontSize:'clamp(0.95rem, 3vw, 1.25rem)', maxWidth:'min(100%, 42rem)'}}
         >
           La plataforma donde miles de clientes conectan cada día con fontaneros, electricistas, pintores y más profesionales verificados.
         </motion.p>
@@ -97,20 +99,21 @@ export default function HeroSection() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch mb-10 max-w-2xl mx-auto"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch mb-10 w-full"
+          style={{maxWidth:'min(100%, 42rem)', margin:'0 auto 2.5rem'}}
         >
           <Button
             onClick={() => navigate(createPageUrl("Search"))}
-            className="group flex-1 h-14 bg-white text-blue-900 hover:bg-blue-50 font-bold text-base rounded-2xl shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_15px_50px_-10px_rgba(255,255,255,0.5)]"
+            className="group flex-1 h-14 bg-white text-blue-900 hover:bg-blue-50 font-bold text-base rounded-2xl shadow-[0_10px_40px_-10px_rgba(255,255,255,0.4)] transition-all"
           >
-            <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+            <Search className="w-5 h-5 mr-2" />
             Buscar profesional
           </Button>
           <Button
             onClick={() => navigate(createPageUrl("Search"))}
-            className="group flex-1 h-14 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white font-bold text-base rounded-2xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transition-all hover:scale-[1.02]"
+            className="group flex-1 h-14 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white font-bold text-base rounded-2xl shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transition-all"
           >
-            <Search className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+            <Search className="w-5 h-5 mr-2" />
             Buscar autónomo
           </Button>
         </motion.div>
@@ -121,13 +124,13 @@ export default function HeroSection() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="flex items-center justify-center gap-2 text-xs text-blue-200/80 mb-12"
+          className="flex flex-wrap items-center justify-center gap-2 text-xs text-blue-200/80 mb-12"
         >
-          <Clock className="w-3.5 h-3.5" />
+          <Clock className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Registro en menos de 3 min</span>
-          <span className="mx-1">·</span>
+          <span>·</span>
           <span>Verificación manual</span>
-          <span className="mx-1">·</span>
+          <span>·</span>
           <span>Sin comisiones</span>
         </motion.div>
 
@@ -137,7 +140,7 @@ export default function HeroSection() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-4xl mx-auto"
         >
           {STATS.map((s, i) => (
             <motion.div
