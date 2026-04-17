@@ -223,8 +223,16 @@ export default function MessagesPage() {
 
     // Determine contact name for each conversation
     Object.values(convMap).forEach(conv => {
-      // Scan all messages in this conversation for names
-      for (const msg of conv.messages) {
+      // Sort messages so that ones sent by the OTHER user come first —
+      // those messages always have the interlocutor's name populated correctly.
+      const sorted = [...conv.messages].sort((a, b) => {
+        const aIsMe = a.sender_id === user?.id;
+        const bIsMe = b.sender_id === user?.id;
+        if (aIsMe && !bIsMe) return 1;  // my message last
+        if (!aIsMe && bIsMe) return -1; // other's message first
+        return 0;
+      });
+      for (const msg of sorted) {
         const name = getContactNameFromMessage(msg, user?.id, isProfessional);
         if (name && name.trim()) {
           conv.contactName = name.trim();
@@ -232,7 +240,6 @@ export default function MessagesPage() {
         }
       }
       if (!conv.contactName) {
-        // Check profile cache
         const prof = profilesCache[conv.otherUserId];
         if (prof) {
           conv.contactName = prof.business_name || prof.full_name || prof.email?.split('@')[0] || "Usuario";
@@ -382,8 +389,15 @@ export default function MessagesPage() {
     if (currentConv?.contactName && currentConv.contactName !== "...") return currentConv.contactName;
     const cached = profilesCache[selectedOtherUserId];
     if (cached) return cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
-    // Scan messages
-    for (const msg of currentMessages) {
+    // Scan messages — prioritize messages sent by the other user
+    const sorted = [...currentMessages].sort((a, b) => {
+      const aIsMe = a.sender_id === user?.id;
+      const bIsMe = b.sender_id === user?.id;
+      if (aIsMe && !bIsMe) return 1;
+      if (!aIsMe && bIsMe) return -1;
+      return 0;
+    });
+    for (const msg of sorted) {
       const name = getContactNameFromMessage(msg, user?.id, isProfessional);
       if (name && name.trim()) return name.trim();
     }
