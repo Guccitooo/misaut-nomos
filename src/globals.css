@@ -526,6 +526,20 @@ html, body {
   color-scheme: light !important;
 }
 
+/* Fix overflow horizontal en móvil */
+@media (max-width: 768px) {
+  #root,
+  #root > div {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Contener orbes decorativos y elementos absolutos grandes */
+  section, .relative {
+    overflow-x: hidden;
+  }
+}
+
 /* Respetar preferencias de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   *,
