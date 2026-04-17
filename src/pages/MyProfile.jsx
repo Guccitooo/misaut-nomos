@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, Save, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone, Eye, EyeOff, Pencil } from "lucide-react";
+import { User, Building2, Save, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone, Eye, EyeOff, Pencil, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -233,6 +233,16 @@ export default function MyProfilePage() {
       return settings[0] || null;
     },
     enabled: !!user && !!profile,
+  });
+
+  const { data: myReviewsAsClient = [] } = useQuery({
+    queryKey: ['myReviewsAsClient', user?.id],
+    queryFn: async () => {
+      const reviews = await base44.entities.Review.filter({ client_id: user.id });
+      return reviews.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    },
+    enabled: !!user && user.user_type === 'client',
+    staleTime: 60000 * 5,
   });
 
   // ================== SYNC PROFILE DATA ==================
@@ -798,7 +808,7 @@ export default function MyProfilePage() {
           {/* Tabs list - optimizado para móvil con scroll horizontal */}
           <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-blue-50 -mx-3 px-3 pt-2 pb-3 md:mx-0 md:px-0 md:static">
             <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
-              <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-4 lg:grid-cols-8' : 'md:grid-cols-1'} bg-white shadow-md rounded-xl p-1 gap-1`}>
+              <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-4 lg:grid-cols-8' : 'md:grid-cols-2'} bg-white shadow-md rounded-xl p-1 gap-1`}>
                 <TabsTrigger 
                   value="personal" 
                   className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
@@ -808,6 +818,21 @@ export default function MyProfilePage() {
                   <span className="sm:hidden">Personal</span>
                 </TabsTrigger>
                 
+                {!isProfessional && (
+                  <TabsTrigger
+                    value="reviews"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
+                  >
+                    <Star className="w-4 h-4" />
+                    <span>Mis reseñas</span>
+                    {myReviewsAsClient.length > 0 && (
+                      <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-bold">
+                        {myReviewsAsClient.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                )}
+
                 {isProfessional && (
                   <>
                     <TabsTrigger 
@@ -1021,6 +1046,57 @@ export default function MyProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ==================== TAB: MIS RESEÑAS (CLIENTE) ==================== */}
+          {!isProfessional && (
+            <TabsContent value="reviews">
+              <Card className="shadow-sm border-0 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <Star className="w-5 h-5 text-amber-500" />
+                    Reseñas que he dejado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {myReviewsAsClient.length === 0 ? (
+                    <div className="text-center py-10">
+                      <Star className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">Aún no has dejado ninguna valoración.</p>
+                      <p className="text-gray-400 text-xs mt-1">Cuando tengas conversaciones con autónomos, podrás valorar su trabajo aquí.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {myReviewsAsClient.map((review) => (
+                        <div key={review.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                {new Date(review.created_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              </p>
+                              <div className="flex gap-0.5 mb-2">
+                                {[1,2,3,4,5].map(s => (
+                                  <Star key={s} className={`w-4 h-4 ${s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                                ))}
+                              </div>
+                              {review.comment && (
+                                <p className="text-sm text-gray-700 leading-relaxed">{review.comment}</p>
+                              )}
+                            </div>
+                          </div>
+                          {review.professional_response && (
+                            <div className="mt-3 ml-4 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                              <p className="text-xs font-semibold text-blue-700 mb-1">Respuesta del profesional</p>
+                              <p className="text-sm text-gray-700">{review.professional_response}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* ==================== TAB: BUSINESS ==================== */}
           {isProfessional && (
