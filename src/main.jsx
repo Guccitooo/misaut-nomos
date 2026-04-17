@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import './globals.css'
+import './i18n'
 import { initOneSignal } from './services/onesignalService'
 
 // Inicializar OneSignal (solo si está configurado el App ID)

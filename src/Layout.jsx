@@ -47,7 +47,7 @@ const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
 import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
-import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
+import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -126,29 +126,8 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
           </div>
 
           <div className="flex items-center gap-2 px-2">
-            <div className="flex gap-1 bg-gray-100 rounded-md p-1 flex-1">
-              <button
-                onClick={() => onChangeLanguage('es')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                  language === 'es'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-200'
-                }`}
-                aria-label="Español"
-              >
-                ES
-              </button>
-              <button
-                onClick={() => onChangeLanguage('en')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                  language === 'en'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-200'
-                }`}
-                aria-label="English"
-              >
-                EN
-              </button>
+            <div className="flex-1">
+              <LanguageSwitcher />
             </div>
             <Button
               variant="ghost"
@@ -455,109 +434,33 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const navigationItems = [];
 
   if (user?.user_type === "professionnel") {
-    // MENÚ PARA AUTÓNOMOS — solo lo útil
     navigationItems.push(
-      {
-        title: "Inicio",
-        url: createPageUrl("ProfessionalDashboard"),
-        icon: Home,
-      },
-      {
-        title: t('messages'),
-        url: createPageUrl("Messages"),
-        icon: MessageSquare,
-        badge: unreadCount > 0 ? unreadCount : null
-      },
-      {
-        title: "Mis clientes",
-        url: "/mis-clientes",
-        icon: Users,
-      },
-      {
-        title: "Facturas",
-        url: createPageUrl("Invoices"),
-        icon: FileText,
-      },
-      {
-        title: "Mi visibilidad",
-        url: "/visibilidad",
-        icon: Eye,
-      },
-      {
-        title: "Mi perfil",
-        url: createPageUrl("MyProfile"),
-        icon: User,
-      },
-      {
-        title: "Mi suscripción",
-        url: createPageUrl("SubscriptionManagement"),
-        icon: CreditCard,
-      },
+      { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
+      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+      { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
+      { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
+      { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
+      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+      { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
     );
   } else if (user?.user_type === "client") {
-    // MENÚ PARA CLIENTES
     navigationItems.push(
-      {
-        title: t('searchFreelancers'),
-        url: createPageUrl("Search"),
-        icon: Search,
-      },
-      {
-        title: t('messages'),
-        url: createPageUrl("Messages"),
-        icon: MessageSquare,
-        badge: unreadCount > 0 ? unreadCount : null
-      },
-      {
-        title: t('favorites'),
-        url: createPageUrl("Favorites"),
-        icon: Heart,
-      },
-      {
-        title: t('myProfile'),
-        url: createPageUrl("MyProfile"),
-        icon: User,
-      },
-      {
-        title: t('viewPlans'),
-        url: createPageUrl("PricingPlans"),
-        icon: CreditCard,
-      },
-      {
-        title: t('faq'),
-        url: createPageUrl("FAQ"),
-        icon: MessageSquare,
-      },
-      {
-        title: t('supportTickets'),
-        url: createPageUrl("Tickets"),
-        icon: MessageSquare,
-      }
+      { title: t('nav.search_professionals'), url: createPageUrl("Search"), icon: Search },
+      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+      { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
+      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+      { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
+      { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
+      { title: t('nav.support'), url: createPageUrl("Tickets"), icon: MessageSquare },
     );
   }
 
   if (user?.role === "admin") {
     navigationItems.push(
-      {
-        title: t('administration'),
-        url: createPageUrl("AdminDashboard"),
-        icon: LayoutDashboard,
-      },
-      {
-        title: "💰 Pagos",
-        url: createPageUrl("AdminPayments"),
-        icon: CreditCard,
-      },
-      {
-        title: "Admin Tickets",
-        url: createPageUrl("AdminTickets"),
-        icon: MessageSquare,
-      },
-      {
-        title: "SEO Analytics",
-        url: "/admin/seo",
-        icon: TrendingUp,
-      }
+      { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
+      { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
+      { title: t('nav.admin_tickets'), url: createPageUrl("AdminTickets"), icon: MessageSquare },
+      { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
     );
   }
 
@@ -661,7 +564,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
                         >
                           <SearchIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                          <span className="font-medium">Buscar autónomos</span>
+                          <span className="font-medium">{t('nav.search_professionals')}</span>
                         </Link>
                         <Link
                           to="/precios"
@@ -670,16 +573,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
                         >
                           <HelpCircle className="w-5 h-5 text-purple-500 flex-shrink-0" />
-                          <span className="font-medium">Cómo funciona</span>
-                        </Link>
-                        <Link
-                          to="/precios"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 rounded-xl text-gray-700 hover:bg-gray-50"
-                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
-                        >
-                          <CreditCard className="w-5 h-5 text-indigo-500 flex-shrink-0" />
-                          <span className="font-medium">Ver planes</span>
+                          <span className="font-medium">{t('nav.view_plans')}</span>
                         </Link>
 
                         <div className="pt-2 border-t border-gray-100 space-y-2 mt-2">
@@ -690,7 +584,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                             style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation', background: '#16a34a' }}
                           >
                             <User className="w-5 h-5" />
-                            Soy cliente
+                            {t('nav.sign_up_client')}
                           </Link>
                           <Link
                             to="/precios"
@@ -699,7 +593,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                             style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation', background: '#2563eb' }}
                           >
                             <Briefcase className="w-5 h-5" />
-                            Hazte autónomo · 7 días gratis
+                            {t('nav.sign_up_pro')}
                           </Link>
                           <button
                             onClick={() => { handleLogin(); setMobileMenuOpen(false); }}
@@ -707,7 +601,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                             style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation' }}
                           >
                             <User className="w-5 h-5" />
-                            Iniciar sesión
+                            {t('nav.login')}
                           </button>
                         </div>
                       </div>
@@ -723,7 +617,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                             style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
                           >
                             <LogOut className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium">Cerrar sesión</span>
+                            <span className="font-medium">{t('nav.logout')}</span>
                           </button>
                         </div>
                       </>
@@ -813,7 +707,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       />
                       <div style={{ minWidth: '150px' }}>
                         <h1 className="font-bold text-xl text-gray-900">MisAutónomos</h1>
-                        <p className="text-xs text-gray-500">{t('tagline')}</p>
+                        <p className="text-xs text-gray-500">{t('footer.tagline')}</p>
                       </div>
                       </Link>
                     
@@ -823,59 +717,36 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           variant="ghost"
                           className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                           onClick={handleLogin}
-                          aria-label={t('login')}
+                          aria-label={t('nav.login')}
                         >
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('login')}
+                          {t('nav.login')}
                         </Button>
                       )}
                       {!user && (
                         <Link to={createPageUrl("ClientOnboarding")}>
                           <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm">
                             <User className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Soy cliente
+                            {t('nav.sign_up_client')}
                           </Button>
                         </Link>
                       )}
-                          {!user || user.user_type !== 'professionnel' ? (
-                          <Link to={createPageUrl("PricingPlans")}>
+                      {(!user || user.user_type !== 'professionnel') ? (
+                        <Link to={createPageUrl("PricingPlans")}>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                             <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('becomeFreelancer')} · 7 días gratis
+                            {t('nav.sign_up_pro')}
                           </Button>
-                          </Link>
+                        </Link>
                       ) : null}
-                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                        <button
-                          onClick={() => changeLanguage('es')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                            language === 'es'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="Español"
-                        >
-                          ES
-                        </button>
-                        <button
-                          onClick={() => changeLanguage('en')}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                            language === 'en'
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                          aria-label="English"
-                        >
-                          EN
-                        </button>
-                      </div>
+                      <LanguageSwitcher />
                       {user && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="hover:bg-red-50 hover:text-red-600 transition-colors"
                           onClick={handleLogout}
-                          aria-label={t('logout')}
+                          aria-label={t('nav.logout')}
                         >
                           <LogOut className="w-5 h-5" aria-hidden="true" />
                         </Button>
@@ -942,16 +813,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 {user ? (
                   <>
                     {(isProfessional ? [
-                      { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), icon: Home },
-                      { title: 'Mensajes', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: 'Clientes', url: "/mis-clientes", icon: Users },
-                      { title: 'Facturas', url: createPageUrl("Invoices"), icon: FileText },
-                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                      { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
+                      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
+                      { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
+                      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
                     ] : [
-                      { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
-                      { title: 'Mensajes', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: 'Favoritos', url: createPageUrl("Favorites"), icon: Heart },
-                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                      { title: t('common.search'), url: createPageUrl("Search"), icon: SearchIcon },
+                      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
+                      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
                     ]).map((item) => (
                       <Link
                         key={item.title}
@@ -972,20 +843,20 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <Link
                       to={createPageUrl("Search")}
                       className={`mobile-bottom-nav-item ${location.pathname === createPageUrl("Search") ? 'active' : ''}`}
-                      aria-label="Buscar"
+                      aria-label={t('common.search')}
                       style={{ touchAction: 'manipulation' }}
                     >
                       <SearchIcon className="w-6 h-6" />
-                      <span>Buscar</span>
+                      <span>{t('common.search')}</span>
                     </Link>
                     <button
                       onClick={() => setJoinModalOpen(true)}
                       className="mobile-bottom-nav-item"
-                      aria-label="Unirse"
+                      aria-label={t('nav.sign_up_client')}
                       style={{ touchAction: 'manipulation', border: 'none', background: 'none', cursor: 'pointer' }}
                     >
                       <Briefcase className="w-6 h-6" />
-                      <span>Unirse</span>
+                      <span>{t('nav.sign_up_client')}</span>
                     </button>
                   </>
                 )}
