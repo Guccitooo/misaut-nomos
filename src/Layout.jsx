@@ -17,7 +17,9 @@ import {
   FileText,
   Users,
   Eye,
-  Home
+  Home,
+  HelpCircle,
+  Ticket
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,7 +43,6 @@ const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
 import PageTransitions from "@/components/ui/PageTransitions";
-import MobileMenu from "@/components/layout/MobileMenu";
 
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
@@ -171,6 +172,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
 
   // Redirect from old domain to new domain
   useEffect(() => {
@@ -561,17 +563,221 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               />
             )}
 
-            <MobileMenu
-              isOpen={mobileMenuOpen}
-              onClose={() => setMobileMenuOpen(false)}
-              user={user}
-              isProfessional={isProfessional}
-              unreadCount={unreadCount}
-              displayName={getDisplayName()}
-              profilePicture={getProfilePicture()}
-              onLogin={handleLogin}
-              onLogout={handleLogout}
-            />
+            {/* ── MENÚ HAMBURGUESA MÓVIL ── */}
+            {mobileMenuOpen && (
+              <>
+                <div
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', zIndex: 50 }}
+                  aria-hidden="true"
+                />
+                <nav
+                  style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: '280px', background: '#fff', zIndex: 51, overflowY: 'auto', boxShadow: '4px 0 24px rgba(0,0,0,0.18)' }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Menú de navegación"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <img src={LOGO_URL} alt="" className="w-8 h-8 rounded" width="32" height="32" />
+                      <span className="font-bold text-gray-900">MisAutónomos</span>
+                    </div>
+                    <button
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
+                      className="flex items-center justify-center rounded-lg hover:bg-gray-100"
+                      aria-label="Cerrar menú"
+                    >
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+
+                  <div className="py-2">
+                    {/* Usuario logueado: avatar + nombre */}
+                    {user && (
+                      <div className="flex items-center gap-3 mx-3 mb-2 p-3 bg-blue-50 rounded-xl">
+                        <Avatar className="w-10 h-10 border-2 border-blue-600 overflow-hidden flex-shrink-0">
+                          {getProfilePicture() ? (
+                            <AvatarImage src={getProfilePicture()} alt={getDisplayName()} className="object-cover w-full h-full" />
+                          ) : (
+                            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                              {getDisplayName().charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">{getDisplayName()}</p>
+                          <p className="text-xs text-gray-500">{isProfessional ? 'Profesional' : 'Cliente'}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Nav items (logueado) */}
+                    {user && navigationItems.map((item) => (
+                      <Link
+                        key={item.title}
+                        to={item.url}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 mx-2 rounded-xl ${
+                          location.pathname === item.url
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+                        }`}
+                        style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                      >
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${location.pathname === item.url ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <span className="font-medium flex-1">{item.title}</span>
+                        {item.badge && (
+                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold min-w-[20px] text-center">{item.badge}</span>
+                        )}
+                      </Link>
+                    ))}
+
+                    {/* Sin sesión: opciones */}
+                    {!user && (
+                      <div className="px-3 space-y-1">
+                        <Link
+                          to="/buscar"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 hover:bg-gray-50"
+                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                        >
+                          <SearchIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium">Buscar autónomos</span>
+                        </Link>
+                        <Link
+                          to="/precios"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 hover:bg-gray-50"
+                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                        >
+                          <HelpCircle className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                          <span className="font-medium">Cómo funciona</span>
+                        </Link>
+                        <Link
+                          to="/precios"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 hover:bg-gray-50"
+                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                        >
+                          <CreditCard className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                          <span className="font-medium">Ver planes</span>
+                        </Link>
+
+                        <div className="pt-2 border-t border-gray-100 space-y-2 mt-2">
+                          <Link
+                            to="/registro-cliente"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-center gap-2 w-full rounded-xl font-semibold text-white"
+                            style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation', background: '#16a34a' }}
+                          >
+                            <User className="w-5 h-5" />
+                            Soy cliente
+                          </Link>
+                          <Link
+                            to="/precios"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-center gap-2 w-full rounded-xl font-semibold text-white"
+                            style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation', background: '#2563eb' }}
+                          >
+                            <Briefcase className="w-5 h-5" />
+                            Hazte autónomo · 7 días gratis
+                          </Link>
+                          <button
+                            onClick={() => { handleLogin(); setMobileMenuOpen(false); }}
+                            className="flex items-center justify-center gap-2 w-full rounded-xl font-semibold text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+                            style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation' }}
+                          >
+                            <User className="w-5 h-5" />
+                            Iniciar sesión
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cerrar sesión */}
+                    {user && (
+                      <>
+                        <div className="mx-3 mt-2 border-t border-gray-100 pt-2">
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 w-full rounded-xl text-red-600 hover:bg-red-50 active:bg-red-100"
+                            style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                          >
+                            <LogOut className="w-5 h-5 flex-shrink-0" />
+                            <span className="font-medium">Cerrar sesión</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </nav>
+              </>
+            )}
+
+            {/* ── MODAL "UNIRSE" (bottom sheet) ── */}
+            {joinModalOpen && (
+              <>
+                <div
+                  onClick={() => setJoinModalOpen(false)}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }}
+                  aria-hidden="true"
+                />
+                <div
+                  style={{
+                    position: 'fixed', bottom: 0, left: 0, right: 0,
+                    background: '#fff', zIndex: 61, borderRadius: '20px 20px 0 0',
+                    padding: '24px 20px', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
+                    boxShadow: '0 -8px 32px rgba(0,0,0,0.18)'
+                  }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Opciones de registro"
+                >
+                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+                  <h2 className="text-xl font-bold text-gray-900 text-center mb-2">¿Cómo quieres unirte?</h2>
+                  <p className="text-sm text-gray-500 text-center mb-6">Elige tu perfil para empezar</p>
+                  <div className="space-y-3">
+                    <Link
+                      to="/registro-cliente"
+                      onClick={() => setJoinModalOpen(false)}
+                      className="flex items-center gap-4 w-full rounded-2xl p-4 text-white font-semibold"
+                      style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', touchAction: 'manipulation' }}
+                    >
+                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <SearchIcon className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">Soy cliente</div>
+                        <div className="text-xs text-green-100">Busco profesionales</div>
+                      </div>
+                    </Link>
+                    <Link
+                      to="/precios"
+                      onClick={() => setJoinModalOpen(false)}
+                      className="flex items-center gap-4 w-full rounded-2xl p-4 text-white font-semibold"
+                      style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', touchAction: 'manipulation' }}
+                    >
+                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Briefcase className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">Soy autónomo</div>
+                        <div className="text-xs text-blue-100">Quiero conseguir clientes</div>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={() => { handleLogin(); setJoinModalOpen(false); }}
+                      className="w-full text-center text-sm text-gray-500 py-3 font-medium"
+                      style={{ touchAction: 'manipulation' }}
+                    >
+                      Ya tengo cuenta → <span className="text-blue-600 font-semibold">Iniciar sesión</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <main className="flex-1 flex flex-col overflow-hidden">
               {!user && (
@@ -753,15 +959,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       <SearchIcon className="w-6 h-6" />
                       <span>Buscar</span>
                     </Link>
-                    <Link
-                      to={createPageUrl("UserTypeSelection")}
+                    <button
+                      onClick={() => setJoinModalOpen(true)}
                       className="mobile-bottom-nav-item"
                       aria-label="Unirse"
-                      style={{ touchAction: 'manipulation' }}
+                      style={{ touchAction: 'manipulation', border: 'none', background: 'none', cursor: 'pointer' }}
                     >
                       <Briefcase className="w-6 h-6" />
                       <span>Unirse</span>
-                    </Link>
+                    </button>
                   </>
                 )}
               </nav>
