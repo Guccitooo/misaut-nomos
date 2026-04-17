@@ -658,6 +658,16 @@ html, body {
   text-align: center;
 }
 
+/* ─── MESSAGES PAGE — altura correcta ───────────────────────── */
+.messages-container {
+  height: calc(100dvh - 56px - 64px);
+}
+@media (min-width: 768px) {
+  .messages-container {
+    height: calc(100dvh - 64px);
+  }
+}
+
 /* ✨ NATIVE-LIKE PAGE TRANSITIONS */
 @keyframes pageFadeIn {
   from { opacity: 0; transform: translateY(4px); }

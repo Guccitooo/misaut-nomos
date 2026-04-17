@@ -217,30 +217,18 @@ export default function MessagesPage() {
     if (!user) return;
     try {
       const [sent, received] = await Promise.all([
-        base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 200),
-        base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 200)
+        base44.entities.Message.filter({ sender_id: user.id }, '-created_date', 500),
+        base44.entities.Message.filter({ recipient_id: user.id }, '-created_date', 500)
       ]);
       const allMsgs = [...sent, ...received];
-      
-      // Agrupar por conversation_id, quedarse con el más reciente de cada uno
-      const conversationsMap = {};
-      allMsgs.forEach(msg => {
-        const convId = msg.conversation_id;
-        if (!convId) return;
-        if (!conversationsMap[convId] || new Date(msg.created_date) > new Date(conversationsMap[convId].created_date)) {
-          conversationsMap[convId] = msg;
-        }
+      // Dedup by id
+      const seen = new Set();
+      const unique = allMsgs.filter(m => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
       });
-      
-      // Obtener todos los mensajes de las conversaciones activas
-      const activeConvIds = Object.keys(conversationsMap);
-      let allConvMessages = [];
-      for (const convId of activeConvIds) {
-        const msgs = await base44.entities.Message.filter({ conversation_id: convId }, 'created_date', 100);
-        allConvMessages = [...allConvMessages, ...msgs];
-      }
-      
-      setAllMessages(allConvMessages);
+      setAllMessages(unique);
     } catch {}
   }, [user]);
 
@@ -470,27 +458,36 @@ export default function MessagesPage() {
     clearInterval(timerRef.current);
     const mr = mediaRecorderRef.current;
     if (!mr) return;
-    
+
+    // Capturar duration ANTES de parar (recordingSeconds puede mutar)
+    const duration = recordingSeconds;
+
+    // Definir onstop ANTES de llamar a mr.stop()
     mr.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-      const duration = recordingSeconds;
-      
+
+      if (blob.size === 0) {
+        toast.error("No se grabó ningún audio. Inténtalo otra vez.");
+        setIsRecording(false);
+        setRecordingSeconds(0);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Audio = reader.result;
-        
         try {
           const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
           if (!otherUserId) return;
 
-          let profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName;
-          let clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email;
+          const profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName || "";
+          const clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email || "";
 
           await base44.entities.Message.create({
             conversation_id: selectedConvId,
             sender_id: user.id,
             recipient_id: otherUserId,
-            content: `🎤 Audio`,
+            content: '',
             professional_name: isProfessional ? (user.full_name || "") : profName,
             client_name: !isProfessional ? clientName : "",
             is_read: false,
@@ -504,16 +501,17 @@ export default function MessagesPage() {
           });
           await loadMessages();
           scrollToBottom(true);
-        } catch (err) {
+        } catch {
           toast.error("Error al enviar audio");
         }
       };
       reader.readAsDataURL(blob);
     };
-    
+
     mr.stop();
-    mr.stream.getTracks().forEach(track => track.stop());
+    if (mr.stream) mr.stream.getTracks().forEach(track => track.stop());
     setIsRecording(false);
+    setRecordingSeconds(0);
   };
 
   // ─── Send Message ─────────────────────────────────────────────────────────
@@ -709,11 +707,8 @@ export default function MessagesPage() {
     <>
       <SEOHead title="Mensajes - MisAutónomos" description="Mensajes y conversaciones" />
 
-      {/* 
-        ESTRUCTURA MÓVIL: fixed inset-0 para pantalla completa. 
-        DESKTOP: layout de 2 columnas normal con height 100dvh.
-      */}
-      <div className="flex bg-white md:h-[100dvh] md:overflow-hidden fixed inset-0 md:relative md:inset-auto">
+      <div style={{ marginBottom: 0, paddingBottom: 0 }}>
+      <div className="messages-container flex bg-white overflow-hidden">
 
         {/* ── Columna izquierda: Lista de conversaciones ── */}
         <div className={`flex-shrink-0 w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
@@ -913,35 +908,39 @@ export default function MessagesPage() {
                               />
                             )}
 
+                            {/* Attachments: audio sin burbuja de texto, otros con FileAttachment */}
                             {msg.attachments?.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-1">
-                              {msg.attachments.map((f, i) => 
-                                f.type === 'audio' ? (
-                                  <AudioBubble key={i} attachment={f} isMe={msg.sender_id === user?.id} />
-                                ) : (
-                                  <FileAttachment key={i} file={f} />
-                                )
-                              )}
-                            </div>
-                            )}
-
-                            <div className={`relative px-4 py-2.5 shadow-sm ${
-                              isMe
-                                ? 'bg-blue-600 text-white rounded-[18px] rounded-br-[4px]'
-                                : 'bg-white text-gray-900 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
-                            }`}>
-                              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
-                              <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <span className={`text-[10px] ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                                  {format(new Date(msg.created_date), "HH:mm")}
-                                </span>
-                                {isMe && (
-                                  msg.is_read
-                                    ? <CheckCheck className="w-3 h-3 text-blue-200" />
-                                    : <Check className="w-3 h-3 text-blue-300" />
+                              <div className="flex flex-wrap gap-1.5 mb-1">
+                                {msg.attachments.map((f, i) =>
+                                  f.type === 'audio' ? (
+                                    <AudioBubble key={i} attachment={f} isMe={msg.sender_id === user?.id} />
+                                  ) : (
+                                    <FileAttachment key={i} file={f} />
+                                  )
                                 )}
                               </div>
-                            </div>
+                            )}
+
+                            {/* Burbuja de texto: no mostrar si el mensaje es solo audio */}
+                            {!(msg.attachments?.length > 0 && msg.attachments[0]?.type === 'audio' && !msg.content) && (
+                              <div className={`relative px-4 py-2.5 shadow-sm ${
+                                isMe
+                                  ? 'bg-blue-600 text-white rounded-[18px] rounded-br-[4px]'
+                                  : 'bg-white text-gray-900 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+                              }`}>
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                                <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                  <span className={`text-[10px] ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                                    {format(new Date(msg.created_date), "HH:mm")}
+                                  </span>
+                                  {isMe && (
+                                    msg.is_read
+                                      ? <CheckCheck className="w-3 h-3 text-blue-200" />
+                                      : <Check className="w-3 h-3 text-blue-300" />
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1069,6 +1068,7 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* ── Quote Dialog ── */}
