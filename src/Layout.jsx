@@ -42,6 +42,7 @@ const Footer = lazy(() => import("@/components/ui/Footer"));
 const CookieBanner = lazy(() => import("@/components/ui/CookieBanner"));
 const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
+const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner"));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
 import PageTransitions from "@/components/ui/PageTransitions";
 
@@ -982,6 +983,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             </main>
           </div>
 
+          {user && 'Notification' in window && (
+            <Suspense fallback={null}>
+              <NotificationPermissionBanner user={user} />
+            </Suspense>
+          )}
           <Suspense fallback={null}>
             <CookieBanner />
           </Suspense>

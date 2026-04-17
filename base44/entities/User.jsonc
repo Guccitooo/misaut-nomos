@@ -1,0 +1,124 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "client",
+        "professionnel"
+      ],
+      "description": "Tipo de usuario"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del usuario"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ciudad del usuario"
+    },
+    "subscription_status": {
+      "type": "string",
+      "description": "Estado de la suscripci\u00f3n"
+    },
+    "subscription_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de inicio de suscripci\u00f3n"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de fin de suscripci\u00f3n"
+    },
+    "profile_picture": {
+      "type": "string",
+      "description": "URL de la foto de perfil del usuario",
+      "default": ""
+    },
+    "profile_completeness": {
+      "type": "number",
+      "description": "Porcentaje de completitud del perfil (0-100)",
+      "default": 0
+    },
+    "has_used_trial": {
+      "type": "boolean",
+      "description": "Si el usuario ya us\u00f3 su periodo de prueba gratuito",
+      "default": false
+    },
+    "push_token": {
+      "type": "string",
+      "description": "JSON del PushSubscription para notificaciones push web",
+      "default": ""
+    },
+    "push_enabled": {
+      "type": "boolean",
+      "description": "Si el usuario tiene notificaciones push activadas",
+      "default": false
+    },
+    "push_last_activated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de \u00faltima activaci\u00f3n de notificaciones push"
+    },
+    "notification_preferences": {
+      "type": "object",
+      "properties": {
+        "email_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "push_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "new_messages": {
+          "type": "boolean",
+          "default": true
+        },
+        "quote_updates": {
+          "type": "boolean",
+          "default": true
+        },
+        "task_reminders": {
+          "type": "boolean",
+          "default": true
+        },
+        "invoice_reminders": {
+          "type": "boolean",
+          "default": true
+        },
+        "subscription_alerts": {
+          "type": "boolean",
+          "default": true
+        },
+        "task_reminder_hours_before": {
+          "type": "number",
+          "default": 24,
+          "description": "Horas antes para recordatorio de tareas"
+        },
+        "invoice_reminder_days_before": {
+          "type": "number",
+          "default": 3,
+          "description": "D\u00edas antes para recordatorio de facturas"
+        }
+      },
+      "default": {
+        "email_enabled": true,
+        "push_enabled": true,
+        "new_messages": true,
+        "quote_updates": true,
+        "task_reminders": true,
+        "invoice_reminders": true,
+        "subscription_alerts": true,
+        "task_reminder_hours_before": 24,
+        "invoice_reminder_days_before": 3
+      },
+      "description": "Preferencias de notificaciones del usuario"
+    }
+  },
+  "required": [
+    "user_type"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "MisAutónomos",
+  "short_name": "MisAutónomos",
+  "description": "La plataforma para encontrar autónomos de confianza en España",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1E40AF",
+  "background_color": "#FFFFFF",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
