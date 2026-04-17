@@ -334,8 +334,8 @@ button, a, [role="button"] {
 }
 
 /* Aplicar overscroll-behavior a contenedores principales */
-main, [role="main"], .flex-1 {
-  overscroll-behavior-y: none;
+main, [role="main"] {
+  overscroll-behavior-y: contain;
 }
 
 /* Reduce repaints y layout shifts */
@@ -414,11 +414,8 @@ img {
   display: block;
 }
 
-/* Header — altura fija para no causar reflow */
-header,
-nav,
-[role="banner"] {
-  height: 64px;
+/* Header — altura mínima para no causar reflow */
+header[role="banner"] {
   min-height: 64px;
 }
 

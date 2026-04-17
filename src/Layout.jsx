@@ -779,7 +779,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </>
             )}
 
-            <main className="flex-1 flex flex-col overflow-hidden">
+            <main className="flex-1 flex flex-col min-h-0">
               {!user && (
                   <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm will-change-transform">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -868,7 +868,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white border-b border-gray-200 lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+              <header className="bg-white border-b border-gray-200 flex lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
                 <div className="flex items-center justify-between">
                   {/* Izquierda: siempre hamburguesa */}
                   <button
@@ -899,7 +899,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </div>
               </header>
 
-              <div className="flex-1 overflow-auto pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
+              <div className="flex-1 overflow-y-auto pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
                 <Suspense fallback={null}>
                   <PageTransitions>
                     {children}
