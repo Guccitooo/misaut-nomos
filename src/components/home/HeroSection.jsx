@@ -26,9 +26,9 @@ export default function HeroSection() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0a1a3a] via-[#112763] to-[#1e3a8a] text-white">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#0a1a3a] via-[#112763] to-[#1e3a8a] text-white" style={{maxWidth:'100%', width:'100%'}}>
       {/* Orbes de color animados */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute -top-32 -right-32 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/20 blur-3xl"
           animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}

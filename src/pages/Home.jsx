@@ -64,7 +64,7 @@ export default function Home() {
   const [openFaq, setOpenFaq] = React.useState(null);
 
   return (
-    <div className="bg-white overflow-x-hidden">
+    <div className="bg-white" style={{overflowX:'hidden', width:'100%', maxWidth:'100vw'}}>
       <HeroSection />
 
       {/* ===== CÓMO FUNCIONA ===== */}
