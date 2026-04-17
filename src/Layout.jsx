@@ -553,8 +553,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   // CAMBIO: bloque <style> eliminado — todas estas reglas ya existen en globals.css.
   // Eliminar el inline style evita: CSS duplicado, conflictos de especificidad y ~20KB extra en el bundle.
   return (
-    <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
+    <SidebarProvider style={{ '--sidebar-width': (!user || !shouldShowSidebar()) ? '0px' : '16rem' }}>
+        <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50" style={{ marginLeft: 0 }}>
           <div className="flex flex-1">
             {user && shouldShowSidebar() && (
               <SidebarContentComponent 
@@ -874,8 +874,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white border-b border-gray-200 flex lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
-                <div className="flex items-center justify-between">
+              <header className="bg-white border-b border-gray-200 flex w-full lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+                <div className="flex items-center justify-between w-full">
                   {/* Izquierda: siempre hamburguesa */}
                   <button
                     onClick={() => setMobileMenuOpen(true)}
