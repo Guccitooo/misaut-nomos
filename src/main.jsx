@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import './globals.css'
+import { initOneSignal } from './services/onesignalService'
+
+// Inicializar OneSignal (solo si está configurado el App ID)
+initOneSignal();
 
 // Registrar Service Worker
 if ('serviceWorker' in navigator) {

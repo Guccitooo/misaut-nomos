@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { Bell, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { requestPermission, isSubscribed } from "@/services/onesignalService";
+import { ONESIGNAL_APP_ID } from "@/config/onesignal";
 
 const DISMISSED_KEY = "notif_banner_dismissed";
 const DELAY_MS = 2 * 60 * 1000; // 2 minutos
@@ -11,16 +12,21 @@ export default function NotificationPermissionBanner({ user }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Verificaciones rápidas antes de setear el timer
     if (!user) return;
+    // No mostrar si OneSignal no está configurado
+    if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') return;
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "default") return;
     if (localStorage.getItem(DISMISSED_KEY) === "true") return;
 
-    const timer = setTimeout(() => {
-      // Re-verificar por si cambió mientras esperábamos
-      if (Notification.permission === "default" && localStorage.getItem(DISMISSED_KEY) !== "true") {
-        setShow(true);
+    const timer = setTimeout(async () => {
+      try {
+        const subscribed = await isSubscribed();
+        if (!subscribed && localStorage.getItem(DISMISSED_KEY) !== "true") {
+          setShow(true);
+        }
+      } catch {
+        // Si falla la comprobación, mostrar igualmente si el permiso es 'default'
+        if (Notification.permission === "default") setShow(true);
       }
     }, DELAY_MS);
 
@@ -32,44 +38,20 @@ export default function NotificationPermissionBanner({ user }) {
     setShow(false);
   };
 
-  const requestPermission = async () => {
+  const handleActivate = async () => {
     try {
-      const permission = await Notification.requestPermission();
-
-      if (permission === "granted") {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            // applicationServerKey se añadirá en fase 2 con claves VAPID
-          });
-
-          await base44.auth.updateMe({
-            push_token: JSON.stringify(subscription),
-            push_enabled: true,
-            push_last_activated: new Date().toISOString(),
-          });
-
-          toast({
-            title: "✓ Notificaciones activadas",
-            description: "Te avisaremos cuando te contacten o envíen solicitudes.",
-          });
-        } catch (subErr) {
-          // Falló la suscripción push pero el permiso está concedido — no es crítico
-          console.warn("No se pudo crear suscripción push:", subErr);
-          toast({
-            title: "✓ Notificaciones activadas",
-            description: "Recibirás avisos cuando uses la app.",
-          });
-        }
+      const granted = await requestPermission();
+      if (granted) {
+        toast({
+          title: "✓ Notificaciones activadas",
+          description: "Te avisaremos cuando tengas nueva actividad.",
+        });
       }
-
-      localStorage.setItem(DISMISSED_KEY, "true");
-      setShow(false);
     } catch (err) {
-      console.error("Error solicitando permisos de notificación:", err);
-      dismiss();
+      console.error("Error solicitando permisos:", err);
     }
+    localStorage.setItem(DISMISSED_KEY, "true");
+    setShow(false);
   };
 
   if (!show) return null;
@@ -99,7 +81,7 @@ export default function NotificationPermissionBanner({ user }) {
           </p>
           <div className="flex gap-2 mt-3">
             <button
-              onClick={requestPermission}
+              onClick={handleActivate}
               className="flex-1 bg-blue-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Activar

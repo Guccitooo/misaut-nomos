@@ -45,6 +45,7 @@ const NotificationCenter = lazy(() => import("@/components/notifications/Notific
 const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner"));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
 import PageTransitions from "@/components/ui/PageTransitions";
+import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
 
@@ -334,6 +335,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       }
 
       setUser(currentUser);
+
+      // Asociar usuario con OneSignal para segmentación
+      if (currentUser) {
+        setUserId(currentUser.id);
+        setUserTags({
+          user_type: currentUser.user_type || 'unknown',
+          city: currentUser.city || '',
+          has_subscription: currentUser.subscription_status === 'activo' ? 'yes' : 'no'
+        });
+      }
     } catch (error) {
       setUser(null);
       setProfessionalProfile(null);
@@ -394,14 +405,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   }, [user]);
 
   const handleLogout = () => {
-    // Limpiar cache de sesión
     sessionStorage.removeItem('current_user');
     sessionStorage.removeItem('unread_count');
-    // Limpiar estado local
     setUser(null);
     setUnreadCount(0);
     setProfessionalProfile(null);
-    // Cerrar sesión (redirige automáticamente)
+    onesignalLogout();
     base44.auth.logout(createPageUrl("Search"));
   };
 
