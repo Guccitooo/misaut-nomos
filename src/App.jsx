@@ -28,12 +28,8 @@ const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Jobs = lazy(() => import('./pages/Jobs'));
 
-// Spinner reutilizable para Suspense boundaries de páginas lazy
-const PageLoader = () => (
-  <div className="fixed inset-0 flex items-center justify-center bg-white/60">
-    <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
-  </div>
-);
+// Sin spinner de carga — renderizar directamente
+const PageLoader = () => null;
 
 const { Pages, Layout } = pagesConfig;
 
@@ -107,11 +103,7 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
+    return null;
   }
 
   if (authError) {

@@ -924,6 +924,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 aria-label="Navegación principal"
                 style={{
                   gridTemplateColumns: (user && isProfessional) ? 'repeat(5, 1fr)' : user ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+                  paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+                  height: 'calc(56px + env(safe-area-inset-bottom, 8px))',
                 }}
               >
                 {user ? (
