@@ -19,7 +19,8 @@ import {
   Eye,
   Home,
   HelpCircle,
-  Ticket
+  Ticket,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
