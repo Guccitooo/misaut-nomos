@@ -609,11 +609,16 @@ html, body {
     right: 0;
     background: #FFFFFF !important;
     border-top: 2px solid #E5E7EB !important;
-    padding: 8px 0;
-    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
-    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-top: 8px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
     z-index: 30;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Contenido principal: padding extra para no quedar oculto bajo el nav */
+  main, [role="main"], .flex-1.overflow-y-auto {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

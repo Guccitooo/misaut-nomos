@@ -34,15 +34,82 @@ const formatRelativeTime = (dateStr) => {
   return format(date, "d MMM", { locale: es });
 };
 
-// Obtener nombre del interlocutor desde un mensaje según el rol del usuario actual
+// Obtener nombre del interlocutor desde un mensaje según el rol del usuario actual.
+// CLAVE: buscar en mensajes donde sender_id === otherUserId, ya que esos mensajes
+// siempre tienen el nombre del "otro" bien rellenado (el emisor rellena su propio nombre).
 const getContactNameFromMessage = (msg, currentUserId, isCurrentUserProfessional) => {
   if (isCurrentUserProfessional) {
-    // Soy profesional → quiero ver el nombre del cliente
-    return msg.client_name || null;
+    // Soy profesional → el interlocutor es cliente → su nombre está en client_name
+    // Solo es fiable si el emisor es el cliente (sender_id !== currentUserId)
+    if (msg.sender_id !== currentUserId && msg.client_name) return msg.client_name;
+    // También puede estar en mensajes que yo envié si el cliente ya habló antes
+    if (msg.client_name) return msg.client_name;
+    return null;
   } else {
-    // Soy cliente → quiero ver el nombre del profesional
-    return msg.professional_name || null;
+    // Soy cliente → el interlocutor es profesional → su nombre está en professional_name
+    if (msg.sender_id !== currentUserId && msg.professional_name) return msg.professional_name;
+    if (msg.professional_name) return msg.professional_name;
+    return null;
   }
+};
+
+// ─── Audio Bubble ─────────────────────────────────────────────────────────────
+const AudioBubble = ({ attachment, isMe }) => {
+  const [playing, setPlaying] = useState(false);
+  const [realDuration, setRealDuration] = useState(attachment.duration || null);
+  const audioRef = useRef(null);
+
+  const formatDuration = (secs) => {
+    if (!secs && secs !== 0) return '0:00';
+    const s = Math.round(secs);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  const handlePlay = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(attachment.url);
+      audioRef.current.addEventListener('loadedmetadata', () => {
+        if (!attachment.duration) setRealDuration(Math.round(audioRef.current.duration));
+      });
+      audioRef.current.addEventListener('ended', () => setPlaying(false));
+    }
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  const bg = isMe ? 'bg-blue-500' : 'bg-gray-100';
+  const textColor = isMe ? 'text-blue-100' : 'text-gray-500';
+  const btnBg = isMe ? 'bg-white/20 hover:bg-white/30' : 'bg-white hover:bg-gray-50 shadow-sm';
+  const btnColor = isMe ? 'text-white' : 'text-blue-600';
+  const barBg = isMe ? 'bg-white/20' : 'bg-gray-200';
+
+  return (
+    <div className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-w-[180px] max-w-[240px] ${bg}`}>
+      <button
+        onClick={handlePlay}
+        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${btnBg} ${btnColor}`}
+      >
+        {playing ? (
+          <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+            <path d="M8 5.14v14l11-7-11-7z"/>
+          </svg>
+        )}
+      </button>
+      <div className={`flex-1 h-1 rounded-full ${barBg}`} />
+      <span className={`text-xs font-medium flex-shrink-0 ${textColor}`}>
+        {formatDuration(realDuration)}
+      </span>
+    </div>
+  );
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -223,20 +290,23 @@ export default function MessagesPage() {
 
     // Determine contact name for each conversation
     Object.values(convMap).forEach(conv => {
-      // Sort messages so that ones sent by the OTHER user come first —
-      // those messages always have the interlocutor's name populated correctly.
-      const sorted = [...conv.messages].sort((a, b) => {
-        const aIsMe = a.sender_id === user?.id;
-        const bIsMe = b.sender_id === user?.id;
-        if (aIsMe && !bIsMe) return 1;  // my message last
-        if (!aIsMe && bIsMe) return -1; // other's message first
-        return 0;
-      });
-      for (const msg of sorted) {
+      // Priority 1: messages sent BY the other user — their name field is always correct
+      const msgsByOther = conv.messages.filter(m => m.sender_id === conv.otherUserId);
+      for (const msg of msgsByOther) {
         const name = getContactNameFromMessage(msg, user?.id, isProfessional);
         if (name && name.trim()) {
           conv.contactName = name.trim();
           break;
+        }
+      }
+      // Priority 2: any message in the conversation that has the field populated
+      if (!conv.contactName) {
+        for (const msg of conv.messages) {
+          const name = getContactNameFromMessage(msg, user?.id, isProfessional);
+          if (name && name.trim()) {
+            conv.contactName = name.trim();
+            break;
+          }
         }
       }
       if (!conv.contactName) {
@@ -389,15 +459,13 @@ export default function MessagesPage() {
     if (currentConv?.contactName && currentConv.contactName !== "...") return currentConv.contactName;
     const cached = profilesCache[selectedOtherUserId];
     if (cached) return cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
-    // Scan messages — prioritize messages sent by the other user
-    const sorted = [...currentMessages].sort((a, b) => {
-      const aIsMe = a.sender_id === user?.id;
-      const bIsMe = b.sender_id === user?.id;
-      if (aIsMe && !bIsMe) return 1;
-      if (!aIsMe && bIsMe) return -1;
-      return 0;
-    });
-    for (const msg of sorted) {
+    // Priority 1: messages from the other user
+    for (const msg of currentMessages.filter(m => m.sender_id === selectedOtherUserId)) {
+      const name = getContactNameFromMessage(msg, user?.id, isProfessional);
+      if (name && name.trim()) return name.trim();
+    }
+    // Priority 2: any message
+    for (const msg of currentMessages) {
       const name = getContactNameFromMessage(msg, user?.id, isProfessional);
       if (name && name.trim()) return name.trim();
     }
@@ -445,7 +513,7 @@ export default function MessagesPage() {
             conversation_id: selectedConvId,
             sender_id: user.id,
             recipient_id: otherUserId,
-            content: `Audio (${duration}s)`,
+            content: `🎤 Audio`,
             professional_name: isProfessional ? (user.full_name || "") : profName,
             client_name: !isProfessional ? clientName : "",
             is_read: false,
@@ -664,7 +732,7 @@ export default function MessagesPage() {
     <>
       <SEOHead title="Mensajes - MisAutónomos" description="Mensajes y conversaciones" />
 
-      <div className="flex bg-white overflow-hidden" style={{ height: '100dvh' }}>
+      <div className="flex bg-white" style={{ height: '100dvh', overflow: 'hidden', maxHeight: '100dvh' }}>
 
         {/* ── Columna izquierda: Lista de conversaciones ── */}
         <div className={`flex-shrink-0 w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
@@ -864,27 +932,15 @@ export default function MessagesPage() {
                             )}
 
                             {msg.attachments?.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mb-1">
-                                {msg.attachments.map((f, i) => 
-                                  f.type === 'audio' ? (
-                                    <div key={i} className="flex items-center gap-2 min-w-40 py-1">
-                                      <button 
-                                        onClick={() => {
-                                          const audio = new Audio(f.url);
-                                          audio.play();
-                                        }}
-                                        className="w-7 h-7 bg-white/30 rounded-full flex items-center justify-center flex-shrink-0 hover:bg-white/50"
-                                      >
-                                        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M8 5v14l11-7z"/></svg>
-                                      </button>
-                                      <div className="flex-1 h-0.5 bg-white/40 rounded-full"/>
-                                      <span className="text-xs opacity-75">{f.duration || '?'}s</span>
-                                    </div>
-                                  ) : (
-                                    <FileAttachment key={i} file={f} />
-                                  )
-                                )}
-                              </div>
+                            <div className="flex flex-wrap gap-1.5 mb-1">
+                              {msg.attachments.map((f, i) => 
+                                f.type === 'audio' ? (
+                                  <AudioBubble key={i} attachment={f} isMe={msg.sender_id === user?.id} />
+                                ) : (
+                                  <FileAttachment key={i} file={f} />
+                                )
+                              )}
+                            </div>
                             )}
 
                             <div className={`relative px-4 py-2.5 shadow-sm ${
@@ -916,7 +972,7 @@ export default function MessagesPage() {
               {/* Input */}
               <div
                 className="bg-white border-t border-gray-200 flex-shrink-0"
-                style={{ padding: '10px 12px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
+                style={{ padding: '8px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
               >
                 {showAIAssistant && isProfessional && (
                   <div className="mb-2">
