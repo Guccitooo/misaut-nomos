@@ -540,6 +540,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         title: "Admin Tickets",
         url: createPageUrl("AdminTickets"),
         icon: MessageSquare,
+      },
+      {
+        title: "SEO Analytics",
+        url: "/admin/seo",
+        icon: TrendingUp,
       }
     );
   }

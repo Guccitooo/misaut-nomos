@@ -19,6 +19,7 @@ const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
 const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
+const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
 const Invoices = lazy(() => import('./pages/Invoices'));
 const MisClientes = lazy(() => import('./pages/MisClientes'));
 const CRMAutomations = lazy(() => import('./pages/CRMAutomations'));
@@ -189,6 +190,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/faq" element={<Suspense fallback={<PageLoader />}><AdminFAQ /></Suspense>} />
           <Route path="/admin/mensajes" element={<Suspense fallback={<PageLoader />}><AdminMessagesStats /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
+          <Route path="/admin/seo" element={<Suspense fallback={<PageLoader />}><SEOAnalysis /></Suspense>} />
 
           {/* ===== REDIRECTS desde URLs ANTIGUAS (PascalCase → español) ===== */}
           {/* El componente LegacyRedirect detecta la URL vieja y redirige con <Navigate replace>. */}
