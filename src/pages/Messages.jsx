@@ -34,22 +34,14 @@ const formatRelativeTime = (dateStr) => {
   return format(date, "d MMM", { locale: es });
 };
 
-// Obtener nombre del interlocutor desde un mensaje según el rol del usuario actual.
-// CLAVE: buscar en mensajes donde sender_id === otherUserId, ya que esos mensajes
-// siempre tienen el nombre del "otro" bien rellenado (el emisor rellena su propio nombre).
-const getContactNameFromMessage = (msg, currentUserId, isCurrentUserProfessional) => {
-  if (isCurrentUserProfessional) {
-    // Soy profesional → el interlocutor es cliente → su nombre está en client_name
-    // Solo es fiable si el emisor es el cliente (sender_id !== currentUserId)
-    if (msg.sender_id !== currentUserId && msg.client_name) return msg.client_name;
-    // También puede estar en mensajes que yo envié si el cliente ya habló antes
-    if (msg.client_name) return msg.client_name;
-    return null;
+// Obtener nombre del interlocutor según el user_type del usuario actual.
+// Regla: si soy profesional → el otro es cliente → client_name
+//        si soy cliente → el otro es profesional → professional_name
+const getInterlocutorName = (msg, currentUserType) => {
+  if (currentUserType === 'professionnel') {
+    return msg.client_name || null;
   } else {
-    // Soy cliente → el interlocutor es profesional → su nombre está en professional_name
-    if (msg.sender_id !== currentUserId && msg.professional_name) return msg.professional_name;
-    if (msg.professional_name) return msg.professional_name;
-    return null;
+    return msg.professional_name || null;
   }
 };
 
@@ -289,30 +281,21 @@ export default function MessagesPage() {
     });
 
     // Determine contact name for each conversation
+    // Regla: el nombre del interlocutor depende de mi user_type
+    const myUserType = user?.user_type;
     Object.values(convMap).forEach(conv => {
-      // Priority 1: messages sent BY the other user — their name field is always correct
-      const msgsByOther = conv.messages.filter(m => m.sender_id === conv.otherUserId);
-      for (const msg of msgsByOther) {
-        const name = getContactNameFromMessage(msg, user?.id, isProfessional);
+      // Buscar en TODOS los mensajes de la conversación el nombre correcto
+      for (const msg of conv.messages) {
+        const name = getInterlocutorName(msg, myUserType);
         if (name && name.trim()) {
           conv.contactName = name.trim();
           break;
         }
       }
-      // Priority 2: any message in the conversation that has the field populated
       if (!conv.contactName) {
-        for (const msg of conv.messages) {
-          const name = getContactNameFromMessage(msg, user?.id, isProfessional);
-          if (name && name.trim()) {
-            conv.contactName = name.trim();
-            break;
-          }
-        }
-      }
-      if (!conv.contactName) {
-        const prof = profilesCache[conv.otherUserId];
-        if (prof) {
-          conv.contactName = prof.business_name || prof.full_name || prof.email?.split('@')[0] || "Usuario";
+        const cached = profilesCache[conv.otherUserId];
+        if (cached) {
+          conv.contactName = cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
         }
       }
       conv.contactName = conv.contactName || "...";
@@ -459,18 +442,12 @@ export default function MessagesPage() {
     if (currentConv?.contactName && currentConv.contactName !== "...") return currentConv.contactName;
     const cached = profilesCache[selectedOtherUserId];
     if (cached) return cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
-    // Priority 1: messages from the other user
-    for (const msg of currentMessages.filter(m => m.sender_id === selectedOtherUserId)) {
-      const name = getContactNameFromMessage(msg, user?.id, isProfessional);
-      if (name && name.trim()) return name.trim();
-    }
-    // Priority 2: any message
     for (const msg of currentMessages) {
-      const name = getContactNameFromMessage(msg, user?.id, isProfessional);
+      const name = getInterlocutorName(msg, user?.user_type);
       if (name && name.trim()) return name.trim();
     }
     return "...";
-  }, [selectedConvId, currentConv, profilesCache, selectedOtherUserId, currentMessages, user, isProfessional]);
+  }, [selectedConvId, currentConv, profilesCache, selectedOtherUserId, currentMessages, user]);
 
   // ─── Audio Recording ──────────────────────────────────────────────────────
   const startRecording = async () => {
@@ -732,7 +709,11 @@ export default function MessagesPage() {
     <>
       <SEOHead title="Mensajes - MisAutónomos" description="Mensajes y conversaciones" />
 
-      <div className="flex bg-white" style={{ height: '100dvh', overflow: 'hidden', maxHeight: '100dvh' }}>
+      {/* 
+        ESTRUCTURA MÓVIL: fixed inset-0 para pantalla completa. 
+        DESKTOP: layout de 2 columnas normal con height 100dvh.
+      */}
+      <div className="flex bg-white md:h-[100dvh] md:overflow-hidden fixed inset-0 md:relative md:inset-auto">
 
         {/* ── Columna izquierda: Lista de conversaciones ── */}
         <div className={`flex-shrink-0 w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
@@ -812,7 +793,8 @@ export default function MessagesPage() {
         </div>
 
         {/* ── Columna derecha: Chat ── */}
-        <div className={`flex-1 flex flex-col bg-gray-50 min-w-0 ${!selectedConvId ? 'hidden md:flex' : 'flex'}`} style={{ minHeight: 0 }}>
+        {/* En móvil: ocupa toda la pantalla cuando está abierto. En desktop: columna normal */}
+        <div className={`flex-1 flex flex-col bg-gray-50 min-w-0 ${!selectedConvId ? 'hidden md:flex' : 'flex'}`} style={{ minHeight: 0, overflow: 'hidden' }}>
           {selectedConvId ? (
             <>
               {/* Chat Header — Diseño compacto en una línea */}
@@ -888,11 +870,11 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              {/* Messages */}
+              {/* Messages — scroll interno, ocupa todo el espacio disponible */}
               <div
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-1"
-                style={{ minHeight: 0, WebkitOverflowScrolling: 'touch' }}
+                style={{ minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
               >
                 {currentMessages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
@@ -969,10 +951,14 @@ export default function MessagesPage() {
                 )}
               </div>
 
-              {/* Input */}
+              {/* Input — fijo abajo, nunca se oculta por el teclado */}
               <div
                 className="bg-white border-t border-gray-200 flex-shrink-0"
-                style={{ padding: '8px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}
+                style={{ 
+                  padding: '8px 12px', 
+                  paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+                  flexShrink: 0
+                }}
               >
                 {showAIAssistant && isProfessional && (
                   <div className="mb-2">
