@@ -457,7 +457,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
       { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
       { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
-      { title: t('supportChat.myTickets'), url: "/soporte", icon: Headphones },
+      { title: t('nav.support'), url: "/soporte", icon: Headphones },
     );
   } else if (user?.user_type === "client") {
     navigationItems.push(
@@ -467,7 +467,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
       { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
       { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
-      { title: t('supportChat.myTickets'), url: "/soporte", icon: Headphones },
+      { title: t('nav.support'), url: "/soporte", icon: Headphones },
     );
   }
 
