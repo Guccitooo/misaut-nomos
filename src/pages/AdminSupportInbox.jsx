@@ -249,7 +249,7 @@ export default function AdminSupportInbox() {
               {messages.map((msg) => {
                 const isFromSupport = msg.sender_id === "support_team";
                 return (
-                  <div key={msg.id} className={`flex ${isFromSupport ? "flex-row-reverse" : ""}`}>
+                  <div key={msg.id} className={`flex ${isFromSupport ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
                         isFromSupport

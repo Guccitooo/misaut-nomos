@@ -21,7 +21,8 @@ import {
   HelpCircle,
   Ticket,
   TrendingUp,
-  Headphones
+  Headphones,
+  Shield
 } from "lucide-react";
 import {
   Sidebar,
@@ -124,7 +125,7 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
               {user?.profile_picture ? (
                 <AvatarImage src={user.profile_picture} alt="Profile" className="object-cover object-center w-full h-full" />
               ) : (
-                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-semibold">
+                <AvatarFallback className={`font-semibold text-white ${isAdmin ? 'bg-gradient-to-br from-purple-600 to-purple-800' : 'bg-gradient-to-br from-blue-600 to-blue-800'}`}>
                   {user?.full_name?.charAt(0) || 'U'}
                 </AvatarFallback>
               )}
@@ -133,9 +134,14 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
               <p className="font-semibold text-gray-900 text-sm truncate">
                 {user?.full_name || 'Usuario'}
               </p>
-              <p className="text-xs text-gray-500 truncate">
-                {isProfessional ? 'Profesional' : 'Cliente'}
-              </p>
+              {isAdmin && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-medium mt-0.5">
+                  <Shield className="w-2.5 h-2.5" />
+                  Administrador
+                </span>
+              )}
+              {isProfessional && <p className="text-xs text-gray-500">Profesional</p>}
+              {isClient && <p className="text-xs text-gray-500">Cliente</p>}
             </div>
           </div>
 
@@ -392,11 +398,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const isAdmin = user?.role === "admin";
   const isProfessional = React.useMemo(() => {
     if (!user) return false;
-    // Es profesional si user_type es professionnel (después del pago)
-    return user.user_type === "professionnel";
-  }, [user]);
+    return user.user_type === "professionnel" && !isAdmin;
+  }, [user, isAdmin]);
+  const isClient = React.useMemo(() => {
+    if (!user) return false;
+    return user.user_type === "client" && !isAdmin;
+  }, [user, isAdmin]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('current_user');
@@ -415,7 +425,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const getDisplayName = () => {
     if (!user) return "";
     
-    if (user.user_type === "professionnel" && professionalProfile?.business_name) {
+    if (user.user_type === "professionnel" && professionalProfile?.business_name && !isAdmin) {
       return professionalProfile.business_name;
     }
     
@@ -444,41 +454,44 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return user?.profile_picture || null;
   };
 
-  // Menú específico según user_type (NO role)
-  const navigationItems = [];
+  const getNavigationItems = () => {
+    const items = [];
 
-  if (user?.user_type === "professionnel") {
-    navigationItems.push(
-      { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
-      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-      { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
-      { title: t('nav.quotes'), url: "/presupuestos", icon: FileText },
-      { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
-      { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
-      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
-      { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
-      { title: t('nav.support'), url: "/soporte", icon: Headphones },
-    );
-  } else if (user?.user_type === "client") {
-    navigationItems.push(
-      { title: t('nav.search_professionals'), url: createPageUrl("Search"), icon: Search },
-      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-      { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
-      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
-      { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
-      { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
-      { title: t('nav.support'), url: "/soporte", icon: Headphones },
-    );
-  }
+    if (isAdmin) {
+      items.push(
+        { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
+        { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
+        { title: t('supportChat.supportInbox'), url: "/admin/soporte", icon: Headphones },
+        { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp }
+      );
+    } else if (isProfessional) {
+      items.push(
+        { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
+        { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+        { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
+        { title: t('nav.quotes'), url: "/presupuestos", icon: FileText },
+        { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
+        { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
+        { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+        { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
+        { title: t('nav.support'), url: "/soporte", icon: Headphones }
+      );
+    } else if (isClient) {
+      items.push(
+        { title: t('nav.search_professionals'), url: createPageUrl("Search"), icon: Search },
+        { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+        { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
+        { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+        { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
+        { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
+        { title: t('nav.support'), url: "/soporte", icon: Headphones }
+      );
+    }
 
-  if (user?.role === "admin") {
-    navigationItems.push(
-      { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
-      { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
-      { title: t('supportChat.supportInbox'), url: "/admin/soporte", icon: Headphones },
-      { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
-    );
-  }
+    return items;
+  };
+
+  const navigationItems = getNavigationItems();
 
   // CAMBIO: bloque <style> eliminado — todas estas reglas ya existen en globals.css.
   // Eliminar el inline style evita: CSS duplicado, conflictos de especificidad y ~20KB extra en el bundle.
