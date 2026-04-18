@@ -649,14 +649,9 @@ html, body {
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
   }
 
-  /* Contenido principal: padding para no quedar oculto bajo el nav fijo */
+  /* Contenido principal: sin padding extra — el footer ya lleva pb-24 en móvil */
   main, [role="main"], .flex-1.overflow-y-auto {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  /* Footer oculto en móvil — ya cubierto por bottom nav */
-  footer {
-    display: none !important;
+    padding-bottom: 0 !important;
   }
 }
 
@@ -781,9 +776,4 @@ html {
   }
 }
 
-/* Footer en móvil: visible pero con padding para no quedar tapado por el bottom nav */
-@media (max-width: 767px) {
-  footer {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
+/* Footer en móvil: el padding-bottom lo gestiona directamente el componente Footer (pb-24) */
