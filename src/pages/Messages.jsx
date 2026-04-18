@@ -34,15 +34,18 @@ const formatRelativeTime = (dateStr) => {
   return format(date, "d MMM", { locale: es });
 };
 
-// Obtener nombre del interlocutor según el user_type del usuario actual.
-// Regla: si soy profesional → el otro es cliente → client_name
-//        si soy cliente → el otro es profesional → professional_name
-const getInterlocutorName = (msg, currentUserType) => {
-  if (currentUserType === 'professionnel') {
-    return msg.client_name || null;
-  } else {
-    return msg.professional_name || null;
+// Obtener nombre del interlocutor dado el otherUserId (quien NO soy yo).
+// Si el otro es el sender → usamos el nombre que él guardó al enviar (professional_name o client_name).
+// Si el otro es el recipient → igual, buscamos cualquier nombre disponible.
+// Clave: buscamos el nombre asociado al otherUserId, no al user_type.
+const getInterlocutorName = (msg, otherUserId) => {
+  if (!otherUserId) return null;
+  // Si el otro fue el remitente del mensaje, su nombre está en professional_name o client_name
+  if (msg.sender_id === otherUserId) {
+    return msg.professional_name || msg.client_name || null;
   }
+  // Si el otro fue el destinatario, su nombre también puede estar guardado
+  return msg.professional_name || msg.client_name || null;
 };
 
 // ─── Audio Bubble ─────────────────────────────────────────────────────────────
@@ -268,18 +271,44 @@ export default function MessagesPage() {
       }
     });
 
-    // Determine contact name for each conversation
-    // Regla: el nombre del interlocutor depende de mi user_type
+    // Determine contact name for each conversation.
+    // Buscamos en todos los mensajes el nombre del interlocutor (otherUserId).
+    // Los mensajes guardan professional_name y client_name — uno de ellos es el otro usuario.
+    // Para saber cuál, comparamos sender_id con el otherUserId:
+    //   - Si el otro fue sender → su nombre está en professional_name o client_name (el que tenga valor)
+    //   - Adicionalmente: si YO soy profesional, el otro es cliente → client_name
+    //                     si YO soy cliente, el otro es profesional → professional_name
+    const myId = user?.id;
     const myUserType = user?.user_type;
     Object.values(convMap).forEach(conv => {
-      // Buscar en TODOS los mensajes de la conversación el nombre correcto
+      const otherUserId = conv.otherUserId;
+      
+      // Buscar en todos los mensajes
       for (const msg of conv.messages) {
-        const name = getInterlocutorName(msg, myUserType);
+        let name = null;
+        
+        if (myUserType === 'professionnel') {
+          // Soy profesional → el otro es cliente → client_name
+          name = msg.client_name || null;
+        } else if (myUserType === 'client') {
+          // Soy cliente → el otro es profesional → professional_name
+          name = msg.professional_name || null;
+        } else {
+          // Admin u otro: usar cualquier nombre disponible del otro usuario
+          if (msg.sender_id === otherUserId) {
+            name = msg.professional_name || msg.client_name || null;
+          } else {
+            // El otro fue recipient — buscar el campo opuesto al sender
+            name = msg.professional_name || msg.client_name || null;
+          }
+        }
+        
         if (name && name.trim()) {
           conv.contactName = name.trim();
           break;
         }
       }
+      
       if (!conv.contactName) {
         const cached = profilesCache[conv.otherUserId];
         if (cached) {
@@ -292,7 +321,7 @@ export default function MessagesPage() {
     return Object.values(convMap).sort((a, b) =>
       new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
     );
-  }, [allMessages, user?.id, isProfessional, profilesCache]);
+  }, [allMessages, user?.id, user?.user_type, profilesCache]);
 
   // Filtered conversations for search
   const filteredConversations = useMemo(() => {
@@ -373,21 +402,41 @@ export default function MessagesPage() {
 
   // ─── Fetch missing profile names ──────────────────────────────────────────
   useEffect(() => {
+    // Buscar nombres faltantes para TODAS las conversaciones, no solo las que muestran "..."
+    // porque puede que el nombre en el mensaje esté vacío aunque el usuario exista
     const missingIds = conversations
-      .filter(c => (!c.contactName || c.contactName === "...") && c.otherUserId && !profilesCache[c.otherUserId])
+      .filter(c => c.otherUserId && !profilesCache[c.otherUserId])
       .map(c => c.otherUserId);
 
     if (!missingIds.length) return;
 
     missingIds.forEach(async (uid) => {
       try {
+        // Buscar primero en ProfessionalProfile (tiene business_name)
         const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: uid });
-        if (profiles[0]) {
-          setProfilesCache(prev => ({ ...prev, [uid]: { business_name: profiles[0].business_name, type: 'professional' } }));
+        if (profiles[0]?.business_name || profiles[0]) {
+          setProfilesCache(prev => ({
+            ...prev,
+            [uid]: {
+              business_name: profiles[0].business_name || null,
+              full_name: null,
+              email: null,
+              type: 'professional'
+            }
+          }));
         } else {
+          // Si no tiene perfil pro, buscar en User entity
           const users = await base44.entities.User.filter({ id: uid });
           if (users[0]) {
-            setProfilesCache(prev => ({ ...prev, [uid]: { full_name: users[0].full_name, email: users[0].email, type: 'client' } }));
+            setProfilesCache(prev => ({
+              ...prev,
+              [uid]: {
+                business_name: null,
+                full_name: users[0].full_name || null,
+                email: users[0].email || null,
+                type: 'client'
+              }
+            }));
           }
         }
       } catch {}
@@ -431,11 +480,11 @@ export default function MessagesPage() {
     const cached = profilesCache[selectedOtherUserId];
     if (cached) return cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
     for (const msg of currentMessages) {
-      const name = getInterlocutorName(msg, user?.user_type);
+      const name = getInterlocutorName(msg, selectedOtherUserId);
       if (name && name.trim()) return name.trim();
     }
     return "...";
-  }, [selectedConvId, currentConv, profilesCache, selectedOtherUserId, currentMessages, user]);
+  }, [selectedConvId, currentConv, profilesCache, selectedOtherUserId, currentMessages]);
 
   // ─── Audio Recording ──────────────────────────────────────────────────────
   const startRecording = async () => {
