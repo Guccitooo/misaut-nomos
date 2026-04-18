@@ -393,6 +393,7 @@ export default function InvoicesPage() {
             onSave={handleSaveInvoice}
             onCancel={() => { setShowDialog(false); setEditingInvoice(null); }}
             onPreview={handlePreview}
+            onDownloadPDF={editingInvoice ? handleDownloadPDF : null}
           />
         </ResponsiveModal>
 

@@ -6,11 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Eye, Sparkles } from "lucide-react";
+import { Plus, Trash2, Eye, Sparkles, Download } from "lucide-react";
 import { useLanguage } from "../ui/LanguageSwitcher";
 import InvoiceAIAssistant from "./InvoiceAIAssistant";
 
-export default function InvoiceForm({ invoice, settings, clients = [], onSave, onCancel, onPreview }) {
+export default function InvoiceForm({ invoice, settings, clients = [], onSave, onCancel, onPreview, onDownloadPDF }) {
   const { t } = useLanguage();
   
   const getNextInvoiceNumber = () => {
@@ -216,6 +216,17 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
           <Eye className="w-4 h-4 mr-1.5" />
           {t('preview') || 'Vista previa'}
         </Button>
+        {invoice && onDownloadPDF && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onDownloadPDF(invoice)}
+            className="border-green-300 text-green-700 hover:bg-green-50"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            PDF
+          </Button>
+        )}
         <Button size="sm" onClick={() => onSave(formData)} className="bg-blue-600 hover:bg-blue-700">
           {t('save')}
         </Button>
