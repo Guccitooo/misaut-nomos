@@ -813,16 +813,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 {user ? (
                   <>
                     {(isProfessional ? [
-                      { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
-                      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
-                      { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
-                      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+                      { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), icon: Home },
+                      { title: 'Chats', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Clientes', url: "/mis-clientes", icon: Users },
+                      { title: 'Facturas', url: createPageUrl("Invoices"), icon: FileText },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
                     ] : [
-                      { title: t('common.search'), url: createPageUrl("Search"), icon: SearchIcon },
-                      { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
-                      { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
+                      { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
+                      { title: 'Chats', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Guardados', url: createPageUrl("Favorites"), icon: Heart },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
                     ]).map((item) => (
                       <Link
                         key={item.title}
@@ -830,11 +830,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         className={`mobile-bottom-nav-item ${location.pathname === item.url ? 'active' : ''}`}
                         aria-label={item.title}
                         aria-current={location.pathname === item.url ? 'page' : undefined}
-                        style={{ touchAction: 'manipulation' }}
+                        style={{ touchAction: 'manipulation', flex: 1, minWidth: 0 }}
                       >
-                        <item.icon className="w-6 h-6" />
-                        <span>{item.title}</span>
-                        {item.badge && <span className="mobile-bottom-nav-badge">{item.badge}</span>}
+                        <div className="relative">
+                          <item.icon className="w-5 h-5" />
+                          {item.badge && (
+                            <span className="absolute -top-1 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center px-1" style={{ fontSize: '10px', minWidth: '16px', height: '16px' }}>
+                              {item.badge > 9 ? '9+' : item.badge}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '10px', fontWeight: 500, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{item.title}</span>
                       </Link>
                     ))}
                   </>
@@ -843,20 +849,20 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <Link
                       to={createPageUrl("Search")}
                       className={`mobile-bottom-nav-item ${location.pathname === createPageUrl("Search") ? 'active' : ''}`}
-                      aria-label={t('common.search')}
-                      style={{ touchAction: 'manipulation' }}
+                      aria-label="Buscar"
+                      style={{ touchAction: 'manipulation', flex: 1, minWidth: 0 }}
                     >
-                      <SearchIcon className="w-6 h-6" />
-                      <span>{t('common.search')}</span>
+                      <SearchIcon className="w-5 h-5" />
+                      <span style={{ fontSize: '10px', fontWeight: 500 }}>Buscar</span>
                     </Link>
                     <button
                       onClick={() => setJoinModalOpen(true)}
                       className="mobile-bottom-nav-item"
-                      aria-label={t('nav.sign_up_client')}
-                      style={{ touchAction: 'manipulation', border: 'none', background: 'none', cursor: 'pointer' }}
+                      aria-label="Unirse"
+                      style={{ touchAction: 'manipulation', border: 'none', background: 'none', cursor: 'pointer', flex: 1, minWidth: 0 }}
                     >
-                      <Briefcase className="w-6 h-6" />
-                      <span>{t('nav.sign_up_client')}</span>
+                      <Briefcase className="w-5 h-5" />
+                      <span style={{ fontSize: '10px', fontWeight: 500 }}>Unirse</span>
                     </button>
                   </>
                 )}
