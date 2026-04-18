@@ -691,6 +691,51 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </>
             )}
 
+            {/* ── HEADER MÓVIL — SIEMPRE VISIBLE, fuera del main para evitar margin-left del sidebar ── */}
+            <header
+              className="lg:hidden bg-white border-b border-gray-100 flex items-center justify-between px-4"
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '56px',
+                zIndex: 35,
+                paddingTop: 'env(safe-area-inset-top, 0px)',
+              }}
+            >
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
+                className="flex items-center justify-center rounded-lg hover:bg-gray-100 flex-shrink-0"
+                aria-label="Abrir menú"
+              >
+                <Menu className="w-6 h-6 text-gray-700" />
+              </button>
+
+              <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
+                <img src={LOGO_URL} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchpriority="high" decoding="async" />
+                <span className="font-bold text-lg text-gray-900">MisAutónomos</span>
+              </Link>
+
+              <div style={{ width: '44px', height: '44px' }} className="flex items-center justify-end flex-shrink-0">
+                {user ? (
+                  <Suspense fallback={<div className="w-9 h-9" />}>
+                    <NotificationCenter user={user} />
+                  </Suspense>
+                ) : (
+                  <button
+                    onClick={() => setJoinModalOpen(true)}
+                    style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
+                    className="flex items-center justify-center rounded-lg hover:bg-gray-100 text-blue-600"
+                    aria-label="Unirse"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </header>
+
             <main className="flex-1 flex flex-col min-h-0 min-w-0" style={{ width: '100%', maxWidth: '100vw', overflow: 'visible' }}>
               {!user && (
                   <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm will-change-transform">
@@ -757,38 +802,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white border-b border-gray-200 flex w-full lg:hidden sticky top-0 z-30" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
-                <div className="flex items-center justify-between w-full">
-                  {/* Izquierda: siempre hamburguesa */}
-                  <button
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="flex items-center justify-center rounded-lg"
-                    style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
-                    aria-label="Abrir menú"
-                  >
-                    <Menu className="w-6 h-6 text-gray-700" />
-                  </button>
-
-                  {/* Centro: logo */}
-                  <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
-                    <img src={LOGO_URL} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchpriority="high" decoding="async" />
-                    <span className="font-bold text-lg text-gray-900">MisAutónomos</span>
-                  </Link>
-
-                  {/* Derecha: notificaciones o vacío */}
-                  <div style={{ width: '44px', height: '44px' }} className="flex items-center justify-end">
-                    {user ? (
-                      <Suspense fallback={<div className="w-9 h-9" />}>
-                        <NotificationCenter user={user} />
-                      </Suspense>
-                    ) : (
-                      <div />
-                    )}
-                  </div>
-                </div>
-              </header>
-
-              <div className="flex-1 pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
+              <div className="flex-1 pb-16 md:pb-0 transition-opacity duration-150 ease-in-out mobile-main-content">
                 <Suspense fallback={null}>
                   <PageTransitions>
                     {children}

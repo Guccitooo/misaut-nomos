@@ -621,6 +621,13 @@ html, body {
   }
 }
 
+/* Header móvil fijo — padding-top para el contenido */
+@media (max-width: 1023px) {
+  .mobile-main-content {
+    padding-top: 56px !important;
+  }
+}
+
 /* Bottom nav: oculto por defecto, solo visible en móvil (< 768px) */
 .mobile-bottom-nav {
   display: none !important;
