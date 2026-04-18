@@ -773,7 +773,7 @@ export default function MyProfilePage() {
           {/* Tabs minimalistas con subrayado */}
           <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
             <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex border-b border-gray-100">
+              <div className="flex min-w-max border-b border-gray-100">
                 {[
                   { value: 'personal', icon: User, label: t('tabPersonal') || 'Información' },
                   ...(!isProfessional ? [{ value: 'reviews', icon: Star, label: 'Mis reseñas', badge: myReviewsAsClient.length > 0 ? myReviewsAsClient.length : null }] : []),
