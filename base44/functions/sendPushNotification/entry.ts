@@ -7,7 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
-const ONESIGNAL_API_URL = 'https://onesignal.com/api/v1/notifications';
+const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
 Deno.serve(async (req) => {
   try {
