@@ -1,1012 +1,419 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, FileText, Clock, CheckCircle, XCircle, Send, Euro, Plus, Trash2, RefreshCw, AlertTriangle, Users, FolderKanban, Calendar } from "lucide-react";
+import { Plus, FileText, Send, CheckCircle, Euro, Download, Eye, Trash2, Loader2, XCircle, RefreshCw, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import SEOHead from "../components/seo/SEOHead";
+import SEOHead from "@/components/seo/SEOHead";
+import QuoteForm from "@/components/quotes/QuoteForm";
+import { downloadQuotePDF } from "@/services/quotePdfGenerator";
+import { useNavigate } from "react-router-dom";
+
+const STATUS_CONFIG = {
+  borrador: { label: "Borrador", className: "bg-gray-100 text-gray-700" },
+  enviado:  { label: "Enviado",  className: "bg-blue-50 text-blue-700" },
+  aceptado: { label: "Aceptado", className: "bg-green-50 text-green-700" },
+  rechazado:{ label: "Rechazado",className: "bg-red-50 text-red-700" },
+};
+
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.borrador;
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.className}`}>{cfg.label}</span>;
+}
+
+function MetricCard({ label, value, icon: Icon, color = "gray" }) {
+  const colors = { gray: "text-gray-600", blue: "text-blue-600", green: "text-green-600", amber: "text-amber-600" };
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-gray-500">{label}</span>
+        <Icon className={`w-4 h-4 ${colors[color]}`} />
+      </div>
+      <p className={`text-xl font-bold ${colors[color]}`}>{value}</p>
+    </div>
+  );
+}
 
 export default function PresupuestosPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [selectedQuote, setSelectedQuote] = useState(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
-  const [showConvertDialog, setShowConvertDialog] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  
-  const [quoteData, setQuoteData] = useState({
-    client_id: "",
-    title: "",
-    description: "",
-    items: [{ concept: "", quantity: 1, unit_price: 0, total: 0 }],
-    subtotal: 0,
-    iva: 21,
-    total: 0,
-    estimated_days: 7,
-    validity_days: 30,
-    payment_conditions: "",
-    notes: ""
-  });
+  const [filter, setFilter] = useState("todos");
+  const [showForm, setShowForm] = useState(false);
+  const [editingQuote, setEditingQuote] = useState(null);
+  const [viewQuote, setViewQuote] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [sendingId, setSendingId] = useState(null);
 
   useEffect(() => {
-    loadUser();
+    base44.auth.me().then(setUser).catch(() => base44.auth.redirectToLogin()).finally(() => setLoadingUser(false));
   }, []);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      base44.auth.redirectToLogin();
-    } finally {
-      setLoadingUser(false);
-    }
-  };
 
   const isProfessional = user?.user_type === "professionnel";
 
-  const { data: myClients = [] } = useQuery({
-    queryKey: ['clientContacts', user?.id],
-    queryFn: () => base44.entities.ClientContact.filter({ professional_id: user.id }),
-    enabled: !!user && isProfessional,
+  const { data: quotes = [], isLoading } = useQuery({
+    queryKey: ['quotes', user?.id, isProfessional],
+    queryFn: () => isProfessional
+      ? base44.entities.Quote.filter({ professional_id: user.id }, '-created_date')
+      : base44.entities.Quote.filter({ client_id: user.id }, '-created_date'),
+    enabled: !!user,
   });
 
-  const { data: sentQuotes = [], isLoading: loadingSent } = useQuery({
-    queryKey: ['quotes', 'sent', user?.id],
-    queryFn: () => base44.entities.Quote.filter({ professional_id: user.id }, '-created_date'),
-    enabled: !!user && isProfessional,
-  });
+  const filteredQuotes = filter === "todos" ? quotes : quotes.filter(q => q.status === filter);
 
-  const { data: receivedQuotes = [], isLoading: loadingReceived } = useQuery({
-    queryKey: ['quotes', 'received', user?.id],
-    queryFn: () => base44.entities.Quote.filter({ client_id: user.id }, '-created_date'),
-    enabled: !!user && !isProfessional,
-  });
-
-  const calculateTotals = (items, ivaPercent) => {
-    const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-    const total = subtotal * (1 + ivaPercent / 100);
-    return { subtotal, total };
+  const metrics = {
+    total: quotes.length,
+    enviados: quotes.filter(q => q.status === 'enviado').length,
+    aceptados: quotes.filter(q => q.status === 'aceptado').length,
+    totalAceptado: quotes.filter(q => q.status === 'aceptado').reduce((s, q) => s + (q.total || 0), 0),
   };
 
-  const updateItem = (index, field, value) => {
-    const newItems = [...quoteData.items];
-    newItems[index][field] = value;
-    
-    if (field === 'quantity' || field === 'unit_price') {
-      newItems[index].total = newItems[index].quantity * newItems[index].unit_price;
-    }
-    
-    const { subtotal, total } = calculateTotals(newItems, quoteData.iva);
-    setQuoteData({ ...quoteData, items: newItems, subtotal, total });
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await base44.entities.Quote.delete(deleteTarget.id);
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    toast.success("Presupuesto eliminado");
+    setDeleteTarget(null);
+    setDeleting(false);
   };
 
-  const addItem = () => {
-    setQuoteData({
-      ...quoteData,
-      items: [...quoteData.items, { concept: "", quantity: 1, unit_price: 0, total: 0 }]
-    });
-  };
+  const handleSendNow = async (q) => {
+    setSendingId(q.id);
+    try {
+      // Enviar por chat
+      const ids = [q.professional_id, q.client_id].sort();
+      const conversationId = ids[0] + '_' + ids[1];
+      const { getQuotePDFBase64 } = await import('@/services/quotePdfGenerator');
+      const pdfBase64 = getQuotePDFBase64(q);
 
-  const removeItem = (index) => {
-    const newItems = quoteData.items.filter((_, i) => i !== index);
-    const { subtotal, total } = calculateTotals(newItems, quoteData.iva);
-    setQuoteData({ ...quoteData, items: newItems, subtotal, total });
-  };
-
-  const createQuoteMutation = useMutation({
-    mutationFn: async (data) => {
-      const selectedClient = myClients.find(c => c.id === data.client_id);
-      return await base44.entities.Quote.create({
-        ...data,
-        professional_id: user.id,
-        professional_name: user.full_name || user.email.split('@')[0],
-        client_name: selectedClient?.client_name || "Cliente",
-        client_email: selectedClient?.client_email || "",
-        status: "borrador"
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      setShowCreateDialog(false);
-      resetForm();
-      toast.success("Presupuesto creado");
-    },
-  });
-
-  const sendQuoteMutation = useMutation({
-    mutationFn: async (quoteId) => {
-      const quote = sentQuotes.find(q => q.id === quoteId);
-      
-      await base44.entities.Quote.update(quoteId, {
-        status: "enviado",
-        sent_date: new Date().toISOString()
+      const msg = await base44.entities.Message.create({
+        conversation_id: conversationId,
+        sender_id: q.professional_id,
+        recipient_id: q.client_id,
+        content: `📄 Te envío el presupuesto: ${q.title}\n\nNº ${q.quote_number}\nTotal: ${parseFloat(q.total).toFixed(2)}€\nVálido hasta: ${q.valid_until ? new Date(q.valid_until).toLocaleDateString('es-ES') : ''}`,
+        professional_name: q.professional_name,
+        client_name: q.client_name,
+        is_read: false,
+        attachments: [{ url: pdfBase64, name: `${q.quote_number}.pdf`, type: 'application/pdf', size: pdfBase64.length }],
+        quote_request: { quote_amount: q.total, status: 'pending', professional_responded: true }
       });
 
-      await base44.entities.Notification.create({
-        user_id: quote.client_id,
-        type: "new_message",
-        title: "Nuevo presupuesto recibido",
-        message: `${quote.professional_name} te ha enviado un presupuesto: ${quote.title}`,
-        link: createPageUrl("Presupuestos")
+      await base44.entities.Quote.update(q.id, {
+        status: 'enviado',
+        sent_date: new Date().toISOString(),
+        sent_via_chat: true,
+        sent_conversation_id: conversationId,
+        quote_message_id: msg.id
       });
 
-      base44.integrations.Core.SendEmail({
-        to: quote.client_email,
-        subject: `📄 Nuevo presupuesto de ${quote.professional_name} - MisAutónomos`,
-        body: `
-<!DOCTYPE html>
-<html>
-<head><style>body{font-family:Arial;background:#f8fafc}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px}.header{background:linear-gradient(135deg,#10b981,#34d399);padding:30px;text-align:center;color:#fff}.content{padding:30px}.quote-box{background:#d1fae5;border-left:4px solid #10b981;padding:20px;margin:20px 0;border-radius:8px}.button{display:inline-block;background:#10b981;color:#fff;padding:14px 30px;text-decoration:none;border-radius:8px;font-weight:bold}</style></head>
-<body>
-<div class="container">
-  <div class="header"><h1>📄 Nuevo Presupuesto</h1></div>
-  <div class="content">
-    <p>Hola,</p>
-    <div class="quote-box">
-      <p><strong>De:</strong> ${quote.professional_name}</p>
-      <p><strong>Presupuesto:</strong> ${quote.title}</p>
-      <p><strong>Total:</strong> ${quote.total.toFixed(2)}€</p>
-      <p><strong>Plazo:</strong> ${quote.estimated_days} días</p>
-    </div>
-    <p style="text-align:center;margin:30px 0">
-      <a href="https://misautonomos.es/Presupuestos" class="button">Ver presupuesto completo →</a>
-    </p>
-  </div>
-</div>
-</body>
-</html>`,
-        from_name: "MisAutónomos"
+      base44.functions.invoke('sendPushNotification', {
+        userIds: [q.client_id],
+        title: `📄 Nuevo presupuesto de ${q.professional_name}`,
+        message: `${q.title} — ${parseFloat(q.total).toFixed(2)}€`,
+        url: 'https://misautonomos.es/mensajes'
       }).catch(() => {});
-    },
-    onSuccess: () => {
+
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast.success("Presupuesto enviado al cliente");
+      toast.success("Presupuesto enviado por chat");
+    } catch (err) {
+      toast.error("Error al enviar: " + err.message);
+    } finally {
+      setSendingId(null);
     }
-  });
+  };
 
-  const acceptQuoteMutation = useMutation({
-    mutationFn: async (quoteId) => {
-      const quote = receivedQuotes.find(q => q.id === quoteId);
-      
-      await base44.entities.Quote.update(quoteId, {
-        status: "aceptado",
-        accepted_date: new Date().toISOString()
-      });
-
-      await base44.entities.Notification.create({
-        user_id: quote.professional_id,
-        type: "new_message",
-        title: "¡Presupuesto aceptado!",
-        message: `${quote.client_name} ha aceptado tu presupuesto: ${quote.title}`,
-        link: createPageUrl("Presupuestos")
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      setShowAcceptDialog(false);
-      setSelectedQuote(null);
-      toast.success("Presupuesto aceptado");
-    }
-  });
-
-  const rejectQuoteMutation = useMutation({
-    mutationFn: async ({ quoteId, reason }) => {
-      const quote = receivedQuotes.find(q => q.id === quoteId);
-      
-      await base44.entities.Quote.update(quoteId, {
-        status: "rechazado",
-        rejection_reason: reason,
-        rejection_date: new Date().toISOString()
-      });
-
-      await base44.entities.Notification.create({
-        user_id: quote.professional_id,
-        type: "new_message",
-        title: "Presupuesto rechazado",
-        message: `${quote.client_name} ha rechazado tu presupuesto: ${quote.title}`,
-        link: createPageUrl("Presupuestos")
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      setShowRejectDialog(false);
-      setSelectedQuote(null);
-      setRejectionReason("");
-      toast.success("Presupuesto rechazado");
-    }
-  });
-
-  const convertToProjectMutation = useMutation({
-    mutationFn: async (quote) => {
+  const handleConvertToProject = async (q) => {
+    try {
       const project = await base44.entities.Project.create({
         professional_id: user.id,
-        client_contact_id: quote.client_id,
-        client_name: quote.client_name,
-        name: quote.title,
-        description: quote.description,
+        client_contact_id: q.client_contact_id || q.client_id,
+        client_name: q.client_name,
+        name: q.title,
+        description: q.description,
         status: 'planning',
         priority: 'medium',
-        budget: quote.total,
-        total_hours_estimated: quote.estimated_days * 8,
+        budget: q.total,
+        total_hours_estimated: (q.estimated_days || 0) * 8,
         progress_percentage: 0,
         color: '#3B82F6'
       });
-
-      toast.success("Proyecto creado desde presupuesto");
-      navigate(createPageUrl("ProjectDetail") + `?id=${project.id}`);
-    },
-    onSuccess: () => {
-      setShowConvertDialog(false);
-      setSelectedQuote(null);
+      toast.success("Proyecto creado");
+      navigate(`/proyectos/${project.id}`);
+    } catch {
+      toast.error("Error al crear proyecto");
     }
-  });
-
-  const remakeQuoteMutation = useMutation({
-    mutationFn: async (originalQuote) => {
-      return await base44.entities.Quote.create({
-        professional_id: originalQuote.professional_id,
-        professional_name: originalQuote.professional_name,
-        client_id: originalQuote.client_id,
-        client_name: originalQuote.client_name,
-        client_email: originalQuote.client_email,
-        title: `${originalQuote.title} (Revisión v${originalQuote.version + 1})`,
-        description: originalQuote.description,
-        items: originalQuote.items,
-        subtotal: originalQuote.subtotal,
-        iva: originalQuote.iva,
-        total: originalQuote.total,
-        estimated_days: originalQuote.estimated_days,
-        validity_days: originalQuote.validity_days,
-        payment_conditions: originalQuote.payment_conditions,
-        notes: originalQuote.notes,
-        version: originalQuote.version + 1,
-        parent_quote_id: originalQuote.parent_quote_id || originalQuote.id,
-        status: "borrador"
-      });
-    },
-    onSuccess: (newQuote) => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast.success("Nueva versión creada como borrador");
-      setSelectedQuote(newQuote);
-    }
-  });
-
-  const resetForm = () => {
-    setQuoteData({
-      client_id: "",
-      title: "",
-      description: "",
-      items: [{ concept: "", quantity: 1, unit_price: 0, total: 0 }],
-      subtotal: 0,
-      iva: 21,
-      total: 0,
-      estimated_days: 7,
-      validity_days: 30,
-      payment_conditions: "",
-      notes: ""
-    });
   };
 
-  const handleCreateQuote = () => {
-    if (!quoteData.client_id || !quoteData.title || quoteData.items.length === 0) {
-      toast.error("Completa al menos cliente, título y una línea");
-      return;
-    }
+  if (loadingUser) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="w-7 h-7 animate-spin text-gray-400" />
+    </div>
+  );
 
-    createQuoteMutation.mutate(quoteData);
-  };
-
-  const getStatusBadge = (status) => {
-    const config = {
-      borrador: { color: "bg-gray-100 text-gray-800", text: "Borrador", icon: FileText },
-      enviado: { color: "bg-blue-100 text-blue-800", text: "Enviado", icon: Send },
-      aceptado: { color: "bg-green-100 text-green-800", text: "Aceptado", icon: CheckCircle },
-      rechazado: { color: "bg-red-100 text-red-800", text: "Rechazado", icon: XCircle }
-    };
-    const { color, text, icon: Icon } = config[status] || config.borrador;
-    return (
-      <Badge className={`${color} flex items-center gap-1`}>
-        <Icon className="w-3 h-3" />
-        {text}
-      </Badge>
-    );
-  };
-
-  if (loadingUser) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  const quotes = isProfessional ? sentQuotes : receivedQuotes;
-  const isLoading = isProfessional ? loadingSent : loadingReceived;
+  const TABS = ['todos', 'borrador', 'enviado', 'aceptado', 'rechazado'];
+  const TAB_LABELS = { todos: 'Todos', borrador: 'Borrador', enviado: 'Enviado', aceptado: 'Aceptado', rechazado: 'Rechazado' };
 
   return (
     <>
-      <SEOHead 
-        title="Presupuestos - MisAutónomos"
-        description="Gestiona tus presupuestos"
-      />
+      <SEOHead title="Presupuestos — MisAutónomos" description="Crea, envía y gestiona tus presupuestos" />
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-4 md:py-8 px-3 md:px-4 pb-24 md:pb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2 md:gap-3">
-                <FileText className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
-                Presupuestos
-              </h1>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">
-                {isProfessional ? "Crea y envía presupuestos a tus clientes" : "Revisa los presupuestos que has recibido"}
-              </p>
-            </div>
-            {isProfessional && (
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => navigate(createPageUrl("CRM"))}
-                  variant="outline"
-                  size="sm"
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Ver clientes</span>
-                  <span className="sm:hidden">CRM</span>
-                </Button>
-                <Button 
-                  onClick={() => setShowCreateDialog(true)} 
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Nuevo presupuesto</span>
-                  <span className="sm:hidden">Nuevo</span>
-                </Button>
-              </div>
-            )}
+      <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Presupuestos</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {isProfessional ? "Crea, envía y gestiona tus presupuestos" : "Presupuestos recibidos"}
+            </p>
           </div>
-
-          {/* Quick Links */}
           {isProfessional && (
-            <Card className="border-0 shadow-sm bg-white mb-6">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 text-sm">Gestión completa</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Button 
-                    onClick={() => navigate(createPageUrl("CRM"))}
-                    variant="outline"
-                    size="sm"
-                    className="justify-start"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    <span className="truncate">Clientes</span>
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(createPageUrl("Projects"))}
-                    variant="outline"
-                    size="sm"
-                    className="justify-start"
-                  >
-                    <FolderKanban className="w-4 h-4 mr-2" />
-                    <span className="truncate">Proyectos</span>
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(createPageUrl("Calendar"))}
-                    variant="outline"
-                    size="sm"
-                    className="justify-start"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <span className="truncate">Calendario</span>
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(createPageUrl("Invoices"))}
-                    variant="outline"
-                    size="sm"
-                    className="justify-start"
-                  >
-                    <Euro className="w-4 h-4 mr-2" />
-                    <span className="truncate">Facturas</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-            </div>
-          ) : quotes.length === 0 ? (
-            <Card className="border-0 shadow-sm">
-              <CardContent className="py-16 text-center">
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {isProfessional ? "No has creado presupuestos aún" : "No has recibido presupuestos aún"}
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  {isProfessional 
-                    ? "Crea presupuestos profesionales y envíalos a tus clientes" 
-                    : "Cuando un profesional te envíe un presupuesto, aparecerá aquí"}
-                </p>
-                {isProfessional && (
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-                    <Button 
-                      onClick={() => navigate(createPageUrl("CRM"))}
-                      variant="outline"
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      Primero añade clientes
-                    </Button>
-                    <Button 
-                      onClick={() => setShowCreateDialog(true)} 
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Crear primer presupuesto
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {quotes.map(quote => (
-                <Card 
-                  key={quote.id} 
-                  className="cursor-pointer hover:shadow-lg transition-all border-0 shadow-sm active:scale-98" 
-                  onClick={() => setSelectedQuote(quote)}
-                >
-                  <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="font-bold text-base md:text-lg">{quote.title}</h3>
-                          {quote.version > 1 && (
-                            <Badge variant="outline" className="text-xs">v{quote.version}</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">
-                          {isProfessional ? `Cliente: ${quote.client_name}` : `De: ${quote.professional_name}`}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {getStatusBadge(quote.status)}
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            <Euro className="w-3 h-3" />
-                            {quote.total.toFixed(2)}€
-                          </Badge>
-                          {quote.estimated_days && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {quote.estimated_days} días
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-left md:text-right text-sm text-gray-500">
-                        <p>{format(new Date(quote.created_date), "dd/MM/yyyy")}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <button
+              onClick={() => { setEditingQuote(null); setShowForm(true); }}
+              className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition-colors"
+            >
+              <Plus className="w-4 h-4" />Nuevo presupuesto
+            </button>
           )}
         </div>
-      </div>
 
-      {/* DIALOG: DETALLE */}
-      <Dialog open={!!selectedQuote} onOpenChange={() => setSelectedQuote(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedQuote && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <FileText className="w-5 h-5" />
-                  {selectedQuote.title}
-                  {selectedQuote.version > 1 && (
-                    <Badge variant="outline">v{selectedQuote.version}</Badge>
-                  )}
-                </DialogTitle>
-              </DialogHeader>
+        {/* Métricas */}
+        {isProfessional && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <MetricCard label="Total" value={metrics.total} icon={FileText} />
+            <MetricCard label="Enviados" value={metrics.enviados} icon={Send} color="blue" />
+            <MetricCard label="Aceptados" value={metrics.aceptados} icon={CheckCircle} color="green" />
+            <MetricCard label="Importe aceptado" value={`${metrics.totalAceptado.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`} icon={Euro} color="amber" />
+          </div>
+        )}
 
-              <div className="space-y-6">
-                <div className="flex flex-wrap gap-2">
-                  {getStatusBadge(selectedQuote.status)}
-                  <Badge variant="outline">
-                    {isProfessional ? `Cliente: ${selectedQuote.client_name}` : `De: ${selectedQuote.professional_name}`}
-                  </Badge>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
-                  <p><strong>Fecha de creación:</strong> {format(new Date(selectedQuote.created_date), "dd/MM/yyyy HH:mm")}</p>
-                  {selectedQuote.sent_date && (
-                    <p><strong>Enviado:</strong> {format(new Date(selectedQuote.sent_date), "dd/MM/yyyy HH:mm")}</p>
-                  )}
-                  <p><strong>Plazo estimado:</strong> {selectedQuote.estimated_days} días</p>
-                  <p><strong>Validez:</strong> {selectedQuote.validity_days} días</p>
-                </div>
-
-                {selectedQuote.description && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Descripción:</h4>
-                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedQuote.description}</p>
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="font-semibold mb-3">Desglose:</h4>
-                  <div className="border rounded-lg overflow-hidden overflow-x-auto">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 md:px-4 py-2 text-left text-xs font-semibold">Concepto</th>
-                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">Cant.</th>
-                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">P. Unit.</th>
-                          <th className="px-3 md:px-4 py-2 text-right text-xs font-semibold">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedQuote.items.map((item, idx) => (
-                          <tr key={idx} className="border-t">
-                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm">{item.concept}</td>
-                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{item.quantity}</td>
-                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{item.unit_price.toFixed(2)}€</td>
-                            <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right font-semibold">{item.total.toFixed(2)}€</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="bg-gray-50 font-semibold">
-                        <tr className="border-t">
-                          <td colSpan="3" className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">Subtotal:</td>
-                          <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{selectedQuote.subtotal.toFixed(2)}€</td>
-                        </tr>
-                        <tr>
-                          <td colSpan="3" className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">IVA ({selectedQuote.iva}%):</td>
-                          <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-right">{(selectedQuote.total - selectedQuote.subtotal).toFixed(2)}€</td>
-                        </tr>
-                        <tr className="border-t-2">
-                          <td colSpan="3" className="px-3 md:px-4 py-3 text-sm md:text-base text-right">TOTAL:</td>
-                          <td className="px-3 md:px-4 py-3 text-sm md:text-base text-right text-blue-600">{selectedQuote.total.toFixed(2)}€</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-
-                {selectedQuote.payment_conditions && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Condiciones de pago:</h4>
-                    <p className="text-gray-700 text-sm">{selectedQuote.payment_conditions}</p>
-                  </div>
-                )}
-
-                {selectedQuote.notes && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Notas:</h4>
-                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{selectedQuote.notes}</p>
-                  </div>
-                )}
-
-                {selectedQuote.rejection_reason && (
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <h4 className="font-semibold mb-2 text-red-800 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Motivo del rechazo:
-                    </h4>
-                    <p className="text-red-700 text-sm">{selectedQuote.rejection_reason}</p>
-                    <p className="text-red-600 text-xs mt-2">
-                      Rechazado el {format(new Date(selectedQuote.rejection_date), "dd/MM/yyyy HH:mm")}
-                    </p>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t flex flex-col sm:flex-row gap-2">
-                  {isProfessional && selectedQuote.status === "borrador" && (
-                    <Button
-                      onClick={() => sendQuoteMutation.mutate(selectedQuote.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      size="sm"
-                      disabled={sendQuoteMutation.isPending}
-                    >
-                      {sendQuoteMutation.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</>
-                      ) : (
-                        <><Send className="w-4 h-4 mr-2" />Enviar al cliente</>
-                      )}
-                    </Button>
-                  )}
-
-                  {isProfessional && selectedQuote.status === "aceptado" && (
-                    <Button
-                      onClick={() => setShowConvertDialog(true)}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-                      size="sm"
-                    >
-                      <FolderKanban className="w-4 h-4 mr-2" />
-                      Convertir a proyecto
-                    </Button>
-                  )}
-
-                  {isProfessional && selectedQuote.status === "rechazado" && (
-                    <Button
-                      onClick={() => remakeQuoteMutation.mutate(selectedQuote)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700"
-                      size="sm"
-                      disabled={remakeQuoteMutation.isPending}
-                    >
-                      {remakeQuoteMutation.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creando...</>
-                      ) : (
-                        <><RefreshCw className="w-4 h-4 mr-2" />Rehacer presupuesto</>
-                      )}
-                    </Button>
-                  )}
-
-                  {!isProfessional && selectedQuote.status === "enviado" && (
-                    <>
-                      <Button
-                        onClick={() => setShowAcceptDialog(true)}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        size="sm"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Aceptar
-                      </Button>
-                      <Button
-                        onClick={() => setShowRejectDialog(true)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-red-300 hover:bg-red-50"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Rechazar
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* DIALOG: CREAR PRESUPUESTO */}
-      <Dialog open={showCreateDialog} onOpenChange={(open) => {
-        setShowCreateDialog(open);
-        if (!open) resetForm();
-      }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Crear Presupuesto</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm">Cliente *</Label>
-              <Select value={quoteData.client_id} onValueChange={(value) => setQuoteData({ ...quoteData, client_id: value })}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecciona un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {myClients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.client_name} {client.client_email && `(${client.client_email})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {myClients.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  Añade clientes desde tu <button onClick={() => navigate(createPageUrl("CRM"))} className="text-blue-600 underline font-medium">CRM</button> primero
-                </p>
+        {/* Tabs */}
+        <div className="flex gap-0.5 border-b border-gray-100 mb-4 overflow-x-auto scrollbar-hide">
+          {TABS.map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-3 py-2 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${filter === s ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              {TAB_LABELS[s]}
+              {s !== 'todos' && quotes.filter(q => q.status === s).length > 0 && (
+                <span className="ml-1.5 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                  {quotes.filter(q => q.status === s).length}
+                </span>
               )}
+            </button>
+          ))}
+        </div>
+
+        {/* Tabla */}
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-gray-300" /></div>
+        ) : filteredQuotes.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+            <FileText className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">
+              {filter === 'todos' ? (isProfessional ? 'No has creado presupuestos aún' : 'No has recibido presupuestos') : `Sin presupuestos ${TAB_LABELS[filter].toLowerCase()}s`}
+            </p>
+            {isProfessional && filter === 'todos' && (
+              <button onClick={() => { setEditingQuote(null); setShowForm(true); }} className="mt-3 text-sm text-blue-600 hover:underline">
+                Crear el primer presupuesto →
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-4 py-2.5 font-medium text-gray-600">Número</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-gray-600">{isProfessional ? 'Cliente' : 'Profesional'}</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-gray-600">Fecha</th>
+                    <th className="text-right px-4 py-2.5 font-medium text-gray-600">Total</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-gray-600">Estado</th>
+                    <th className="px-4 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredQuotes.map(q => (
+                    <tr key={q.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{q.quote_number || '—'}</td>
+                      <td className="px-4 py-3 text-gray-700">{isProfessional ? q.client_name : q.professional_name}</td>
+                      <td className="px-4 py-3 text-gray-500">{q.issue_date ? new Date(q.issue_date).toLocaleDateString('es-ES') : format(new Date(q.created_date), 'dd/MM/yyyy')}</td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-900">{parseFloat(q.total || 0).toFixed(2)}€</td>
+                      <td className="px-4 py-3 text-center"><StatusBadge status={q.status} /></td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 justify-end items-center">
+                          <button onClick={() => setViewQuote(q)} title="Ver" className="p-1.5 hover:bg-gray-100 rounded">
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          </button>
+                          <button onClick={() => downloadQuotePDF(q)} title="Descargar PDF" className="p-1.5 hover:bg-gray-100 rounded">
+                            <Download className="w-4 h-4 text-gray-500" />
+                          </button>
+                          {isProfessional && q.status === 'borrador' && (
+                            <button
+                              onClick={() => handleSendNow(q)}
+                              title="Enviar por chat"
+                              disabled={sendingId === q.id}
+                              className="p-1.5 hover:bg-blue-50 rounded"
+                            >
+                              {sendingId === q.id ? <Loader2 className="w-4 h-4 text-blue-500 animate-spin" /> : <Send className="w-4 h-4 text-blue-500" />}
+                            </button>
+                          )}
+                          {isProfessional && q.status === 'aceptado' && (
+                            <button onClick={() => handleConvertToProject(q)} title="Convertir a proyecto" className="p-1.5 hover:bg-indigo-50 rounded">
+                              <FolderKanban className="w-4 h-4 text-indigo-500" />
+                            </button>
+                          )}
+                          {isProfessional && (
+                            <button onClick={() => { setEditingQuote(q); setShowForm(true); }} title="Editar" className="p-1.5 hover:bg-gray-100 rounded">
+                              <RefreshCw className="w-4 h-4 text-gray-500" />
+                            </button>
+                          )}
+                          {isProfessional && (
+                            <button onClick={() => setDeleteTarget(q)} title="Eliminar" className="p-1.5 hover:bg-red-50 rounded">
+                              <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div>
-              <Label className="text-sm">Título del presupuesto *</Label>
-              <Input
-                value={quoteData.title}
-                onChange={(e) => setQuoteData({ ...quoteData, title: e.target.value })}
-                placeholder="Ej: Reforma integral cocina"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm">Descripción del servicio</Label>
-              <Textarea
-                value={quoteData.description}
-                onChange={(e) => setQuoteData({ ...quoteData, description: e.target.value })}
-                placeholder="Describe el trabajo a realizar..."
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm">Líneas del presupuesto *</Label>
-                <Button onClick={addItem} variant="outline" size="sm">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Añadir línea
-                </Button>
-              </div>
-
-              <div className="space-y-2 overflow-x-auto">
-                {quoteData.items.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-end min-w-[400px]">
-                    <div className="col-span-5">
-                      <Input
-                        placeholder="Concepto"
-                        value={item.concept}
-                        onChange={(e) => updateItem(idx, 'concept', e.target.value)}
-                        className="text-sm"
-                      />
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-gray-50">
+              {filteredQuotes.map(q => (
+                <div key={q.id} className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
+                      <p className="text-xs text-gray-500">{q.quote_number || '—'} · {isProfessional ? q.client_name : q.professional_name}</p>
                     </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        placeholder="Cant."
-                        value={item.quantity}
-                        onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))}
-                        className="text-sm"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        placeholder="€"
-                        value={item.unit_price}
-                        onChange={(e) => updateItem(idx, 'unit_price', Number(e.target.value))}
-                        className="text-sm"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        readOnly
-                        value={item.total.toFixed(2)}
-                        className="bg-gray-50 font-semibold text-sm"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      {quoteData.items.length > 1 && (
-                        <Button
-                          onClick={() => removeItem(idx)}
-                          variant="ghost"
-                          size="icon"
-                          className="hover:bg-red-50 hover:text-red-600 h-9 w-9"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    <StatusBadge status={q.status} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900">{parseFloat(q.total || 0).toFixed(2)}€</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => downloadQuotePDF(q)} className="p-1.5 hover:bg-gray-100 rounded"><Download className="w-4 h-4 text-gray-500" /></button>
+                      {isProfessional && q.status === 'borrador' && (
+                        <button onClick={() => handleSendNow(q)} disabled={sendingId === q.id} className="p-1.5 hover:bg-blue-50 rounded">
+                          {sendingId === q.id ? <Loader2 className="w-4 h-4 text-blue-500 animate-spin" /> : <Send className="w-4 h-4 text-blue-500" />}
+                        </button>
+                      )}
+                      {isProfessional && (
+                        <button onClick={() => setDeleteTarget(q)} className="p-1.5 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4 text-gray-400" /></button>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-lg mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold">{quoteData.subtotal.toFixed(2)}€</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span>IVA:</span>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={quoteData.iva}
-                      onChange={(e) => {
-                        const newIva = Number(e.target.value);
-                        const { total } = calculateTotals(quoteData.items, newIva);
-                        setQuoteData({ ...quoteData, iva: newIva, total });
-                      }}
-                      className="w-14 h-8 text-right text-sm"
-                    />
-                    <span>%</span>
-                    <span className="font-semibold w-20 text-right">{(quoteData.total - quoteData.subtotal).toFixed(2)}€</span>
-                  </div>
-                </div>
-                <div className="flex justify-between text-base font-bold border-t pt-2">
-                  <span>TOTAL:</span>
-                  <span className="text-blue-600">{quoteData.total.toFixed(2)}€</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm">Días estimados</Label>
-                <Input
-                  type="number"
-                  value={quoteData.estimated_days}
-                  onChange={(e) => setQuoteData({ ...quoteData, estimated_days: Number(e.target.value) })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm">Validez (días)</Label>
-                <Input
-                  type="number"
-                  value={quoteData.validity_days}
-                  onChange={(e) => setQuoteData({ ...quoteData, validity_days: Number(e.target.value) })}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-sm">Condiciones de pago</Label>
-              <Textarea
-                value={quoteData.payment_conditions}
-                onChange={(e) => setQuoteData({ ...quoteData, payment_conditions: e.target.value })}
-                placeholder="Ej: 50% al inicio, 50% al finalizar"
-                rows={2}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm">Notas adicionales</Label>
-              <Textarea
-                value={quoteData.notes}
-                onChange={(e) => setQuoteData({ ...quoteData, notes: e.target.value })}
-                placeholder="Información adicional para el cliente..."
-                rows={2}
-                className="mt-1"
-              />
+              ))}
             </div>
           </div>
+        )}
+      </div>
 
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateQuote}
-              size="sm"
-              disabled={createQuoteMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {createQuoteMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>
-              ) : (
-                <><FileText className="w-4 h-4 mr-2" />Guardar borrador</>
+      {/* Vista detalle */}
+      {viewQuote && (
+        <AlertDialog open={!!viewQuote} onOpenChange={() => setViewQuote(null)}>
+          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                {viewQuote.title}
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={viewQuote.status} />
+                <span className="text-gray-500">{viewQuote.quote_number}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 bg-gray-50 rounded-lg p-3 text-xs">
+                <div><span className="text-gray-500">Cliente:</span> <strong>{viewQuote.client_name}</strong></div>
+                <div><span className="text-gray-500">Fecha:</span> {viewQuote.issue_date || format(new Date(viewQuote.created_date), 'dd/MM/yyyy')}</div>
+                <div><span className="text-gray-500">Válido hasta:</span> {viewQuote.valid_until || '—'}</div>
+                {viewQuote.estimated_days && <div><span className="text-gray-500">Días estimados:</span> {viewQuote.estimated_days}</div>}
+              </div>
+              {viewQuote.description && <p className="text-gray-700">{viewQuote.description}</p>}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border rounded-lg overflow-hidden min-w-[360px]">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Concepto</th>
+                      <th className="px-3 py-2 text-center">Cant.</th>
+                      <th className="px-3 py-2 text-right">Precio</th>
+                      <th className="px-3 py-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(viewQuote.items || []).map((item, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="px-3 py-2">{item.concept}</td>
+                        <td className="px-3 py-2 text-center">{item.quantity}</td>
+                        <td className="px-3 py-2 text-right">{parseFloat(item.unit_price || 0).toFixed(2)}€</td>
+                        <td className="px-3 py-2 text-right font-medium">{parseFloat(item.total || 0).toFixed(2)}€</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 font-medium">
+                    <tr className="border-t"><td colSpan={3} className="px-3 py-1.5 text-right">Subtotal:</td><td className="px-3 py-1.5 text-right">{parseFloat(viewQuote.subtotal || 0).toFixed(2)}€</td></tr>
+                    <tr><td colSpan={3} className="px-3 py-1.5 text-right">IVA:</td><td className="px-3 py-1.5 text-right">{parseFloat(viewQuote.total_iva || 0).toFixed(2)}€</td></tr>
+                    {viewQuote.aplica_retencion && <tr><td colSpan={3} className="px-3 py-1.5 text-right text-red-600">Retención ({viewQuote.porcentaje_retencion}%):</td><td className="px-3 py-1.5 text-right text-red-600">-{parseFloat(viewQuote.total_retencion || 0).toFixed(2)}€</td></tr>}
+                    <tr className="border-t-2"><td colSpan={3} className="px-3 py-2 text-right font-bold">TOTAL:</td><td className="px-3 py-2 text-right font-bold text-green-700">{parseFloat(viewQuote.total || 0).toFixed(2)}€</td></tr>
+                  </tfoot>
+                </table>
+              </div>
+              {viewQuote.rejection_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 font-medium text-xs">Motivo del rechazo:</p>
+                  <p className="text-red-600 text-xs mt-1">{viewQuote.rejection_reason}</p>
+                </div>
               )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cerrar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => downloadQuotePDF(viewQuote)} className="bg-gray-900 hover:bg-gray-800">
+                <Download className="w-4 h-4 mr-1" />Descargar PDF
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
-      {/* DIALOG: CONVERTIR A PROYECTO */}
-      <AlertDialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <FolderKanban className="w-5 h-5 text-indigo-600" />
-              Convertir a proyecto
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Se creará un nuevo proyecto basado en este presupuesto. Podrás gestionarlo desde la sección de Proyectos.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => convertToProjectMutation.mutate(selectedQuote)}
-              className="bg-indigo-600 hover:bg-indigo-700"
-              disabled={convertToProjectMutation.isPending}
-            >
-              {convertToProjectMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creando...</>
-              ) : (
-                "Crear proyecto"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Form modal */}
+      {showForm && (
+        <QuoteForm
+          open={showForm}
+          onClose={() => { setShowForm(false); setEditingQuote(null); }}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['quotes'] })}
+          user={user}
+          initialQuote={editingQuote}
+        />
+      )}
 
-      {/* DIALOG: RECHAZAR */}
-      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+      {/* Confirm delete */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <XCircle className="w-5 h-5" />
-              Rechazar presupuesto
+              <Trash2 className="w-5 h-5" />Eliminar presupuesto
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Por favor indica el motivo del rechazo para que el profesional pueda mejorar su propuesta
+              ¿Seguro que quieres eliminar <strong>{deleteTarget?.title}</strong>? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
-          <div className="my-4">
-            <Label className="text-sm">Motivo del rechazo *</Label>
-            <Textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Ej: El precio es superior a mi presupuesto..."
-              rows={4}
-              className="mt-2"
-            />
-          </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRejectionReason("")}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (!rejectionReason.trim()) {
-                  toast.error("Debes indicar un motivo");
-                  return;
-                }
-                rejectQuoteMutation.mutate({ quoteId: selectedQuote.id, reason: rejectionReason });
-              }}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={rejectQuoteMutation.isPending}
-            >
-              {rejectQuoteMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Rechazando...</>
-              ) : (
-                "Confirmar rechazo"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* DIALOG: ACEPTAR */}
-      <AlertDialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              Aceptar presupuesto
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Al aceptar este presupuesto, el profesional recibirá una notificación y podrá comenzar el trabajo.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {selectedQuote && (
-            <div className="bg-green-50 p-4 rounded-lg my-4">
-              <p className="text-sm mb-2"><strong>Presupuesto:</strong> {selectedQuote.title}</p>
-              <p className="text-sm mb-2"><strong>Total:</strong> {selectedQuote.total.toFixed(2)}€</p>
-              <p className="text-sm"><strong>Plazo:</strong> {selectedQuote.estimated_days} días</p>
-            </div>
-          )}
-
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => acceptQuoteMutation.mutate(selectedQuote.id)}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={acceptQuoteMutation.isPending}
-            >
-              {acceptQuoteMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Aceptando...</>
-              ) : (
-                "Confirmar aceptación"
-              )}
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

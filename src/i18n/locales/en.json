@@ -30,6 +30,7 @@
     "support": "Support",
     "home": "Home",
     "my_clients": "My Clients",
+    "quotes": "Quotes",
     "invoices": "Invoices",
     "visibility": "My Visibility",
     "my_subscription": "My Subscription",
@@ -313,6 +314,14 @@
   "accountType": "Account type",
   "professionalLabel": "Professional",
   "clientLabel": "Client",
+  "quotesPage": {
+    "title": "Quotes",
+    "subtitle": "Create, send and manage your quotes",
+    "newQuote": "New quote",
+    "sentSuccessfully": "Quote sent via chat to client",
+    "quoteAccepted": "Quote accepted",
+    "quoteRejected": "Quote rejected"
+  },
   "notifications": {
     "enable_title": "Don't miss any client",
     "enable_subtitle": "Get instant alerts when someone contacts you or sends a request.",

@@ -1,0 +1,292 @@
+{
+  "name": "Quote",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del aut\u00f3nomo que crea el presupuesto"
+    },
+    "professional_name": {
+      "type": "string",
+      "description": "Nombre del aut\u00f3nomo"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID del cliente destinatario"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "client_email": {
+      "type": "string",
+      "description": "Email del cliente"
+    },
+    "client_nif": {
+      "type": "string",
+      "default": ""
+    },
+    "client_phone": {
+      "type": "string",
+      "default": ""
+    },
+    "client_address": {
+      "type": "string",
+      "default": ""
+    },
+    "client_contact_id": {
+      "type": "string",
+      "description": "ID del contacto CRM (opcional)"
+    },
+    "quote_number": {
+      "type": "string",
+      "description": "N\u00famero \u00fanico del presupuesto (ej: PRES-2026-001)"
+    },
+    "serie": {
+      "type": "string",
+      "description": "Serie (ej: PRES, P)",
+      "default": "PRES"
+    },
+    "numero": {
+      "type": "number",
+      "description": "N\u00famero secuencial"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de emisi\u00f3n"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "V\u00e1lido hasta"
+    },
+    "emisor_razon_social": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_nif": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_direccion": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_telefono": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_email": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_iban": {
+      "type": "string",
+      "default": ""
+    },
+    "emisor_logo_url": {
+      "type": "string",
+      "default": ""
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo del presupuesto"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada del servicio"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "concept": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "discount_percent": {
+            "type": "number",
+            "default": 0
+          },
+          "iva_percent": {
+            "type": "number",
+            "default": 21
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "iva_amount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      },
+      "default": [],
+      "description": "L\u00edneas del presupuesto"
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Subtotal sin impuestos"
+    },
+    "iva": {
+      "type": "number",
+      "default": 21,
+      "description": "Porcentaje de IVA (legacy)"
+    },
+    "total_iva": {
+      "type": "number"
+    },
+    "aplica_retencion": {
+      "type": "boolean",
+      "default": false
+    },
+    "porcentaje_retencion": {
+      "type": "number",
+      "default": 15
+    },
+    "total_retencion": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number",
+      "description": "Total final"
+    },
+    "estimated_days": {
+      "type": "number",
+      "description": "D\u00edas estimados de trabajo"
+    },
+    "validity_days": {
+      "type": "number",
+      "default": 30,
+      "description": "Validez del presupuesto en d\u00edas"
+    },
+    "payment_conditions": {
+      "type": "string",
+      "description": "Condiciones de pago"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales"
+    },
+    "legal_text": {
+      "type": "string",
+      "default": "Este presupuesto tiene una validez de 30 d\u00edas desde la fecha de emisi\u00f3n. Los precios incluyen todos los materiales y mano de obra salvo indicaci\u00f3n contraria."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "borrador",
+        "enviado",
+        "aceptado",
+        "rechazado"
+      ],
+      "default": "borrador",
+      "description": "Estado del presupuesto"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Versi\u00f3n del presupuesto"
+    },
+    "parent_quote_id": {
+      "type": "string",
+      "description": "ID del presupuesto original (si es una revisi\u00f3n)"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "description": "Motivo de rechazo del cliente"
+    },
+    "rejection_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de rechazo"
+    },
+    "accepted_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de aceptaci\u00f3n"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de env\u00edo al cliente"
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL del PDF generado"
+    },
+    "sent_via_chat": {
+      "type": "boolean",
+      "default": false
+    },
+    "sent_conversation_id": {
+      "type": "string",
+      "description": "Conversaci\u00f3n donde se envi\u00f3"
+    },
+    "quote_message_id": {
+      "type": "string",
+      "description": "ID del mensaje de chat asociado"
+    }
+  },
+  "required": [
+    "professional_id",
+    "client_id",
+    "title",
+    "total"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.client_id == auth.user_id || resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || resource.client_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "client_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "parent_quote_id"
+      ]
+    },
+    {
+      "fields": [
+        "quote_message_id"
+      ]
+    }
+  ]
+}

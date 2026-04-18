@@ -1,0 +1,145 @@
+{
+  "name": "InvoicingSettings",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "razon_social": {
+      "type": "string",
+      "description": "Raz\u00f3n social o nombre comercial",
+      "default": ""
+    },
+    "nif_cif": {
+      "type": "string",
+      "description": "NIF/CIF del profesional",
+      "default": ""
+    },
+    "direccion_fiscal": {
+      "type": "string",
+      "description": "Direcci\u00f3n fiscal completa",
+      "default": ""
+    },
+    "codigo_postal": {
+      "type": "string",
+      "description": "C\u00f3digo postal",
+      "default": ""
+    },
+    "ciudad": {
+      "type": "string",
+      "description": "Ciudad",
+      "default": ""
+    },
+    "provincia": {
+      "type": "string",
+      "description": "Provincia",
+      "default": ""
+    },
+    "pais": {
+      "type": "string",
+      "description": "Pa\u00eds",
+      "default": "Espa\u00f1a"
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Tel\u00e9fono de contacto",
+      "default": ""
+    },
+    "email": {
+      "type": "string",
+      "description": "Email de facturaci\u00f3n",
+      "default": ""
+    },
+    "web": {
+      "type": "string",
+      "description": "P\u00e1gina web",
+      "default": ""
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN para pagos",
+      "default": ""
+    },
+    "actividad_economica": {
+      "type": "string",
+      "description": "Tipo de actividad econ\u00f3mica",
+      "default": ""
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL del logo de la empresa",
+      "default": ""
+    },
+    "iva_por_defecto": {
+      "type": "number",
+      "description": "Tipo de IVA por defecto (%)",
+      "default": 21
+    },
+    "aplica_retencion": {
+      "type": "boolean",
+      "description": "Si aplica retenci\u00f3n IRPF por defecto",
+      "default": false
+    },
+    "porcentaje_retencion": {
+      "type": "number",
+      "description": "Porcentaje de retenci\u00f3n IRPF",
+      "default": 0
+    },
+    "plazo_pago_dias": {
+      "type": "number",
+      "description": "Plazo de pago en d\u00edas",
+      "default": 30
+    },
+    "metodo_pago_defecto": {
+      "type": "string",
+      "description": "M\u00e9todo de pago por defecto",
+      "default": "Transferencia bancaria"
+    },
+    "texto_legal": {
+      "type": "string",
+      "description": "Texto legal para el pie de factura",
+      "default": ""
+    },
+    "serie_factura": {
+      "type": "string",
+      "description": "Serie de facturaci\u00f3n (ej: A, B, 2025...)",
+      "default": "A"
+    },
+    "ultimo_numero_factura": {
+      "type": "number",
+      "description": "\u00daltimo n\u00famero de factura emitido",
+      "default": 0
+    },
+    "ultimo_numero_presupuesto": {
+      "type": "number",
+      "description": "\u00daltimo n\u00famero de presupuesto emitido",
+      "default": 0
+    }
+  },
+  "required": [
+    "professional_id"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id"
+      ],
+      "unique": true
+    }
+  ]
+}

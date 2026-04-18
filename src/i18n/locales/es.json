@@ -30,6 +30,7 @@
     "support": "Tickets de soporte",
     "home": "Inicio",
     "my_clients": "Mis clientes",
+    "quotes": "Presupuestos",
     "invoices": "Facturas",
     "visibility": "Mi visibilidad",
     "my_subscription": "Mi suscripción",
@@ -313,6 +314,14 @@
   "accountType": "Tipo de cuenta",
   "professionalLabel": "Profesional",
   "clientLabel": "Cliente",
+  "quotesPage": {
+    "title": "Presupuestos",
+    "subtitle": "Crea, envía y gestiona tus presupuestos",
+    "newQuote": "Nuevo presupuesto",
+    "sentSuccessfully": "Presupuesto enviado por chat al cliente",
+    "quoteAccepted": "Presupuesto aceptado",
+    "quoteRejected": "Presupuesto rechazado"
+  },
   "notifications": {
     "enable_title": "No te pierdas ningún cliente",
     "enable_subtitle": "Recibe avisos instantáneos cuando te contacten o te envíen una solicitud.",
