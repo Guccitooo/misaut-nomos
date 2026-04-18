@@ -49,7 +49,7 @@ import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
-import { openSupportChat } from "@/lib/supportChat";
+
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -457,7 +457,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
       { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
       { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
-      { title: t('supportChat.talkToSupport'), url: null, icon: Headphones, action: () => openSupportChat(user, navigate) },
+      { title: t('supportChat.myTickets'), url: "/soporte", icon: Headphones },
     );
   } else if (user?.user_type === "client") {
     navigationItems.push(
@@ -467,8 +467,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
       { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
       { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
-      { title: t('nav.support'), url: createPageUrl("Tickets"), icon: MessageSquare },
-      { title: t('supportChat.talkToSupport'), url: null, icon: Headphones, action: () => openSupportChat(user, navigate) },
+      { title: t('supportChat.myTickets'), url: "/soporte", icon: Headphones },
     );
   }
 

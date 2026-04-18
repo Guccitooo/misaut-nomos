@@ -28,6 +28,9 @@ const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Jobs = lazy(() => import('./pages/Jobs'));
+const SupportTicketList = lazy(() => import('./pages/SupportTicketList'));
+const SupportNewTicket = lazy(() => import('./pages/SupportNewTicket'));
+const SupportTicketDetail = lazy(() => import('./pages/SupportTicketDetail'));
 
 // Sin spinner de carga — renderizar directamente
 const PageLoader = () => null;
@@ -146,8 +149,9 @@ const AuthenticatedApp = () => {
           <Route path="/mensajes" element={<Pages.Messages />} />
           <Route path="/favoritos" element={<Pages.Favorites />} />
           <Route path="/mi-perfil" element={<Pages.MyProfile />} />
-          <Route path="/soporte" element={<Pages.Tickets />} />
-          <Route path="/soporte/:id" element={<Pages.TicketDetail />} />
+          <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><SupportTicketList /></Suspense>} />
+          <Route path="/soporte/nuevo" element={<Suspense fallback={<PageLoader />}><SupportNewTicket /></Suspense>} />
+          <Route path="/soporte/ticket/:ticketId" element={<Suspense fallback={<PageLoader />}><SupportTicketDetail /></Suspense>} />
           <Route path="/presupuestos" element={<Pages.Presupuestos />} />
           <Route path="/pedir-presupuesto" element={<Pages.RequestQuote />} />
           <Route path="/solicitudes" element={<Pages.QuoteRequests />} />
