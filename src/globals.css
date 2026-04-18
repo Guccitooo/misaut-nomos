@@ -591,7 +591,15 @@ html, body {
 /* ✨ BOTTOM NAV — reservar espacio en móvil con safe area iOS */
 @media (max-width: 767px) {
   main, [role="main"], .flex-1.overflow-auto {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 8px)) !important;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  body {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  #root, #root > div {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
 

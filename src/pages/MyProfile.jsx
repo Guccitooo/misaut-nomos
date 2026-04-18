@@ -680,7 +680,7 @@ export default function MyProfilePage() {
 
   // ================== MAIN RENDER ==================
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
+    <div className="min-h-screen bg-white md:bg-gray-50 pb-20 md:pb-8">
       {/* HEADER MINIMALISTA */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-between gap-3 flex-wrap">
@@ -837,7 +837,7 @@ export default function MyProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm">{t('phone')}</Label>
+                    <Label className="text-sm">Teléfono</Label>
                     <Input
                       value={userData.phone || ""}
                       onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
@@ -847,14 +847,14 @@ export default function MyProfilePage() {
                     />
                   </div>
                   <div>
-                    <Label className="text-sm">{t('city')}</Label>
+                    <Label className="text-sm">Ciudad</Label>
                     <Select
                       value={userData.city || ""}
                       onValueChange={(value) => setUserData({ ...userData, city: value })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={t('selectCityPlaceholder')} />
+                        <SelectValue placeholder="Selecciona tu ciudad" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {Object.values(ciudadesPorProvincia).flat().sort().map((ciudad) => (
@@ -882,11 +882,11 @@ export default function MyProfilePage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <Label className="text-base font-bold text-gray-900 mb-2 block">
-                              {t('manageAvailability')}
+                              Disponibilidad
                             </Label>
                             <p className="text-xs md:text-sm text-gray-700 leading-relaxed">
                               {profile.visible_en_busqueda 
-                                ? t('profileActiveVisible')
+                                ? 'Perfil activo y visible para clientes'
                                 : t('profilePausedHidden')}
                             </p>
                           </div>
@@ -904,10 +904,10 @@ export default function MyProfilePage() {
                               <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 mt-0.5 flex-shrink-0" />
                               <div>
                                 <p className="text-xs md:text-sm font-semibold text-green-900 mb-1">
-                                  {t('activeAndVisible')}
+                                  Activo y visible
                                 </p>
                                 <p className="text-xs text-green-800">
-                                  {t('clientsCanSee')}
+                                  Los clientes pueden ver tu perfil
                                 </p>
                               </div>
                             </div>
