@@ -55,7 +55,7 @@ import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
 // Sidebar optimizado con memo
-const SidebarContentComponent = React.memo(function SidebarContentComponent({ navigationItems, location, user, isProfessional, unreadCount, language, onChangeLanguage, onLogout }) {
+const SidebarContentComponent = React.memo(function SidebarContentComponent({ navigationItems, location, user, isProfessional, isAdmin, isClient, unreadCount, language, onChangeLanguage, onLogout }) {
   return (
     <Sidebar className="border-r border-gray-200 bg-white shadow-sm hidden lg:flex">
       <SidebarHeader className="border-b border-gray-100 p-6">
@@ -505,6 +505,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 location={location}
                 user={user}
                 isProfessional={isProfessional}
+                isAdmin={isAdmin}
+                isClient={isClient}
                 unreadCount={unreadCount}
                 language={language}
                 onChangeLanguage={changeLanguage}
