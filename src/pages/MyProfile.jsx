@@ -869,7 +869,7 @@ export default function MyProfilePage() {
                   <Label className="text-sm">{t('accountType')}</Label>
                   <div className="mt-1">
                     <Badge className="bg-blue-100 text-blue-900">
-                      {isProfessional ? t('professional') : t('client')}
+                      {isProfessional ? 'Profesional' : 'Cliente'}
                     </Badge>
                   </div>
                 </div>

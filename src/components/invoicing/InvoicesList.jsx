@@ -70,32 +70,32 @@ export default function InvoicesList({
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t('searchInvoices') || 'Buscar por nº factura o cliente...'}
+            placeholder="Buscar por nº factura o cliente..."
             className="pl-10"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder={t('allStatuses') || 'Todos los estados'} />
+            <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('allStatuses') || 'Todos'}</SelectItem>
-            <SelectItem value="draft">{t('draft') || 'Borrador'}</SelectItem>
-            <SelectItem value="sent">{t('sent') || 'Emitida'}</SelectItem>
-            <SelectItem value="paid">{t('paid') || 'Pagada'}</SelectItem>
-            <SelectItem value="overdue">{t('overdue') || 'Vencida'}</SelectItem>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="draft">Borrador</SelectItem>
+            <SelectItem value="sent">Emitida</SelectItem>
+            <SelectItem value="paid">Pagada</SelectItem>
+            <SelectItem value="overdue">Vencida</SelectItem>
           </SelectContent>
         </Select>
         <Select value={dateFilter} onValueChange={setDateFilter}>
           <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder={t('period') || 'Periodo'} />
+            <SelectValue placeholder="Todo el periodo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('allTime') || 'Todo'}</SelectItem>
-            <SelectItem value="1">{t('lastMonth') || 'Último mes'}</SelectItem>
-            <SelectItem value="3">{t('last3Months') || 'Últimos 3 meses'}</SelectItem>
-            <SelectItem value="6">{t('last6Months') || 'Últimos 6 meses'}</SelectItem>
-            <SelectItem value="12">{t('lastYear') || 'Último año'}</SelectItem>
+            <SelectItem value="all">Todo el periodo</SelectItem>
+            <SelectItem value="1">Último mes</SelectItem>
+            <SelectItem value="3">Últimos 3 meses</SelectItem>
+            <SelectItem value="6">Últimos 6 meses</SelectItem>
+            <SelectItem value="12">Último año</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -103,7 +103,7 @@ export default function InvoicesList({
       {filtered.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">{t('noInvoicesFound') || 'No se encontraron facturas'}</p>
+          <p className="text-gray-500">No hay facturas</p>
         </Card>
       ) : (
         <div className="space-y-3">

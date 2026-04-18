@@ -321,8 +321,8 @@ export default function InvoicesPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-900">{t('invoices') || 'Facturas'}</h1>
-            <p className="text-gray-500 text-sm mt-0.5">{invoices.length} {t('invoicesTotal') || 'facturas totales'}</p>
+            <h1 className="text-2xl font-extrabold text-gray-900">Facturas</h1>
+            <p className="text-gray-500 text-sm mt-0.5">{invoices.length} facturas en total</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowExportDialog(true)} className="hidden sm:flex">
@@ -340,7 +340,7 @@ export default function InvoicesPage() {
           <TabsList className="bg-white shadow-sm">
             <TabsTrigger value="invoices">
               <FileText className="w-4 h-4 mr-2" />
-              {t('invoices') || 'Facturas'}
+              Facturas
             </TabsTrigger>
             <TabsTrigger value="stats">
               <BarChart3 className="w-4 h-4 mr-2" />
@@ -348,7 +348,7 @@ export default function InvoicesPage() {
             </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings className="w-4 h-4 mr-2" />
-              {t('invoicingData') || 'Datos de facturación'}
+              Datos de facturación
             </TabsTrigger>
           </TabsList>
 

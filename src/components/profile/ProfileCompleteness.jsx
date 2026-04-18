@@ -11,15 +11,15 @@ export default function ProfileCompleteness({ profile, user }) {
     if (!profile) return { percentage: 0, items: [] };
     
     const checks = [
-      { field: 'business_name', label: t('professionalName'), weight: 15 },
-      { field: 'profile_picture', label: t('profilePicture'), weight: 15, check: () => user?.profile_picture },
-      { field: 'cif_nif', label: t('cifNif'), weight: 10 },
-      { field: 'telefono_contacto', label: t('telephoneContact'), weight: 10 },
-      { field: 'descripcion_corta', label: t('shortDescription'), weight: 15 },
-      { field: 'categories', label: t('categoryPlural'), weight: 10, check: () => profile.categories?.length > 0 },
-      { field: 'photos', label: t('photoGallery'), weight: 15, check: () => profile.photos?.length >= 1 },
-      { field: 'provincia', label: t('location'), weight: 5 },
-      { field: 'formas_pago', label: t('paymentMethods'), weight: 5, check: () => profile.formas_pago?.length > 0 },
+      { field: 'business_name', label: 'Nombre comercial', weight: 15 },
+      { field: 'profile_picture', label: 'Foto de perfil', weight: 15, check: () => user?.profile_picture },
+      { field: 'cif_nif', label: 'CIF/NIF', weight: 10 },
+      { field: 'telefono_contacto', label: 'Teléfono de contacto', weight: 10 },
+      { field: 'descripcion_corta', label: 'Descripción corta', weight: 15 },
+      { field: 'categories', label: 'Categorías', weight: 10, check: () => profile.categories?.length > 0 },
+      { field: 'photos', label: 'Galería de fotos', weight: 15, check: () => profile.photos?.length >= 1 },
+      { field: 'provincia', label: 'Ubicación', weight: 5 },
+      { field: 'formas_pago', label: 'Métodos de pago', weight: 5, check: () => profile.formas_pago?.length > 0 },
     ];
     
     const items = checks.map(check => ({

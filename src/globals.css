@@ -596,10 +596,17 @@ html, body {
   body {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
+    background: white !important;
+  }
+  main {
+    background: white !important;
   }
   #root, #root > div {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
+  }
+  footer, .site-footer {
+    display: none !important;
   }
 }
 

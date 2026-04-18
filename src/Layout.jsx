@@ -756,7 +756,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </header>
               )}
 
-              <header className="bg-white border-b border-gray-200 flex w-full lg:hidden sticky top-0 z-20" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+              <header className="bg-white border-b border-gray-200 flex w-full lg:hidden sticky top-0 z-30" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
                 <div className="flex items-center justify-between w-full">
                   {/* Izquierda: siempre hamburguesa */}
                   <button
