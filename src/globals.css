@@ -742,3 +742,10 @@ html {
     max-width: 100vw !important;
   }
 }
+
+/* ✨ OCULTAR FOOTER EN MÓVIL — evita hueco gris entre footer y bottom nav */
+@media (max-width: 767px) {
+  footer {
+    display: none !important;
+  }
+}
