@@ -22,6 +22,7 @@ import SEOHead from "../components/seo/SEOHead";
 import FileAttachment from "../components/messages/FileAttachment";
 import QuoteRequest from "../components/messages/QuoteRequest";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
+import { notifyUser, pushTemplates } from "@/services/pushNotifications";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -613,14 +614,17 @@ export default function MessagesPage() {
       await loadMessages();
       scrollToBottom(true);
 
-      // Notify
-      base44.entities.Notification.create({
-        user_id: otherUserId,
-        type: "new_message",
-        title: "Nuevo mensaje",
-        message: `Tienes un nuevo mensaje`,
-        link: `/messages?conv=${selectedConvId}`,
-      }).catch(() => {});
+      // Push + notificación en BD al destinatario
+      const senderName = isProfessional
+        ? (profName || user.full_name || 'Profesional')
+        : (clientName || user.full_name || 'Cliente');
+      notifyUser({
+        userId: otherUserId,
+        type: 'new_message',
+        ...pushTemplates.newMessage(senderName, msgData.content),
+        url: `https://misautonomos.es/mensajes?conv=${selectedConvId}`,
+        data: { type: 'new_message', conversationId: selectedConvId },
+      });
 
       setTimeout(() => textareaRef.current?.focus(), 100);
     } catch (err) {
@@ -698,6 +702,14 @@ export default function MessagesPage() {
     const newAvg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
     const [prof] = await base44.entities.ProfessionalProfile.filter({ user_id: selectedOtherUserId });
     if (prof) await base44.entities.ProfessionalProfile.update(prof.id, { average_rating: newAvg, total_reviews: allReviews.length });
+    // Notificar al profesional de la nueva reseña
+    notifyUser({
+      userId: selectedOtherUserId,
+      type: 'new_review',
+      ...pushTemplates.newReview(user.full_name || 'Un cliente', Math.round(avg)),
+      data: { type: 'new_review' },
+    });
+
     setExistingReview(true);
     setShowReviewDialog(false);
     setReviewData({ rapidez: 0, comunicacion: 0, calidad: 0, precio_satisfaccion: 0, comment: "" });
