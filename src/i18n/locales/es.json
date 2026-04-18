@@ -74,6 +74,15 @@
     "filters": "Filtros",
     "filters_advanced": "Filtros avanzados"
   },
+  "allCategories": "Todas las categorías",
+  "allProvinces": "Todas las provincias",
+  "allCities": "Todas las ciudades",
+  "advancedFilters": "Filtros avanzados",
+  "searchPlaceholder": "Buscar profesional, servicio...",
+  "clearFilters": "Limpiar filtros",
+  "noResults": "No hay resultados",
+  "noResultsHint": "Prueba con otra búsqueda o categoría",
+  "verifiedDirectNoFees": "Verificados · Contacto directo · Sin comisiones",
   "profile_card": {
     "contact": "Contactar",
     "view_profile": "Ver perfil",

@@ -74,6 +74,15 @@
     "filters": "Filters",
     "filters_advanced": "Advanced filters"
   },
+  "allCategories": "All categories",
+  "allProvinces": "All provinces",
+  "allCities": "All cities",
+  "advancedFilters": "Advanced filters",
+  "searchPlaceholder": "Search professional, service...",
+  "clearFilters": "Clear filters",
+  "noResults": "No results",
+  "noResultsHint": "Try another search or category",
+  "verifiedDirectNoFees": "Verified · Direct contact · No fees",
   "profile_card": {
     "contact": "Contact",
     "view_profile": "View profile",
