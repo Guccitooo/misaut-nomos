@@ -605,8 +605,19 @@ html, body {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
   }
-  footer, .site-footer {
-    display: none !important;
+  /* Footer visible en móvil, sin margen extra */
+  footer {
+    margin-top: 0 !important;
+  }
+
+  /* Main: no forzar altura mínima para evitar hueco gris */
+  main {
+    min-height: auto !important;
+  }
+
+  /* Espacio al final del body para la bottom nav fija */
+  body {
+    padding-bottom: 64px !important;
   }
 }
 
