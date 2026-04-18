@@ -271,50 +271,52 @@ export default function MessagesPage() {
       }
     });
 
-    // Determine contact name for each conversation.
-    // Buscamos en todos los mensajes el nombre del interlocutor (otherUserId).
-    // Los mensajes guardan professional_name y client_name — uno de ellos es el otro usuario.
-    // Para saber cuál, comparamos sender_id con el otherUserId:
-    //   - Si el otro fue sender → su nombre está en professional_name o client_name (el que tenga valor)
-    //   - Adicionalmente: si YO soy profesional, el otro es cliente → client_name
-    //                     si YO soy cliente, el otro es profesional → professional_name
+    // Determine contact name: buscar en los mensajes el nombre del interlocutor (otherUserId).
+    // Estrategia: mirar mensajes donde el OTHER fue el sender — su nombre estará en professional_name o client_name.
+    // Si no hay mensajes del otro, mirar mensajes míos — también guardan ambos nombres.
+    // Prioridad final: profilesCache con datos reales del User entity.
     const myId = user?.id;
-    const myUserType = user?.user_type;
     Object.values(convMap).forEach(conv => {
       const otherUserId = conv.otherUserId;
       
-      // Buscar en todos los mensajes
+      // 1. Buscar en mensajes donde el otro fue sender (nombre más fiable)
       for (const msg of conv.messages) {
-        let name = null;
-        
-        if (myUserType === 'professionnel') {
-          // Soy profesional → el otro es cliente → client_name
-          name = msg.client_name || null;
-        } else if (myUserType === 'client') {
-          // Soy cliente → el otro es profesional → professional_name
-          name = msg.professional_name || null;
-        } else {
-          // Admin u otro: usar cualquier nombre disponible del otro usuario
-          if (msg.sender_id === otherUserId) {
-            name = msg.professional_name || msg.client_name || null;
-          } else {
-            // El otro fue recipient — buscar el campo opuesto al sender
-            name = msg.professional_name || msg.client_name || null;
-          }
-        }
-        
+        if (msg.sender_id !== otherUserId) continue;
+        // El otro envió este mensaje — su nombre está en professional_name o client_name
+        // Usamos el que NO sea el nombre del usuario actual
+        const name = msg.professional_name || msg.client_name || null;
         if (name && name.trim()) {
           conv.contactName = name.trim();
           break;
         }
       }
-      
+
+      // 2. Si no encontramos nada, buscar en mensajes míos (también guardan ambos nombres)
       if (!conv.contactName) {
-        const cached = profilesCache[conv.otherUserId];
-        if (cached) {
-          conv.contactName = cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
+        for (const msg of conv.messages) {
+          if (msg.sender_id !== myId) continue;
+          // Yo envié este mensaje — los campos professional_name/client_name corresponden al otro
+          // Si soy profesional → client_name es el nombre del cliente (el otro)
+          // Si soy cliente → professional_name es el nombre del pro (el otro)
+          const myType = user?.user_type;
+          const name = myType === 'professionnel' 
+            ? (msg.client_name || msg.professional_name)
+            : (msg.professional_name || msg.client_name);
+          if (name && name.trim()) {
+            conv.contactName = name.trim();
+            break;
+          }
         }
       }
+
+      // 3. Fallback: profilesCache (buscado via User/ProfessionalProfile entity)
+      if (!conv.contactName) {
+        const cached = profilesCache[otherUserId];
+        if (cached) {
+          conv.contactName = cached.business_name || cached.full_name || cached.email?.split('@')[0] || null;
+        }
+      }
+
       conv.contactName = conv.contactName || "...";
     });
 
@@ -756,11 +758,10 @@ export default function MessagesPage() {
     <>
       <SEOHead title="Mensajes - MisAutónomos" description="Mensajes y conversaciones" />
 
-      <div style={{ marginBottom: 0, paddingBottom: 0 }}>
       <div className="messages-container flex bg-white overflow-hidden">
 
         {/* ── Columna izquierda: Lista de conversaciones ── */}
-        <div className={`flex-shrink-0 w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-shrink-0 w-full md:w-80 bg-white border-r border-gray-200 flex flex-col min-h-0 ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
           <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-5 h-5 text-blue-600" />
@@ -781,7 +782,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {loadingMessages ? (
               <ConvSkeleton />
             ) : filteredConversations.length === 0 ? (
@@ -1117,7 +1118,6 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
-      </div>
       </div>
 
       {/* ── Quote Dialog ── */}

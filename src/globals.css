@@ -660,12 +660,24 @@ html, body {
 
 /* ─── MESSAGES PAGE — altura correcta ───────────────────────── */
 .messages-container {
+  /* móvil: descontamos header (56px) + bottom nav (64px) */
   height: calc(100dvh - 56px - 64px);
+  overflow: hidden;
+  /* anular el padding-bottom global del main */
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 @media (min-width: 768px) {
   .messages-container {
+    /* desktop: solo header (64px) */
     height: calc(100dvh - 64px);
   }
+}
+
+/* Anular el padding-bottom global del main cuando hay messages-container */
+main:has(.messages-container),
+.flex-1.overflow-y-auto:has(.messages-container) {
+  padding-bottom: 0 !important;
 }
 
 /* ✨ NATIVE-LIKE PAGE TRANSITIONS */
