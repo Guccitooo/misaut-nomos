@@ -19,6 +19,14 @@ i18n
       order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'language'
+    },
+    parseMissingKeyHandler: (key) => {
+      const part = key.split('.').pop() || key;
+      return part
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/_/g, ' ')
+        .trim()
+        .replace(/^\w/, c => c.toUpperCase());
     }
   });
 
