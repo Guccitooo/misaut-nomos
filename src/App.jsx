@@ -139,6 +139,7 @@ const AuthenticatedApp = () => {
           <Route path="/privacidad" element={<Pages.PrivacyPolicy />} />
           <Route path="/terminos" element={<Pages.TermsConditions />} />
           <Route path="/cookies" element={<Pages.CookiePolicy />} />
+          <Route path="/configuracion-cookies" element={<Pages.CookiePreferences />} />
           <Route path="/aviso-legal" element={<Pages.LegalNotice />} />
 
           {/* ===== RUTAS DE CLIENTE ===== */}

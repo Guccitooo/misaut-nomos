@@ -52,6 +52,7 @@ const UserTypeSelection  = lazy(() => import('./pages/UserTypeSelection'));
 
 // 🟢 PÁGINAS ESTÁTICAS — ligeras, pero no críticas
 const CookiePolicy       = lazy(() => import('./pages/CookiePolicy'));
+const CookiePreferences  = lazy(() => import('./pages/CookiePreferences'));
 const FAQ                = lazy(() => import('./pages/FAQ'));
 const FAQDetail          = lazy(() => import('./pages/FAQDetail'));
 const HelpCenter         = lazy(() => import('./pages/HelpCenter'));
@@ -74,6 +75,7 @@ export const PAGES = {
     "ClientDetail": ClientDetail,
     "ClientOnboarding": ClientOnboarding,
     "CookiePolicy": CookiePolicy,
+    "CookiePreferences": CookiePreferences,
     "DashboardProInfo": DashboardProInfo,
     "FAQ": FAQ,
     "FAQDetail": FAQDetail,

@@ -401,5 +401,24 @@
     "needHelp": "Need help?",
     "helpDescription": "Our team responds within 24 hours. Write to us and we'll help you with anything related to your account, payments, invoices, or platform functionality.",
     "startSupportChat": "Start support chat"
+  },
+  "cookies": {
+    "bannerTitle": "We use cookies",
+    "bannerText": "We use first-party and third-party cookies to improve your experience, analyze platform usage, and personalize content. You can accept all, reject optional ones, or customize your preferences.",
+    "moreInfo": "More information",
+    "rejectAll": "Reject optional",
+    "customize": "Customize",
+    "acceptAll": "Accept all",
+    "preferencesTitle": "Cookie preferences",
+    "savePreferences": "Save preferences",
+    "settingsSaved": "Preferences saved",
+    "essential": "Essential",
+    "essentialDesc": "Required for basic functionality (session, language, security). Cannot be disabled.",
+    "analytics": "Analytics",
+    "analyticsDesc": "Help us understand how you use the platform to improve it (Google Analytics, anonymous statistics).",
+    "marketing": "Marketing",
+    "marketingDesc": "Allow us to show you relevant ads on other websites based on your interests.",
+    "alwaysActive": "Always active",
+    "managePrefs": "Manage cookie preferences"
   }
 }
