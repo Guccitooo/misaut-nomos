@@ -680,83 +680,48 @@ export default function MyProfilePage() {
 
   // ================== MAIN RENDER ==================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 md:p-8 pb-24 md:pb-8">
-      <div className="max-w-5xl mx-auto">
-        {/* HEADER */}
-        <div className="mb-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('myProfile')}</h1>
-              <p className="text-sm md:text-base text-gray-600">
-                {isProfessional ? t('manageYourProfile') : t('manageYourInformation')}
-              </p>
-            </div>
-            
-            {/* EDIT/SAVE BUTTONS - Sticky on mobile */}
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <Button 
-                  onClick={() => setIsEditing(true)} 
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 h-9 md:h-10"
-                >
-                  <Pencil className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">{t('editProfile')}</span>
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setIsEditing(false);
-                      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
-                    }}
-                    className="h-9 md:h-10"
-                  >
-                    <X className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">{t('cancel')}</span>
-                  </Button>
-                  <Button 
-                    onClick={handleSave}
-                    size="sm"
-                    disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 h-9 md:h-10"
-                  >
-                    {updateProfileMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 md:mr-2" />
-                        <span className="hidden md:inline">{t('saveChanges')}</span>
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-            </div>
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
+      {/* HEADER MINIMALISTA */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{t('myProfileTitle') || 'Mi Perfil'}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{isProfessional ? (t('manageYourProfile') || 'Gestiona tu perfil público') : (t('manageYourInformation') || 'Gestiona tu información')}</p>
           </div>
-
-          {/* VISIBILITY STATUS */}
-          {profile && (
-            <div className="flex flex-wrap gap-2">
-              {isProfileVisible ? (
-                <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  ✓ {t('visibleToClients')}
-                </Badge>
-              ) : (
-                <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
-                  <EyeOff className="w-3 h-3" />
-                  ⚠ {t('hiddenProfile')}
-                </Badge>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {profile && isProfessional && (
+              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg ${isProfileVisible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                {isProfileVisible ? <Eye className="w-3.5 h-3.5"/> : <EyeOff className="w-3.5 h-3.5"/>}
+                {isProfileVisible ? (t('publishedProfile') || 'Perfil publicado') : (t('hiddenProfile') || 'Perfil oculto')}
+              </span>
+            )}
+            {!isEditing ? (
+              <button onClick={() => setIsEditing(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors">
+                <Pencil className="w-3.5 h-3.5"/>
+                <span className="hidden sm:inline">{t('editProfile') || 'Editar perfil'}</span>
+              </button>
+            ) : (
+              <>
+                <button onClick={() => { setIsEditing(false); queryClient.invalidateQueries({ queryKey: ['myProfile'] }); }}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                  <X className="w-3.5 h-3.5"/>
+                  <span className="hidden sm:inline">{t('cancel') || 'Cancelar'}</span>
+                </button>
+                <button onClick={handleSave} disabled={updateUserMutation.isPending || updateProfileMutation.isPending}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors disabled:opacity-50">
+                  {updateProfileMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Save className="w-3.5 h-3.5"/>}
+                  <span className="hidden sm:inline">{t('saveChanges') || 'Guardar cambios'}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-3 md:px-4 pt-4">
 
         {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
+          <Alert className="mb-4 bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               {t('profileUpdatedSuccess')}
@@ -805,95 +770,33 @@ export default function MyProfilePage() {
 
         {/* TABS */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          {/* Tabs list - optimizado para móvil con scroll horizontal */}
-          <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-blue-50 -mx-3 px-3 pt-2 pb-3 md:mx-0 md:px-0 md:static">
-            <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
-              <TabsList className={`inline-flex w-max md:grid md:w-full ${isProfessional ? 'md:grid-cols-4 lg:grid-cols-8' : 'md:grid-cols-2'} bg-white shadow-md rounded-xl p-1 gap-1`}>
-                <TabsTrigger 
-                  value="personal" 
-                  className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('tabPersonal')}</span>
-                  <span className="sm:hidden">Personal</span>
-                </TabsTrigger>
-                
-                {!isProfessional && (
-                  <TabsTrigger
-                    value="reviews"
-                    className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                  >
-                    <Star className="w-4 h-4" />
-                    <span>Mis reseñas</span>
-                    {myReviewsAsClient.length > 0 && (
-                      <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-bold">
-                        {myReviewsAsClient.length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                )}
-
-                {isProfessional && (
-                  <>
-                    <TabsTrigger 
-                      value="business" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Building2 className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t('tabProfile')}</span>
-                      <span className="sm:hidden">Negocio</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="skills" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Award className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t('tabSkills')}</span>
-                      <span className="sm:hidden">Skills</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="services" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Briefcase className="w-4 h-4" />
-                      <span className="hidden sm:inline">Servicios</span>
-                      <span className="sm:hidden">Servicios</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="portfolio" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t('tabPortfolio')}</span>
-                      <span className="sm:hidden">Portfolio</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="availability" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Clock className="w-4 h-4" />
-                      <span className="hidden sm:inline">Disponibilidad</span>
-                      <span className="sm:hidden">Horario</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="faq" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t('tabFAQ')}</span>
-                      <span className="sm:hidden">FAQ</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="invoicing" 
-                      className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=inactive]:text-gray-600 transition-all"
-                    >
-                      <Euro className="w-4 h-4" />
-                      <span className="hidden sm:inline">{t('tabInvoicing')}</span>
-                      <span className="sm:hidden">Factura</span>
-                    </TabsTrigger>
-                  </>
-                )}
-              </TabsList>
+          {/* Tabs minimalistas con subrayado */}
+          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex border-b border-gray-100">
+                {[
+                  { value: 'personal', icon: User, label: t('tabPersonal') || 'Información' },
+                  ...(!isProfessional ? [{ value: 'reviews', icon: Star, label: 'Mis reseñas', badge: myReviewsAsClient.length > 0 ? myReviewsAsClient.length : null }] : []),
+                  ...(isProfessional ? [
+                    { value: 'business', icon: Building2, label: t('tabProfile') || 'Perfil público' },
+                    { value: 'skills', icon: Award, label: t('tabSkills') || 'Especialidades' },
+                    { value: 'services', icon: Briefcase, label: t('tabServices') || 'Servicios' },
+                    { value: 'portfolio', icon: Camera, label: t('tabPortfolio') || 'Trabajos' },
+                    { value: 'availability', icon: Clock, label: t('tabAvailability') || 'Disponibilidad' },
+                    { value: 'faq', icon: BarChart3, label: t('tabFAQ') || 'FAQ' },
+                    { value: 'invoicing', icon: Euro, label: t('tabInvoicing') || 'Facturación' },
+                  ] : [])
+                ].map(({ value, icon: Icon, label, badge }) => (
+                  <button key={value} onClick={() => setActiveTab(value)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex-shrink-0 ${
+                      activeTab === value ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'
+                    }`}>
+                    <Icon className="w-4 h-4"/>
+                    <span className="hidden sm:inline">{label}</span>
+                    {badge && <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-bold">{badge}</span>}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1774,6 +1677,8 @@ export default function MyProfilePage() {
           )}
         </Tabs>
       </div>
+
+      </div>{/* end max-w-5xl */}
 
       {/* DELETE ACCOUNT DIALOG */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
