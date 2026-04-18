@@ -769,9 +769,9 @@ html {
   }
 }
 
-/* ✨ OCULTAR FOOTER EN MÓVIL — evita hueco gris entre footer y bottom nav */
+/* Footer en móvil: visible pero con padding para no quedar tapado por el bottom nav */
 @media (max-width: 767px) {
   footer {
-    display: none !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
