@@ -28,9 +28,9 @@ const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Jobs = lazy(() => import('./pages/Jobs'));
-const SupportTicketList = lazy(() => import('./pages/SupportTicketList'));
-const SupportNewTicket = lazy(() => import('./pages/SupportNewTicket'));
-const SupportTicketDetail = lazy(() => import('./pages/SupportTicketDetail'));
+const SupportTicketList = lazy(() => import('./pages/SupportTicketList.jsx'));
+const SupportNewTicket = lazy(() => import('./pages/SupportNewTicket.jsx'));
+const SupportTicketDetail = lazy(() => import('./pages/SupportTicketDetail.jsx'));
 
 // Sin spinner de carga — renderizar directamente
 const PageLoader = () => null;
