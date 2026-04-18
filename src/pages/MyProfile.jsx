@@ -1678,8 +1678,6 @@ export default function MyProfilePage() {
         </Tabs>
       </div>
 
-      </div>{/* end max-w-5xl */}
-
       {/* DELETE ACCOUNT DIALOG */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="max-w-md">
