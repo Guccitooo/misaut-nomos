@@ -817,7 +817,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), icon: Home },
                       { title: 'Chats', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
                       { title: 'Clientes', url: "/mis-clientes", icon: Users },
-                      { title: 'Facturas', url: createPageUrl("Invoices"), icon: FileText },
+                      { title: 'Presupuestos', url: "/presupuestos", icon: FileText },
                       { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
                     ] : [
                       { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
