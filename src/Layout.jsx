@@ -475,7 +475,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     navigationItems.push(
       { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
       { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
-      { title: t('nav.admin_tickets'), url: createPageUrl("AdminTickets"), icon: MessageSquare },
+      { title: t('supportChat.supportInbox'), url: "/admin/soporte", icon: Headphones },
       { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
     );
   }
@@ -824,9 +824,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   </PageTransitions>
                 </Suspense>
 
-                <Suspense fallback={null}>
-                  <Footer />
-                </Suspense>
+                {!location.pathname.startsWith("/soporte") && (
+                  <Suspense fallback={null}>
+                    <Footer />
+                  </Suspense>
+                )}
               </div>
 
               {/* Bottom nav móvil — solo visible en móvil (< 768px) */}

@@ -85,7 +85,7 @@ export default function SupportChat() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] md:h-auto bg-white">
+    <div className="flex flex-col h-[calc(100dvh-56px)] md:h-[calc(100vh-56px)] bg-white">
       {/* Header */}
       <div className="border-b border-gray-100 px-4 py-3 flex items-center gap-3 bg-white sticky top-0">
         <button
