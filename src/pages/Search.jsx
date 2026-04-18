@@ -115,7 +115,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   return (
     <div 
       onClick={onClick}
-      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full"
+      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full overflow-hidden"
     >
       {/* Header azul PEQUEÑO — solo desktop */}
       <div className="hidden md:block h-12 bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0">
@@ -187,14 +187,14 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
         )}
 
         {/* Botones compactos — siempre al fondo */}
-        <div className="flex gap-1.5 mt-auto pt-2" onClick={e => e.stopPropagation()}>
+        <div className="flex gap-1.5 mt-auto pt-2 w-full min-w-0" onClick={e => e.stopPropagation()}>
           <button
             onClick={handleContactDirect}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+            className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 text-xs font-medium flex items-center justify-center gap-1 transition-colors overflow-hidden"
             aria-label={`Contactar con ${profile.business_name}`}
           >
-            <MessageSquare className="w-3 h-3" />
-            Contactar
+            <MessageSquare className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">Contactar</span>
           </button>
           
           {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
@@ -203,7 +203,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
               target="_blank"
               rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
-              className="w-8 h-8 bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-8 h-8 min-w-[2rem] bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
               aria-label={`Contactar a ${profile.business_name} por WhatsApp`}
             >
               <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
@@ -214,10 +214,10 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
           {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
             <div className="relative group flex-shrink-0" onClick={e => e.stopPropagation()}>
-              <a href={`tel:${profile.telefono_contacto}`} className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors md:hidden" aria-label={`Llamar a ${profile.business_name} al ${profile.telefono_contacto}`}>
+              <a href={`tel:${profile.telefono_contacto}`} className="w-8 h-8 min-w-[2rem] bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors md:hidden" aria-label={`Llamar a ${profile.business_name} al ${profile.telefono_contacto}`}>
                 <Phone className="w-3.5 h-3.5 text-gray-600" />
               </a>
-              <button className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors hidden md:flex" aria-label={`Teléfono: ${profile.telefono_contacto}`}>
+              <button className="w-8 h-8 min-w-[2rem] bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors hidden md:flex" aria-label={`Teléfono: ${profile.telefono_contacto}`}>
                 <Phone className="w-3.5 h-3.5 text-gray-600" />
               </button>
               <div className="absolute bottom-10 right-0 bg-gray-900 text-white text-xs rounded-lg px-2 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
