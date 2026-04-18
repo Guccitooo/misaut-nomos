@@ -637,6 +637,14 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* Ocultar bottom nav cuando hay un modal abierto */
+@media (max-width: 767px) {
+  body.modal-open .mobile-bottom-nav,
+  body.modal-open [data-role="bottom-nav"] {
+    display: none !important;
+  }
+}
+
 /* Bottom nav: oculto por defecto, solo visible en móvil (< 768px) */
 .mobile-bottom-nav {
   display: none !important;

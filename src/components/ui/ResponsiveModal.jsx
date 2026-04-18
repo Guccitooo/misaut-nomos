@@ -1,28 +1,42 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
 /**
  * Modal responsive:
- * - Móvil: ocupa toda la pantalla, aparece desde abajo (bottom-sheet style)
+ * - Móvil: ocupa TODA la pantalla (100dvh), oculta la bottom nav automáticamente
  * - Desktop (md+): modal centrado con max-w-3xl
  */
 export default function ResponsiveModal({ isOpen, onClose, title, children, footer, maxWidth = "md:max-w-3xl" }) {
+  // Ocultar bottom nav y bloquear scroll del body mientras el modal está abierto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay — z-index 60 para estar por encima de la bottom nav (z-40) */}
       <div
-        className="fixed inset-0 bg-black/50 z-50"
+        className="fixed inset-0 bg-black/50 z-[60]"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal container */}
-      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none">
+      <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center pointer-events-none">
         <div
-          className={`bg-white w-full ${maxWidth} md:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col pointer-events-auto`}
-          style={{ maxHeight: '95dvh' }}
+          className={`bg-white w-full ${maxWidth} rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col pointer-events-auto h-[100dvh] md:h-auto md:max-h-[90vh]`}
           onClick={e => e.stopPropagation()}
         >
           {/* Header fijo */}
@@ -44,11 +58,11 @@ export default function ResponsiveModal({ isOpen, onClose, title, children, foot
             {children}
           </div>
 
-          {/* Footer fijo */}
+          {/* Footer fijo — siempre pegado al bottom, respetando safe-area en iPhone */}
           {footer && (
             <div
-              className="border-t border-gray-100 px-4 md:px-6 py-3 flex flex-wrap gap-2 flex-shrink-0"
-              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
+              className="border-t border-gray-100 px-4 md:px-6 py-3 flex flex-wrap gap-2 flex-shrink-0 bg-white"
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
             >
               {footer}
             </div>

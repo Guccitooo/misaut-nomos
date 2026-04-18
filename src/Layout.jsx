@@ -817,6 +817,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               {/* Bottom nav móvil — solo visible en móvil (< 768px) */}
               <nav
                 className="mobile-bottom-nav"
+                data-role="bottom-nav"
                 role="navigation"
                 aria-label="Navegación principal"
                 style={{
