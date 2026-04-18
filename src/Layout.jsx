@@ -468,8 +468,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   // Eliminar el inline style evita: CSS duplicado, conflictos de especificidad y ~20KB extra en el bundle.
   return (
     <SidebarProvider style={{ '--sidebar-width': '16rem', '--sidebar-width-mobile': '0px' }}>
-        <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50" style={{ marginLeft: 0, width: '100%', maxWidth: '100vw' }}>
-          <div className="flex flex-1" style={{ minWidth: 0 }}>
+        <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50" style={{ marginLeft: 0, width: '100%', maxWidth: '100vw', overflow: 'visible' }}>
+          <div className="flex flex-1" style={{ minWidth: 0, overflow: 'visible' }}>
             {user && shouldShowSidebar() && (
               <SidebarContentComponent 
                 navigationItems={navigationItems}
@@ -690,7 +690,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </>
             )}
 
-            <main className="flex-1 flex flex-col min-h-0 min-w-0" style={{ width: '100%', maxWidth: '100vw', overflow: 'hidden' }}>
+            <main className="flex-1 flex flex-col min-h-0 min-w-0" style={{ width: '100%', maxWidth: '100vw', overflow: 'visible' }}>
               {!user && (
                   <header className="bg-white border-b border-gray-200 px-6 py-4 hidden lg:block sticky top-0 z-20 shadow-sm will-change-transform">
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -787,7 +787,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 </div>
               </header>
 
-              <div className="flex-1 overflow-y-auto pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
+              <div className="flex-1 pb-16 md:pb-0 transition-opacity duration-150 ease-in-out">
                 <Suspense fallback={null}>
                   <PageTransitions>
                     {children}
