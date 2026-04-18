@@ -390,5 +390,16 @@
     "activate": "Activate",
     "not_now": "Not now",
     "activated_toast": "✓ Notifications enabled"
+  },
+  "supportChat": {
+    "talkToSupport": "Talk to support",
+    "supportTeam": "MisAutónomos Support",
+    "responseTime": "We respond as soon as possible",
+    "supportInbox": "Support Inbox",
+    "selectConversation": "Select a conversation to reply",
+    "conversationsCount": "{{count}} conversations",
+    "needHelp": "Need help?",
+    "helpDescription": "Our team responds within 24 hours. Write to us and we'll help you with anything related to your account, payments, invoices, or platform functionality.",
+    "startSupportChat": "Start support chat"
   }
 }

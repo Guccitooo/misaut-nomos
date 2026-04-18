@@ -20,7 +20,8 @@ import {
   Home,
   HelpCircle,
   Ticket,
-  TrendingUp
+  TrendingUp,
+  Headphones
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,7 @@ import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
+import { openSupportChat } from "@/lib/supportChat";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -81,20 +83,32 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
-                    asChild 
+                    asChild={!item.action}
                     className={`hover:bg-blue-50 hover:text-blue-900 transition-all duration-150 rounded-xl mb-1 relative ${
                       location.pathname === item.url ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : ''
                     }`}
                   >
-                    <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
-                      <item.icon className="w-5 h-5" aria-hidden="true" />
-                      <span className="font-medium">{item.title}</span>
-                      {item.badge && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} unread`}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
+                    {item.action ? (
+                      <button onClick={item.action} className="flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer">
+                        <item.icon className="w-5 h-5" aria-hidden="true" />
+                        <span className="font-medium">{item.title}</span>
+                        {item.badge && (
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
+                        <item.icon className="w-5 h-5" aria-hidden="true" />
+                        <span className="font-medium">{item.title}</span>
+                        {item.badge && (
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} unread`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -443,6 +457,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
       { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
       { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
+      { title: t('supportChat.talkToSupport'), url: null, icon: Headphones, action: () => openSupportChat(user, navigate) },
     );
   } else if (user?.user_type === "client") {
     navigationItems.push(
@@ -453,6 +468,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
       { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
       { title: t('nav.support'), url: createPageUrl("Tickets"), icon: MessageSquare },
+      { title: t('supportChat.talkToSupport'), url: null, icon: Headphones, action: () => openSupportChat(user, navigate) },
     );
   }
 

@@ -19,6 +19,7 @@ const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
 const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
+const AdminSupport = lazy(() => import('./pages/AdminSupport'));
 const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
 const Invoices = lazy(() => import('./pages/Invoices'));
 const MisClientes = lazy(() => import('./pages/MisClientes'));
@@ -178,7 +179,8 @@ const AuthenticatedApp = () => {
           {/* ===== RUTAS ADMIN ===== */}
           {/* Subrutas admin ANTES que /admin para matchear primero */}
           <Route path="/admin/pagos" element={<Suspense fallback={<PageLoader />}><AdminPayments /></Suspense>} />
-          <Route path="/admin/soporte" element={<Suspense fallback={<PageLoader />}><AdminTickets /></Suspense>} />
+          <Route path="/admin/tickets" element={<Suspense fallback={<PageLoader />}><AdminTickets /></Suspense>} />
+          <Route path="/admin/chat-soporte" element={<Suspense fallback={<PageLoader />}><AdminSupport /></Suspense>} />
           <Route path="/admin/faq" element={<Suspense fallback={<PageLoader />}><AdminFAQ /></Suspense>} />
           <Route path="/admin/mensajes" element={<Suspense fallback={<PageLoader />}><AdminMessagesStats /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />

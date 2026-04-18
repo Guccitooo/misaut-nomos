@@ -390,5 +390,16 @@
     "activate": "Activar",
     "not_now": "Ahora no",
     "activated_toast": "✓ Notificaciones activadas"
+  },
+  "supportChat": {
+    "talkToSupport": "Hablar con soporte",
+    "supportTeam": "Soporte MisAutónomos",
+    "responseTime": "Respondemos lo antes posible",
+    "supportInbox": "Bandeja de Soporte",
+    "selectConversation": "Selecciona una conversación para responder",
+    "conversationsCount": "{{count}} conversaciones",
+    "needHelp": "¿Necesitas ayuda?",
+    "helpDescription": "Nuestro equipo responde en menos de 24h. Escríbenos y te ayudamos con cualquier cosa relacionada con tu cuenta, pagos, facturas, o el funcionamiento de la plataforma.",
+    "startSupportChat": "Empezar chat con soporte"
   }
 }
