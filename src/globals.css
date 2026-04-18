@@ -628,6 +628,15 @@ html, body {
   }
 }
 
+/* Scrollbar oculta — usada en tabs horizontales con scroll */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Safe area bottom utility */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 /* Bottom nav: oculto por defecto, solo visible en móvil (< 768px) */
 .mobile-bottom-nav {
   display: none !important;

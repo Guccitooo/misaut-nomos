@@ -197,28 +197,28 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{invoice ? t('editInvoice') : t('newInvoice')}</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowAIAssistant(!showAIAssistant)}
-            className={showAIAssistant ? "bg-purple-50 text-purple-700 border-purple-300" : ""}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            IA
-          </Button>
-          <Button variant="outline" onClick={onCancel}>
-            {t('cancel')}
-          </Button>
-          <Button variant="outline" onClick={() => onPreview(formData)}>
-            <Eye className="w-4 h-4 mr-2" />
-            {t('preview') || 'Vista previa'}
-          </Button>
-          <Button onClick={() => onSave(formData)} className="bg-blue-600 hover:bg-blue-700">
-            {t('save')}
-          </Button>
-        </div>
+      {/* Botones de acción — responsivos */}
+      <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAIAssistant(!showAIAssistant)}
+          className={showAIAssistant ? "bg-purple-50 text-purple-700 border-purple-300" : ""}
+        >
+          <Sparkles className="w-4 h-4 mr-1.5" />
+          IA
+        </Button>
+        <div className="flex-1" />
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          {t('cancel')}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onPreview(formData)}>
+          <Eye className="w-4 h-4 mr-1.5" />
+          {t('preview') || 'Vista previa'}
+        </Button>
+        <Button size="sm" onClick={() => onSave(formData)} className="bg-blue-600 hover:bg-blue-700">
+          {t('save')}
+        </Button>
       </div>
 
       {/* AI Assistant */}
@@ -275,7 +275,7 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t('clientName') || 'Nombre/Empresa'} *</Label>
                 <Input
@@ -303,7 +303,7 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div>
                 <Label>{t('postalCode') || 'CP'}</Label>
                 <Input

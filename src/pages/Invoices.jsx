@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ResponsiveModal from "../components/ui/ResponsiveModal";
 import { Plus, Loader2, Settings, FileText, Copy, ExternalLink, BarChart3, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -379,30 +380,30 @@ export default function InvoicesPage() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingInvoice ? t('editInvoice') : t('newInvoice')}</DialogTitle>
-            </DialogHeader>
-            <InvoiceForm
-              invoice={editingInvoice}
-              settings={invoicingSettings}
-              clients={clients}
-              onSave={handleSaveInvoice}
-              onCancel={() => { setShowDialog(false); setEditingInvoice(null); }}
-              onPreview={handlePreview}
-            />
-          </DialogContent>
-        </Dialog>
+        <ResponsiveModal
+          isOpen={showDialog}
+          onClose={() => { setShowDialog(false); setEditingInvoice(null); }}
+          title={editingInvoice ? t('editInvoice') : t('newInvoice')}
+          maxWidth="md:max-w-4xl"
+        >
+          <InvoiceForm
+            invoice={editingInvoice}
+            settings={invoicingSettings}
+            clients={clients}
+            onSave={handleSaveInvoice}
+            onCancel={() => { setShowDialog(false); setEditingInvoice(null); }}
+            onPreview={handlePreview}
+          />
+        </ResponsiveModal>
 
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{t('invoicePreview') || 'Vista previa de factura'}</DialogTitle>
-            </DialogHeader>
-            <InvoicePreview invoiceData={previewData} />
-          </DialogContent>
-        </Dialog>
+        <ResponsiveModal
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          title={t('invoicePreview') || 'Vista previa de factura'}
+          maxWidth="md:max-w-4xl"
+        >
+          <InvoicePreview invoiceData={previewData} />
+        </ResponsiveModal>
 
         {/* Diálogo link de pago */}
         <Dialog open={!!paymentLinkDialog} onOpenChange={() => setPaymentLinkDialog(null)}>

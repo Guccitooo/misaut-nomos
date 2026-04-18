@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ui/ResponsiveModal";
 import { Plus, Trash2, Loader2, FileText, Send, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -275,17 +275,42 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
 
   if (!form) return null;
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            {initialQuote ? "Editar presupuesto" : "Nuevo presupuesto"}
-          </DialogTitle>
-        </DialogHeader>
+  const modalFooter = (
+    <>
+      <button
+        onClick={onClose}
+        disabled={saving}
+        className="flex-1 md:flex-none px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+      >
+        Cancelar
+      </button>
+      <button
+        onClick={() => handleSave(false)}
+        disabled={saving}
+        className="flex-1 md:flex-none px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-1.5"
+      >
+        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+        Guardar borrador
+      </button>
+      <button
+        onClick={() => handleSave(true)}
+        disabled={saving || !form.client_id}
+        className="flex-1 md:flex-none px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1.5"
+      >
+        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+        Guardar y enviar
+      </button>
+    </>
+  );
 
-        <div className="space-y-6 py-2">
+  return (
+    <ResponsiveModal
+      isOpen={open}
+      onClose={onClose}
+      title={initialQuote ? "Editar presupuesto" : "Nuevo presupuesto"}
+      footer={modalFooter}
+    >
+        <div className="space-y-6">
           {/* ── A) CLIENTE ─── */}
           <section>
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Datos del cliente</h3>
@@ -484,19 +509,6 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
             </div>
           </section>
         </div>
-
-        <DialogFooter className="gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="outline" onClick={() => handleSave(false)} disabled={saving} className="border-gray-300">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
-            Guardar borrador
-          </Button>
-          <Button onClick={() => handleSave(true)} disabled={saving || !form.client_id} className="bg-gray-900 hover:bg-gray-800 text-white">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-            Guardar y enviar por chat
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   );
 }
