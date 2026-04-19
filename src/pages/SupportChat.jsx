@@ -14,6 +14,7 @@ export default function SupportChat() {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
+  const prevMsgCountRef = useRef(0);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => navigate("/"));
@@ -59,6 +60,14 @@ export default function SupportChat() {
     }
   }, [conversationId, user, isLoading, messages.length]);
 
+  // Scroll solo cuando llega un mensaje nuevo
+  useEffect(() => {
+    if (messages.length > prevMsgCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages.length]);
+
   const sendMutation = useMutation({
     mutationFn: async (text) => {
       return await base44.entities.Message.create({
@@ -75,7 +84,6 @@ export default function SupportChat() {
     onSuccess: () => {
       setMessage("");
       queryClient.invalidateQueries({ queryKey: ["supportMessages", conversationId] });
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     },
   });
 
