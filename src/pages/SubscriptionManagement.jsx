@@ -236,29 +236,45 @@ export default function SubscriptionManagementPage() {
   };
 
   const handleUpgradePlan = async (newPlanId) => {
-    console.log('[handleUpgradePlan] Button clicked, newPlanId:', newPlanId);
+    console.log('[UI] Button clicked - Starting upgrade to:', newPlanId);
     setIsUpgrading(true);
+    
     try {
-      console.log('[handleUpgradePlan] Invoking upgradeSubscription function...');
+      console.log('[UI] Calling backend upgradeSubscription function...');
       const response = await base44.functions.invoke('upgradeSubscription', {
         newPlanId
       });
 
-      console.log('[handleUpgradePlan] Response received:', response.data);
+      console.log('[UI] Response received:', response.data);
 
       if (response.data?.ok) {
-        console.log('[handleUpgradePlan] Upgrade successful, reloading page...');
-        toast.success('✅ Plan actualizado correctamente');
+        console.log('[UI] ✅ Upgrade successful! Plan changed to:', response.data.plan);
+        toast.success(`✅ Plan actualizado a ${response.data.plan}`, {
+          description: `Se ha cobrado ${response.data.amountCharged?.toFixed(2)}€ prorrateado. Próximo cobro: ${new Date(response.data.nextBillingDate).toLocaleDateString('es-ES')}`
+        });
+        
+        // Reload subscription data without full page reload for better UX
         sessionStorage.removeItem('current_user');
-        window.location.reload();
+        setTimeout(() => {
+          const currentUser = user;
+          if (currentUser) {
+            loadSubscription(currentUser).then(() => {
+              console.log('[UI] Subscription data reloaded');
+            });
+          }
+        }, 1500);
       } else {
-        console.error('[handleUpgradePlan] Upgrade failed:', response.data?.error);
-        toast.error(response.data?.error || 'Error al mejorar el plan');
+        console.error('[UI] ❌ Upgrade failed:', response.data?.error);
+        toast.error(response.data?.error || 'Error al mejorar el plan', {
+          description: 'Verifica tu método de pago e intenta de nuevo'
+        });
         setIsUpgrading(false);
       }
     } catch (error) {
-      console.error('[handleUpgradePlan] Exception caught:', error);
-      toast.error('Error al mejorar el plan: ' + error.message);
+      console.error('[UI] ❌ Exception caught:', error);
+      toast.error('Error al mejorar el plan', {
+        description: error.message || 'Algo salió mal. Intenta de nuevo.'
+      });
       setIsUpgrading(false);
     }
   };
