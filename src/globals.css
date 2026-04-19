@@ -794,3 +794,43 @@ html {
 }
 
 /* Footer en móvil: el padding-bottom lo gestiona directamente el componente Footer (pb-24) */
+
+/* ═══════════════════════════════════════════════════════════════
+   CLS FIX — Imágenes de perfil profesional: reservar espacio SIEMPRE
+   Evita el layout shift de 0.88 → objetivo < 0.1
+   ═══════════════════════════════════════════════════════════════ */
+img[width="48"][height="48"] {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px;
+  min-height: 48px;
+  aspect-ratio: 1 / 1;
+}
+
+img[width="32"][height="32"] {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px;
+  min-height: 32px;
+  aspect-ratio: 1 / 1;
+}
+
+/* Cards de profesional — altura mínima garantizada sin animaciones costosas */
+[data-professional-card] {
+  min-height: 200px;
+  contain: layout style paint;
+}
+
+/* Skeleton: sin animation para reducir trabajo del hilo principal */
+@media (max-width: 768px) {
+  .animate-pulse {
+    animation: none !important;
+    background: #f3f4f6 !important;
+  }
+}
+
+/* Google Fonts: font-display swap para evitar FOIT */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}

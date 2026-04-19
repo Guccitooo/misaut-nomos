@@ -115,10 +115,11 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   return (
     <div 
       onClick={onClick}
-      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full overflow-hidden"
+      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col overflow-hidden"
+      style={{ minHeight: '200px', contain: 'layout style' }}
     >
       {/* Header azul PEQUEÑO — solo desktop */}
-      <div className="hidden md:block h-12 bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0">
+      <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0" style={{ height: '48px', minHeight: '48px' }}>
         {profile.tarifa_base > 0 && (
           <div className="absolute top-2 right-2 bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
             {profile.tarifa_base}€/h
@@ -129,38 +130,44 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       {/* Zona con avatar posicionado negativamente desde aquí */}
       <div className="relative px-3 flex flex-col flex-1">
         {/* Avatar: solo desktop, a caballo entre header y contenido */}
-        <div className="hidden md:block absolute -top-6 left-3">
+        <div className="hidden md:block absolute -top-6 left-3" style={{ width: '48px', height: '48px' }}>
           {photoUrl ? (
             <img
               src={photoUrl}
               alt={profile.business_name}
               width="48"
               height="48"
+              loading="lazy"
+              decoding="async"
               className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm"
-              onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+              style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px' }}
             />
-          ) : null}
-          <div className={`w-12 h-12 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-white font-bold text-base shadow-sm ${photoUrl ? 'hidden' : ''}`}>
-            {profile.business_name?.[0]?.toUpperCase()}
-          </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-white font-bold text-base shadow-sm" style={{ width: '48px', height: '48px' }}>
+              {profile.business_name?.[0]?.toUpperCase()}
+            </div>
+          )}
         </div>
 
         {/* Fila avatar+nombre — solo móvil */}
         <div className="md:hidden flex items-center gap-3 pt-3 pb-1">
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
             {photoUrl ? (
               <img
                 src={photoUrl}
                 alt={profile.business_name}
                 width="48"
                 height="48"
+                loading="lazy"
+                decoding="async"
                 className="w-12 h-12 rounded-full object-cover"
-                onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                style={{ width: '48px', height: '48px' }}
               />
-            ) : null}
-            <div className={`w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base ${photoUrl ? 'hidden' : ''}`}>
-              {profile.business_name?.[0]?.toUpperCase()}
-            </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base" style={{ width: '48px', height: '48px' }}>
+                {profile.business_name?.[0]?.toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
@@ -626,15 +633,15 @@ export default function SearchPage() {
 
           {/* Skeleton loading */}
           {isInitialLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
               {[...Array(8)].map((_, idx) => (
-                <div key={idx} className="bg-white rounded-2xl overflow-hidden border border-gray-100" style={{ height: '300px' }}>
-                  <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-100 animate-pulse" />
-                  <div className="p-4 pt-9 space-y-3">
-                    <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-3 w-1/2 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-8 w-full bg-gray-100 rounded-lg animate-pulse mt-4" />
-                    <div className="h-9 w-full bg-gray-100 rounded-xl animate-pulse mt-2" />
+                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ height: '220px', minHeight: '220px', contain: 'layout style' }}>
+                  <div style={{ height: '48px', background: 'linear-gradient(90deg, #e5e7eb, #f3f4f6)' }} />
+                  <div className="p-3 pt-8 space-y-2">
+                    <div className="h-4 w-3/4 bg-gray-100 rounded" style={{ minHeight: '16px' }} />
+                    <div className="h-3 w-1/2 bg-gray-100 rounded" style={{ minHeight: '12px' }} />
+                    <div className="h-3 w-full bg-gray-100 rounded mt-2" style={{ minHeight: '12px' }} />
+                    <div className="h-8 w-full bg-gray-100 rounded-lg mt-3" style={{ minHeight: '32px' }} />
                   </div>
                 </div>
               ))}

@@ -6,33 +6,47 @@
     <meta http-equiv="Cache-Control" content="public, max-age=31536000" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     
-    <!-- Preconnect a dominios externos críticos -->
+    <!-- Preconnect crítico -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://api.stripe.com" />
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    
-    <!-- Preload de fuente principal para evitar FOUT -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" />
-    
-    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" fetchpriority="high" />
+    <link rel="dns-prefetch" href="https://qtrypzzcjebvfcihiynt.supabase.co" />
+    <link rel="dns-prefetch" href="https://cdn.onesignal.com" />
+
+    <!-- Google Fonts: carga no-bloqueante -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" /></noscript>
+
+    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
     <title>MisAutónomos - Plataforma de profesionales autónomos</title>
     <meta name="description" content="Conecta con profesionales autónomos verificados. Servicios de calidad, precios competitivos." />
 
-    <!-- OneSignal -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <!-- OneSignal: cargado diferido tras interacción para no bloquear LCP -->
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "e178adb2-38e8-4397-9239-833be611ed27",
-          allowLocalhostAsSecureOrigin: true,
-          notifyButton: { enable: false },
-          promptOptions: {
-            slidedown: { prompts: [] }
-          }
-        });
+      // Diferir carga del SDK de OneSignal hasta después del primer input del usuario
+      function _loadOneSignal() {
+        if (window._oneSignalLoaded) return;
+        window._oneSignalLoaded = true;
+        var s = document.createElement('script');
+        s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+        s.async = true;
+        s.onload = function() {
+          OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+              appId: "e178adb2-38e8-4397-9239-833be611ed27",
+              allowLocalhostAsSecureOrigin: true,
+              notifyButton: { enable: false },
+              promptOptions: { slidedown: { prompts: [] } }
+            });
+          });
+        };
+        document.head.appendChild(s);
+      }
+      // Cargar tras interacción o 5s de timeout
+      ['click','touchstart','keydown','scroll'].forEach(function(e){
+        window.addEventListener(e, _loadOneSignal, { once: true, passive: true });
       });
+      setTimeout(_loadOneSignal, 5000);
     </script>
 
     <!-- PWA -->
@@ -42,6 +56,26 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MisAutónomos" />
     <link rel="apple-touch-icon" href="/logo-192.png" />
+    <!-- CSS crítico inline: evita CLS del layout inicial y FOUC -->
+    <style>
+      *,*::before,*::after{box-sizing:border-box}
+      html,body{margin:0;padding:0;background:#fff;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+      #root{min-height:100vh}
+      /* Reservar espacio para el header móvil fijo — evita CLS */
+      @media(max-width:1023px){.mobile-main-content{padding-top:56px!important}}
+      /* Bottom nav fijo — reservar espacio */
+      @media(max-width:767px){body{padding-bottom:64px}}
+      /* Imágenes sin dimensiones explícitas — evitar layout shift */
+      img{max-width:100%;height:auto;display:block}
+      /* Avatares — siempre dimensión fija */
+      .avatar-fixed{width:48px;height:48px;min-width:48px;min-height:48px;flex-shrink:0;border-radius:9999px;overflow:hidden}
+      /* Cards profesional — altura mínima fija */
+      .pro-card{min-height:200px;contain:layout style}
+      /* Skeleton sin animación costosa */
+      .sk{background:#f3f4f6}
+      /* Fonts sistema como fallback instantáneo */
+      body{font-display:swap}
+    </style>
   </head>
   <body>
     <div id="root"></div>
