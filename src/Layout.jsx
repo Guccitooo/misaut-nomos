@@ -318,6 +318,12 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       const currentUser = await base44.auth.me();
 
       if (currentUser) {
+        // Usuarios sin user_type (entraron con Google sin pasar por onboarding) → asignar "client"
+        if (!currentUser.user_type) {
+          await base44.auth.updateMe({ user_type: "client" });
+          currentUser.user_type = "client";
+        }
+
         const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
