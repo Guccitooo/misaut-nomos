@@ -242,19 +242,31 @@ export default function SubscriptionManagementPage() {
         newPlanId
       });
 
+      console.log('Respuesta de upgradeSubscription:', response.data);
+
       if (response.data?.ok) {
         toast.success(response.data.message || 'Plan mejorado correctamente');
-        // Recargar con el user actual
+        // Limpiar cache y recargar TODO
+        sessionStorage.removeItem('current_user');
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        queryClient.invalidateQueries({ queryKey: ['user'] });
+        
+        // Recargar usuario y suscripción
         const currentUser = await loadUser();
         if (currentUser) {
           await loadSubscription(currentUser);
         }
+        
+        // Forzar recarga completa después de 2 segundos
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
         toast.error(response.data?.error || 'Error al mejorar el plan');
       }
     } catch (error) {
       console.error('Error upgrading plan:', error);
-      toast.error('Error al mejorar el plan');
+      toast.error('Error al mejorar el plan: ' + (error.message || 'Desconocido'));
     } finally {
       setIsUpgrading(false);
     }
