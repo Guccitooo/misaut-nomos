@@ -4,20 +4,25 @@ import Stripe from 'npm:stripe@14.21.0';
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
 Deno.serve(async (req) => {
+  const NOW = new Date().toISOString();
+  console.log(`[upgradeSubscription] ╔══════════════════════════════════════════════════════`);
+  console.log(`[upgradeSubscription] ║ 🚀 UPGRADE REQUEST STARTED AT ${NOW}`);
+  console.log(`[upgradeSubscription] ║ This is the REAL upgradeSubscription function in Deno`);
+  console.log(`[upgradeSubscription] ╚══════════════════════════════════════════════════════`);
+  
   try {
-    console.log('[upgradeSubscription] ===== REQUEST STARTED =====');
-    
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
+    console.log(`[upgradeSubscription] ✓ User authenticated: ${user?.email} (ID: ${user?.id})`);
     
     if (!user) {
-      console.log('[upgradeSubscription] ❌ No authenticated user');
+      console.log('[upgradeSubscription] ❌ FAIL: No authenticated user - returning 401');
       return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
     const { newPlanId } = body;
-    console.log(`[upgradeSubscription] 📝 User ${user.id} (${user.email}) upgrading to plan: ${newPlanId}`);
+    console.log(`[upgradeSubscription] ✓ Parsed request body: newPlanId = ${newPlanId}`);
 
     if (!newPlanId) {
       console.log('[upgradeSubscription] ❌ Missing newPlanId in request body');
@@ -93,6 +98,11 @@ Deno.serve(async (req) => {
 
     // Step 5: Update Stripe subscription
     console.log('[upgradeSubscription] 🔄 Step 4: Updating Stripe subscription...');
+    console.log(`[upgradeSubscription] Calling stripe.subscriptions.update with:`);
+    console.log(`   - subscription_id: ${currentSub.stripe_subscription_id}`);
+    console.log(`   - item_id: ${subscriptionItemId}`);
+    console.log(`   - new_price_id: ${newPlan.stripe_price_id}`);
+    
     let updatedStripeSubscription;
     try {
       updatedStripeSubscription = await stripe.subscriptions.update(
@@ -106,14 +116,27 @@ Deno.serve(async (req) => {
           ],
           proration_behavior: 'create_prorations',
           cancel_at_period_end: false,
+          trial_end: 'now',  // Terminar el trial inmediatamente si está activo
         }
       );
       console.log(`[upgradeSubscription] ✅ Stripe subscription updated successfully`);
       console.log(`   - new status: ${updatedStripeSubscription.status}`);
+      console.log(`   - current_period_start: ${updatedStripeSubscription.current_period_start}`);
+      console.log(`   - current_period_end: ${updatedStripeSubscription.current_period_end}`);
       console.log(`   - amount_due: ${updatedStripeSubscription.amount_due}`);
       console.log(`   - billing_reason: ${updatedStripeSubscription.billing_reason}`);
+      console.log(`   - latest_invoice: ${updatedStripeSubscription.latest_invoice}`);
+      
+      // Verificar que el precio se cambió realmente
+      const updatedItem = updatedStripeSubscription.items.data[0];
+      console.log(`[upgradeSubscription] Updated item price_id: ${updatedItem.price.id}`);
+      if (updatedItem.price.id !== newPlan.stripe_price_id) {
+        console.error(`[upgradeSubscription] ❌ CRITICAL: Price ID mismatch! Expected ${newPlan.stripe_price_id}, got ${updatedItem.price.id}`);
+        throw new Error(`Stripe price update verification failed: price was not actually changed`);
+      }
     } catch (error) {
-      console.log(`[upgradeSubscription] ❌ Stripe update failed: ${error.message}`);
+      console.error(`[upgradeSubscription] ❌ Stripe update failed: ${error.message}`);
+      console.error(`[upgradeSubscription] Full error:`, error);
       return Response.json(
         { ok: false, error: `Stripe update failed: ${error.message}` },
         { status: 400 }
@@ -126,7 +149,14 @@ Deno.serve(async (req) => {
     newExpirationDate.setDate(newExpirationDate.getDate() + newPlan.duracion_dias);
 
     try {
-      await base44.asServiceRole.entities.Subscription.update(currentSub.id, {
+      console.log('[upgradeSubscription] Calling .update() with:');
+      console.log(`   - id: ${currentSub.id}`);
+      console.log(`   - plan_id: ${newPlanId}`);
+      console.log(`   - plan_nombre: ${newPlan.nombre}`);
+      console.log(`   - plan_precio: ${newPlan.precio}`);
+      console.log(`   - estado: activo`);
+      
+      const updateResult = await base44.asServiceRole.entities.Subscription.update(currentSub.id, {
         plan_id: newPlanId,
         plan_nombre: newPlan.nombre,
         plan_precio: newPlan.precio,
@@ -134,9 +164,29 @@ Deno.serve(async (req) => {
         estado: 'activo',
         stripe_price_id: newPlan.stripe_price_id,
       });
-      console.log(`[upgradeSubscription] ✅ Subscription updated in DB`);
+      
+      console.log(`[upgradeSubscription] ✅ Subscription update call completed`);
+      console.log('[upgradeSubscription] Update result:', updateResult);
+      
+      // VERIFICACIÓN: Leer la suscripción nuevamente para confirmar que se guardó
+      const verifyRead = await base44.asServiceRole.entities.Subscription.filter({
+        id: currentSub.id
+      });
+      
+      if (verifyRead && verifyRead.length > 0) {
+        const updatedRecord = verifyRead[0];
+        console.log('[upgradeSubscription] ✅ VERIFICATION - Updated record in DB:');
+        console.log(`   - plan_id: ${updatedRecord.plan_id}`);
+        console.log(`   - plan_precio: ${updatedRecord.plan_precio}`);
+        console.log(`   - estado: ${updatedRecord.estado}`);
+        
+        if (updatedRecord.plan_id !== newPlanId) {
+          throw new Error(`CRITICAL: Plan ID was not actually updated! DB shows ${updatedRecord.plan_id} but we tried to set ${newPlanId}`);
+        }
+      }
     } catch (error) {
-      console.log(`[upgradeSubscription] ❌ Failed to update subscription in DB: ${error.message}`);
+      console.error(`[upgradeSubscription] ❌ Failed to update subscription in DB: ${error.message}`);
+      console.error('[upgradeSubscription] Error stack:', error.stack);
       return Response.json(
         { ok: false, error: `Database update failed: ${error.message}` },
         { status: 500 }
@@ -207,7 +257,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[upgradeSubscription] ===== ❌ UNEXPECTED ERROR =====');
-    console.error('[upgradeSubscription] Error details:', error);
+    console.error('[upgradeSubscription] Error name:', error.name);
+    console.error('[upgradeSubscription] Error message:', error.message);
+    console.error('[upgradeSubscription] Error stack:', error.stack);
     return Response.json(
       { ok: false, error: error.message || 'Internal server error' },
       { status: 500 }

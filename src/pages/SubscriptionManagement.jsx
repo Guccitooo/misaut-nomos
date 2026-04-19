@@ -76,11 +76,14 @@ export default function SubscriptionManagementPage() {
     setLoadingInvoices(true);
     try {
       const response = await base44.functions.invoke('getStripeInvoices', {});
-      if (response.data?.invoices) {
+      if (response.data?.invoices && Array.isArray(response.data.invoices)) {
         setInvoices(response.data.invoices);
+      } else {
+        setInvoices([]);
       }
     } catch (error) {
       console.error('Error loading invoices:', error);
+      setInvoices([]);
     } finally {
       setLoadingInvoices(false);
     }
@@ -107,9 +110,9 @@ export default function SubscriptionManagementPage() {
       setSyncing(false);
 
       // Cargar suscripción de la BD
-      const subs = await base44.entities.Subscription.filter({
+      const subs = (await base44.entities.Subscription.filter({
         user_id: currentUser.id
-      });
+      })) || [];
       const sub = subs[0] || null;
       setSubscription(sub);
 
@@ -122,8 +125,13 @@ export default function SubscriptionManagementPage() {
           // Cargar detalles del plan
           const planId = planData?.planId || sub.plan_id;
           if (planId) {
-            const plans = (await base44.entities.SubscriptionPlan.filter({ plan_id: planId })) || [];
-            setPlan(plans[0] || null);
+            try {
+              const plans = (await base44.entities.SubscriptionPlan.filter({ plan_id: planId })) || [];
+              setPlan((Array.isArray(plans) ? plans : [])[0] || null);
+            } catch (planFetchError) {
+              console.warn('[loadSubscription] Error loading plan details:', planFetchError.message);
+              setPlan(null);
+            }
           }
         } catch (planError) {
           console.warn('[loadSubscription] Error loading effective plan, using fallback:', planError.message);
