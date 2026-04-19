@@ -249,52 +249,8 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  const handleUpgradePlan = async (newPlanId) => {
-    console.log('[Upgrade] 1️⃣ Click detected - Starting upgrade to:', newPlanId);
-    console.log('[Upgrade] Current user:', user?.email);
-    console.log('[Upgrade] Current subscription:', subscription?.plan_id);
-    setIsUpgrading(true);
-    
-    try {
-      console.log('[Upgrade] 2️⃣ Calling backend upgradeSubscription function...');
-      const response = await base44.functions.invoke('upgradeSubscription', {
-        newPlanId
-      });
-
-      console.log('[Upgrade] 3️⃣ Response received from backend:', response.data);
-
-      if (response.data?.ok) {
-        console.log('[Upgrade] 4️⃣ ✅ Upgrade successful! Plan changed to:', response.data.plan);
-        toast.success(`✅ Plan actualizado a ${response.data.plan}`, {
-          description: `Se ha cobrado ${response.data.amountCharged?.toFixed(2)}€ prorrateado. Próximo cobro: ${new Date(response.data.nextBillingDate).toLocaleDateString('es-ES')}`
-        });
-        
-        console.log('[Upgrade] 5️⃣ Clearing cache and reloading subscription data...');
-        sessionStorage.removeItem('current_user');
-        setTimeout(() => {
-          const currentUser = user;
-          if (currentUser) {
-            loadSubscription(currentUser).then(() => {
-              console.log('[Upgrade] 6️⃣ ✅ Subscription data reloaded');
-            });
-          }
-        }, 1500);
-      } else {
-        console.error('[Upgrade] 4️⃣ ❌ Upgrade failed:', response.data?.error);
-        toast.error(response.data?.error || 'Error al mejorar el plan', {
-          description: 'Verifica tu método de pago e intenta de nuevo'
-        });
-      }
-    } catch (error) {
-      console.error('[Upgrade] 3️⃣ ❌ Exception caught:', error);
-      console.error('[Upgrade] Error stack:', error.stack);
-      toast.error('Error al mejorar el plan', {
-        description: error.message || 'Algo salió mal. Intenta de nuevo.'
-      });
-    } finally {
-      console.log('[Upgrade] 7️⃣ Finally block - resetting isUpgrading to false');
-      setIsUpgrading(false);
-    }
+  const handleUpgradePlan = () => {
+    toast.info('La mejora de plan estará disponible muy pronto. Contacta con soporte@misautonomos.es si necesitas activar Plan Ads+ ya.');
   };
 
   const handleDowngradePlan = async (newPlanId) => {
