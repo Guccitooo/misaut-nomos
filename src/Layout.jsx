@@ -535,11 +535,11 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               <>
                 <div
                   onClick={() => setMobileMenuOpen(false)}
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', zIndex: 50 }}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', zIndex: 9998 }}
                   aria-hidden="true"
                 />
                 <nav
-                  style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: '280px', background: '#fff', zIndex: 51, overflowY: 'auto', boxShadow: '4px 0 24px rgba(0,0,0,0.18)' }}
+                  style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: '280px', background: '#fff', zIndex: 9999, overflowY: 'auto', boxShadow: '4px 0 24px rgba(0,0,0,0.18)' }}
                   role="dialog"
                   aria-modal="true"
                   aria-label="Menú de navegación"
@@ -679,13 +679,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               <>
                 <div
                   onClick={() => setJoinModalOpen(false)}
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9998 }}
                   aria-hidden="true"
                 />
                 <div
                   style={{
                     position: 'fixed', bottom: 0, left: 0, right: 0,
-                    background: '#fff', zIndex: 61, borderRadius: '20px 20px 0 0',
+                    background: '#fff', zIndex: 9999, borderRadius: '20px 20px 0 0',
                     padding: '24px 20px', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
                     boxShadow: '0 -8px 32px rgba(0,0,0,0.18)'
                   }}
@@ -746,14 +746,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 left: 0,
                 right: 0,
                 height: '56px',
-                zIndex: 35,
+                zIndex: 45,
                 paddingTop: 'env(safe-area-inset-top, 0px)',
               }}
             >
               <button
-                onClick={() => setMobileMenuOpen(true)}
-                style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
-                className="flex items-center justify-center rounded-lg hover:bg-gray-100 flex-shrink-0"
+                onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
+                style={{ width: '48px', height: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
+                className="flex items-center justify-center rounded-lg flex-shrink-0 active:bg-gray-100"
                 aria-label="Abrir menú"
               >
                 <Menu className="w-6 h-6 text-gray-700" />
