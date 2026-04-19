@@ -277,7 +277,7 @@ function App() {
             <VisualEditAgent />
           </QueryClientProvider>
         </AppProvider>
-      </ErrorBoundary>
+      </AuthProvider>
     </ErrorBoundary>
   )
 }
