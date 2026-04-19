@@ -83,7 +83,7 @@ export default function IdentityVerificationWidget({ user }) {
         base44.integrations.Core.UploadFile({ file: selfieFile }),
       ]);
 
-      await base44.entities.IdentityVerification.create({
+      const payload = {
         user_id: user.id,
         user_email: user.email,
         user_name: user.full_name || user.email,
@@ -92,7 +92,14 @@ export default function IdentityVerificationWidget({ user }) {
         document_back_url: backRes.file_url || null,
         selfie_url: selfieRes.file_url,
         status: "pending",
-      });
+        rejection_reason: null,
+      };
+
+      if (verification?.id) {
+        await base44.entities.IdentityVerification.update(verification.id, payload);
+      } else {
+        await base44.entities.IdentityVerification.create(payload);
+      }
 
       queryClient.invalidateQueries({ queryKey: ["identity_verification", user.id] });
       toast.success("¡Solicitud enviada! La revisaremos en 24-48h.");
@@ -132,8 +139,8 @@ export default function IdentityVerificationWidget({ user }) {
     );
   }
 
-  // --- ESTADO: RECHAZADO ---
-  if (verification?.status === "rejected") {
+  // --- ESTADO: RECHAZADO (solo si no está intentando de nuevo) ---
+  if (verification?.status === "rejected" && step !== "form" && step !== "submitting") {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2">
