@@ -45,10 +45,57 @@ const renderEmail = ({ lang, preheader, title, alert, bodyHtml, cta }) => {
   `.trim();
 };
 
-export const giftReceivedEmail = ({ userName, giftedPlanName, giftedUntil, originalPlanName, duration }, lang = 'es') => {
+export const giftReceivedEmail = ({ userName, giftedPlanName, giftedUntil, originalPlanName, duration, giftedPlanId }, lang = 'es') => {
   const expiry = new Date(giftedUntil).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', {
     day: 'numeric', month: 'long', year: 'numeric'
   });
+  
+  // Bloque extra SOLO si el plan regalado incluye marketing/ads (plan_adsplus)
+  const isAdsPlan = giftedPlanId === 'plan_adsplus';
+  
+  const actionBlockEs = isAdsPlan ? `
+    <div style="background:#EFF6FF;border:1px solid #3B82F6;border-radius:10px;padding:16px;margin:20px 0;">
+      <p style="margin:0;font-weight:600;color:#1E40AF;font-size:15px;">📋 Importante: necesitamos unos datos tuyos</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#1E293B;line-height:1.5;">
+        El plan <strong>${giftedPlanName}</strong> incluye gestión de campañas publicitarias personalizadas. 
+        Para que podamos crear campañas efectivas para tu negocio, necesitamos conocerlo mejor.
+      </p>
+      <p style="margin:12px 0 0;font-size:14px;color:#1E293B;line-height:1.5;">
+        Por favor, entra en tu cuenta y completa el <strong>cuestionario inicial</strong> (2 minutos):
+      </p>
+      <ul style="margin:8px 0 0;font-size:13px;color:#475569;line-height:1.7;">
+        <li>Cómo es tu cliente ideal</li>
+        <li>En qué redes suele estar presente</li>
+        <li>Cómo consigues clientes actualmente</li>
+        <li>Tu objetivo principal para los próximos meses</li>
+      </ul>
+      <p style="margin:12px 0 0;font-size:13px;color:#64748B;font-style:italic;">
+        Sin esta información no podremos preparar tus campañas de ads.
+      </p>
+    </div>
+  ` : '';
+  
+  const actionBlockEn = isAdsPlan ? `
+    <div style="background:#EFF6FF;border:1px solid #3B82F6;border-radius:10px;padding:16px;margin:20px 0;">
+      <p style="margin:0;font-weight:600;color:#1E40AF;font-size:15px;">📋 Important: we need some info from you</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#1E293B;line-height:1.5;">
+        The <strong>${giftedPlanName}</strong> plan includes personalized ad campaign management. 
+        To create effective campaigns for your business, we need to know it better.
+      </p>
+      <p style="margin:12px 0 0;font-size:14px;color:#1E293B;line-height:1.5;">
+        Please log into your account and complete the <strong>initial questionnaire</strong> (2 minutes):
+      </p>
+      <ul style="margin:8px 0 0;font-size:13px;color:#475569;line-height:1.7;">
+        <li>Who is your ideal client</li>
+        <li>On which platforms they usually are</li>
+        <li>How you currently get clients</li>
+        <li>Your main goal for the coming months</li>
+      </ul>
+      <p style="margin:12px 0 0;font-size:13px;color:#64748B;font-style:italic;">
+        Without this information we won't be able to prepare your ad campaigns.
+      </p>
+    </div>
+  ` : '';
   
   return renderEmail({
     lang,
@@ -64,14 +111,14 @@ export const giftReceivedEmail = ({ userName, giftedPlanName, giftedUntil, origi
            <p style="margin:4px 0 0;font-weight:600;color:#78350F;font-size:16px;">${expiry}</p>
          </div>
          
+         ${actionBlockEn}
+         
          <p><strong>What does this mean?</strong></p>
          <ul style="font-size:14px;color:#1E293B;">
-           <li>All ${giftedPlanName} features are unlocked in your account</li>
+           <li>All ${giftedPlanName} features are unlocked</li>
            <li>Your current billing won't change — you continue paying only for ${originalPlanName}</li>
            <li>After ${duration} days, your account returns to ${originalPlanName}</li>
-         </ul>
-         
-         <p>Log in to explore your new features.</p>`
+         </ul>`
       : `<p>Hola <strong>${userName}</strong>,</p>
          <p>¡Buenas noticias! Como agradecimiento, te hemos regalado <strong>${giftedPlanName}</strong> durante <strong>${duration} días</strong>.</p>
          
@@ -80,17 +127,21 @@ export const giftReceivedEmail = ({ userName, giftedPlanName, giftedUntil, origi
            <p style="margin:4px 0 0;font-weight:600;color:#78350F;font-size:16px;">${expiry}</p>
          </div>
          
+         ${actionBlockEs}
+         
          <p><strong>¿Qué significa esto?</strong></p>
          <ul style="font-size:14px;color:#1E293B;">
            <li>Tienes desbloqueadas todas las funciones de ${giftedPlanName}</li>
            <li>Tu facturación NO cambia — sigues pagando solo tu ${originalPlanName}</li>
            <li>Al pasar los ${duration} días, tu cuenta vuelve a ${originalPlanName}</li>
-         </ul>
-         
-         <p>Entra para explorar las nuevas funciones disponibles.</p>`,
+         </ul>`,
     cta: {
-      label: lang === 'en' ? 'Open my account' : 'Abrir mi cuenta',
-      url: 'https://misautonomos.es/suscripcion'
+      label: isAdsPlan 
+        ? (lang === 'en' ? 'Complete the questionnaire now' : 'Completar cuestionario ahora')
+        : (lang === 'en' ? 'Open my account' : 'Abrir mi cuenta'),
+      url: isAdsPlan 
+        ? 'https://misautonomos.es/mi-campana' 
+        : 'https://misautonomos.es/suscripcion'
     }
   });
 };

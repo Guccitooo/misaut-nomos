@@ -111,6 +111,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
   };
 
   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
+  const isVerified = profile.identity_verified === true;
 
   return (
     <div 
@@ -170,7 +171,14 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+            <div className="flex items-center gap-1">
+              <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+              {isVerified && (
+                <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Identidad verificada">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+              )}
+            </div>
             <p className="text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
           </div>
           {profile.tarifa_base > 0 && (
@@ -180,7 +188,14 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
       {/* Contenido — padding-top para no tapar el avatar (desktop) */}
       <div className="md:pt-8 pt-1 pb-3 flex flex-col flex-1">
-        <h3 className="hidden md:block font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+        <div className="hidden md:block flex items-center gap-1">
+          <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+          {isVerified && (
+            <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Identidad verificada">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            </svg>
+          )}
+        </div>
         <p className="hidden md:block text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
         <p className="text-gray-400 text-xs mt-0.5 truncate">📍 {profile.ciudad}, {profile.provincia}</p>
         <p className="text-gray-600 text-xs mt-1.5 line-clamp-2 min-h-[2.5rem] leading-relaxed">{profile.descripcion_corta}</p>

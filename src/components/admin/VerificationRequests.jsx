@@ -25,11 +25,39 @@ export default function VerificationRequests() {
 
   const approveMutation = useMutation({
     mutationFn: async (id) => {
+      const v = verifications.find(v => v.id === id);
+      const now = new Date().toISOString();
+      
+      // 1. Marcar verificación como aprobada
       await base44.entities.IdentityVerification.update(id, {
         status: "approved",
-        reviewed_date: new Date().toISOString(),
+        reviewed_date: now,
       });
-      const v = verifications.find(v => v.id === id);
+      
+      // 2. CRÍTICO: actualizar ProfessionalProfile del usuario
+      if (v?.user_id) {
+        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: v.user_id }).limit(1);
+        if (profiles[0]) {
+          await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+            identity_verified: true,
+            identity_verified_at: now,
+            identity_document_type: v.document_type
+          });
+        }
+      }
+      
+      // 3. Notificar al usuario (push + email)
+      if (v?.user_id) {
+        try {
+          await base44.functions.invoke('sendPushNotification', {
+            userIds: [v.user_id],
+            title: '✓ Identidad verificada',
+            message: 'Tu identidad ha sido verificada. Tu perfil ahora muestra el distintivo de verificado.',
+            url: 'https://misautonomos.es/mi-perfil'
+          });
+        } catch (e) { console.error('Push error:', e); }
+      }
+      
       if (v?.user_email) {
         const name = v.user_name || "Usuario";
         await base44.integrations.Core.SendEmail({
@@ -81,12 +109,26 @@ export default function VerificationRequests() {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }) => {
+      const v = verifications.find(v => v.id === id);
+      
+      // 1. Marcar verificación como rechazada
       await base44.entities.IdentityVerification.update(id, {
         status: "rejected",
         rejection_reason: reason,
         reviewed_date: new Date().toISOString(),
       });
-      const v = verifications.find(v => v.id === id);
+      
+      // 2. Asegurar que el perfil NO esté marcado como verificado
+      if (v?.user_id) {
+        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: v.user_id }).limit(1);
+        if (profiles[0] && profiles[0].identity_verified) {
+          await base44.entities.ProfessionalProfile.update(profiles[0].id, {
+            identity_verified: false,
+            identity_verified_at: null
+          });
+        }
+      }
+      
       if (v?.user_email) {
         const name = v.user_name || "Usuario";
         const motivo = reason || "Documentos no válidos o ilegibles";

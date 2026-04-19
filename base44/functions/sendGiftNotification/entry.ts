@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, giftedPlanName, giftedUntil, originalPlanName, duration } = await req.json();
+    const { userId, giftedPlanName, giftedUntil, originalPlanName, duration, giftedPlanId } = await req.json();
     const { User } = await import('@/api/entities');
     
     const targetUser = await User.get(userId);
@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
     }
     
     const lang = targetUser.language || 'es';
+    const isAdsPlan = giftedPlanId === 'plan_adsplus';
     
     // Push notification
     try {
@@ -26,9 +27,9 @@ Deno.serve(async (req) => {
         userIds: [userId],
         title: lang === 'en' ? '🎁 You received a gift!' : '🎁 ¡Has recibido un regalo!',
         message: lang === 'en' 
-          ? `We've gifted you ${giftedPlanName} for ${duration} days. Enjoy!`
-          : `Te regalamos ${giftedPlanName} durante ${duration} días. ¡Disfrútalo!`,
-        url: 'https://misautonomos.es/suscripcion'
+          ? `We've gifted you ${giftedPlanName} for ${duration} days. ${isAdsPlan ? 'Complete your questionnaire to activate campaigns.' : 'Enjoy!'}`
+          : `Te regalamos ${giftedPlanName} durante ${duration} días. ${isAdsPlan ? 'Completa el cuestionario para activar campañas.' : '¡Disfrútalo!'}`,
+        url: isAdsPlan ? 'https://misautonomos.es/mi-campana' : 'https://misautonomos.es/suscripcion'
       });
     } catch (e) {
       console.error('Error sending push:', e);
@@ -49,7 +50,8 @@ Deno.serve(async (req) => {
           giftedPlanName,
           giftedUntil,
           originalPlanName,
-          duration
+          duration,
+          giftedPlanId
         }, lang)
       });
     } catch (e) {

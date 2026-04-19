@@ -448,6 +448,7 @@ export default function AutonomoPage() {
   const showPhone = profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto;
   const showWhatsApp = profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto;
   const showChat = profile.metodos_contacto?.includes('chat_interno');
+  const isVerified = profile.identity_verified === true;
 
   return (
     <>
@@ -518,20 +519,28 @@ export default function AutonomoPage() {
               </Avatar>
               
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-900 mb-1">{profile.business_name}</h1>
-                
-                <div className="flex items-center gap-2 mb-1">
-                  {profile.categories?.[0] && (
-                    <Badge className="bg-blue-50 text-blue-700 text-xs">{profile.categories[0]}</Badge>
-                  )}
-                  {profile.total_reviews > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-semibold">{profile.average_rating?.toFixed(1)}</span>
-                      <span className="text-xs text-gray-500">({profile.total_reviews})</span>
-                    </div>
-                  )}
-                </div>
+              <h1 className="text-xl font-bold text-gray-900 mb-1">{profile.business_name}</h1>
+
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                {profile.categories?.[0] && (
+                  <Badge className="bg-blue-50 text-blue-700 text-xs">{profile.categories[0]}</Badge>
+                )}
+                {isVerified && (
+                  <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs inline-flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    Verificado
+                  </Badge>
+                )}
+                {profile.total_reviews > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-semibold">{profile.average_rating?.toFixed(1)}</span>
+                    <span className="text-xs text-gray-500">({profile.total_reviews})</span>
+                  </div>
+                )}
+              </div>
 
                 {(profile.ciudad || profile.provincia) && (
                   <div className="flex items-center gap-1 text-xs text-gray-600">

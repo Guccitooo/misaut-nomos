@@ -210,6 +210,7 @@ export default function ProfessionalProfilePage() {
   const showWhatsApp = profile.metodos_contacto?.includes("whatsapp") && profile.telefono_contacto;
   const showChat = profile.metodos_contacto?.includes("chat_interno");
   const firstName = profile.business_name?.split(" ")[0] || profile.business_name;
+  const isVerified = profile.identity_verified === true;
 
   const seoTitle = `${profile.business_name} - ${profile.categories?.[0] || "Profesional"} en ${profile.ciudad || profile.provincia}`;
   const seoDescription = profile.descripcion_corta || `${profile.business_name} ofrece servicios en ${profile.ciudad || profile.provincia}. Contacta ahora.`;
@@ -276,9 +277,18 @@ export default function ProfessionalProfilePage() {
 
             {/* Fila 2: Badges minimalistas */}
             <div className="flex flex-wrap gap-1.5 mt-4">
-              <span className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
-                <CheckCircle2 className="w-3 h-3 text-green-600" /> Verificado
-              </span>
+              {isVerified ? (
+                <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  Identidad verificada
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+                  <CheckCircle2 className="w-3 h-3 text-green-600" /> Verificado
+                </span>
+              )}
               {profile.years_experience > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
                   <Award className="w-3 h-3 text-gray-400" />

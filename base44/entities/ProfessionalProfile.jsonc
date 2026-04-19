@@ -385,6 +385,27 @@
       "type": "string",
       "description": "C\u00f3digo con el que se registr\u00f3 este usuario (si vino por referido)",
       "default": ""
+    },
+    "identity_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Identidad verificada por admin"
+    },
+    "identity_verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cu\u00e1ndo se aprob\u00f3 la verificaci\u00f3n"
+    },
+    "identity_document_type": {
+      "type": "string",
+      "enum": [
+        "dni",
+        "nie",
+        "passport",
+        ""
+      ],
+      "default": "",
+      "description": "Tipo de documento verificado"
     }
   },
   "required": [

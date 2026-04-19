@@ -49,7 +49,8 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
           giftedPlanName: targetPlan.name,
           giftedUntil: giftedUntil.toISOString(),
           originalPlanName: currentPlan.name,
-          duration
+          duration,
+          giftedPlanId: giftPlan
         });
       } catch (e) {
         console.error('Error sending notification:', e);
