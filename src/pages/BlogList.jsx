@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Clock, Search, TrendingUp } from 'lucide-react';
-import { SEOHead } from '@/components/seo/SEOHead';
+import { Helmet } from 'react-helmet-async';
 
 const CATEGORIES = [
   { id: 'autonomos', label: 'Para autónomos' },
@@ -53,11 +53,11 @@ export default function BlogListPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <SEOHead
-        title="Blog MisAutónomos — Consejos para autónomos en España"
-        description="Guías fiscales, herramientas y consejos prácticos para autónomos y clientes en España."
-        canonical="https://misautonomos.es/blog"
-      />
+      <Helmet>
+        <title>Blog MisAutónomos — Consejos para autónomos en España</title>
+        <meta name="description" content="Guías fiscales, herramientas y consejos prácticos para autónomos y clientes en España." />
+        <link rel="canonical" href="https://misautonomos.es/blog" />
+      </Helmet>
 
       {/* Hero */}
       <div className="bg-gray-50 border-b border-gray-100">
