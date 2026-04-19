@@ -6,22 +6,28 @@ export async function getEffectivePlan(userId) {
   if (!userId) return null;
   
   try {
-    const { Subscription } = await import('@/api/entities');
-    const subs = await Subscription.filter({
-      user_id: userId,
-      estado: { $in: ['activo', 'en_prueba'] }
-    });
+    const { base44 } = await import('@/api/base44Client');
+    const subs = (await base44.entities.Subscription.filter({
+      user_id: userId
+    })) || [];
     
-    // Proteger contra undefined o array vacío
-    if (!subs || (Array.isArray(subs) && subs.length === 0)) return null;
+    if (!Array.isArray(subs) || subs.length === 0) return null;
     
-    const sub = (Array.isArray(subs) ? subs[0] : subs);
+    const sub = subs[0];
     if (!sub) return null;
     
+    // Verificar que la suscripción está activa
+    const estado = sub.estado?.toLowerCase();
+    const fechaExp = new Date(sub.fecha_expiracion);
     const now = new Date();
     
+    const isActive = (estado === 'activo' || estado === 'en_prueba') && fechaExp >= now;
+    if (!isActive) return null;
+    
+    const now_date = new Date();
+    
     // Si tiene regalo activo
-    if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now) {
+    if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now_date) {
       return {
         planId: sub.gifted_plan_id,
         planName: sub.gifted_plan_name || sub.gifted_plan_id,
