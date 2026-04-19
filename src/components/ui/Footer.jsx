@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Mail, Instagram } from "lucide-react";
-import NewsletterSignup from "@/components/NewsletterSignup";
+import { Mail, Instagram, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -49,6 +49,70 @@ const legalLinks = [
   { label: "Política de cookies", to: createPageUrl("CookiePolicy") },
   { label: "Aviso legal", to: createPageUrl("LegalNotice") },
 ];
+
+function NewsletterInlineForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle');
+  const { i18n } = useTranslation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) return;
+    setStatus('loading');
+    try {
+      const { NewsletterSubscriber } = await import('@/api/entities');
+      const existing = await NewsletterSubscriber.filter({ email: email.toLowerCase() }).limit(1);
+      if (existing.length > 0) {
+        if (existing[0].status === 'unsubscribed') {
+          await NewsletterSubscriber.update(existing[0].id, { status: 'confirmed', confirmed_at: new Date().toISOString() });
+        }
+        setStatus('success');
+        return;
+      }
+      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      await NewsletterSubscriber.create({
+        email: email.toLowerCase().trim(),
+        status: 'confirmed',
+        language: i18n.language || 'es',
+        source: 'footer',
+        confirmation_token: token,
+        unsubscribe_token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+        confirmed_at: new Date().toISOString()
+      });
+      setStatus('success');
+      setEmail('');
+    } catch { setStatus('idle'); }
+  };
+
+  if (status === 'success') {
+    return (
+      <div className="text-xs text-green-400 flex items-center gap-1.5 whitespace-nowrap">
+        <Check className="w-3.5 h-3.5" />¡Gracias! Revisa tu email.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex w-full md:w-auto md:min-w-[300px]">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="tu@email.com"
+        required
+        disabled={status === 'loading'}
+        className="flex-1 bg-white/5 border border-white/10 rounded-l-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/30 border-r-0"
+      />
+      <button 
+        type="submit" 
+        disabled={status === 'loading'}
+        className="bg-white text-gray-900 text-xs font-medium px-3 py-1.5 rounded-r-lg hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap"
+      >
+        {status === 'loading' ? '...' : 'Suscribirme'}
+      </button>
+    </form>
+  );
+}
 
 export default function Footer() {
   return (
@@ -133,14 +197,15 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Newsletter signup bar */}
+      {/* Newsletter compacta inline */}
       <div className="border-t border-slate-800/60">
-        <div className="max-w-7xl mx-auto px-6 py-8 grid md:grid-cols-2 gap-6 items-start">
-          <div>
-            <h3 className="text-white font-semibold text-base">Recibe nuestros mejores consejos en tu email</h3>
-            <p className="text-sm text-gray-400 mt-1">Guías, herramientas y novedades para autónomos y clientes. Sin spam, máximo 2 emails al mes.</p>
+        <div className="max-w-7xl mx-auto px-6 py-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="text-xs text-gray-400">
+              <span className="text-white font-medium">Newsletter:</span> 1-2 emails al mes con consejos prácticos. Sin spam.
+            </div>
+            <NewsletterInlineForm />
           </div>
-          <NewsletterSignup variant="footer" source="footer" />
         </div>
       </div>
 
