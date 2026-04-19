@@ -421,22 +421,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     if (!user?.id) return;
 
     try {
-      // Cache extendido a 5 minutos
-      const cached = sessionStorage.getItem('unread_count');
-      if (cached) {
-        const { count, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 300000) {
-          setUnreadCount(count);
-          return;
-        }
-      }
-
       const messages = await base44.entities.Message.filter({
         recipient_id: user.id,
         is_read: false
       });
       const count = messages.length;
       setUnreadCount(count);
+      // Cache reducido a 1 minuto para actualizaciones más frecuentes
       sessionStorage.setItem('unread_count', JSON.stringify({
         count,
         timestamp: Date.now()
@@ -451,11 +442,24 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     loadUser();
   }, [loadUser]);
 
+  // Cargar mensajes no leídos al iniciar y cada 30 segundos
   useEffect(() => {
-    if (user) {
-      loadUnreadCount();
-    }
+    if (!user) return;
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, [user, loadUnreadCount]);
+
+  // Suscribirse a cambios en tiempo real
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = base44.entities.Message.subscribe((event) => {
+      if (event.type === 'create' && event.data?.recipient_id === user.id && !event.data?.is_read) {
+        setUnreadCount(prev => prev + 1);
+      }
+    });
+    return unsubscribe;
+  }, [user]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

@@ -22,6 +22,7 @@ import SEOHead from "../components/seo/SEOHead";
 import FileAttachment from "../components/messages/FileAttachment";
 import QuoteRequest from "../components/messages/QuoteRequest";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
+import SendQuoteDialog from "../components/messages/SendQuoteDialog";
 import { notifyUser, pushTemplates } from "@/services/pushNotifications";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -158,6 +159,8 @@ export default function MessagesPage() {
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   const [quoteData, setQuoteData] = useState({ description: "", budget: "", deadline: "" });
+  const [showSendQuoteDialog, setShowSendQuoteDialog] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
 
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
@@ -653,7 +656,7 @@ export default function MessagesPage() {
     finally { setUploadingFile(false); e.target.value = ''; }
   };
 
-  // ─── Quote ────────────────────────────────────────────────────────────────
+  // ─── Quote (cliente solicita) ─────────────────────────────────────────────
   const handleSendQuote = async () => {
     if (!quoteData.description.trim()) return;
     const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
@@ -673,6 +676,92 @@ export default function MessagesPage() {
     await loadMessages();
     setShowQuoteDialog(false);
     setQuoteData({ description: "", budget: "", deadline: "" });
+  };
+
+  // ─── Send Quote PDF (profesional envía) ───────────────────────────────────
+  const handleSendQuotePDF = async (quoteData) => {
+    if (!selectedConvId) return;
+    setSendingQuote(true);
+    try {
+      const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
+      if (!otherUserId) throw new Error('Sin destinatario');
+
+      // Generar PDF del presupuesto
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Configurar PDF
+      doc.setFont('helvetica');
+      doc.setFontSize(20);
+      doc.text('PRESUPUESTO', 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Título: ${quoteData.title}`, 20, 35);
+      doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 20, 45);
+      if (quoteData.validUntil) {
+        doc.text(`Válido hasta: ${new Date(quoteData.validUntil).toLocaleDateString('es-ES')}`, 20, 55);
+      }
+      
+      doc.text('Descripción del servicio:', 20, 70);
+      doc.setFontSize(10);
+      const descLines = doc.splitTextToSize(quoteData.description || 'Sin descripción', 170);
+      doc.text(descLines, 20, 80);
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total: ${quoteData.amount}€`, 20, 120);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Presupuesto enviado vía MisAutónomos', 20, 280);
+      
+      // Convertir a blob y subir
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], `presupuesto_${Date.now()}.pdf`, { type: 'application/pdf' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+      // Crear mensaje con el PDF
+      let profName = "";
+      let clientName = "";
+      for (const msg of currentMessages) {
+        if (!profName && msg.professional_name) profName = msg.professional_name;
+        if (!clientName && msg.client_name) clientName = msg.client_name;
+        if (profName && clientName) break;
+      }
+
+      if (isProfessional) {
+        profName = profName || user.full_name || user.email || "";
+      } else {
+        clientName = clientName || user.full_name || user.email || "";
+      }
+
+      await base44.entities.Message.create({
+        conversation_id: selectedConvId,
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: `📄 Presupuesto: ${quoteData.title} - ${quoteData.amount}€`,
+        professional_name: profName,
+        client_name: clientName,
+        is_read: false,
+        attachments: [{
+          url: file_url,
+          type: 'pdf',
+          name: `Presupuesto_${quoteData.title.replace(/\s+/g, '_')}.pdf`,
+          size: pdfBlob.size,
+          quote_data: quoteData
+        }]
+      });
+
+      await loadMessages();
+      setShowSendQuoteDialog(false);
+      toast.success('Presupuesto enviado correctamente');
+    } catch (error) {
+      console.error('Error sending quote:', error);
+      toast.error('Error al enviar presupuesto');
+    } finally {
+      setSendingQuote(false);
+    }
   };
 
   const handleRespondQuote = async (messageId, response) => {
@@ -1053,11 +1142,18 @@ export default function MessagesPage() {
                   <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" accept="image/*,.pdf,.doc,.docx,.txt" />
 
                   {isProfessional && (
-                    <Button type="button" variant="ghost" size="icon"
-                      className={`h-10 w-10 rounded-xl flex-shrink-0 ${showAIAssistant ? 'bg-purple-100 text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
-                      onClick={() => setShowAIAssistant(p => !p)}>
-                      <Sparkles className="w-4 h-4" />
-                    </Button>
+                    <>
+                      <Button type="button" variant="ghost" size="icon"
+                        className="h-10 w-10 rounded-xl flex-shrink-0 text-gray-500 hover:text-gray-700"
+                        onClick={() => setShowSendQuoteDialog(true)}>
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon"
+                        className={`h-10 w-10 rounded-xl flex-shrink-0 ${showAIAssistant ? 'bg-purple-100 text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setShowAIAssistant(p => !p)}>
+                        <Sparkles className="w-4 h-4" />
+                      </Button>
+                    </>
                   )}
 
                   <Button type="button" variant="ghost" size="icon"
@@ -1132,7 +1228,15 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* ── Quote Dialog ── */}
+      {/* ── Send Quote PDF Dialog (Profesional) ── */}
+      <SendQuoteDialog
+        open={showSendQuoteDialog}
+        onOpenChange={setShowSendQuoteDialog}
+        onSendQuote={handleSendQuotePDF}
+        loading={sendingQuote}
+      />
+
+      {/* ── Quote Request Dialog (Cliente) ── */}
       <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
