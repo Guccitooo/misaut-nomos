@@ -29,13 +29,45 @@ export default function VerificationRequests() {
         status: "approved",
         reviewed_date: new Date().toISOString(),
       });
-      // Notificar al usuario
       const v = verifications.find(v => v.id === id);
       if (v?.user_email) {
+        const name = v.user_name || "Usuario";
         await base44.integrations.Core.SendEmail({
           to: v.user_email,
           subject: "✅ Tu identidad ha sido verificada - MisAutónomos",
-          body: `<p>Hola ${v.user_name || ""},</p><p>Tu identidad ha sido verificada correctamente. Ya puedes dejar reseñas y aparecerás con el badge de <strong>usuario verificado</strong> en la plataforma.</p><p>Gracias,<br>El equipo de MisAutónomos</p>`,
+          body: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8FAFC;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+<tr><td style="padding:24px 32px 20px;border-bottom:1px solid #E2E8F0;">
+  <span style="font-size:20px;font-weight:700;color:#0F172A;">✦ MisAutónomos</span>
+</td></tr>
+<tr><td style="padding:32px 32px 8px;">
+  <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0F172A;">✓ Identidad verificada</h1>
+  <div style="background:#ECFDF5;border-left:3px solid #10B981;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+    <span style="color:#10B981;font-weight:700;margin-right:6px;">✓</span>
+    <span style="color:#1E293B;font-size:14px;">Tu solicitud ha sido aprobada</span>
+  </div>
+  <div style="font-size:15px;line-height:1.6;color:#1E293B;">
+    <p>Hola <strong>${name}</strong>,</p>
+    <p>Tu verificación de identidad ha sido <strong>aprobada</strong>. Tu perfil ahora muestra el distintivo <strong>"Verificado"</strong>, lo que genera mayor confianza en los clientes que visiten tu perfil.</p>
+  </div>
+  <table cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 8px;">
+    <tr><td>
+      <a href="https://misautonomos.es/mi-perfil" style="display:inline-block;background:#0F172A;color:#fff;font-weight:600;font-size:15px;text-decoration:none;padding:12px 28px;border-radius:10px;">Ver mi perfil</a>
+    </td></tr>
+  </table>
+</td></tr>
+<tr><td style="padding:24px 32px 28px;border-top:1px solid #E2E8F0;background:#FAFBFC;">
+  <p style="margin:0 0 12px;font-size:13px;color:#64748B;">Saludos,<br><strong style="color:#1E293B;">El equipo de MisAutónomos</strong></p>
+  <p style="margin:16px 0 0;font-size:12px;color:#64748B;">Recibes este correo porque tienes una cuenta en <a href="https://misautonomos.es" style="color:#1E40AF;">misautonomos.es</a>.</p>
+  <p style="margin:8px 0 0;font-size:11px;color:#94A3B8;">© ${new Date().getFullYear()} MisAutónomos · <a href="https://misautonomos.es/privacidad" style="color:#94A3B8;">Privacidad</a> · <a href="https://misautonomos.es/terminos" style="color:#94A3B8;">Términos</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
           from_name: "MisAutónomos"
         }).catch(() => {});
       }
@@ -56,10 +88,49 @@ export default function VerificationRequests() {
       });
       const v = verifications.find(v => v.id === id);
       if (v?.user_email) {
+        const name = v.user_name || "Usuario";
+        const motivo = reason || "Documentos no válidos o ilegibles";
         await base44.integrations.Core.SendEmail({
           to: v.user_email,
-          subject: "❌ Verificación de identidad rechazada - MisAutónomos",
-          body: `<p>Hola ${v.user_name || ""},</p><p>Tu solicitud de verificación de identidad ha sido rechazada.</p><p><strong>Motivo:</strong> ${reason || "Documentos no válidos o ilegibles"}</p><p>Puedes volver a intentarlo desde tu perfil.</p><p>Gracias,<br>El equipo de MisAutónomos</p>`,
+          subject: "⚠️ Tu verificación de identidad necesita atención - MisAutónomos",
+          body: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8FAFC;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+<tr><td style="padding:24px 32px 20px;border-bottom:1px solid #E2E8F0;">
+  <span style="font-size:20px;font-weight:700;color:#0F172A;">✦ MisAutónomos</span>
+</td></tr>
+<tr><td style="padding:32px 32px 8px;">
+  <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0F172A;">Tu verificación necesita atención</h1>
+  <div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+    <span style="color:#F59E0B;font-weight:700;margin-right:6px;">⚠</span>
+    <span style="color:#1E293B;font-size:14px;">No hemos podido aprobar tu verificación</span>
+  </div>
+  <div style="font-size:15px;line-height:1.6;color:#1E293B;">
+    <p>Hola <strong>${name}</strong>,</p>
+    <p>Lamentablemente no hemos podido aprobar tu verificación de identidad.</p>
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin:16px 0;">
+      <p style="margin:0;font-size:13px;color:#64748B;">Motivo</p>
+      <p style="margin:4px 0 0;font-weight:600;color:#1E293B;">${motivo}</p>
+    </div>
+    <p>Puedes volver a intentarlo subiendo documentos más claros desde tu perfil.</p>
+  </div>
+  <table cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 8px;">
+    <tr><td>
+      <a href="https://misautonomos.es/mi-perfil" style="display:inline-block;background:#0F172A;color:#fff;font-weight:600;font-size:15px;text-decoration:none;padding:12px 28px;border-radius:10px;">Volver a intentarlo</a>
+    </td></tr>
+  </table>
+</td></tr>
+<tr><td style="padding:24px 32px 28px;border-top:1px solid #E2E8F0;background:#FAFBFC;">
+  <p style="margin:0 0 12px;font-size:13px;color:#64748B;">Saludos,<br><strong style="color:#1E293B;">El equipo de MisAutónomos</strong></p>
+  <p style="margin:16px 0 0;font-size:12px;color:#64748B;">Recibes este correo porque tienes una cuenta en <a href="https://misautonomos.es" style="color:#1E40AF;">misautonomos.es</a>.</p>
+  <p style="margin:8px 0 0;font-size:11px;color:#94A3B8;">© ${new Date().getFullYear()} MisAutónomos · <a href="https://misautonomos.es/privacidad" style="color:#94A3B8;">Privacidad</a> · <a href="https://misautonomos.es/terminos" style="color:#94A3B8;">Términos</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
           from_name: "MisAutónomos"
         }).catch(() => {});
       }

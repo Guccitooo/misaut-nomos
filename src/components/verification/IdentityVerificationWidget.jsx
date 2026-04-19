@@ -84,21 +84,25 @@ export default function IdentityVerificationWidget({ user }) {
       ]);
 
       const payload = {
-        user_id: user.id,
-        user_email: user.email,
-        user_name: user.full_name || user.email,
         document_type: docType,
         document_front_url: frontRes.file_url,
         document_back_url: backRes.file_url || null,
         selfie_url: selfieRes.file_url,
         status: "pending",
         rejection_reason: null,
+        reviewed_date: null,
       };
 
+      // Si ya existe un registro (reintento tras rechazo), actualizar; si no, crear
       if (verification?.id) {
         await base44.entities.IdentityVerification.update(verification.id, payload);
       } else {
-        await base44.entities.IdentityVerification.create(payload);
+        await base44.entities.IdentityVerification.create({
+          ...payload,
+          user_id: user.id,
+          user_email: user.email,
+          user_name: user.full_name || user.email,
+        });
       }
 
       queryClient.invalidateQueries({ queryKey: ["identity_verification", user.id] });
@@ -113,55 +117,8 @@ export default function IdentityVerificationWidget({ user }) {
 
   if (isLoading) return null;
 
-  // --- ESTADO: APROBADO ---
-  if (verification?.status === "approved") {
-    return (
-      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-emerald-800">Identidad verificada</p>
-          <p className="text-xs text-emerald-600">Tu badge de verificación está activo en tu perfil</p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- ESTADO: PENDIENTE ---
-  if (verification?.status === "pending") {
-    return (
-      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-        <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-amber-800">Verificación en revisión</p>
-          <p className="text-xs text-amber-600">Revisaremos tus documentos en 24-48h</p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- ESTADO: RECHAZADO (solo si no está intentando de nuevo) ---
-  if (verification?.status === "rejected" && step !== "form" && step !== "submitting") {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <ShieldX className="w-5 h-5 text-red-600" />
-          <p className="text-sm font-semibold text-red-800">Verificación rechazada</p>
-        </div>
-        {verification.rejection_reason && (
-          <p className="text-xs text-red-700 bg-red-100 rounded-lg px-3 py-2">
-            Motivo: {verification.rejection_reason}
-          </p>
-        )}
-        <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-50"
-          onClick={() => setStep("form")}>
-          Volver a intentarlo
-        </Button>
-      </div>
-    );
-  }
-
-  // --- ESTADO: FORMULARIO ---
-  if (step === "form" || (step !== "idle" && step !== "done")) {
+  // --- FORMULARIO (tiene prioridad sobre status rechazado para permitir reintento) ---
+  if (step === "form" || step === "submitting") {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -265,6 +222,53 @@ export default function IdentityVerificationWidget({ user }) {
           ) : (
             <><CheckCircle className="w-4 h-4 mr-2" /> Enviar para verificación</>
           )}
+        </Button>
+      </div>
+    );
+  }
+
+  // --- ESTADO: APROBADO ---
+  if (verification?.status === "approved") {
+    return (
+      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+        <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">Identidad verificada</p>
+          <p className="text-xs text-emerald-600">Tu badge de verificación está activo en tu perfil</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ESTADO: PENDIENTE ---
+  if (verification?.status === "pending") {
+    return (
+      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+        <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Verificación en revisión</p>
+          <p className="text-xs text-amber-600">Revisaremos tus documentos en 24-48h</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ESTADO: RECHAZADO ---
+  if (verification?.status === "rejected") {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldX className="w-5 h-5 text-red-600" />
+          <p className="text-sm font-semibold text-red-800">Verificación rechazada</p>
+        </div>
+        {verification.rejection_reason && (
+          <p className="text-xs text-red-700 bg-red-100 rounded-lg px-3 py-2">
+            Motivo: {verification.rejection_reason}
+          </p>
+        )}
+        <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-50"
+          onClick={() => setStep("form")}>
+          Volver a intentarlo
         </Button>
       </div>
     );

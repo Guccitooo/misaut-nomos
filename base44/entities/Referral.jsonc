@@ -1,0 +1,101 @@
+{
+  "name": "Referral",
+  "type": "object",
+  "properties": {
+    "referrer_id": {
+      "type": "string",
+      "description": "ID del aut\u00f3nomo que refiere"
+    },
+    "referrer_name": {
+      "type": "string",
+      "description": "Nombre del referidor"
+    },
+    "referrer_email": {
+      "type": "string",
+      "description": "Email del referidor (para notificaciones)"
+    },
+    "referred_id": {
+      "type": "string",
+      "description": "ID del nuevo usuario referido"
+    },
+    "referred_name": {
+      "type": "string",
+      "description": "Nombre del referido"
+    },
+    "referred_email": {
+      "type": "string",
+      "description": "Email del referido"
+    },
+    "code": {
+      "type": "string",
+      "description": "C\u00f3digo usado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "qualified",
+        "rewarded",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "reward_extra_days_applied_to_referred": {
+      "type": "boolean",
+      "default": false
+    },
+    "reward_month_applied_to_referrer": {
+      "type": "boolean",
+      "default": false
+    },
+    "qualified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rewarded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "referred_subscription_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "referrer_id",
+    "referred_id",
+    "code"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.referrer_id == auth.user_id || resource.referred_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "referrer_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "referred_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "code"
+      ]
+    }
+  ]
+}
