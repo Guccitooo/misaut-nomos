@@ -87,11 +87,24 @@ export default function SubscriptionManagementPage() {
 
   async function loadSubscription() {
     try {
+      console.log('[SubscriptionManagement] loadSubscription start, user:', user);
+      
+      if (!user?.id) {
+        console.error('[SubscriptionManagement] No user ID available');
+        setLoading(false);
+        return;
+      }
+
       setSyncing(true);
       // Sincronizar con Stripe
-      const syncResponse = await base44.functions.invoke('syncStripeSubscription', {});
-      if (syncResponse.data?.ok && syncResponse.data?.subscription) {
-        sessionStorage.removeItem('current_user');
+      try {
+        const syncResponse = await base44.functions.invoke('syncStripeSubscription', {});
+        console.log('[SubscriptionManagement] Sync response:', syncResponse.data);
+        if (syncResponse.data?.ok && syncResponse.data?.subscription) {
+          sessionStorage.removeItem('current_user');
+        }
+      } catch (syncError) {
+        console.warn('[SubscriptionManagement] Sync failed, continuing:', syncError.message);
       }
       setSyncing(false);
 
@@ -99,18 +112,21 @@ export default function SubscriptionManagementPage() {
       const subs = await base44.entities.Subscription.filter({
         user_id: user.id
       });
+      console.log('[SubscriptionManagement] Found subscriptions:', subs);
       const sub = subs[0] || null;
       setSubscription(sub);
 
       // Cargar plan efectivo
       if (sub) {
         const planData = await getEffectivePlan(user.id);
+        console.log('[SubscriptionManagement] Effective plan:', planData);
         setEffectivePlan(planData);
 
         // Cargar detalles del plan
         const planId = planData?.planId || sub.plan_id;
         if (planId) {
           const plans = await base44.entities.SubscriptionPlan.filter({ plan_id: planId });
+          console.log('[SubscriptionManagement] Plan details:', plans);
           setPlan(plans[0] || null);
         }
       }
@@ -120,7 +136,7 @@ export default function SubscriptionManagementPage() {
         await loadInvoices();
       }
     } catch (error) {
-      console.error('Error loading subscription:', error);
+      console.error('[SubscriptionManagement] Error loading subscription:', error);
     } finally {
       setLoading(false);
     }
@@ -129,10 +145,13 @@ export default function SubscriptionManagementPage() {
   // 3. EFFECTS
   useEffect(() => {
     async function init() {
+      console.log('[SubscriptionManagement] init start');
       const currentUser = await loadUser();
+      console.log('[SubscriptionManagement] User loaded:', currentUser);
       if (currentUser) {
         await loadSubscription();
       } else {
+        console.warn('[SubscriptionManagement] No user, setting loading false');
         setLoading(false);
       }
     }
@@ -326,6 +345,19 @@ export default function SubscriptionManagementPage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                 >
                   Ver planes disponibles
+                </Button>
+                
+                {/* DEBUG: Forzar recarga */}
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    console.log('[DEBUG] Forzando recarga...');
+                    setLoading(true);
+                    await loadSubscription();
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  🔄 Forzar recarga (DEBUG)
                 </Button>
                 
                 <p className="text-sm text-gray-500">
