@@ -406,6 +406,21 @@
       ],
       "default": "",
       "description": "Tipo de documento verificado"
+    },
+    "whatsapp_notifications_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Activar notificaciones por WhatsApp para nuevos contactos"
+    },
+    "whatsapp_phone_number": {
+      "type": "string",
+      "default": "",
+      "description": "N\u00famero de tel\u00e9fono para WhatsApp (formato: +34612345678)"
+    },
+    "whatsapp_last_test": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima prueba de WhatsApp realizada"
     }
   },
   "required": [
