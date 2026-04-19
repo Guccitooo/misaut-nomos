@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 
 import AdminLayout from "@/components/admin/AdminLayout";
-import AdminDashboardStats from "@/components/admin/AdminDashboardStats";
+import AdminBusinessDashboard from "@/components/admin/AdminBusinessDashboard";
 import AdminUsersTable from "@/components/admin/AdminUsersTable";
 import AdminPendingProfiles from "@/components/admin/AdminPendingProfiles";
 import AdminSubscriptionsTable from "@/components/admin/AdminSubscriptionsTable";
@@ -83,6 +83,13 @@ export default function AdminDashboardPage() {
     staleTime: 1000 * 60 * 2,
   });
 
+  const { data: paymentRecords = [] } = useQuery({
+    queryKey: ['allPaymentRecords'],
+    queryFn: () => base44.entities.PaymentRecord.list(),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const openTickets = tickets.filter(t => t.status === "abierto" || t.status === "en_progreso").length;
   const isLoading = loadingUsers || loadingProfiles || loadingSubscriptions;
 
@@ -118,12 +125,11 @@ export default function AdminDashboardPage() {
   return (
     <AdminLayout activeSection={activeSection} onSectionChange={setActiveSection} openTickets={openTickets}>
       {activeSection === "dashboard" && (
-        <AdminDashboardStats
+        <AdminBusinessDashboard
           users={users}
           profiles={profiles}
           subscriptions={subscriptions}
-          messages={messages}
-          reviews={reviews}
+          paymentRecords={paymentRecords}
         />
       )}
 
