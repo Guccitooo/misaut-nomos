@@ -248,8 +248,6 @@ export default function SubscriptionManagementPage() {
         toast.success(response.data.message || 'Plan mejorado correctamente');
         // Limpiar cache y recargar TODO
         sessionStorage.removeItem('current_user');
-        queryClient.invalidateQueries({ queryKey: ['subscription'] });
-        queryClient.invalidateQueries({ queryKey: ['user'] });
         
         // Recargar usuario y suscripción
         const currentUser = await loadUser();
