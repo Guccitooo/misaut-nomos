@@ -45,6 +45,7 @@ export default function AdminNewsletter() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   useEffect(() => {
     load();
@@ -98,7 +99,7 @@ export default function AdminNewsletter() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
