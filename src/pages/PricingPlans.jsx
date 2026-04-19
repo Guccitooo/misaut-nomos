@@ -30,12 +30,14 @@ const PLAN_VISIBILITY_EXCLUDES = [
 
 const PLAN_ADSPLUS_INCLUDES = [
   "Todo lo del Plan Visibilidad ✓",
-  "Campañas activas en Instagram, Facebook y TikTok",
-  "Inversión publicitaria gestionada por nuestro equipo",
-  "Resumen mensual de rendimiento",
-  "Posicionamiento destacado en búsquedas",
-  "Badge verificado en el perfil",
-  "Soporte prioritario por WhatsApp",
+  "30€/mes de presupuesto publicitario REAL invertido en tu campaña",
+  "Briefing mensual guiado (eliges red y objetivo cada mes)",
+  "Campaña en Instagram, Facebook, TikTok, LinkedIn o Google",
+  "Creatividades profesionales hechas por nosotros",
+  "Copy publicitario optimizado",
+  "Gestión y optimización activa durante todo el mes",
+  "Reporte semanal de resultados con métricas reales",
+  "Deadline flexible para briefing (día 5 de cada mes)",
 ];
 
 const FAQS = [
@@ -375,10 +377,14 @@ export default function PricingPlansPage() {
                       {PLAN_ADSPLUS_INCLUDES.map((f, i) => (
                         <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                           <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className={i === 0 ? "font-semibold text-blue-700" : ""}>{f}</span>
+                          <span className={i === 1 ? "font-semibold text-blue-700" : ""}>{f}</span>
                         </li>
                       ))}
                     </ul>
+
+                    <p className="text-sm font-semibold text-blue-700 bg-blue-50 rounded-lg p-3 mt-4">
+                      💡 Visibility te hace aparecer. Ads+ te trae clientes activamente.
+                    </p>
                   </div>
                 </div>
               );

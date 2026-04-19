@@ -483,7 +483,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return user?.profile_picture || null;
   };
 
-  const getNavigationItems = useMemo(() => {
+  const navigationItems = useMemo(() => {
     const items = [];
 
     if (isAdmin) {
@@ -530,8 +530,6 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
     return items;
   }, [isProfessional, isClient, isAdmin, userPlan, unreadCount, t]);
-
-  const navigationItems = getNavigationItems();
 
   // CAMBIO: bloque <style> eliminado — todas estas reglas ya existen en globals.css.
   // Eliminar el inline style evita: CSS duplicado, conflictos de especificidad y ~20KB extra en el bundle.

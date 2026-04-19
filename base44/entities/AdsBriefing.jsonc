@@ -1,0 +1,247 @@
+{
+  "name": "AdsBriefing",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional suscrito a Plan Ads+"
+    },
+    "professional_name": {
+      "type": "string",
+      "description": "Nombre del profesional"
+    },
+    "month_year": {
+      "type": "string",
+      "description": "Mes de la campa\u00f1a (formato YYYY-MM)"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "tiktok",
+        "google_search",
+        "linkedin"
+      ],
+      "description": "Red social donde quiere anunciarse este mes (solo una)"
+    },
+    "goal": {
+      "type": "string",
+      "enum": [
+        "more_calls",
+        "more_leads",
+        "brand_awareness",
+        "website_traffic",
+        "more_quotes"
+      ],
+      "description": "Objetivo principal de la campa\u00f1a este mes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "in_progress",
+        "approved",
+        "live",
+        "completed"
+      ],
+      "default": "draft",
+      "description": "Estado del briefing"
+    },
+    "campaign_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_review",
+        "creating",
+        "live",
+        "paused",
+        "finished"
+      ],
+      "default": "pending",
+      "description": "Estado de ejecuci\u00f3n"
+    },
+    "top_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Servicios que m\u00e1s quiere promocionar este mes"
+    },
+    "service_area": {
+      "type": "string",
+      "default": "",
+      "description": "Zona geogr\u00e1fica donde quiere captar clientes"
+    },
+    "special_offer": {
+      "type": "string",
+      "default": "",
+      "description": "Oferta o descuento a promocionar (opcional)"
+    },
+    "images_provided": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "URLs de im\u00e1genes que el profesional aporta"
+    },
+    "video_url": {
+      "type": "string",
+      "default": "",
+      "description": "Video que el profesional aporta (opcional)"
+    },
+    "best_testimonials": {
+      "type": "string",
+      "default": "",
+      "description": "Testimonios o casos de \u00e9xito que quiera destacar"
+    },
+    "client_sources_now": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "C\u00f3mo obtiene clientes actualmente"
+    },
+    "client_profile": {
+      "type": "string",
+      "default": "",
+      "description": "Perfil ideal del cliente (edad, sexo, sector, intereses)"
+    },
+    "additional_notes": {
+      "type": "string",
+      "default": "",
+      "description": "Notas adicionales del profesional"
+    },
+    "admin_notes": {
+      "type": "string",
+      "default": "",
+      "description": "Notas internas del equipo"
+    },
+    "ads_copy": {
+      "type": "string",
+      "default": "",
+      "description": "Copy del anuncio preparado por el equipo"
+    },
+    "ads_creative_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "URLs de creatividades preparadas por el equipo"
+    },
+    "ads_content_approved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cliente aprob\u00f3 el contenido del anuncio"
+    },
+    "campaign_id_external": {
+      "type": "string",
+      "default": "",
+      "description": "ID de campa\u00f1a en Meta Ads / TikTok Ads"
+    },
+    "campaign_metrics": {
+      "type": "object",
+      "default": {
+        "reach": 0,
+        "impressions": 0,
+        "clicks": 0,
+        "conversions": 0,
+        "leads_generated": 0,
+        "cpc": 0,
+        "spent_eur": 0
+      },
+      "description": "M\u00e9tricas de la campa\u00f1a"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de inicio de la campa\u00f1a"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de fin de la campa\u00f1a"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cu\u00e1ndo se envi\u00f3 el briefing"
+    },
+    "admin_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima actualizaci\u00f3n por el admin"
+    },
+    "included_budget_eur": {
+      "type": "number",
+      "default": 30,
+      "description": "Presupuesto de ads incluido en el plan"
+    },
+    "budget_spent_to_date": {
+      "type": "number",
+      "default": 0,
+      "description": "Presupuesto gastado hasta la fecha (se actualiza desde campaign_metrics.spent_eur)"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si se gener\u00f3 autom\u00e1ticamente el d\u00eda 6 sin input del profesional"
+    },
+    "budget_tier": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "boosted"
+      ],
+      "default": "standard",
+      "description": "Presupuesto incluido en el plan"
+    }
+  },
+  "required": [
+    "professional_id",
+    "month_year",
+    "platform",
+    "goal"
+  ],
+  "security": {
+    "type": "object",
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id",
+        "month_year"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "status",
+        "month_year"
+      ]
+    },
+    {
+      "fields": [
+        "professional_id",
+        "created_date"
+      ]
+    }
+  ]
+}

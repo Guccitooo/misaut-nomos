@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Instagram, Facebook, Search, Upload, X, Check, ChevronLeft } from "lucide-react";
+import { Instagram, Facebook, Search, Upload, X, Check, ChevronLeft, Linkedin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ export default function BriefingMensualPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [professionalProfile, setProfessionalProfile] = useState(null);
+  const [insights, setInsights] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
 
@@ -150,11 +151,51 @@ export default function BriefingMensualPage() {
   };
 
   const platforms = [
-    { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'from-pink-600 to-purple-600' },
-    { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-800' },
-    { id: 'tiktok', label: 'TikTok', icon: TikTokIcon, color: 'from-gray-800 to-black' },
-    { id: 'google_search', label: 'Google', icon: Search, color: 'from-green-600 to-blue-600' }
+    { id: 'instagram', label: 'Instagram', icon: Instagram, hint: 'Gran alcance visual, 25-45 años', color: 'from-pink-600 to-purple-600' },
+    { id: 'facebook', label: 'Facebook', icon: Facebook, hint: 'Local + 35-65 años', color: 'from-blue-600 to-blue-800' },
+    { id: 'tiktok', label: 'TikTok', icon: TikTokIcon, hint: '18-30 años, formato vídeo', color: 'from-gray-800 to-black' },
+    { id: 'google_search', label: 'Google', icon: Search, hint: 'Intención alta de compra', color: 'from-green-600 to-blue-600' },
+    { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, hint: 'B2B, profesionales', color: 'from-blue-700 to-blue-900' }
   ];
+
+  // Función de recomendación basada en ClientInsights
+  const recommendPlatform = (insights) => {
+    if (!insights) return null;
+    const { client_type, client_age_range, preferred_platforms, service_area_type } = insights;
+    
+    // Si cliente es empresa → LinkedIn prioritario
+    if (client_type === 'company') {
+      return { platform: 'linkedin', reason: 'Para captar clientes empresa, LinkedIn da mejor calidad de lead.' };
+    }
+    
+    // Si cliente joven (18-30) → TikTok o Instagram
+    const ages = client_age_range || [];
+    if (ages.includes('18-25') && !ages.includes('45-55')) {
+      return { platform: 'tiktok', reason: 'Tu cliente es joven y TikTok funciona mejor para este rango de edad.' };
+    }
+    
+    // Si ámbito local + intención compra → Google
+    if (service_area_type === 'local_city' && client_type === 'particular') {
+      return { platform: 'google_search', reason: 'Para captación local con intención de compra, Google Search convierte más.' };
+    }
+    
+    // Si ya lo usa habitualmente y tiene presencia → potenciar esa red
+    if (preferred_platforms?.includes('instagram')) {
+      return { platform: 'instagram', reason: 'Tu cliente ya está en Instagram y tú ya publicas ahí — potenciamos tu presencia.' };
+    }
+    
+    // Default para particulares adultos
+    return { platform: 'facebook', reason: 'Para tu perfil de cliente, Facebook da el mejor coste por lead.' };
+  };
+
+  const recommendedPlatform = recommendPlatform(insights);
+  const platformLabels = {
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    tiktok: 'TikTok',
+    google_search: 'Google Search',
+    linkedin: 'LinkedIn'
+  };
 
   const goals = [
     { id: 'more_calls', label: 'Más llamadas', desc: 'Que me llamen pidiendo info' },
