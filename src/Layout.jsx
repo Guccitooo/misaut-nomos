@@ -352,7 +352,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
           sessionStorage.setItem('current_user', JSON.stringify({
             user: currentUser,
             profile,
-            plan,
+            plan: effective?.planId || null,
             timestamp: Date.now()
           }));
         }
