@@ -519,10 +519,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   };
 
   const navigationItems = useMemo(() => {
-    const items = [];
-
     if (isAdmin) {
-      items.push(
+      return [
         { title: "Administración", url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
         { title: "💰 Pagos", url: createPageUrl("AdminPayments"), icon: CreditCard },
         { title: "Bandeja de Soporte", url: "/admin/soporte", icon: Headphones },
@@ -530,29 +528,30 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: "Blog", url: "/admin/blog", icon: BookOpen },
         { title: "Newsletter", url: "/admin/newsletter", icon: Mail },
         { title: "Referidos", url: "/admin/referidos", icon: Gift }
-      );
-    } else if (isProfessional) {
-      items.push(
+      ];
+    }
+    
+    if (isProfessional) {
+      return [
         { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
         { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
         { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
         { title: t('nav.quotes'), url: "/presupuestos", icon: FileText },
         { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
         { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
-        // ✅ Plan Ads+ → mostrar "Mi campaña"
-        isAdsPlus(userPlan) && {
-          title: 'Mi campaña',
-          url: '/mi-campana',
-          icon: Megaphone,
-          badge: null // Aquí podrías añadir lógica para mostrar punto rojo si hay novedades
-        },
+        // ✅ Plan Ads+ → mostrar "Mi campaña" (solo si userPlan es 'plan_adsplus')
+        userPlan === 'plan_adsplus' 
+          ? { title: 'Mi campaña', url: '/mi-campana', icon: Megaphone, badge: null }
+          : null,
         { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
         { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
         { title: 'Invita y gana', url: "/referidos", icon: Gift },
         { title: t('nav.support'), url: "/soporte", icon: Headphones }
-      ).filter(Boolean);
-    } else if (isClient) {
-      items.push(
+      ].filter(Boolean);
+    }
+    
+    if (isClient) {
+      return [
         { title: t('nav.search_professionals'), url: createPageUrl("Search"), icon: Search },
         { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
         { title: t('nav.favorites'), url: createPageUrl("Favorites"), icon: Heart },
@@ -560,10 +559,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
         { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
         { title: t('nav.support'), url: "/soporte", icon: Headphones }
-      );
+      ];
     }
-
-    return items;
+    
+    return [];
   }, [isProfessional, isClient, isAdmin, userPlan, unreadCount, t]);
 
   // CAMBIO: bloque <style> eliminado — todas estas reglas ya existen en globals.css.
