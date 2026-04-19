@@ -1,0 +1,95 @@
+{
+  "name": "IdentityVerification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario que solicita verificaci\u00f3n"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del usuario"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nombre del usuario"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Estado de la verificaci\u00f3n"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "dni",
+        "nie",
+        "passport"
+      ],
+      "description": "Tipo de documento"
+    },
+    "document_front_url": {
+      "type": "string",
+      "description": "URL de la foto frontal del documento"
+    },
+    "document_back_url": {
+      "type": "string",
+      "description": "URL de la foto trasera del documento (DNI/NIE)"
+    },
+    "selfie_url": {
+      "type": "string",
+      "description": "URL del selfie con el documento"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "description": "Motivo de rechazo (si aplica)"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "ID del admin que revis\u00f3"
+    },
+    "reviewed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de revisi\u00f3n"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "document_type",
+    "document_front_url"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "user_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "status"
+      ]
+    }
+  ]
+}

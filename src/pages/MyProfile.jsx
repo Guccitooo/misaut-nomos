@@ -41,6 +41,7 @@ import FAQSection from "../components/profile/FAQSection";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
 import ServicesSection from "../components/profile/ServicesSection";
 import AvailabilityCalendar from "../components/profile/AvailabilityCalendar";
+import IdentityVerificationWidget from "../components/verification/IdentityVerificationWidget";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -931,6 +932,14 @@ export default function MyProfilePage() {
                     </Card>
                   </div>
                 )}
+
+                {/* VERIFICACIÓN DE IDENTIDAD */}
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span>🛡️</span> Verificación de identidad
+                  </p>
+                  <IdentityVerificationWidget user={user} />
+                </div>
 
                 {/* DELETE ACCOUNT */}
                 <div className="pt-6 border-t border-gray-200">

@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { id: "subscriptions", label: "Suscripciones", icon: CreditCard, emoji: "💳" },
   { id: "metrics", label: "Métricas", icon: BarChart2, emoji: "📈" },
   { id: "support", label: "Soporte", icon: Ticket, emoji: "🎫" },
+  { id: "verifications", label: "Verificaciones", icon: Settings, emoji: "🛡️" },
 ];
 
 export default function AdminLayout({ activeSection, onSectionChange, openTickets = 0, children }) {

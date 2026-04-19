@@ -12,6 +12,7 @@ import AdminPendingProfiles from "@/components/admin/AdminPendingProfiles";
 import AdminSubscriptionsTable from "@/components/admin/AdminSubscriptionsTable";
 import AdminMetrics from "@/components/admin/AdminMetrics";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
+import VerificationRequests from "@/components/admin/VerificationRequests";
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -152,6 +153,10 @@ export default function AdminDashboardPage() {
 
       {activeSection === "support" && (
         <AdminSupportTickets tickets={tickets} />
+      )}
+
+      {activeSection === "verifications" && (
+        <VerificationRequests />
       )}
     </AdminLayout>
   );

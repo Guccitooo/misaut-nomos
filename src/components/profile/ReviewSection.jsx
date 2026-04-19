@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Star, MessageSquare, Flag, Reply, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, MessageSquare, Flag, Reply, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
+import { useIdentityVerification } from "@/components/verification/IdentityVerificationWidget";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -71,6 +72,13 @@ function ReviewForm({ professionalId, currentUser, existingReview, onSuccess }) 
     }
     setSubmitting(true);
     try {
+      // Comprobar si el usuario tiene verificación aprobada
+      let clientVerified = false;
+      try {
+        const verifs = await base44.entities.IdentityVerification.filter({ user_id: currentUser.id });
+        clientVerified = verifs[0]?.status === "approved";
+      } catch {}
+
       const data = {
         professional_id: professionalId,
         client_id: currentUser.id,
@@ -82,6 +90,7 @@ function ReviewForm({ professionalId, currentUser, existingReview, onSuccess }) 
         precio_satisfaccion: ratings.precio_satisfaccion,
         comment: comment.trim(),
         is_verified: true,
+        client_verified: clientVerified,
       };
       if (existingReview) {
         await base44.entities.Review.update(existingReview.id, data);
@@ -222,6 +231,34 @@ function ProfessionalResponseBox({ review, isOwner, professionalId }) {
   return null;
 }
 
+// ── Botón de valorar con gate de verificación ────────────────────────────────
+function ReviewButton({ currentUser, myReview, showForm, setShowForm }) {
+  const { data: verification } = useIdentityVerification(currentUser?.id);
+  const isVerified = verification?.status === "approved";
+
+  if (!isVerified) {
+    return (
+      <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-xs text-amber-700">
+        <ShieldCheck className="w-3.5 h-3.5" />
+        <span>Verifica tu identidad para valorar</span>
+        <a href="/mi-perfil" className="font-semibold underline hover:no-underline ml-1">→</a>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant={myReview ? "outline" : "default"}
+      className={myReview ? "h-8 text-xs" : "h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white"}
+      onClick={() => setShowForm((v) => !v)}
+    >
+      <Star className="w-3 h-3 mr-1" />
+      {myReview ? "Mi valoración" : "Valorar"}
+    </Button>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function ReviewSection({ reviews, professionalId, currentUser }) {
   const [reportingReviewId, setReportingReviewId] = useState(null);
@@ -294,15 +331,7 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
 
           {/* CTA para clientes verificados */}
           {isClient && currentUser && !isOwner && (
-            <Button
-              size="sm"
-              variant={myReview ? "outline" : "default"}
-              className={myReview ? "h-8 text-xs" : "h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white"}
-              onClick={() => setShowForm((v) => !v)}
-            >
-              <Star className="w-3 h-3 mr-1" />
-              {myReview ? "Mi valoración" : "Valorar"}
-            </Button>
+            <ReviewButton currentUser={currentUser} myReview={myReview} showForm={showForm} setShowForm={setShowForm} />
           )}
         </div>
 
@@ -349,13 +378,20 @@ export default function ReviewSection({ reviews, professionalId, currentUser }) 
               <article key={review.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-blue-600 text-white text-sm">
-                        {review.client_name?.charAt(0).toUpperCase() || "C"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-sm text-gray-900">{review.client_name}</p>
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-blue-600 text-white text-sm">
+                      {review.client_name?.charAt(0).toUpperCase() || "C"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-900 flex items-center gap-1.5">
+                      {review.client_name}
+                      {review.client_verified && (
+                        <span title="Identidad verificada" className="inline-flex items-center">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        </span>
+                      )}
+                    </p>
                       <div className="flex items-center gap-1.5">
                         <div className="flex gap-0.5">
                           {[1, 2, 3, 4, 5].map((s) => (
