@@ -23,7 +23,8 @@ import {
   TrendingUp,
   Headphones,
   Shield,
-  Gift
+  Gift,
+  BookOpen
 } from "lucide-react";
 import {
   Sidebar,
@@ -479,7 +480,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
         { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
         { title: t('supportChat.supportInbox'), url: "/admin/soporte", icon: Headphones },
-        { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp }
+        { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
+        { title: "Blog", url: "/admin/blog", icon: BookOpen }
       );
     } else if (isProfessional) {
       items.push(
@@ -614,6 +616,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         >
                           <SearchIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
                           <span className="font-medium">{t('nav.search_professionals')}</span>
+                        </Link>
+                        <Link
+                          to="/blog"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-xl text-gray-700 hover:bg-gray-50"
+                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                        >
+                          <BookOpen className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">Blog</span>
                         </Link>
                         <Link
                           to="/precios"

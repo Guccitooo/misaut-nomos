@@ -1,0 +1,155 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "title_es": {
+      "type": "string",
+      "description": "T\u00edtulo en espa\u00f1ol"
+    },
+    "title_en": {
+      "type": "string",
+      "description": "T\u00edtulo en ingl\u00e9s"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL slug \u00fanico"
+    },
+    "excerpt_es": {
+      "type": "string",
+      "description": "Extracto en espa\u00f1ol"
+    },
+    "excerpt_en": {
+      "type": "string",
+      "description": "Extracto en ingl\u00e9s"
+    },
+    "content_es": {
+      "type": "string",
+      "description": "Contenido HTML en espa\u00f1ol"
+    },
+    "content_en": {
+      "type": "string",
+      "description": "Contenido HTML en ingl\u00e9s"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "autonomos",
+        "clientes",
+        "legal_fiscal",
+        "herramientas",
+        "actualidad"
+      ],
+      "description": "Categor\u00eda del art\u00edculo"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "scheduled",
+        "published",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "featured_image": {
+      "type": "string",
+      "description": "URL imagen destacada"
+    },
+    "og_image": {
+      "type": "string",
+      "description": "URL imagen Open Graph"
+    },
+    "author_name": {
+      "type": "string",
+      "default": "Equipo MisAut\u00f3nomos"
+    },
+    "author_avatar": {
+      "type": "string",
+      "description": "URL avatar del autor"
+    },
+    "author_bio": {
+      "type": "string"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "read_time_minutes": {
+      "type": "number",
+      "default": 5
+    },
+    "views": {
+      "type": "number",
+      "default": 0
+    },
+    "meta_title_es": {
+      "type": "string"
+    },
+    "meta_description_es": {
+      "type": "string"
+    },
+    "meta_title_en": {
+      "type": "string"
+    },
+    "meta_description_en": {
+      "type": "string"
+    },
+    "related_articles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "title_es",
+    "slug",
+    "category"
+  ],
+  "security": {
+    "read": {
+      "rule": "true"
+    },
+    "create": {
+      "rule": "auth.role == 'admin'"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "slug"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "status",
+        "publish_date"
+      ]
+    },
+    {
+      "fields": [
+        "category",
+        "status"
+      ]
+    }
+  ]
+}

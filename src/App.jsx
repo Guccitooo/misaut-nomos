@@ -21,6 +21,9 @@ const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
 const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
 const AdminSupport = lazy(() => import('./pages/AdminSupport'));
 const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
+const BlogList = lazy(() => import('./pages/BlogList'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
+const AdminBlog = lazy(() => import('./pages/AdminBlog'));
 const Invoices = lazy(() => import('./pages/Invoices'));
 const MisClientes = lazy(() => import('./pages/MisClientes'));
 const CRMAutomations = lazy(() => import('./pages/CRMAutomations'));
@@ -186,6 +189,11 @@ const AuthenticatedApp = () => {
           <Route path="/admin/mensajes" element={<Suspense fallback={<PageLoader />}><AdminMessagesStats /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
           <Route path="/admin/seo" element={<Suspense fallback={<PageLoader />}><SEOAnalysis /></Suspense>} />
+          <Route path="/admin/blog" element={<Suspense fallback={<PageLoader />}><AdminBlog /></Suspense>} />
+
+          {/* ===== BLOG PÚBLICO ===== */}
+          <Route path="/blog" element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>} />
+          <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><BlogPost /></Suspense>} />
 
           {/* ===== REFERIDOS ===== */}
           <Route path="/r/:code" element={<Pages.ReferralRedirect />} />

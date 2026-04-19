@@ -38,6 +38,10 @@ const platformLinks = [
   { label: "Centro de ayuda", to: createPageUrl("FAQ") },
 ];
 
+const resourceLinks = [
+  { label: "Blog", to: "/blog" },
+];
+
 const legalLinks = [
   { label: "Política de privacidad", to: createPageUrl("PrivacyPolicy") },
   { label: "Términos de uso", to: createPageUrl("TermsConditions") },
@@ -79,6 +83,18 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Plataforma</h4>
             <ul className="space-y-2.5">
               {platformLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="text-sm text-gray-400 hover:text-white transition-colors">{label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Recursos</h4>
+            <ul className="space-y-2.5">
+              {resourceLinks.map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="text-sm text-gray-400 hover:text-white transition-colors">{label}</Link>
                 </li>
