@@ -1,129 +1,129 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import Stripe from 'npm:stripe@17.5.0';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import Stripe from 'npm:stripe@14.21.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
 Deno.serve(async (req) => {
-  console.log('⬆️ ========== UPGRADE SUBSCRIPTION ==========');
-  
   try {
+    console.log('[upgradeSubscription] Request received');
+    
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      console.log('[upgradeSubscription] No authenticated user');
+      return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { newPlanId } = body;
+    const { newPlanId } = await req.json();
+    console.log(`[upgradeSubscription] User ${user.id} upgrading to ${newPlanId}`);
 
-    console.log('👤 Usuario:', user.email);
-    console.log('📦 Nuevo plan:', newPlanId);
+    if (!newPlanId) {
+      return Response.json({ ok: false, error: 'Missing newPlanId' }, { status: 400 });
+    }
 
-    // ✅ OBTENER SUSCRIPCIÓN ACTUAL
+    // 1. Fetch current subscription from DB
     const subs = await base44.asServiceRole.entities.Subscription.filter({
       user_id: user.id
     });
+    const currentSub = subs[0];
 
-    if (subs.length === 0 || !subs[0].stripe_subscription_id) {
-      return Response.json({ 
-        error: 'No tienes una suscripción activa' 
-      }, { status: 404 });
+    if (!currentSub) {
+      console.log('[upgradeSubscription] No subscription found for user');
+      return Response.json({ ok: false, error: 'No subscription found' }, { status: 400 });
     }
 
-    const currentSub = subs[0];
-    const stripeSubscriptionId = currentSub.stripe_subscription_id;
+    console.log(`[upgradeSubscription] Current plan: ${currentSub.plan_id}, Current Stripe ID: ${currentSub.stripe_subscription_id}`);
 
-    // ✅ OBTENER NUEVO PLAN
-    const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
+    // 2. Fetch new plan details
+    const newPlans = await base44.asServiceRole.entities.SubscriptionPlan.filter({
       plan_id: newPlanId
     });
+    const newPlan = newPlans[0];
 
-    const newPlan = plans[0];
     if (!newPlan || !newPlan.stripe_price_id) {
-      return Response.json({ 
-        error: 'Plan no encontrado o no configurado en Stripe' 
-      }, { status: 404 });
+      console.log(`[upgradeSubscription] Plan ${newPlanId} not found or missing stripe_price_id`);
+      return Response.json({ ok: false, error: `Plan ${newPlanId} not configured` }, { status: 400 });
     }
 
-    console.log('💼 Nuevo plan:', newPlan.nombre, '- Price ID:', newPlan.stripe_price_id);
+    console.log(`[upgradeSubscription] New plan price ID: ${newPlan.stripe_price_id}`);
 
-    // ✅ OBTENER SUSCRIPCIÓN DE STRIPE
-    const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    // 3. Update Stripe subscription with new price
+    if (!currentSub.stripe_subscription_id) {
+      console.log('[upgradeSubscription] No Stripe subscription ID found');
+      return Response.json({ ok: false, error: 'No Stripe subscription to upgrade' }, { status: 400 });
+    }
 
-    console.log('📊 Suscripción actual en Stripe:', stripeSubscription.status);
+    try {
+      const updatedStripeSubscription = await stripe.subscriptions.update(
+        currentSub.stripe_subscription_id,
+        {
+          items: [
+            {
+              id: (await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id)).items.data[0].id,
+              price: newPlan.stripe_price_id,
+            }
+          ],
+          proration_behavior: 'create_prorations',
+          billing_cycle_anchor: 'unchanged',
+        }
+      );
 
-    // ✅ ACTUALIZAR SUSCRIPCIÓN EN STRIPE CON PRORRATEO
-    const updatedSubscription = await stripe.subscriptions.update(stripeSubscriptionId, {
-      items: [{
-        id: stripeSubscription.items.data[0].id,
-        price: newPlan.stripe_price_id,
-      }],
-      proration_behavior: 'always_invoice', // ✅ Prorrateo automático
-      metadata: {
-        upgraded_at: new Date().toISOString(),
-        previous_plan: currentSub.plan_id,
-        new_plan: newPlanId
+      console.log(`[upgradeSubscription] Stripe subscription updated, new amount due: ${updatedStripeSubscription.amount_due}`);
+
+      // 4. Update local DB subscription
+      const newExpirationDate = new Date();
+      newExpirationDate.setDate(newExpirationDate.getDate() + newPlan.duracion_dias);
+
+      await base44.asServiceRole.entities.Subscription.update(currentSub.id, {
+        plan_id: newPlanId,
+        plan_nombre: newPlan.nombre,
+        plan_precio: newPlan.precio,
+        fecha_expiracion: newExpirationDate.toISOString(),
+        estado: 'activo',
+        stripe_price_id: newPlan.stripe_price_id,
+      });
+
+      console.log(`[upgradeSubscription] DB subscription updated successfully`);
+
+      // 5. Send confirmation email
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: user.email,
+          subject: `Plan actualizado a ${newPlan.nombre} - MisAutónomos`,
+          body: `
+            <h2>¡Felicidades!</h2>
+            <p>Tu plan ha sido actualizado a <strong>${newPlan.nombre}</strong></p>
+            <p><strong>Nuevo precio:</strong> ${newPlan.precio}€/mes</p>
+            <p>Los cambios se reflejarán en tu próxima factura. Se ha aplicado el prorrateo automático.</p>
+            <p>Disfruta de todas las nuevas funcionalidades.</p>
+          `,
+        });
+        console.log('[upgradeSubscription] Confirmation email sent');
+      } catch (emailError) {
+        console.warn('[upgradeSubscription] Email send failed, but upgrade completed:', emailError.message);
       }
-    });
 
-    console.log('✅ Suscripción actualizada en Stripe');
+      return Response.json({
+        ok: true,
+        message: `Plan actualizado a ${newPlan.nombre}`,
+        plan: newPlan.nombre,
+        price: newPlan.precio,
+      });
 
-    // ✅ ACTUALIZAR EN BASE DE DATOS
-    await base44.asServiceRole.entities.Subscription.update(currentSub.id, {
-      plan_id: newPlanId,
-      plan_nombre: newPlan.nombre,
-      plan_precio: newPlan.precio,
-      fecha_expiracion: new Date(updatedSubscription.current_period_end * 1000).toISOString()
-    });
-
-    console.log('✅ Suscripción actualizada en BD');
-
-    // ✅ ENVIAR EMAIL DE CONFIRMACIÓN
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: user.email,
-      subject: '✅ Plan actualizado correctamente - MisAutónomos',
-      body: `
-<!DOCTYPE html>
-<html>
-<head><style>body{font-family:Arial;background:#f8fafc}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px}.header{background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:30px;text-align:center;border-radius:16px 16px 0 0}.header h1{color:#fff;margin:0}.content{padding:30px}.success{background:#ecfdf5;border-left:4px solid #10b981;padding:16px;margin:20px 0}.button{display:inline-block;background:#3b82f6;color:#fff;padding:14px 30px;text-decoration:none;border-radius:8px;font-weight:bold}</style></head>
-<body>
-<div class="container">
-  <div class="header">
-    <h1>✅ Plan actualizado</h1>
-  </div>
-  <div class="content">
-    <div class="success">
-      <p><strong>Tu plan se ha mejorado correctamente</strong></p>
-    </div>
-    <p><strong>Nuevo plan:</strong> ${newPlan.nombre}</p>
-    <p><strong>Precio:</strong> ${newPlan.precio}€/mes</p>
-    <p>El cambio es efectivo de inmediato. El próximo cobro se ajustará automáticamente con el prorrateo correspondiente.</p>
-    <p style="text-align:center;margin:30px 0">
-      <a href="https://misautonomos.es/SubscriptionManagement" class="button">Ver mi suscripción →</a>
-    </p>
-  </div>
-</div>
-</body>
-</html>`,
-      from_name: "MisAutónomos"
-    });
-
-    console.log('📧 Email de confirmación enviado');
-
-    return Response.json({
-      ok: true,
-      message: 'Plan actualizado correctamente',
-      newPlan: {
-        nombre: newPlan.nombre,
-        precio: newPlan.precio
-      }
-    });
+    } catch (stripeError) {
+      console.error('[upgradeSubscription] Stripe API error:', stripeError.message);
+      return Response.json(
+        { ok: false, error: `Stripe error: ${stripeError.message}` },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    return Response.json({ 
-      error: error.message || 'Error al actualizar el plan' 
-    }, { status: 500 });
+    console.error('[upgradeSubscription] Unexpected error:', error);
+    return Response.json(
+      { ok: false, error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
 });

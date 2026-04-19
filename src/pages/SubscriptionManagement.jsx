@@ -236,24 +236,28 @@ export default function SubscriptionManagementPage() {
   };
 
   const handleUpgradePlan = async (newPlanId) => {
+    console.log('[handleUpgradePlan] Button clicked, newPlanId:', newPlanId);
     setIsUpgrading(true);
     try {
+      console.log('[handleUpgradePlan] Invoking upgradeSubscription function...');
       const response = await base44.functions.invoke('upgradeSubscription', {
         newPlanId
       });
 
+      console.log('[handleUpgradePlan] Response received:', response.data);
+
       if (response.data?.ok) {
+        console.log('[handleUpgradePlan] Upgrade successful, reloading page...');
         toast.success('✅ Plan actualizado correctamente');
-        // Limpiar sesión e inmediatamente recargar
         sessionStorage.removeItem('current_user');
-        // Recargar página de inmediato
         window.location.reload();
       } else {
+        console.error('[handleUpgradePlan] Upgrade failed:', response.data?.error);
         toast.error(response.data?.error || 'Error al mejorar el plan');
         setIsUpgrading(false);
       }
     } catch (error) {
-      console.error('Error upgrading plan:', error);
+      console.error('[handleUpgradePlan] Exception caught:', error);
       toast.error('Error al mejorar el plan: ' + error.message);
       setIsUpgrading(false);
     }
