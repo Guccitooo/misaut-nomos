@@ -24,8 +24,8 @@ export const AppProvider = ({ children }) => {
     try {
       // Cargar perfil y suscripción en paralelo
       const [profiles, subscriptions] = await Promise.all([
-        base44.entities.ProfessionalProfile.filter({ user_id: user.id }).limit(1),
-        base44.entities.Subscription.filter({ user_id: user.id, estado: 'activo' }).limit(1)
+        base44.entities.ProfessionalProfile.filter({ user_id: user.id }, '-created_date', 1),
+        base44.entities.Subscription.filter({ user_id: user.id, estado: 'activo' }, '-created_date', 1)
       ]);
 
       setAppData({
