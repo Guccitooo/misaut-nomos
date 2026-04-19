@@ -483,7 +483,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: "Bandeja de Soporte", url: "/admin/soporte", icon: Headphones },
         { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
         { title: "Blog", url: "/admin/blog", icon: BookOpen },
-        { title: "Newsletter", url: "/admin/newsletter", icon: Mail }
+        { title: "Newsletter", url: "/admin/newsletter", icon: Mail },
+        { title: "Referidos", url: "/admin/referidos", icon: Gift }
       );
     } else if (isProfessional) {
       items.push(

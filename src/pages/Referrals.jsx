@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Copy, Check, Gift, Users, Calendar, AlertCircle } from "lucide-react";
+import { Copy, Check, Gift, Users, Calendar, CheckCircle } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 
 function generateReferralCode(name) {
@@ -148,11 +148,16 @@ export default function ReferralsPage() {
             </button>
           </div>
 
-          {/* FIX 3 — Banner informativo sobre cómo se aplica el mes gratis */}
-          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-900">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+          {/* Banner informativo — cómo se aplica el mes gratis */}
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2 text-xs text-blue-900">
+            <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
             <div>
-              <strong>Cómo se aplica el mes gratis:</strong> Cada mes ganado se añade a la fecha de expiración de tu suscripción. Si estás en un plan de pago mensual, Stripe seguirá cobrando normalmente — la recompensa funciona como crédito de tiempo añadido a tu cuenta. Contacta con soporte si tu suscripción renueva antes de aplicar tus meses acumulados y te ayudamos a pausarla.
+              <strong>Cómo se aplica tu mes gratis:</strong>
+              <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                <li>Si estás en periodo de prueba: se añaden 30 días más a tu prueba</li>
+                <li>Si ya estás pagando: se aplica 1 mes de descuento automáticamente en tu próxima factura</li>
+              </ul>
+              La recompensa se aplica a los 7 días de que tu referido se haya registrado activamente.
             </div>
           </div>
         </section>

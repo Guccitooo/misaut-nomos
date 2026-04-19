@@ -21,6 +21,7 @@ const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
 const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
 const AdminSupport = lazy(() => import('./pages/AdminSupport'));
 const AdminNewsletter = lazy(() => import('./pages/AdminNewsletter'));
+const AdminReferrals = lazy(() => import('./pages/AdminReferrals'));
 const NewsletterUnsubscribe = lazy(() => import('./pages/NewsletterUnsubscribe'));
 const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
 const BlogList = lazy(() => import('./pages/BlogList'));
@@ -193,6 +194,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/seo" element={<Suspense fallback={<PageLoader />}><SEOAnalysis /></Suspense>} />
           <Route path="/admin/blog" element={<Suspense fallback={<PageLoader />}><AdminBlog /></Suspense>} />
           <Route path="/admin/newsletter" element={<Suspense fallback={<PageLoader />}><AdminNewsletter /></Suspense>} />
+          <Route path="/admin/referidos" element={<Suspense fallback={<PageLoader />}><AdminReferrals /></Suspense>} />
           <Route path="/newsletter/unsubscribe" element={<Suspense fallback={<PageLoader />}><NewsletterUnsubscribe /></Suspense>} />
 
           {/* ===== BLOG PÚBLICO ===== */}
