@@ -37,9 +37,12 @@ export default function SupportChat() {
     refetchInterval: 2000,
   });
 
-  // Crear mensaje de bienvenida si es la primera vez
+  // Crear mensaje de bienvenida UNA SOLA VEZ cuando no hay ningún mensaje
+  const welcomeSentRef = useRef(false);
   useEffect(() => {
-    if (messages.length === 0 && conversationId && user) {
+    if (!conversationId || !user || isLoading || welcomeSentRef.current) return;
+    if (messages.length === 0) {
+      welcomeSentRef.current = true;
       base44.entities.Message.create({
         conversation_id: conversationId,
         sender_id: "support_team",
@@ -50,8 +53,11 @@ export default function SupportChat() {
         is_read: false,
         attachments: [],
       });
+    } else {
+      // Ya hay mensajes, marcar para no volver a enviar nunca
+      welcomeSentRef.current = true;
     }
-  }, [conversationId, user, messages.length]);
+  }, [conversationId, user, isLoading, messages.length]);
 
   const sendMutation = useMutation({
     mutationFn: async (text) => {
