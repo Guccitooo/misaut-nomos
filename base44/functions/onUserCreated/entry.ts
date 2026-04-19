@@ -138,6 +138,64 @@ Deno.serve(async (req) => {
       from_name: "MisAutónomos"
     });
 
+    // Email de notificación al administrador
+    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'soporte@misautonomos.es';
+    const userType = user.user_type === 'professionnel' ? '🔧 Autónomo / Profesional' : '👤 Cliente';
+    const registrationDate = new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid', dateStyle: 'full', timeStyle: 'short' });
+
+    try {
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: adminEmail,
+        subject: `🆕 Nuevo registro: ${userName} (${userType})`,
+        body: `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
+  .card { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 24px; color: white; }
+  .header h2 { margin: 0; font-size: 20px; }
+  .header p { margin: 4px 0 0; opacity: 0.85; font-size: 14px; }
+  .body { padding: 28px; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+  .badge-client { background: #dcfce7; color: #166534; }
+  .badge-pro { background: #dbeafe; color: #1e40af; }
+  .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+  .row:last-child { border-bottom: none; }
+  .label { color: #6b7280; font-weight: 500; }
+  .value { color: #111827; font-weight: 600; text-align: right; }
+  .cta { margin-top: 24px; text-align: center; }
+  .btn { display: inline-block; background: #2563eb; color: white !important; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .footer { background: #f9fafb; padding: 16px 28px; font-size: 12px; color: #9ca3af; text-align: center; }
+</style></head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h2>🆕 Nuevo usuario registrado</h2>
+      <p>${registrationDate}</p>
+    </div>
+    <div class="body">
+      <span class="badge ${user.user_type === 'professionnel' ? 'badge-pro' : 'badge-client'}">${userType}</span>
+      <div class="row"><span class="label">Nombre</span><span class="value">${userName}</span></div>
+      <div class="row"><span class="label">Email</span><span class="value">${user.email}</span></div>
+      <div class="row"><span class="label">Tipo de cuenta</span><span class="value">${userType}</span></div>
+      <div class="row"><span class="label">ID de usuario</span><span class="value" style="font-size:12px;font-family:monospace">${user.id || 'N/A'}</span></div>
+      <div class="row"><span class="label">Fecha de registro</span><span class="value">${registrationDate}</span></div>
+      <div class="cta">
+        <a href="https://misautonomos.es/admin" class="btn">Ver en el panel de administración →</a>
+      </div>
+    </div>
+    <div class="footer">MisAutónomos · Panel de administración · misautonomos.es</div>
+  </div>
+</body>
+</html>
+        `,
+        from_name: "MisAutónomos Notificaciones"
+      });
+    } catch (adminEmailError) {
+      console.error('Error enviando email al admin (no crítico):', adminEmailError.message);
+    }
+
     // Notificar en Slack
     try {
       await base44.asServiceRole.functions.invoke('notifySlackNewClient', {
