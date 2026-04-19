@@ -421,6 +421,9 @@ export default function ProfileOnboardingPage() {
         console.log('Referral code generation failed (non-critical):', codeErr);
       }
 
+      // ✅ Auto-suscribir a newsletter (fire-and-forget)
+      autoSubscribeNewsletter({ email: formData.email_contacto, name: formData.business_name, user_type: "professionnel" }).catch(() => {});
+
       // ✅ ACTIVACIÓN AUTOMÁTICA: Si tiene suscripción, activar perfil AHORA
       if (shouldBeVisible || hasActiveSubscription) {
         // Fix #14: welcome notification after completing onboarding
@@ -451,6 +454,48 @@ export default function ProfileOnboardingPage() {
       console.error("Error saving profile:", error);
       toast.error("Error al guardar el perfil: " + error.message);
       setSaving(false);
+    }
+  };
+
+  // Auto-suscripción a newsletter tras registro
+  const autoSubscribeNewsletter = async (userData) => {
+    try {
+      const { NewsletterSubscriber } = await import('@/api/entities');
+      const email = userData.email.toLowerCase().trim();
+      
+      // Comprobar si ya está suscrito
+      const existing = await NewsletterSubscriber.filter({ email }).limit(1);
+      
+      if (existing.length > 0) {
+        // Si estaba dado de baja, reactivar
+        if (existing[0].status === 'unsubscribed') {
+          await NewsletterSubscriber.update(existing[0].id, {
+            status: 'confirmed',
+            unsubscribed_at: null,
+            confirmed_at: new Date().toISOString(),
+            source: 'auto_signup',
+            name: userData.name || existing[0].name
+          });
+        }
+        return;
+      }
+      
+      // Crear suscripción automática
+      const unsubToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      await NewsletterSubscriber.create({
+        email: email,
+        name: userData.name || '',
+        status: 'confirmed',
+        language: localStorage.getItem('language') || 'es',
+        source: 'auto_signup',
+        user_type_interest: userData.user_type === 'professionnel' ? 'autonomo' : userData.user_type === 'client' ? 'cliente' : 'ambos',
+        confirmation_token: Math.random().toString(36).substring(2),
+        unsubscribe_token: unsubToken,
+        confirmed_at: new Date().toISOString(),
+        tags: ['auto_signup']
+      });
+    } catch (err) {
+      console.error('Auto newsletter subscribe failed:', err);
     }
   };
 

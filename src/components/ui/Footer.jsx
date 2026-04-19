@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Mail, Instagram, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -115,6 +116,16 @@ function NewsletterInlineForm() {
 }
 
 export default function Footer() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  useEffect(() => {
+    base44.auth.me()
+      .then(u => setCurrentUser(u))
+      .catch(() => setCurrentUser(null))
+      .finally(() => setLoadingUser(false));
+  }, []);
+
   return (
     <footer className="bg-slate-900 text-gray-300">
       {/* Main content */}
@@ -197,17 +208,19 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Newsletter compacta inline */}
-      <div className="border-t border-slate-800/60">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="text-xs text-gray-400">
-              <span className="text-white font-medium">Newsletter:</span> 1-2 emails al mes con consejos prácticos. Sin spam.
+      {/* Newsletter compacta inline - SOLO para usuarios NO logueados */}
+      {!loadingUser && !currentUser && (
+        <div className="border-t border-slate-800/60">
+          <div className="max-w-7xl mx-auto px-6 py-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="text-xs text-gray-400">
+                <span className="text-white font-medium">Newsletter:</span> 1-2 emails al mes con consejos prácticos. Sin spam.
+              </div>
+              <NewsletterInlineForm />
             </div>
-            <NewsletterInlineForm />
           </div>
         </div>
-      </div>
+      )}
 
       {/* Bottom bar */}
       <div className="border-t border-slate-800">
