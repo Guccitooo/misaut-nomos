@@ -160,6 +160,11 @@ export default function SubscriptionManagementPage() {
   const handleFixSubscription = async () => {
     setIsFixing(true);
     try {
+      if (!user?.email) {
+        toast.error("No se pudo obtener tu email");
+        return;
+      }
+      
       const debugResponse = await base44.functions.invoke('debugUserSubscription', {
         email: user.email
       });
@@ -182,6 +187,7 @@ export default function SubscriptionManagementPage() {
         toast.info("La suscripción está correctamente configurada");
       }
     } catch (error) {
+      console.error('Error fixing subscription:', error);
       toast.error("Error al verificar la suscripción");
     } finally {
       setIsFixing(false);
