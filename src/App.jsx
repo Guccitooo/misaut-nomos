@@ -20,6 +20,8 @@ const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminFAQ = lazy(() => import('./pages/AdminFAQ'));
 const AdminMessagesStats = lazy(() => import('./pages/AdminMessagesStats'));
 const AdminSupport = lazy(() => import('./pages/AdminSupport'));
+const AdminNewsletter = lazy(() => import('./pages/AdminNewsletter'));
+const NewsletterUnsubscribe = lazy(() => import('./pages/NewsletterUnsubscribe'));
 const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
 const BlogList = lazy(() => import('./pages/BlogList'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
@@ -190,6 +192,8 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
           <Route path="/admin/seo" element={<Suspense fallback={<PageLoader />}><SEOAnalysis /></Suspense>} />
           <Route path="/admin/blog" element={<Suspense fallback={<PageLoader />}><AdminBlog /></Suspense>} />
+          <Route path="/admin/newsletter" element={<Suspense fallback={<PageLoader />}><AdminNewsletter /></Suspense>} />
+          <Route path="/newsletter/unsubscribe" element={<Suspense fallback={<PageLoader />}><NewsletterUnsubscribe /></Suspense>} />
 
           {/* ===== BLOG PÚBLICO ===== */}
           <Route path="/blog" element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>} />

@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Helmet } from 'react-helmet-async';
 import { Clock, ArrowLeft, Twitter, Linkedin, Copy, Check } from 'lucide-react';
 import { CategoryBadge } from './BlogList';
+import NewsletterSignup from '@/components/NewsletterSignup';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
@@ -186,8 +187,13 @@ export default function BlogPostPage() {
               </div>
             </div>
 
+            {/* Newsletter */}
+            <div className="mt-10">
+              <NewsletterSignup variant="blog" source="blog_article" />
+            </div>
+
             {/* CTA */}
-            <div className="mt-10 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white">
+            <div className="mt-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white">
               <h3 className="text-lg font-semibold">¿Eres autónomo? Empieza en MisAutónomos</h3>
               <p className="text-sm text-gray-300 mt-1">Crea tu perfil gratis, recibe clientes y gestiona todo desde un sitio. 7 días de prueba sin tarjeta.</p>
               <Link to="/precios" className="inline-block mt-4 bg-white text-gray-900 font-medium text-sm px-5 py-2 rounded-lg hover:bg-gray-100 transition-colors">

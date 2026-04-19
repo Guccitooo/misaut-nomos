@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Mail, Instagram } from "lucide-react";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -129,6 +130,17 @@ export default function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Newsletter signup bar */}
+      <div className="border-t border-slate-800/60">
+        <div className="max-w-7xl mx-auto px-6 py-8 grid md:grid-cols-2 gap-6 items-start">
+          <div>
+            <h3 className="text-white font-semibold text-base">Recibe nuestros mejores consejos en tu email</h3>
+            <p className="text-sm text-gray-400 mt-1">Guías, herramientas y novedades para autónomos y clientes. Sin spam, máximo 2 emails al mes.</p>
+          </div>
+          <NewsletterSignup variant="footer" source="footer" />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Clock, Search, TrendingUp } from 'lucide-react';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { Helmet } from 'react-helmet-async';
 
 const CATEGORIES = [
@@ -146,9 +147,35 @@ export default function BlogListPage() {
               </Link>
             )}
 
-            {/* Grid */}
+            {/* Grid con newsletter insertada después del 2º artículo */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rest.map(post => (
+              {rest.slice(0, 2).map(post => (
+                <Link key={post.id} to={`/blog/${post.slug}`} className="group">
+                  <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 mb-3">
+                    {post.featured_image ? (
+                      <img src={post.featured_image} alt={post.title_es} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-3xl">📝</div>
+                    )}
+                  </div>
+                  <CategoryBadge category={post.category} />
+                  <h3 className="text-base font-semibold text-gray-900 mt-2 group-hover:text-gray-700 line-clamp-2">{post.title_es}</h3>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{post.excerpt_es}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-3">
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{post.read_time_minutes} min</span>
+                    <span>·</span>
+                    <span>{post.publish_date && formatDate(post.publish_date, { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                </Link>
+              ))}
+
+              {rest.length > 2 && (
+                <div className="md:col-span-2 lg:col-span-3">
+                  <NewsletterSignup variant="blog" source="blog" />
+                </div>
+              )}
+
+              {rest.slice(2).map(post => (
                 <Link key={post.id} to={`/blog/${post.slug}`} className="group">
                   <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 mb-3">
                     {post.featured_image ? (

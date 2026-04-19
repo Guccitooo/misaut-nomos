@@ -481,7 +481,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: "💰 Pagos", url: createPageUrl("AdminPayments"), icon: CreditCard },
         { title: "Bandeja de Soporte", url: "/admin/soporte", icon: Headphones },
         { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
-        { title: "Blog", url: "/admin/blog", icon: BookOpen }
+        { title: "Blog", url: "/admin/blog", icon: BookOpen },
+        { title: "Newsletter", url: "/admin/newsletter", icon: Mail }
       );
     } else if (isProfessional) {
       items.push(
