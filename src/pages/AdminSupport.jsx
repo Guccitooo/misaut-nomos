@@ -1,335 +1,273 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { SUPPORT_USER_ID, SUPPORT_DISPLAY_NAME } from '@/config/support';
-import { ArrowLeft, Send, Search } from 'lucide-react';
+import { Send, Search, Headphones, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useLanguage } from '@/components/ui/LanguageSwitcher';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function AdminSupport() {
-  const { t } = useLanguage();
-  const [conversations, setConversations] = useState([]);
-  const [activeConv, setActiveConv] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [selectedConvId, setSelectedConvId] = useState(null);
   const [messageInput, setMessageInput] = useState('');
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const messagesEndRef = useRef(null);
+  const queryClient = useQueryClient();
 
-  // Cargar conversaciones de soporte
-  const loadSupportConversations = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [sent, received] = await Promise.all([
-        base44.entities.Message.filter({ sender_id: SUPPORT_USER_ID }, '-created_date', 500),
-        base44.entities.Message.filter({ recipient_id: SUPPORT_USER_ID }, '-created_date', 500),
+  // Cargar TODOS los mensajes de conversaciones de soporte
+  // Las conversaciones de soporte tienen conversation_id que empieza con "support_"
+  const { data: allMessages = [], isLoading } = useQuery({
+    queryKey: ['adminSupportMessages'],
+    queryFn: async () => {
+      // Traemos mensajes enviados por usuarios a soporte y respuestas del equipo
+      const [fromUsers, fromSupport] = await Promise.all([
+        base44.entities.Message.filter({ recipient_id: 'support_team' }, '-created_date', 1000),
+        base44.entities.Message.filter({ sender_id: 'support_team' }, '-created_date', 1000),
       ]);
+      return [...fromUsers, ...fromSupport];
+    },
+    refetchInterval: 4000,
+  });
 
-      // Agrupar por conversation_id → último mensaje
-      const map = {};
-      for (const msg of [...sent, ...received]) {
-        if (!map[msg.conversation_id] || new Date(msg.created_date) > new Date(map[msg.conversation_id].created_date)) {
-          map[msg.conversation_id] = msg;
-        }
+  // Agrupar en conversaciones (una por usuario)
+  const conversations = useMemo(() => {
+    const map = {};
+    for (const msg of allMessages) {
+      const cid = msg.conversation_id;
+      if (!cid?.startsWith('support_')) continue;
+      if (!map[cid]) {
+        map[cid] = { conversationId: cid, messages: [], lastMsg: null, unread: 0 };
       }
+      map[cid].messages.push(msg);
+      if (!map[cid].lastMsg || new Date(msg.created_date) > new Date(map[cid].lastMsg.created_date)) {
+        map[cid].lastMsg = msg;
+      }
+      // Contar mensajes del usuario no leídos (los que llegaron al soporte)
+      if (msg.recipient_id === 'support_team' && !msg.is_read) {
+        map[cid].unread++;
+      }
+    }
 
-      // Ordenar: no leídos primero, luego por fecha descendente
-      const list = Object.values(map).sort((a, b) => {
-        const aUnread = a.recipient_id === SUPPORT_USER_ID && !a.is_read;
-        const bUnread = b.recipient_id === SUPPORT_USER_ID && !b.is_read;
-        if (aUnread && !bUnread) return -1;
-        if (!aUnread && bUnread) return 1;
-        return new Date(b.created_date) - new Date(a.created_date);
+    return Object.values(map)
+      .map(conv => {
+        // Nombre del usuario: sacarlo del mensaje (client_name del mensaje del usuario)
+        const userMsg = conv.messages.find(m => m.sender_id !== 'support_team');
+        return {
+          ...conv,
+          userName: userMsg?.client_name || userMsg?.professional_name || 'Usuario',
+          userId: userMsg?.sender_id,
+        };
+      })
+      .sort((a, b) => {
+        if (a.unread > 0 && b.unread === 0) return -1;
+        if (a.unread === 0 && b.unread > 0) return 1;
+        return new Date(b.lastMsg?.created_date) - new Date(a.lastMsg?.created_date);
       });
+  }, [allMessages]);
 
-      setConversations(list);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error cargando conversaciones:', error);
-      setLoading(false);
-    }
-  }, []);
+  // Mensajes de la conversación activa, ordenados por fecha
+  const activeMessages = useMemo(() => {
+    if (!selectedConvId) return [];
+    const conv = conversations.find(c => c.conversationId === selectedConvId);
+    if (!conv) return [];
+    return [...conv.messages].sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  }, [conversations, selectedConvId]);
 
-  // Cargar mensajes de conversación activa
-  const loadConversationMessages = useCallback(async (convId) => {
-    try {
-      const msgs = await base44.entities.Message.filter(
-        { conversation_id: convId },
-        'created_date',
-        500
-      );
-      setMessages(msgs);
+  const activeConv = conversations.find(c => c.conversationId === selectedConvId);
 
-      // Marcar como leídos los mensajes que yo (admin) recibí
-      const unreadMsgs = msgs.filter(m => m.recipient_id === SUPPORT_USER_ID && !m.is_read);
-      for (const msg of unreadMsgs) {
-        await base44.entities.Message.update(msg.id, { is_read: true });
-      }
-    } catch (error) {
-      console.error('Error cargando mensajes:', error);
-    }
-  }, []);
-
+  // Scroll al último mensaje cuando cambian
   useEffect(() => {
-    loadSupportConversations();
-    const interval = setInterval(loadSupportConversations, 5000);
-    return () => clearInterval(interval);
-  }, [loadSupportConversations]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeMessages.length]);
 
+  // Marcar como leídos al abrir conversación
   useEffect(() => {
-    if (activeConv) {
-      loadConversationMessages(activeConv.conversation_id);
-      const interval = setInterval(() => loadConversationMessages(activeConv.conversation_id), 3000);
-      return () => clearInterval(interval);
+    if (!selectedConvId || !activeConv) return;
+    const unread = activeConv.messages.filter(m => m.recipient_id === 'support_team' && !m.is_read);
+    for (const msg of unread) {
+      base44.entities.Message.update(msg.id, { is_read: true }).catch(() => {});
     }
-  }, [activeConv, loadConversationMessages]);
+  }, [selectedConvId]);
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!messageInput.trim() || !activeConv) return;
-
-    try {
-      await base44.entities.Message.create({
-        conversation_id: activeConv.conversation_id,
-        sender_id: SUPPORT_USER_ID,
-        recipient_id: activeConv.sender_id === SUPPORT_USER_ID ? activeConv.recipient_id : activeConv.sender_id,
-        content: messageInput.trim(),
-        professional_name: SUPPORT_DISPLAY_NAME,
-        client_name: activeConv.client_name,
+  // Enviar respuesta del admin
+  const sendMutation = useMutation({
+    mutationFn: async (text) => {
+      if (!activeConv) return;
+      return await base44.entities.Message.create({
+        conversation_id: selectedConvId,
+        sender_id: 'support_team',
+        recipient_id: activeConv.userId,
+        content: text,
+        professional_name: 'Soporte MisAutónomos',
+        client_name: activeConv.userName,
         is_read: false,
         attachments: [],
       });
-
+    },
+    onSuccess: () => {
       setMessageInput('');
-      await loadConversationMessages(activeConv.conversation_id);
-    } catch (error) {
-      console.error('Error enviando mensaje:', error);
-    }
+      queryClient.invalidateQueries({ queryKey: ['adminSupportMessages'] });
+    },
+  });
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (messageInput.trim()) sendMutation.mutate(messageInput.trim());
   };
 
   const filteredConversations = conversations.filter(conv =>
-    conv.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.content?.toLowerCase().includes(searchTerm.toLowerCase())
+    conv.userName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-96">Cargando...</div>;
-  }
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return formatTime(date);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 h-[calc(100vh-120px)] bg-white rounded-lg overflow-hidden shadow">
-      {/* Columna izquierda: lista de conversaciones */}
-      <div className="border-r border-gray-100 flex flex-col">
+    <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden">
+      {/* Sidebar izquierda */}
+      <div className={`w-80 border-r border-gray-100 flex flex-col flex-shrink-0 ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-100">
-          <h1 className="text-lg font-semibold text-gray-900">Bandeja de Soporte</h1>
-          <p className="text-xs text-gray-500 mt-1">{filteredConversations.length} conversaciones</p>
+          <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Headphones className="w-5 h-5 text-blue-600" />
+            Bandeja de Soporte
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">{filteredConversations.length} conversaciones</p>
         </div>
 
         <div className="px-3 py-2 border-b border-gray-100">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Buscar..."
+              placeholder="Buscar usuario..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 py-1.5 text-sm"
+              className="pl-8 h-9 text-sm"
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
-              No hay conversaciones
-            </div>
+          {isLoading ? (
+            <div className="p-4 text-sm text-gray-400 text-center">Cargando...</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">No hay conversaciones de soporte</div>
           ) : (
-            filteredConversations.map(conv => {
-              const otherUserId = conv.sender_id === SUPPORT_USER_ID ? conv.recipient_id : conv.sender_id;
-              const isUnread = conv.recipient_id === SUPPORT_USER_ID && !conv.is_read;
-
-              return (
-                <button
-                  key={conv.conversation_id}
-                  onClick={() => setActiveConv(conv)}
-                  className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                    isUnread ? 'bg-blue-50/40' : ''
-                  } ${activeConv?.conversation_id === conv.conversation_id ? 'bg-gray-100' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900 text-sm truncate">{conv.client_name}</span>
-                    {isUnread && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+            filteredConversations.map(conv => (
+              <button
+                key={conv.conversationId}
+                onClick={() => setSelectedConvId(conv.conversationId)}
+                className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                  selectedConvId === conv.conversationId ? 'bg-blue-50' : ''
+                } ${conv.unread > 0 ? 'bg-blue-50/30' : ''}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs font-semibold">
+                        {conv.userName?.[0]?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className={`text-sm truncate ${conv.unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                        {conv.userName}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {conv.lastMsg?.sender_id === 'support_team' ? '✓ ' : ''}{conv.lastMsg?.content}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">{conv.content}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    {new Date(conv.created_date).toLocaleString('es-ES')}
-                  </p>
-                </button>
-              );
-            })
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="text-[10px] text-gray-400">{formatDate(conv.lastMsg?.created_date)}</span>
+                    {conv.unread > 0 && (
+                      <span className="bg-blue-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                        {conv.unread}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))
           )}
         </div>
       </div>
 
-      {/* Columna derecha: chat activo */}
-      <div className="md:col-span-2 flex flex-col hidden md:flex">
-        {activeConv ? (
-          <>
-            {/* Header */}
-            <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-4 bg-gradient-to-r from-blue-50 to-transparent">
-              <Avatar className="w-10 h-10 border-2 border-blue-200">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white">
-                  {activeConv.client_name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{activeConv.client_name}</p>
-                <p className="text-xs text-gray-500">Respondiendo ahora...</p>
-              </div>
-            </div>
-
-            {/* Mensajes */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map(msg => {
-                const isFromAdmin = msg.sender_id === SUPPORT_USER_ID;
-                return (
-                  <div key={msg.id} className={`flex ${isFromAdmin ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
-                        isFromAdmin
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm">{msg.content}</p>
-                      <p className={`text-xs mt-1 ${isFromAdmin ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {new Date(msg.created_date).toLocaleTimeString('es-ES', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Input */}
-            <div className="border-t border-gray-100 px-4 py-3">
-              <form onSubmit={sendMessage} className="flex gap-2">
-                <Input
-                  placeholder="Escribe tu respuesta..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 text-sm"
-                />
-                <Button
-                  type="submit"
-                  disabled={!messageInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  size="icon"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </form>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            Selecciona una conversación para responder
+      {/* Panel derecho: chat */}
+      <div className={`flex-1 flex flex-col min-w-0 ${!selectedConvId ? 'hidden md:flex' : 'flex'}`}>
+        {!selectedConvId ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+            <Headphones className="w-12 h-12 text-gray-200" />
+            <p className="text-sm">Selecciona una conversación para responder</p>
           </div>
-        )}
-      </div>
-
-      {/* Vista mobile */}
-      <div className="md:hidden flex flex-col">
-        {activeConv ? (
+        ) : (
           <>
-            <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
+            {/* Header del chat */}
+            <div className="border-b border-gray-100 px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
               <button
-                onClick={() => setActiveConv(null)}
-                className="text-gray-600 hover:text-gray-900"
+                onClick={() => setSelectedConvId(null)}
+                className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <Avatar className="w-8 h-8 border-2 border-blue-200">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white text-xs">
-                  {activeConv.client_name?.charAt(0).toUpperCase()}
+              <Avatar className="w-9 h-9">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white font-semibold text-sm">
+                  {activeConv?.userName?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{activeConv.client_name}</p>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{activeConv?.userName}</p>
                 <p className="text-xs text-gray-500">Chat de soporte</p>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {messages.map(msg => {
-                const isFromAdmin = msg.sender_id === SUPPORT_USER_ID;
+            {/* Mensajes */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              {activeMessages.map(msg => {
+                const isFromSupport = msg.sender_id === 'support_team';
                 return (
-                  <div key={msg.id} className={`flex ${isFromAdmin ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-xs px-3 py-1.5 rounded-lg text-sm ${
-                        isFromAdmin
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p>{msg.content}</p>
-                      <p className={`text-xs mt-0.5 ${isFromAdmin ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {new Date(msg.created_date).toLocaleTimeString('es-ES', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                  <div key={msg.id} className={`flex ${isFromSupport ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm ${
+                      isFromSupport
+                        ? 'bg-blue-600 text-white rounded-br-md'
+                        : 'bg-white text-gray-900 rounded-bl-md border border-gray-100'
+                    }`}>
+                      <p className="whitespace-pre-line break-words">{msg.content}</p>
+                      <span className={`text-[10px] block mt-0.5 ${isFromSupport ? 'text-blue-100' : 'text-gray-400'}`}>
+                        {formatTime(msg.created_date)}
+                      </span>
                     </div>
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-gray-100 px-3 py-2">
-              <form onSubmit={sendMessage} className="flex gap-2">
+            {/* Input de respuesta */}
+            <div className="border-t border-gray-100 p-3 bg-white flex-shrink-0">
+              <form onSubmit={handleSend} className="flex gap-2">
                 <Input
-                  placeholder="Responder..."
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 text-sm h-9"
+                  placeholder="Responder como Soporte MisAutónomos..."
+                  className="flex-1 rounded-full bg-gray-50 border-gray-200 text-sm"
+                  disabled={sendMutation.isPending}
                 />
                 <Button
                   type="submit"
-                  disabled={!messageInput.trim()}
                   size="icon"
-                  className="bg-blue-600 hover:bg-blue-700 h-9 w-9"
+                  className="rounded-full w-10 h-10 bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+                  disabled={!messageInput.trim() || sendMutation.isPending}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4 text-white" />
                 </Button>
               </form>
             </div>
           </>
-        ) : (
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              {/* misma lista que desktop */}
-              {filteredConversations.map(conv => {
-                const isUnread = conv.recipient_id === SUPPORT_USER_ID && !conv.is_read;
-                return (
-                  <button
-                    key={conv.conversation_id}
-                    onClick={() => setActiveConv(conv)}
-                    className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${
-                      isUnread ? 'bg-blue-50/40' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-900 text-sm truncate">{conv.client_name}</span>
-                      {isUnread && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-                    </div>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{conv.content}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         )}
       </div>
     </div>
