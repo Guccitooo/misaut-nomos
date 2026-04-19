@@ -477,9 +477,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
     if (isAdmin) {
       items.push(
-        { title: t('nav.administration'), url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
-        { title: `💰 ${t('nav.payments')}`, url: createPageUrl("AdminPayments"), icon: CreditCard },
-        { title: t('supportChat.supportInbox'), url: "/admin/soporte", icon: Headphones },
+        { title: "Administración", url: createPageUrl("AdminDashboard"), icon: LayoutDashboard },
+        { title: "💰 Pagos", url: createPageUrl("AdminPayments"), icon: CreditCard },
+        { title: "Bandeja de Soporte", url: "/admin/soporte", icon: Headphones },
         { title: "SEO Analytics", url: "/admin/seo", icon: TrendingUp },
         { title: "Blog", url: "/admin/blog", icon: BookOpen }
       );
