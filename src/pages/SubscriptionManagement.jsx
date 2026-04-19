@@ -249,8 +249,23 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  const handleUpgradePlan = () => {
-    toast.info('La mejora de plan estará disponible muy pronto. Contacta con soporte@misautonomos.es si necesitas activar Plan Ads+ ya.');
+  const handleUpgradePlan = async () => {
+    setIsUpgrading(true);
+    try {
+      const response = await base44.functions.invoke('createBillingPortalSession', {});
+      if (response?.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No se recibió URL del portal');
+      }
+    } catch (error) {
+      console.error('[Upgrade] Error:', error.message);
+      toast.error('Error al abrir el portal de facturación');
+      // Fallback: abrir el portal de login general
+      window.open('https://billing.stripe.com/p/login/00w00j5OLbXH4PV7jbgjC00', '_blank');
+    } finally {
+      setIsUpgrading(false);
+    }
   };
 
   const handleDowngradePlan = async (newPlanId) => {
