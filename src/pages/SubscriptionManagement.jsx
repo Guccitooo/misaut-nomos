@@ -52,6 +52,7 @@ export default function SubscriptionManagementPage() {
   const [isFixing, setIsFixing] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isDowngrading, setIsDowngrading] = useState(false);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
@@ -170,7 +171,10 @@ export default function SubscriptionManagementPage() {
         
         if (fixResponse.data.ok) {
           toast.success("Suscripción corregida, recargando...");
-          await loadSubscription();
+          const currentUser = await loadUser();
+          if (currentUser) {
+            await loadSubscription(currentUser);
+          }
         } else {
           toast.error("No se pudo corregir automáticamente");
         }
@@ -191,7 +195,10 @@ export default function SubscriptionManagementPage() {
       const response = await base44.functions.invoke('cancelSubscription', {});
       
       if (response.data?.success) {
-        await loadSubscription();
+        const currentUser = await loadUser();
+        if (currentUser) {
+          await loadSubscription(currentUser);
+        }
         toast.success('Suscripción cancelada correctamente', {
           description: 'Tu perfil ya no es visible en búsquedas'
         });
@@ -214,7 +221,10 @@ export default function SubscriptionManagementPage() {
       const response = await base44.functions.invoke('reactivateSubscription', {});
       if (response.data.ok) {
         toast.success(response.data.message);
-        await loadSubscription();
+        const currentUser = await loadUser();
+        if (currentUser) {
+          await loadSubscription(currentUser);
+        }
       } else {
         toast.error(response.data.error || "Error al reactivar");
       }
@@ -233,15 +243,45 @@ export default function SubscriptionManagementPage() {
       });
 
       if (response.data?.ok) {
-        toast.success(response.data.message);
-        await loadSubscription();
+        toast.success(response.data.message || 'Plan mejorado correctamente');
+        // Recargar con el user actual
+        const currentUser = await loadUser();
+        if (currentUser) {
+          await loadSubscription(currentUser);
+        }
       } else {
         toast.error(response.data?.error || 'Error al mejorar el plan');
       }
     } catch (error) {
+      console.error('Error upgrading plan:', error);
       toast.error('Error al mejorar el plan');
     } finally {
       setIsUpgrading(false);
+    }
+  };
+
+  const handleDowngradePlan = async (newPlanId) => {
+    setIsDowngrading(true);
+    try {
+      const response = await base44.functions.invoke('downgradeSubscription', {
+        newPlanId
+      });
+
+      if (response.data?.ok) {
+        toast.success(response.data.message || 'Plan degradado correctamente');
+        // Recargar con el user actual
+        const currentUser = await loadUser();
+        if (currentUser) {
+          await loadSubscription(currentUser);
+        }
+      } else {
+        toast.error(response.data?.error || 'Error al degradar el plan');
+      }
+    } catch (error) {
+      console.error('Error downgrading plan:', error);
+      toast.error('Error al degradar el plan');
+    } finally {
+      setIsDowngrading(false);
     }
   };
 
@@ -452,7 +492,7 @@ export default function SubscriptionManagementPage() {
                       </div>
                       <TrendingUp className="w-10 h-10 opacity-80" />
                     </div>
-                    
+
                     <ul className="space-y-2 mb-4 text-sm">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 flex-shrink-0" />
@@ -487,6 +527,41 @@ export default function SubscriptionManagementPage() {
                     </Button>
                     <p className="text-xs text-purple-100 mt-2 text-center">
                       Prorrateo automático. Solo pagas la diferencia del mes actual.
+                    </p>
+                  </div>
+                )}
+
+                {/* DOWNGRADE si está en Plan Ads+ */}
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_adsplus' && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Cambiar a Plan Visibilidad</h3>
+                        <p className="text-sm text-gray-600">
+                          Reduce tus gastos manteniendo visibilidad en búsquedas
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full border-gray-300 hover:bg-gray-50"
+                      onClick={() => handleDowngradePlan('plan_visibility')}
+                      disabled={isDowngrading}
+                    >
+                      {isDowngrading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          Cambiar a 14€/mes
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Se aplicará en el próximo período de facturación.
                     </p>
                   </div>
                 )}
