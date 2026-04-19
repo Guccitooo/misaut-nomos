@@ -336,25 +336,44 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       if (currentUser) {
         // Usuarios sin user_type (entraron con Google sin pasar por onboarding) → asignar "client"
         if (!currentUser.user_type) {
-          await base44.auth.updateMe({ user_type: "client" });
-          currentUser.user_type = "client";
+          try {
+            await base44.auth.updateMe({ user_type: "client" });
+            currentUser.user_type = "client";
+          } catch (e) {
+            console.warn('Failed to set user_type:', e);
+            currentUser.user_type = "client"; // Fallback local
+          }
         }
 
-        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
-        const profile = profiles[0] || null;
+        let profile = null;
+        try {
+          const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
+          profile = profiles[0] || null;
+        } catch (e) {
+          console.warn('Failed to load professional profile:', e);
+        }
         setProfessionalProfile(profile);
 
-        // Cargar plan efectivo del usuario (incluye regalos)
-        const effective = await getEffectivePlan(currentUser.id);
+        // Cargar plan efectivo del usuario (incluye regalos) - con try/catch para no romper login
+        let effective = null;
+        try {
+          effective = await getEffectivePlan(currentUser.id);
+        } catch (e) {
+          console.warn('Failed to load effective plan:', e);
+        }
         setUserPlan(effective?.planId || null);
 
         if (!isPostPayment) {
-          sessionStorage.setItem('current_user', JSON.stringify({
-            user: currentUser,
-            profile,
-            plan: effective?.planId || null,
-            timestamp: Date.now()
-          }));
+          try {
+            sessionStorage.setItem('current_user', JSON.stringify({
+              user: currentUser,
+              profile,
+              plan: effective?.planId || null,
+              timestamp: Date.now()
+            }));
+          } catch (e) {
+            console.warn('Failed to cache user data:', e);
+          }
         }
       } else {
         setProfessionalProfile(null);

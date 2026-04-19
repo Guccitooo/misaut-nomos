@@ -10,9 +10,9 @@ export async function getEffectivePlan(userId) {
     const subs = await Subscription.filter({
       user_id: userId,
       estado: { $in: ['activo', 'en_prueba'] }
-    }).limit(1);
+    });
     
-    if (!subs[0]) return null;
+    if (!subs || subs.length === 0) return null;
     
     const sub = subs[0];
     const now = new Date();

@@ -11,7 +11,44 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { AppProvider } from '@/lib/AppContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { Suspense, lazy, React } from 'react';
+import { Suspense, lazy, React, Component } from 'react';
+
+// ErrorBoundary para capturar errores en producción
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Algo salió mal</h1>
+            <p className="text-gray-600 mb-4">Por favor, recarga la página o intenta de nuevo.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700"
+            >
+              Recargar página
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Lazy load de páginas pesadas (admin, invoicing, CRM)
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -228,18 +265,20 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
-    <AuthProvider>
-      <AppProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <NavigationTracker />
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-          <VisualEditAgent />
-        </QueryClientProvider>
-      </AppProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <NavigationTracker />
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+            <VisualEditAgent />
+          </QueryClientProvider>
+        </AppProvider>
+      </ErrorBoundary>
+    </ErrorBoundary>
   )
 }
 
