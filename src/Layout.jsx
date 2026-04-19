@@ -331,7 +331,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       }
 
       // Paralelizar auth + perfil + plan en un solo round-trip
-      const currentUser = await base44.auth.me();
+      let currentUser = null;
+      try {
+        currentUser = await base44.auth.me();
+      } catch (e) {
+        console.warn('Failed to get current user:', e);
+        setUser(null);
+        setProfessionalProfile(null);
+        setUserPlan(null);
+        setLoadingUser(false);
+        return;
+      }
 
       if (currentUser) {
         // Usuarios sin user_type (entraron con Google sin pasar por onboarding) → asignar "client"
@@ -384,17 +394,23 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
 
       // Re-asociar usuario con OneSignal si ya tenía notificaciones activadas
       if (currentUser) {
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          const externalId = OneSignal.User.externalId;
-          if (!externalId || externalId !== currentUser.id) {
-            await OneSignal.login(currentUser.id);
-          }
-        });
+        try {
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          window.OneSignalDeferred.push(async function(OneSignal) {
+            const externalId = OneSignal.User.externalId;
+            if (!externalId || externalId !== currentUser.id) {
+              await OneSignal.login(currentUser.id);
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to setup OneSignal:', e);
+        }
       }
     } catch (error) {
+      console.error('Critical loadUser error:', error);
       setUser(null);
       setProfessionalProfile(null);
+      setUserPlan(null);
       sessionStorage.removeItem('current_user');
     } finally {
       setLoadingUser(false);

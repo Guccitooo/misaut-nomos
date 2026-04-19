@@ -15,24 +15,26 @@ export async function getEffectivePlan(userId) {
     if (!subs || subs.length === 0) return null;
     
     const sub = subs[0];
+    if (!sub) return null;
+    
     const now = new Date();
     
     // Si tiene regalo activo
     if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now) {
       return {
         planId: sub.gifted_plan_id,
-        planName: sub.gifted_plan_name,
+        planName: sub.gifted_plan_name || sub.gifted_plan_id,
         isGifted: true,
         giftedUntil: sub.gifted_until,
         originalPlanId: sub.plan_id,
-        originalPlanName: sub.plan_nombre,
+        originalPlanName: sub.plan_nombre || sub.plan_id,
         subscription: sub
       };
     }
     
     return {
       planId: sub.plan_id,
-      planName: sub.plan_nombre,
+      planName: sub.plan_nombre || sub.plan_id,
       isGifted: false,
       subscription: sub
     };
@@ -47,8 +49,13 @@ export async function getUserPlan(userId) {
   return effective?.planId || null;
 }
 
-export function isAdsPlus(effectivePlan) {
-  return effectivePlan?.planId === 'plan_adsplus';
+export function isAdsPlus(planIdOrEffectivePlan) {
+  // Soporta tanto string (planId) como objeto (effectivePlan)
+  if (!planIdOrEffectivePlan) return false;
+  const planId = typeof planIdOrEffectivePlan === 'string' 
+    ? planIdOrEffectivePlan 
+    : planIdOrEffectivePlan?.planId;
+  return planId === 'plan_adsplus';
 }
 
 export function isVisibility(effectivePlan) {

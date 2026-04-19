@@ -28,19 +28,56 @@ class ErrorBoundary extends Component {
     console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
+  handleLogout = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear storage:', e);
+    }
+    window.location.href = '/';
+  };
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Algo salió mal</h1>
-            <p className="text-gray-600 mb-4">Por favor, recarga la página o intenta de nuevo.</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700"
-            >
-              Recargar página
-            </button>
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+          <div className="max-w-lg w-full bg-white rounded-2xl border border-red-100 p-6 shadow-lg">
+            <h2 className="font-semibold text-gray-900 text-lg">Algo salió mal</h2>
+            <p className="text-sm text-gray-500 mt-2">Por favor, recarga la página o intenta de nuevo.</p>
+            
+            {/* MOSTRAR ERROR REAL - TEMPORAL PARA DEBUGGING */}
+            {this.state.error && (
+              <details className="mt-4 bg-red-50 rounded-lg p-3 text-xs">
+                <summary className="font-medium text-red-900 cursor-pointer">Ver detalles del error</summary>
+                <pre className="mt-2 overflow-auto text-red-800 whitespace-pre-wrap max-h-64">
+                  {this.state.error.message || 'Error desconocido'}
+                  {'\n\n'}
+                  {this.state.error.stack?.split('\n').slice(0, 8).join('\n')}
+                </pre>
+              </details>
+            )}
+            
+            <div className="flex gap-2 mt-4">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="flex-1 bg-gray-900 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 transition"
+              >
+                Recargar
+              </button>
+              <button 
+                onClick={() => { window.location.href = '/'; }} 
+                className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition"
+              >
+                Ir al inicio
+              </button>
+              <button 
+                onClick={this.handleLogout} 
+                className="flex-1 bg-red-50 text-red-700 text-sm font-medium py-2.5 rounded-lg hover:bg-red-100 transition"
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </div>
         </div>
       );
