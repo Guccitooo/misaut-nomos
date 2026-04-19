@@ -35,6 +35,8 @@ const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const Jobs = lazy(() => import('./pages/Jobs'));
 const SupportChat = lazy(() => import('./pages/SupportChat.jsx'));
+const MiCampana = lazy(() => import('./pages/MiCampana'));
+const BriefingMensual = lazy(() => import('./pages/BriefingMensual'));
 
 // Sin spinner de carga — renderizar directamente
 const PageLoader = () => null;
@@ -182,6 +184,10 @@ const AuthenticatedApp = () => {
           <Route path="/suscripcion" element={<Pages.SubscriptionManagement />} />
           <Route path="/pago-exitoso" element={<Pages.PaymentSuccess />} />
           <Route path="/bienvenida" element={<Pages.Onboarding />} />
+          
+          {/* ===== RUTAS PLAN ADS+ ===== */}
+          <Route path="/mi-campana" element={<Suspense fallback={<PageLoader />}><MiCampana /></Suspense>} />
+          <Route path="/mi-campana/briefing" element={<Suspense fallback={<PageLoader />}><BriefingMensual /></Suspense>} />
 
           {/* ===== RUTAS ADMIN ===== */}
           {/* Subrutas admin ANTES que /admin para matchear primero */}

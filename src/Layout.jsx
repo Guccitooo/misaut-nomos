@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import React, { useState, useEffect, Suspense, lazy, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -25,7 +25,8 @@ import {
   Shield,
   Gift,
   BookOpen,
-  Mail
+  Mail,
+  Megaphone
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,7 @@ import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
+import { getUserPlan, isAdsPlus } from "@/utils/subscription";
 
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
@@ -183,6 +185,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const navigate = useNavigate();
   const { t, language, changeLanguage } = useLanguage();
   const [user, setUser] = useState(null);
+  const [userPlan, setUserPlan] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [professionalProfile, setProfessionalProfile] = useState(undefined);
@@ -327,7 +330,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         }
       }
 
-      // Paralelizar auth + perfil en un solo round-trip
+      // Paralelizar auth + perfil + plan en un solo round-trip
       const currentUser = await base44.auth.me();
 
       if (currentUser) {
@@ -341,15 +344,21 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
 
+        // Cargar plan del usuario
+        const plan = await getUserPlan(currentUser.id);
+        setUserPlan(plan);
+
         if (!isPostPayment) {
           sessionStorage.setItem('current_user', JSON.stringify({
             user: currentUser,
             profile,
+            plan,
             timestamp: Date.now()
           }));
         }
       } else {
         setProfessionalProfile(null);
+        setUserPlan(null);
       }
 
       setUser(currentUser);
@@ -431,6 +440,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     sessionStorage.removeItem('current_user');
     sessionStorage.removeItem('unread_count');
     setUser(null);
+    setUserPlan(null);
     setUnreadCount(0);
     setProfessionalProfile(null);
     onesignalLogout();
@@ -473,7 +483,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return user?.profile_picture || null;
   };
 
-  const getNavigationItems = () => {
+  const getNavigationItems = useMemo(() => {
     const items = [];
 
     if (isAdmin) {
@@ -494,11 +504,18 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: t('nav.quotes'), url: "/presupuestos", icon: FileText },
         { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
         { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
+        // ✅ Plan Ads+ → mostrar "Mi campaña"
+        isAdsPlus(userPlan) && {
+          title: 'Mi campaña',
+          url: '/mi-campana',
+          icon: Megaphone,
+          badge: null // Aquí podrías añadir lógica para mostrar punto rojo si hay novedades
+        },
         { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
         { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
         { title: 'Invita y gana', url: "/referidos", icon: Gift },
         { title: t('nav.support'), url: "/soporte", icon: Headphones }
-      );
+      ).filter(Boolean);
     } else if (isClient) {
       items.push(
         { title: t('nav.search_professionals'), url: createPageUrl("Search"), icon: Search },
@@ -512,7 +529,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     }
 
     return items;
-  };
+  }, [isProfessional, isClient, isAdmin, userPlan, unreadCount, t]);
 
   const navigationItems = getNavigationItems();
 
