@@ -12,12 +12,16 @@ const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
-    const { userIds, title, message, url, data = {} } = await req.json();
+    const { userIds, title, message, url, data = {}, _serviceCall } = await req.json();
+
+    // Permitir llamadas desde automaciones (sin usuario autenticado) si _serviceCall es true
+    if (!_serviceCall) {
+      const user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
 
     const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
     if (!apiKey) {

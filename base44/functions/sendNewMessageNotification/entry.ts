@@ -1,6 +1,37 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
+const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
+
+async function sendPush(recipientId, title, message, url) {
+  const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+  if (!apiKey) return;
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    include_aliases: { external_id: [recipientId] },
+    target_channel: 'push',
+    headings: { en: title, es: title },
+    contents: { en: message, es: message },
+    url: url || 'https://misautonomos.es/mensajes',
+    chrome_web_icon: 'https://misautonomos.es/logo-192.png',
+    ttl: 86400,
+  };
+
+  const res = await fetch(ONESIGNAL_API_URL, {
+    method: 'POST',
+    headers: { 'Authorization': `Key ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const result = await res.json();
+  if (!res.ok) {
+    console.error('OneSignal push error:', JSON.stringify(result));
+  } else {
+    console.log(`Push enviado a ${recipientId}: ${result.id}, recipients: ${result.recipients}`);
+  }
+}
 
 /**
  * Enviar notificación de nuevo mensaje por email
@@ -37,12 +68,20 @@ Deno.serve(async (req) => {
     }
 
     const conversationUrl = conversationId 
-      ? `https://misautonomos.es/Messages?conversation=${conversationId}`
-      : 'https://misautonomos.es/Messages';
+      ? `https://misautonomos.es/mensajes?conversation=${conversationId}`
+      : 'https://misautonomos.es/mensajes';
 
     const preview = messagePreview 
       ? (messagePreview.length > 100 ? messagePreview.substring(0, 100) + '...' : messagePreview)
       : 'Tienes un nuevo mensaje';
+
+    // Enviar notificación push via OneSignal (fire-and-forget)
+    sendPush(
+      recipientId,
+      `💬 Mensaje de ${displaySenderName}`,
+      preview,
+      conversationUrl
+    ).catch(e => console.error('Push error (non-fatal):', e.message));
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: recipient.email,
