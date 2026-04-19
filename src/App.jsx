@@ -37,6 +37,7 @@ const Jobs = lazy(() => import('./pages/Jobs'));
 const SupportChat = lazy(() => import('./pages/SupportChat.jsx'));
 const MiCampana = lazy(() => import('./pages/MiCampana'));
 const BriefingMensual = lazy(() => import('./pages/BriefingMensual'));
+const PlanAds = lazy(() => import('./pages/PlanAds'));
 
 // Sin spinner de carga — renderizar directamente
 const PageLoader = () => null;
@@ -188,6 +189,7 @@ const AuthenticatedApp = () => {
           {/* ===== RUTAS PLAN ADS+ ===== */}
           <Route path="/mi-campana" element={<Suspense fallback={<PageLoader />}><MiCampana /></Suspense>} />
           <Route path="/mi-campana/briefing" element={<Suspense fallback={<PageLoader />}><BriefingMensual /></Suspense>} />
+          <Route path="/plan-ads" element={<Suspense fallback={<PageLoader />}><PlanAds /></Suspense>} />
 
           {/* ===== RUTAS ADMIN ===== */}
           {/* Subrutas admin ANTES que /admin para matchear primero */}

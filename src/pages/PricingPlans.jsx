@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle, XCircle, Loader2, Shield, Star, Briefcase,
-  TrendingUp, ChevronDown, ChevronUp, Zap, Rocket
+  TrendingUp, ChevronDown, ChevronUp, Zap, Rocket, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
@@ -336,7 +336,12 @@ export default function PricingPlansPage() {
                       <TrendingUp className="w-5 h-5 text-blue-600" />
                       <h2 className="text-lg font-bold text-gray-900">{plan.nombre}</h2>
                     </div>
-                    <p className="text-sm text-gray-500 mb-5">Máxima visibilidad con publicidad gestionada</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm text-gray-500">Máxima visibilidad con publicidad gestionada</p>
+                      <Link to="/plan-ads" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1">
+                        Saber más <ChevronRight className="w-3 h-3" />
+                      </Link>
+                    </div>
 
                     <div className="mb-6">
                       <div className="flex items-end gap-1">

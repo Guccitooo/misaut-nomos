@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import {
   MessageSquare, Users, FileText, Eye, CreditCard,
   ArrowRight, Plus, CheckCircle2, AlertCircle, Clock,
-  ExternalLink, Sparkles, TrendingUp, Circle, Star, Gift
+  ExternalLink, Sparkles, TrendingUp, Circle, Star, Gift, Megaphone
 } from "lucide-react";
 import SEOHead from "../components/seo/SEOHead";
 import PullToRefresh from "../components/ui/PullToRefresh";
@@ -115,6 +115,23 @@ export default function ProfessionalDashboardPage() {
     },
     enabled: !!user,
     staleTime: 60000 * 2,
+  });
+
+  // Cargar briefing actual si tiene Plan Ads+
+  const { data: currentBriefing } = useQuery({
+    queryKey: ['adsBriefing_dashboard', user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      const briefings = await base44.entities.AdsBriefing.filter({
+        professional_id: user.id,
+        month_year: `${year}-${String(month).padStart(2, '0')}`
+      }).limit(1);
+      return briefings[0] || null;
+    },
+    enabled: !!user && subscription?.plan_id === 'plan_adsplus',
+    staleTime: 60000 * 5,
   });
 
   const { data: reviews = [] } = useQuery({
@@ -447,9 +464,41 @@ export default function ProfessionalDashboardPage() {
             </motion.div>
           )}
 
+          {/* WIDGET PLAN ADS+ */}
+          {subscription?.plan_id === 'plan_adsplus' && currentBriefing && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Megaphone className="w-5 h-5" />
+                    <h3 className="font-semibold text-sm">Tu campaña de {new Date().toLocaleDateString('es-ES', { month: 'long' })}</h3>
+                  </div>
+                  {currentBriefing.campaign_status === 'live' ? (
+                    <>
+                      <p className="text-2xl font-bold mt-1">{currentBriefing.campaign_metrics?.leads_generated || 0} leads</p>
+                      <p className="text-xs text-blue-200 mt-0.5">
+                        {currentBriefing.campaign_metrics?.reach?.toLocaleString() || '0'} personas alcanzadas esta semana
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-blue-100">
+                      {currentBriefing.campaign_status === 'pending' ? 'Pendiente de configuración' :
+                       currentBriefing.campaign_status === 'in_review' ? 'En revisión' :
+                       currentBriefing.campaign_status === 'finished' ? 'Finalizada' : 'En preparación'}
+                    </p>
+                  )}
+                  <Link to="/mi-campana" className="inline-block mt-3 bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
+                    Ver detalles →
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* WIDGET REFERIDOS */}
           {hasActiveSub && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: subscription?.plan_id === 'plan_adsplus' ? 0.42 : 0.38 }}>
               <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 rounded-2xl border border-amber-100 p-5 relative overflow-hidden">
                 <div className="absolute -top-4 -right-4 w-20 h-20 bg-amber-200/40 rounded-full blur-2xl pointer-events-none" />
                 <div className="relative">

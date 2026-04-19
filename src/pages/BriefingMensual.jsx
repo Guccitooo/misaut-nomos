@@ -59,6 +59,16 @@ export default function BriefingMensualPage() {
           services_to_highlight: profiles[0].services_offered?.map(s => s.name) || []
         }));
       }
+
+      // Cargar ClientInsights para recomendación
+      const insightsData = await base44.entities.ClientInsights.filter({
+        user_id: currentUser.id,
+        onboarding_completed: true
+      }).limit(1);
+      
+      if (insightsData.length > 0) {
+        setInsights(insightsData[0]);
+      }
     } catch (error) {
       console.error("Error loading user data:", error);
     }
@@ -224,6 +234,16 @@ export default function BriefingMensualPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Recomendación automática */}
+          {recommendedPlatform && !formData.platform && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"/>
+              <div className="text-xs text-amber-900">
+                <strong>Recomendación:</strong> Según tu cuestionario, tus clientes suelen estar en <strong>{platformLabels[recommendedPlatform.platform]}</strong>. {recommendedPlatform.reason}
+              </div>
+            </div>
+          )}
+
           {/* 1. Elegir red */}
           <Card className="border-0 shadow-md">
             <CardHeader className="pb-3">
@@ -235,13 +255,13 @@ export default function BriefingMensualPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                 {platforms.map(p => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setFormData({ ...formData, platform: p.id })}
-                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-xl transition-all ${
+                    className={`flex flex-col items-center gap-1.5 p-3 border-2 rounded-xl transition-colors ${
                       formData.platform === p.id
                         ? 'border-gray-900 bg-gray-50'
                         : 'border-gray-100 hover:border-gray-200'
@@ -251,6 +271,7 @@ export default function BriefingMensualPage() {
                       <p.icon className="w-5 h-5 text-white" />
                     </div>
                     <span className="text-sm font-medium">{p.label}</span>
+                    <span className="text-[10px] text-gray-500 text-center leading-tight">{p.hint}</span>
                   </button>
                 ))}
               </div>
@@ -440,30 +461,16 @@ export default function BriefingMensualPage() {
             </CardContent>
           </Card>
 
-          {/* Presupuesto */}
-          <Card className="border-0 shadow-md bg-blue-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-blue-900">
-                Presupuesto de publicidad
-              </CardTitle>
-              <p className="text-xs text-blue-700">
-                Incluido en tu Plan Ads+ (30€/mes en inversión publicitaria)
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="number"
-                  value={formData.budget_eur}
-                  onChange={e => setFormData({ ...formData, budget_eur: parseFloat(e.target.value) || 30 })}
-                  className="w-24"
-                  min="10"
-                  max="100"
-                />
-                <span className="text-sm text-blue-700 font-medium">euros de inversión en ads</span>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Presupuesto explícito */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-blue-900">Presupuesto publicitario del mes</span>
+              <span className="text-lg font-bold text-blue-900">30,00 €</span>
+            </div>
+            <p className="text-xs text-blue-700">
+              Este presupuesto se invierte íntegramente en tu campaña. Gestión y creatividades ya incluidas en tu plan.
+            </p>
+          </div>
 
           {/* Notas adicionales */}
           <Card className="border-0 shadow-md">

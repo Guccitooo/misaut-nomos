@@ -58,7 +58,7 @@ export default function SubscriptionManagementPage() {
 
   // Cargar facturas cuando hay suscripción activa
   useEffect(() => {
-    if (subscription && (subscription.estado === 'activo' || subscription.estado === 'en_prueba' || subscription.estado === 'cancelado')) {
+    if (subscription && (subscription?.estado === 'activo' || subscription?.estado === 'en_prueba' || subscription?.estado === 'cancelado')) {
       loadInvoices();
     }
   }, [subscription]);
@@ -80,8 +80,9 @@ export default function SubscriptionManagementPage() {
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      setUser(currentUser || null);
     } catch (error) {
+      console.error('Error loading user:', error);
       base44.auth.redirectToLogin();
     }
   };
@@ -115,19 +116,24 @@ export default function SubscriptionManagementPage() {
   const { data: subscription, isLoading: loadingSubscription, refetch: refetchSubscription } = useQuery({
     queryKey: ['subscription', user?.id, syncResult?.subscription?.id],
     queryFn: async () => {
-      // Si syncResult tiene suscripción activa, usar esos datos
-      if (syncResult?.subscription?.active) {
+      try {
+        // Si syncResult tiene suscripción activa, usar esos datos
+        if (syncResult?.subscription?.active) {
+          const subs = await base44.entities.Subscription.filter({
+            user_id: user.id
+          });
+          return subs[0] || null;
+        }
+        
         const subs = await base44.entities.Subscription.filter({
           user_id: user.id
         });
-        return subs[0];
+        
+        return subs[0] || null;
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
       }
-      
-      const subs = await base44.entities.Subscription.filter({
-        user_id: user.id
-      });
-      
-      return subs[0];
     },
     enabled: !!user && !syncing,
     retry: 2,
@@ -137,12 +143,18 @@ export default function SubscriptionManagementPage() {
   const { data: plan } = useQuery({
     queryKey: ['plan', subscription?.plan_id],
     queryFn: async () => {
-      const plans = await base44.entities.SubscriptionPlan.filter({
-        plan_id: subscription.plan_id
-      });
-      return plans[0];
+      try {
+        if (!subscription?.plan_id) return null;
+        const plans = await base44.entities.SubscriptionPlan.filter({
+          plan_id: subscription.plan_id
+        });
+        return plans[0] || null;
+      } catch (error) {
+        console.error('Error fetching plan:', error);
+        return null;
+      }
     },
-    enabled: !!subscription,
+    enabled: !!subscription?.plan_id,
   });
 
   const handleFixSubscription = async () => {

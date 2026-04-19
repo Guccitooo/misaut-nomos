@@ -410,13 +410,25 @@ function MetricsCard({ metrics, budget }) {
           />
         </div>
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-gray-600">Presupuesto gastado</span>
-            <span className="font-semibold">
-              {metrics.spent_eur?.toFixed(2) || '0'}€ / {budget}€
+        <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500">PRESUPUESTO</span>
+            <span className="text-sm font-bold text-gray-900">
+              {metrics.spent_eur?.toFixed(2) || '0'}€ / 30,00€
             </span>
           </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
+              style={{width: `${Math.min(100, (metrics.spent_eur / 30) * 100)}%`}}
+            />
+          </div>
+          <p className="text-[10px] text-gray-500 mt-1.5">
+            Invertido en tu campaña a día {new Date().getDate()} de {new Date().toLocaleDateString('es-ES', { month: 'long' })}
+          </p>
+        </div>
+
+        <div className="space-y-2 text-sm">
           <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
             <span className="text-gray-600">CPC medio</span>
             <span className="font-semibold">
