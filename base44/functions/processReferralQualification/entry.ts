@@ -36,6 +36,12 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Subscription.update(refSub.id, {
           fecha_expiracion: newExpiry.toISOString()
         });
+
+        // TODO: integración Stripe pendiente
+        // Opciones para aplicar el mes gratis realmente en Stripe:
+        // 1. Crear coupon de 100% y adjuntarlo: stripe.subscriptions.update(subId, {coupon: couponId})
+        // 2. Extender trial: stripe.subscriptions.update(subId, {trial_end: newTimestamp})
+        // Requiere variable env STRIPE_SECRET_KEY y que el referidor tenga stripe_subscription_id en refSub
       }
 
       // Actualizar contadores del perfil del referidor

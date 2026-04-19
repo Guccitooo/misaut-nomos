@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { Copy, Check, Gift, Users, Calendar } from "lucide-react";
+import { Copy, Check, Gift, Users, Calendar, AlertCircle } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+
+function generateReferralCode(name) {
+  const prefix = 'MA';
+  const cleanName = (name || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
+  const initials = cleanName.substring(0, 3).padEnd(3, 'X');
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${prefix}-${initials}${random}`;
+}
 
 function StatusBadge({ status }) {
   const config = {
@@ -17,26 +24,53 @@ function StatusBadge({ status }) {
 
 export default function ReferralsPage() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [referrals, setReferrals] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    load();
   }, []);
 
-  const { data: profile } = useQuery({
-    queryKey: ["referralProfile", user?.id],
-    queryFn: async () => {
-      const p = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-      return p[0] || null;
-    },
-    enabled: !!user,
-  });
+  const load = async () => {
+    setLoading(true);
+    try {
+      const currentUser = await base44.auth.me();
+      if (!currentUser) { setLoading(false); return; }
+      setUser(currentUser);
 
-  const { data: referrals = [] } = useQuery({
-    queryKey: ["myReferrals", user?.id],
-    queryFn: () => base44.entities.Referral.filter({ referrer_id: user.id }),
-    enabled: !!user,
-  });
+      let profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
+      let prof = profiles[0] || null;
+
+      if (!prof) { setLoading(false); return; }
+
+      // Backfill: generar referral_code si no existe
+      if (!prof.referral_code) {
+        let code;
+        let exists = true;
+        let attempts = 0;
+        while (exists && attempts < 10) {
+          code = generateReferralCode(prof.business_name || currentUser.full_name || 'MA');
+          const check = await base44.entities.ProfessionalProfile.filter({ referral_code: code });
+          exists = check.length > 0;
+          attempts++;
+        }
+        await base44.entities.ProfessionalProfile.update(prof.id, { referral_code: code });
+        prof = { ...prof, referral_code: code };
+      }
+
+      setProfile(prof);
+
+      const refs = await base44.entities.Referral.filter({ referrer_id: currentUser.id });
+      refs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      setReferrals(refs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const refLink = profile?.referral_code
     ? `https://misautonomos.es/r/${profile.referral_code}`
@@ -49,7 +83,7 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareText = "¡Únete a MisAutónomos con mi código y consigue 30 días extra de prueba gratis! 🎁";
+  const shareText = "¡Únete a MisAutónomos con mi código y consigue 30 días extra de prueba gratis!";
   const shareWA = () => window.open(`https://wa.me/?text=${encodeURIComponent(shareText + " " + refLink)}`);
   const shareEmail = () => window.open(`mailto:?subject=${encodeURIComponent("Únete a MisAutónomos")}&body=${encodeURIComponent(shareText + "\n\n" + refLink)}`);
   const shareX = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(refLink)}`);
@@ -58,8 +92,6 @@ export default function ReferralsPage() {
   const qualified = referrals.filter((r) => ["qualified", "rewarded"].includes(r.status)).length;
   const pending = referrals.filter((r) => r.status === "pending").length;
   const monthsEarned = profile?.referral_months_earned || 0;
-
-  const sorted = [...referrals].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -83,13 +115,18 @@ export default function ReferralsPage() {
         <section className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
           <p className="text-xs text-gray-400 mb-1">Tu link personal</p>
           <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2.5 mb-4">
-            <span className="flex-1 text-sm text-white truncate">
-              {refLink || "Cargando..."}
-            </span>
+            {loading ? (
+              <div className="flex items-center gap-2 text-gray-400 flex-1">
+                <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full flex-shrink-0" />
+                <span className="text-sm">Generando tu link...</span>
+              </div>
+            ) : (
+              <span className="flex-1 text-sm text-white truncate">{refLink || "—"}</span>
+            )}
             <button
               onClick={copyLink}
-              disabled={!refLink}
-              className="bg-white text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-gray-100 transition-colors flex-shrink-0"
+              disabled={!refLink || loading}
+              className="bg-white text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-gray-100 transition-colors flex-shrink-0 disabled:opacity-40"
             >
               {copied ? <><Check className="w-4 h-4" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar</>}
             </button>
@@ -97,18 +134,26 @@ export default function ReferralsPage() {
 
           <p className="text-xs text-gray-400 mb-2">Compartir por:</p>
           <div className="flex gap-2 flex-wrap">
-            <button onClick={shareWA} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg">
+            <button onClick={shareWA} disabled={!refLink} className="bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
               WhatsApp
             </button>
-            <button onClick={shareEmail} className="bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-3 py-2 rounded-lg">
+            <button onClick={shareEmail} disabled={!refLink} className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
               Email
             </button>
-            <button onClick={shareX} className="bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-3 py-2 rounded-lg">
+            <button onClick={shareX} disabled={!refLink} className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
               Twitter/X
             </button>
-            <button onClick={shareLinkedIn} className="bg-blue-800 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg">
+            <button onClick={shareLinkedIn} disabled={!refLink} className="bg-blue-800 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
               LinkedIn
             </button>
+          </div>
+
+          {/* FIX 3 — Banner informativo sobre cómo se aplica el mes gratis */}
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-900">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+            <div>
+              <strong>Cómo se aplica el mes gratis:</strong> Cada mes ganado se añade a la fecha de expiración de tu suscripción. Si estás en un plan de pago mensual, Stripe seguirá cobrando normalmente — la recompensa funciona como crédito de tiempo añadido a tu cuenta. Contacta con soporte si tu suscripción renueva antes de aplicar tus meses acumulados y te ayudamos a pausarla.
+            </div>
           </div>
         </section>
 
@@ -160,7 +205,11 @@ export default function ReferralsPage() {
         {/* Historial */}
         <section className="bg-white rounded-2xl border border-gray-100 p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Historial de referidos</h2>
-          {sorted.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-10">
+              <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-gray-600 rounded-full mx-auto" />
+            </div>
+          ) : referrals.length === 0 ? (
             <div className="text-center py-10">
               <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-700">Aún no has invitado a nadie</p>
@@ -168,7 +217,7 @@ export default function ReferralsPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {sorted.map((r) => (
+              {referrals.map((r) => (
                 <div key={r.id} className="flex items-center justify-between py-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-gray-900 truncate">{r.referred_name || r.referred_email}</p>
