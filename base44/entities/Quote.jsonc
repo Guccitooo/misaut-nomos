@@ -223,6 +223,16 @@
       "format": "date-time",
       "description": "Fecha de aceptaci\u00f3n"
     },
+    "client_signature": {
+      "type": "string",
+      "default": "",
+      "description": "Firma digital del cliente (nombre completo)"
+    },
+    "client_signature_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora de la firma del cliente"
+    },
     "sent_date": {
       "type": "string",
       "format": "date-time",
@@ -243,6 +253,21 @@
     "quote_message_id": {
       "type": "string",
       "description": "ID del mensaje de chat asociado"
+    },
+    "acceptance_ip": {
+      "type": "string",
+      "default": "",
+      "description": "IP desde la que se acept\u00f3"
+    },
+    "converted_to_invoice": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si este presupuesto se convirti\u00f3 en factura"
+    },
+    "invoice_id": {
+      "type": "string",
+      "default": "",
+      "description": "ID de la factura generada desde este presupuesto"
     }
   },
   "required": [

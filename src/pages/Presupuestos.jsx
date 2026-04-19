@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { Plus, FileText, Send, CheckCircle, Euro, Download, Eye, Trash2, Loader2, XCircle, RefreshCw, FolderKanban } from "lucide-react";
+import { Plus, FileText, Send, CheckCircle, Euro, Download, Eye, Trash2, Loader2, XCircle, RefreshCw, FolderKanban, Link as LinkIcon, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import SEOHead from "@/components/seo/SEOHead";
@@ -49,6 +49,8 @@ export default function PresupuestosPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [sendingId, setSendingId] = useState(null);
+  const [shareQuote, setShareQuote] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => base44.auth.redirectToLogin()).finally(() => setLoadingUser(false));
@@ -150,6 +152,37 @@ export default function PresupuestosPage() {
     }
   };
 
+  const handleConvertToInvoice = async (q) => {
+    try {
+      const response = await base44.functions.invoke('convertQuoteToInvoice', { quoteId: q.id });
+      
+      if (response.data.error) {
+        toast.error(response.data.error);
+        return;
+      }
+
+      toast.success(`✅ Factura ${response.data.invoice.invoice_number} creada`);
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    } catch (error) {
+      console.error("Error converting to invoice:", error);
+      toast.error("Error al convertir en factura");
+    }
+  };
+
+  const handleShare = (q) => {
+    setShareQuote(q);
+    setCopied(false);
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/presupuesto/${shareQuote.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success("Enlace copiado");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loadingUser) return (
     <div className="flex items-center justify-center min-h-screen">
       <Loader2 className="w-7 h-7 animate-spin text-gray-400" />
@@ -249,13 +282,16 @@ export default function PresupuestosPage() {
                       <td className="px-4 py-3 text-right font-medium text-gray-900">{parseFloat(q.total || 0).toFixed(2)}€</td>
                       <td className="px-4 py-3 text-center"><StatusBadge status={q.status} /></td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1 justify-end items-center">
-                          <button onClick={() => setViewQuote(q)} title="Ver" className="p-1.5 hover:bg-gray-100 rounded">
-                            <Eye className="w-4 h-4 text-gray-500" />
-                          </button>
-                          <button onClick={() => downloadQuotePDF(q)} title="Descargar PDF" className="p-1.5 hover:bg-gray-100 rounded">
-                            <Download className="w-4 h-4 text-gray-500" />
-                          </button>
+                      <div className="flex gap-1 justify-end items-center">
+                        <button onClick={() => handleShare(q)} title="Compartir" className="p-1.5 hover:bg-blue-50 rounded">
+                          <Share2 className="w-4 h-4 text-blue-500" />
+                        </button>
+                        <button onClick={() => setViewQuote(q)} title="Ver" className="p-1.5 hover:bg-gray-100 rounded">
+                          <Eye className="w-4 h-4 text-gray-500" />
+                        </button>
+                        <button onClick={() => downloadQuotePDF(q)} title="Descargar PDF" className="p-1.5 hover:bg-gray-100 rounded">
+                          <Download className="w-4 h-4 text-gray-500" />
+                        </button>
                           {isProfessional && q.status === 'borrador' && (
                             <button
                               onClick={() => handleSendNow(q)}
@@ -267,9 +303,14 @@ export default function PresupuestosPage() {
                             </button>
                           )}
                           {isProfessional && q.status === 'aceptado' && (
-                            <button onClick={() => handleConvertToProject(q)} title="Convertir a proyecto" className="p-1.5 hover:bg-indigo-50 rounded">
-                              <FolderKanban className="w-4 h-4 text-indigo-500" />
-                            </button>
+                            <>
+                              <button onClick={() => handleConvertToInvoice(q)} title="Convertir a factura" className="p-1.5 hover:bg-green-50 rounded">
+                                <FileText className="w-4 h-4 text-green-500" />
+                              </button>
+                              <button onClick={() => handleConvertToProject(q)} title="Convertir a proyecto" className="p-1.5 hover:bg-indigo-50 rounded">
+                                <FolderKanban className="w-4 h-4 text-indigo-500" />
+                              </button>
+                            </>
                           )}
                           {isProfessional && (
                             <button onClick={() => { setEditingQuote(q); setShowForm(true); }} title="Editar" className="p-1.5 hover:bg-gray-100 rounded">
@@ -307,6 +348,11 @@ export default function PresupuestosPage() {
                       {isProfessional && q.status === 'borrador' && (
                         <button onClick={() => handleSendNow(q)} disabled={sendingId === q.id} className="p-1.5 hover:bg-blue-50 rounded">
                           {sendingId === q.id ? <Loader2 className="w-4 h-4 text-blue-500 animate-spin" /> : <Send className="w-4 h-4 text-blue-500" />}
+                        </button>
+                      )}
+                      {isProfessional && q.status === 'aceptado' && (
+                        <button onClick={() => handleConvertToInvoice(q)} title="Convertir a factura" className="p-1.5 hover:bg-green-50 rounded">
+                          <FileText className="w-4 h-4 text-green-500" />
                         </button>
                       )}
                       {isProfessional && (
@@ -414,6 +460,57 @@ export default function PresupuestosPage() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700">
               {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog compartir */}
+      <AlertDialog open={!!shareQuote} onOpenChange={() => setShareQuote(null)}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5" />
+              Compartir presupuesto
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                Envía este enlace a <strong>{shareQuote?.client_name}</strong> para que pueda ver y aceptar el presupuesto online.
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-2">Enlace público:</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={`${window.location.origin}/presupuesto/${shareQuote?.id}`}
+                    readOnly
+                    className="flex-1 text-xs bg-white border rounded px-2 py-1.5"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyLink}
+                    className={copied ? "bg-green-50 border-green-200 text-green-700" : ""}
+                  >
+                    {copied ? <CheckCircle className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>💡 Consejo:</strong> El cliente podrá aceptar o rechazar el presupuesto desde este enlace. 
+                  Una vez aceptado, podrás convertirlo automáticamente en factura.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cerrar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCopyLink} className="bg-blue-600 hover:bg-blue-700">
+              {copied ? <CheckCircle className="w-4 h-4 mr-2" /> : <LinkIcon className="w-4 h-4 mr-2" />}
+              {copied ? "Copiado" : "Copiar enlace"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
