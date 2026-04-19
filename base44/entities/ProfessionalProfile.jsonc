@@ -1,0 +1,437 @@
+{
+  "name": "ProfessionalProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario profesional"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Nombre comercial",
+      "default": ""
+    },
+    "cif_nif": {
+      "type": "string",
+      "description": "CIF / NIF",
+      "default": ""
+    },
+    "email_contacto": {
+      "type": "string",
+      "description": "Email de contacto",
+      "default": ""
+    },
+    "telefono_contacto": {
+      "type": "string",
+      "description": "Tel\u00e9fono de contacto (OPCIONAL)",
+      "default": ""
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN para recibir pagos de facturas",
+      "default": ""
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Categor\u00edas de servicios",
+      "default": []
+    },
+    "activity_other": {
+      "type": "string",
+      "description": "Descripci\u00f3n personalizada cuando se selecciona 'Otro tipo de servicio profesional'",
+      "default": ""
+    },
+    "metodos_contacto": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "chat_interno",
+          "whatsapp",
+          "telefono"
+        ]
+      },
+      "description": "M\u00e9todos de contacto preferidos del profesional",
+      "default": [
+        "chat_interno"
+      ]
+    },
+    "descripcion_corta": {
+      "type": "string",
+      "description": "Descripci\u00f3n corta (m\u00e1x 220 caracteres)",
+      "default": ""
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada de los servicios",
+      "default": ""
+    },
+    "service_area": {
+      "type": "string",
+      "description": "Zona de intervenci\u00f3n completa",
+      "default": ""
+    },
+    "provincia": {
+      "type": "string",
+      "description": "Provincia",
+      "default": ""
+    },
+    "ciudad": {
+      "type": "string",
+      "description": "Ciudad",
+      "default": ""
+    },
+    "municipio": {
+      "type": "string",
+      "description": "Municipio / Barrio",
+      "default": ""
+    },
+    "radio_servicio_km": {
+      "type": "number",
+      "description": "Radio de servicio en kil\u00f3metros",
+      "default": 10
+    },
+    "opening_hours": {
+      "type": "string",
+      "description": "Horarios de apertura (legacy)",
+      "default": ""
+    },
+    "horario_dias": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "D\u00edas de disponibilidad",
+      "default": []
+    },
+    "disponibilidad_tipo": {
+      "type": "string",
+      "enum": [
+        "laborables",
+        "festivos",
+        "ambos"
+      ],
+      "description": "Tipo de disponibilidad",
+      "default": "laborables"
+    },
+    "horario_apertura": {
+      "type": "string",
+      "description": "Hora de apertura (HH:MM)",
+      "default": "09:00"
+    },
+    "horario_cierre": {
+      "type": "string",
+      "description": "Hora de cierre (HH:MM)",
+      "default": "18:00"
+    },
+    "tarifa_base": {
+      "type": "number",
+      "description": "Tarifa base por hora/servicio (OPCIONAL)",
+      "default": 0
+    },
+    "facturacion": {
+      "type": "string",
+      "enum": [
+        "autonomo",
+        "sociedad",
+        "otros"
+      ],
+      "description": "Tipo de facturaci\u00f3n",
+      "default": "autonomo"
+    },
+    "formas_pago": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Formas de pago aceptadas",
+      "default": []
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de las fotos de realizaciones",
+      "default": []
+    },
+    "imagen_principal": {
+      "type": "string",
+      "description": "URL de la imagen principal",
+      "default": ""
+    },
+    "website": {
+      "type": "string",
+      "description": "Sitio web",
+      "default": ""
+    },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "facebook": {
+          "type": "string",
+          "default": ""
+        },
+        "instagram": {
+          "type": "string",
+          "default": ""
+        },
+        "linkedin": {
+          "type": "string",
+          "default": ""
+        },
+        "tiktok": {
+          "type": "string",
+          "default": ""
+        }
+      },
+      "description": "Enlaces de redes sociales",
+      "default": {
+        "facebook": "",
+        "instagram": "",
+        "linkedin": "",
+        "tiktok": ""
+      }
+    },
+    "price_range": {
+      "type": "string",
+      "enum": [
+        "\u20ac",
+        "\u20ac\u20ac",
+        "\u20ac\u20ac\u20ac"
+      ],
+      "description": "Gama de precios",
+      "default": "\u20ac\u20ac"
+    },
+    "average_rating": {
+      "type": "number",
+      "description": "Nota media",
+      "default": 0
+    },
+    "total_reviews": {
+      "type": "number",
+      "description": "N\u00famero total de opiniones",
+      "default": 0
+    },
+    "estado_perfil": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "activo",
+        "inactivo",
+        "suspendido"
+      ],
+      "description": "Estado del perfil",
+      "default": "pendiente"
+    },
+    "visible_en_busqueda": {
+      "type": "boolean",
+      "description": "Visible en b\u00fasquedas p\u00fablicas",
+      "default": false
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "description": "Quiz de onboarding completado",
+      "default": false
+    },
+    "fecha_publicacion": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de publicaci\u00f3n del perfil"
+    },
+    "acepta_terminos": {
+      "type": "boolean",
+      "description": "Acepta t\u00e9rminos y condiciones",
+      "default": false
+    },
+    "acepta_politica_privacidad": {
+      "type": "boolean",
+      "description": "Acepta pol\u00edtica de privacidad",
+      "default": false
+    },
+    "consiente_contacto_clientes": {
+      "type": "boolean",
+      "description": "Consiente contacto de clientes",
+      "default": false
+    },
+    "slug_publico": {
+      "type": "string",
+      "description": "Slug para URL p\u00fablica",
+      "default": ""
+    },
+    "years_experience": {
+      "type": "number",
+      "description": "A\u00f1os de experiencia profesional",
+      "default": 0
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Certificaciones y t\u00edtulos profesionales",
+      "default": []
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Habilidades espec\u00edficas del profesional",
+      "default": []
+    },
+    "portfolio_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Trabajos del portfolio con descripciones",
+      "default": []
+    },
+    "faq_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Preguntas frecuentes configuradas por el profesional",
+      "default": []
+    },
+    "services_offered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Lista de servicios ofrecidos con detalles",
+      "default": []
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "C\u00f3digo \u00fanico de referido (formato: MA-ABC123)",
+      "default": ""
+    },
+    "referral_count": {
+      "type": "number",
+      "description": "Total de referidos cualificados",
+      "default": 0
+    },
+    "referral_months_earned": {
+      "type": "number",
+      "description": "Meses gratis acumulados por referidos",
+      "default": 0
+    },
+    "referral_months_used": {
+      "type": "number",
+      "description": "Meses gratis ya aplicados",
+      "default": 0
+    },
+    "referred_by_code": {
+      "type": "string",
+      "description": "C\u00f3digo con el que se registr\u00f3 este usuario (si vino por referido)",
+      "default": ""
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "security": {
+    "read": {
+      "rule": "true"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "user_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "visible_en_busqueda",
+        "onboarding_completed"
+      ]
+    },
+    {
+      "fields": [
+        "provincia",
+        "ciudad"
+      ]
+    },
+    {
+      "fields": [
+        "categories"
+      ]
+    },
+    {
+      "fields": [
+        "referral_code"
+      ]
+    }
+  ]
+}

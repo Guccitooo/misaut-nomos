@@ -397,6 +397,30 @@ export default function ProfileOnboardingPage() {
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 
+      // ✅ Procesar código de referido si existe en localStorage
+      try {
+        const referralCode = localStorage.getItem('referral_code');
+        const referralExpires = parseInt(localStorage.getItem('referral_expires') || '0');
+        if (referralCode && Date.now() < referralExpires) {
+          const result = await base44.functions.invoke('applyReferral', { referral_code: referralCode });
+          if (result.data?.ok) {
+            localStorage.removeItem('referral_code');
+            localStorage.removeItem('referral_referrer_name');
+            localStorage.removeItem('referral_expires');
+            toast.success('🎁 30 días extra de prueba añadidos gracias a tu código de referido');
+          }
+        }
+      } catch (refErr) {
+        console.log('Referral apply failed (non-critical):', refErr);
+      }
+
+      // ✅ Generar código de referido para el nuevo profesional
+      try {
+        await base44.functions.invoke('generateReferralCode', {});
+      } catch (codeErr) {
+        console.log('Referral code generation failed (non-critical):', codeErr);
+      }
+
       // ✅ ACTIVACIÓN AUTOMÁTICA: Si tiene suscripción, activar perfil AHORA
       if (shouldBeVisible || hasActiveSubscription) {
         // Fix #14: welcome notification after completing onboarding

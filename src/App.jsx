@@ -187,6 +187,10 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
           <Route path="/admin/seo" element={<Suspense fallback={<PageLoader />}><SEOAnalysis /></Suspense>} />
 
+          {/* ===== REFERIDOS ===== */}
+          <Route path="/r/:code" element={<Pages.ReferralRedirect />} />
+          <Route path="/referidos" element={<Pages.Referrals />} />
+
           {/* ===== REDIRECTS desde URLs ANTIGUAS (PascalCase → español) ===== */}
           {/* El componente LegacyRedirect detecta la URL vieja y redirige con <Navigate replace>. */}
           <Route path="*" element={<LegacyRedirect />} />

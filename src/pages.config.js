@@ -60,6 +60,8 @@ const Home               = lazy(() => import('./pages/Home'));
 const LegalNotice        = lazy(() => import('./pages/LegalNotice'));
 const PrivacyPolicy      = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsConditions    = lazy(() => import('./pages/TermsConditions'));
+const Referrals          = lazy(() => import('./pages/Referrals'));
+const ReferralRedirect   = lazy(() => import('./pages/ReferralRedirect'));
 
 export const PAGES = {
     "AdminDashboard": AdminDashboard,
@@ -109,6 +111,8 @@ export const PAGES = {
     "TicketDetail": TicketDetail,
     "Tickets": Tickets,
     "UserTypeSelection": UserTypeSelection,
+    "Referrals": Referrals,
+    "ReferralRedirect": ReferralRedirect,
 }
 
 export const pagesConfig = {

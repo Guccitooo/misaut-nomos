@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import {
   MessageSquare, Users, FileText, Eye, CreditCard,
   ArrowRight, Plus, CheckCircle2, AlertCircle, Clock,
-  ExternalLink, Sparkles, TrendingUp, Circle, Star
+  ExternalLink, Sparkles, TrendingUp, Circle, Star, Gift
 } from "lucide-react";
 import SEOHead from "../components/seo/SEOHead";
 import PullToRefresh from "../components/ui/PullToRefresh";
@@ -443,6 +443,30 @@ export default function ProfessionalDashboardPage() {
                     +{reviews.filter(r => !r.professional_response && !r.is_reported).length - 3} más pendientes
                   </p>
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* WIDGET REFERIDOS */}
+          {hasActiveSub && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+              <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 rounded-2xl border border-amber-100 p-5 relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-amber-200/40 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Gift className="w-5 h-5 text-amber-600" />
+                    <h3 className="font-semibold text-gray-900 text-sm">Invita a un colega → gana 1 mes gratis</h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Llevas <strong>{profile?.referral_count || 0} referidos</strong> y has ganado <strong>{profile?.referral_months_earned || 0} meses</strong> gratis. ¡Sin límite!
+                  </p>
+                  <button
+                    onClick={() => navigate("/referidos")}
+                    className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <Gift className="w-3.5 h-3.5" /> Ir a mis referidos
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
