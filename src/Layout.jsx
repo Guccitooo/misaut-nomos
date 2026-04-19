@@ -54,7 +54,7 @@ import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import LanguageSwitcher, { useLanguage, LanguageProvider } from "@/components/ui/LanguageSwitcher";
-import { getUserPlan, isAdsPlus } from "@/utils/subscription";
+import { getEffectivePlan, isAdsPlus } from "@/utils/subscription";
 
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
@@ -344,9 +344,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         const profile = profiles[0] || null;
         setProfessionalProfile(profile);
 
-        // Cargar plan del usuario
-        const plan = await getUserPlan(currentUser.id);
-        setUserPlan(plan);
+        // Cargar plan efectivo del usuario (incluye regalos)
+        const effective = await getEffectivePlan(currentUser.id);
+        setUserPlan(effective?.planId || null);
 
         if (!isPostPayment) {
           sessionStorage.setItem('current_user', JSON.stringify({

@@ -37,6 +37,8 @@ import {
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import SEOHead from "../components/seo/SEOHead";
+import { getEffectivePlan } from "@/utils/subscription";
+import { Gift } from "lucide-react";
 
 export default function SubscriptionManagementPage() {
   const navigate = useNavigate();
@@ -117,7 +119,6 @@ export default function SubscriptionManagementPage() {
     queryKey: ['subscription', user?.id, syncResult?.subscription?.id],
     queryFn: async () => {
       try {
-        // Si syncResult tiene suscripción activa, usar esos datos
         if (syncResult?.subscription?.active) {
           const subs = await base44.entities.Subscription.filter({
             user_id: user.id
@@ -140,13 +141,23 @@ export default function SubscriptionManagementPage() {
     staleTime: 0,
   });
 
+  const { data: effectivePlan } = useQuery({
+    queryKey: ['effectivePlan', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return await getEffectivePlan(user.id);
+    },
+    enabled: !!user,
+  });
+
   const { data: plan } = useQuery({
-    queryKey: ['plan', subscription?.plan_id],
+    queryKey: ['plan', effectivePlan?.planId || subscription?.plan_id],
     queryFn: async () => {
       try {
-        if (!subscription?.plan_id) return null;
+        const planId = effectivePlan?.planId || subscription?.plan_id;
+        if (!planId) return null;
         const plans = await base44.entities.SubscriptionPlan.filter({
-          plan_id: subscription.plan_id
+          plan_id: planId
         });
         return plans[0] || null;
       } catch (error) {
@@ -154,7 +165,7 @@ export default function SubscriptionManagementPage() {
         return null;
       }
     },
-    enabled: !!subscription?.plan_id,
+    enabled: !!effectivePlan?.planId || !!subscription?.plan_id,
   });
 
   const handleFixSubscription = async () => {
@@ -364,12 +375,43 @@ export default function SubscriptionManagementPage() {
             </div>
           ) : (
             <>
+              {/* REGALO ACTIVO */}
+              {effectivePlan?.isGifted && (
+                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-5 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-5 h-5 text-white"/>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-amber-900">Tienes un plan regalado activo</h3>
+                      <p className="text-sm text-amber-800 mt-1">
+                        Disfrutas de <strong>{effectivePlan.planName}</strong> hasta el{' '}
+                        <strong>{new Date(effectivePlan.giftedUntil).toLocaleDateString('es-ES', {day:'numeric', month:'long', year:'numeric'})}</strong>.
+                      </p>
+                      <p className="text-xs text-amber-700 mt-2">
+                        Tu facturación actual ({effectivePlan.originalPlanName}) no ha cambiado. Al terminar el regalo volverás automáticamente a este plan.
+                      </p>
+                      <p className="text-xs text-amber-700 mt-2 font-medium">
+                        {Math.ceil((new Date(effectivePlan.giftedUntil) - new Date()) / (1000*60*60*24))} días restantes
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ENCABEZADO DE ESTADO - Visual y Directo */}
               <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Tu plan actual</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">{plan?.nombre || subscription.plan_nombre}</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      {plan?.nombre || (effectivePlan?.planName) || subscription.plan_nombre}
+                      {effectivePlan?.isGifted && (
+                        <span className="ml-2 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                          Regalo
+                        </span>
+                      )}
+                    </h2>
                   </div>
                   {subscription.estado === "activo" && (
                     <Badge className="bg-green-100 text-green-700 border-0 px-3 py-1">

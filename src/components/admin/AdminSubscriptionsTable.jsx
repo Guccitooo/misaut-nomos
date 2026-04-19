@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, MoreVertical, Gift } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import GiftUpgradeModal from "@/components/admin/GiftUpgradeModal";
 
 const STATUS_FILTERS = ["todos", "activo", "en_prueba", "expirado", "cancelado"];
 
@@ -19,6 +20,8 @@ function getStatusBadge(estado) {
 
 export default function AdminSubscriptionsTable({ subscriptions, users }) {
   const [filter, setFilter] = useState("todos");
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
+  const [selectedSubscriber, setSelectedSubscriber] = useState(null);
 
   const filtered = useMemo(() => {
     return subscriptions.filter(s => filter === "todos" || s.estado === filter);
@@ -67,6 +70,7 @@ export default function AdminSubscriptionsTable({ subscriptions, users }) {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Estado</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Inicio</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Expiración</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -91,6 +95,20 @@ export default function AdminSubscriptionsTable({ subscriptions, users }) {
                         {expiringSoon && <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />}
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setSelectedSubscriber({ ...sub, name: users.find(u => u.id === sub.user_id)?.full_name, email: users.find(u => u.id === sub.user_id)?.email });
+                            setGiftModalOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-900 font-medium px-2 py-1 rounded hover:bg-amber-50"
+                        >
+                          <Gift className="w-3.5 h-3.5" />
+                          Regalar upgrade
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -98,6 +116,20 @@ export default function AdminSubscriptionsTable({ subscriptions, users }) {
           </table>
         </div>
       </Card>
+
+      {giftModalOpen && selectedSubscriber && (
+        <GiftUpgradeModal
+          subscriber={selectedSubscriber}
+          onClose={() => {
+            setGiftModalOpen(false);
+            setSelectedSubscriber(null);
+          }}
+          onSuccess={() => {
+            setGiftModalOpen(false);
+            setSelectedSubscriber(null);
+          }}
+        />
+      )}
     </div>
   );
 }

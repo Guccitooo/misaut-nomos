@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import SEOHead from "../components/seo/SEOHead";
 import PullToRefresh from "../components/ui/PullToRefresh";
+import { getEffectivePlan, isAdsPlus } from "@/utils/subscription";
 
 function computeProfilePct(profile) {
   if (!profile) return 0;
@@ -117,7 +118,17 @@ export default function ProfessionalDashboardPage() {
     staleTime: 60000 * 2,
   });
 
-  // Cargar briefing actual si tiene Plan Ads+
+  const { data: effectivePlan } = useQuery({
+    queryKey: ['effectivePlan', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return await getEffectivePlan(user.id);
+    },
+    enabled: !!user,
+    staleTime: 60000 * 2,
+  });
+
+  // Cargar briefing actual si tiene Plan Ads+ (efectivo)
   const { data: currentBriefing } = useQuery({
     queryKey: ['adsBriefing_dashboard', user?.id],
     queryFn: async () => {
@@ -130,7 +141,7 @@ export default function ProfessionalDashboardPage() {
       }).limit(1);
       return briefings[0] || null;
     },
-    enabled: !!user && subscription?.plan_id === 'plan_adsplus',
+    enabled: !!user && isAdsPlus(effectivePlan),
     staleTime: 60000 * 5,
   });
 
@@ -465,7 +476,7 @@ export default function ProfessionalDashboardPage() {
           )}
 
           {/* WIDGET PLAN ADS+ */}
-          {subscription?.plan_id === 'plan_adsplus' && currentBriefing && (
+          {isAdsPlus(effectivePlan) && currentBriefing && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white relative overflow-hidden">
                 <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full blur-2xl pointer-events-none" />

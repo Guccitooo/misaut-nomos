@@ -2,7 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, Users, Briefcase, CreditCard, 
-  BarChart2, Ticket, Settings, ChevronRight
+  BarChart2, Ticket, Settings, ChevronRight, Gift
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { id: "users", label: "Usuarios", icon: Users, emoji: "👥" },
   { id: "pending", label: "Pendientes", icon: Briefcase, emoji: "🔧" },
   { id: "subscriptions", label: "Suscripciones", icon: CreditCard, emoji: "💳" },
+  { id: "gifts", label: "Regalos", icon: Gift, emoji: "🎁" },
   { id: "metrics", label: "Métricas", icon: BarChart2, emoji: "📈" },
   { id: "support", label: "Soporte", icon: Ticket, emoji: "🎫" },
   { id: "verifications", label: "Verificaciones", icon: Settings, emoji: "🛡️" },

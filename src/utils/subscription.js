@@ -1,8 +1,8 @@
 /**
- * Helpers para gestionar suscripciones y detectar planes
+ * Helpers para gestionar suscripciones y detectar planes regalados
  */
 
-export async function getUserPlan(userId) {
+export async function getEffectivePlan(userId) {
   if (!userId) return null;
   
   try {
@@ -12,19 +12,47 @@ export async function getUserPlan(userId) {
       estado: { $in: ['activo', 'en_prueba'] }
     }).limit(1);
     
-    return subs[0]?.plan_id || null;
+    if (!subs[0]) return null;
+    
+    const sub = subs[0];
+    const now = new Date();
+    
+    // Si tiene regalo activo
+    if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now) {
+      return {
+        planId: sub.gifted_plan_id,
+        planName: sub.gifted_plan_name,
+        isGifted: true,
+        giftedUntil: sub.gifted_until,
+        originalPlanId: sub.plan_id,
+        originalPlanName: sub.plan_nombre,
+        subscription: sub
+      };
+    }
+    
+    return {
+      planId: sub.plan_id,
+      planName: sub.plan_nombre,
+      isGifted: false,
+      subscription: sub
+    };
   } catch (error) {
-    console.error('Error getting user plan:', error);
+    console.error('Error getting effective plan:', error);
     return null;
   }
 }
 
-export function isAdsPlus(planId) {
-  return planId === 'plan_adsplus';
+export async function getUserPlan(userId) {
+  const effective = await getEffectivePlan(userId);
+  return effective?.planId || null;
 }
 
-export function isVisibility(planId) {
-  return planId === 'plan_visibility';
+export function isAdsPlus(effectivePlan) {
+  return effectivePlan?.planId === 'plan_adsplus';
+}
+
+export function isVisibility(effectivePlan) {
+  return effectivePlan?.planId === 'plan_visibility';
 }
 
 export function hasActiveSubscription(subscription) {
