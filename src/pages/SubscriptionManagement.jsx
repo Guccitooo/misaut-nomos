@@ -29,7 +29,10 @@ import {
   TrendingUp,
   Zap,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Download,
+  FileText,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
@@ -46,10 +49,33 @@ export default function SubscriptionManagementPage() {
   const [isReactivating, setIsReactivating] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [invoices, setInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  // Cargar facturas cuando hay suscripción activa
+  useEffect(() => {
+    if (subscription && (subscription.estado === 'activo' || subscription.estado === 'en_prueba' || subscription.estado === 'cancelado')) {
+      loadInvoices();
+    }
+  }, [subscription]);
+
+  const loadInvoices = async () => {
+    setLoadingInvoices(true);
+    try {
+      const response = await base44.functions.invoke('getStripeInvoices', {});
+      if (response.data?.invoices) {
+        setInvoices(response.data.invoices);
+      }
+    } catch (error) {
+      console.error('Error loading invoices:', error);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -435,16 +461,104 @@ export default function SubscriptionManagementPage() {
                   </div>
                 )}
 
-                {/* GESTIONAR PAGOS Y FACTURAS */}
+                {/* FACTURAS DE SUSCRIPCIÓN */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">Facturas de tu suscripción</h3>
+                      <p className="text-sm text-gray-600">
+                        Descarga o consulta tus facturas de MisAutónomos
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {loadingInvoices ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                    </div>
+                  ) : invoices.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">
+                        No hay facturas disponibles aún
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Las facturas aparecen después del primer cobro
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {invoices.map((invoice) => (
+                        <div
+                          key={invoice.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {invoice.number || `Factura ${invoice.id}`}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(invoice.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-gray-900">
+                                {invoice.amount.toFixed(2)}€
+                              </p>
+                              <p className="text-xs text-gray-500 capitalize">
+                                {invoice.status === 'paid' ? 'Pagada' : invoice.status === 'open' ? 'Pendiente' : invoice.status}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              {invoice.pdf_url && (
+                                <a
+                                  href={invoice.pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 hover:bg-white rounded-md transition-colors"
+                                  title="Descargar PDF"
+                                >
+                                  <Download className="w-4 h-4 text-gray-600" />
+                                </a>
+                              )}
+                              {invoice.hosted_invoice_url && (
+                                <a
+                                  href={invoice.hosted_invoice_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 hover:bg-white rounded-md transition-colors"
+                                  title="Ver factura"
+                                >
+                                  <ExternalLink className="w-4 h-4 text-gray-600" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* GESTIONAR MÉTODO DE PAGO */}
                 <div className="bg-white border border-gray-200 rounded-xl p-6">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-6 h-6 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">Gestionar método de pago</h3>
+                      <h3 className="font-semibold text-gray-900 mb-1">Método de pago</h3>
                       <p className="text-sm text-gray-600">
-                        Actualiza tu tarjeta o consulta tus facturas
+                        Actualiza tu tarjeta o gestiona tu facturación
                       </p>
                     </div>
                   </div>
@@ -498,7 +612,7 @@ export default function SubscriptionManagementPage() {
                     ) : (
                       <>
                         <CreditCard className="w-4 h-4 mr-2" />
-                        Gestionar pago y facturas
+                        Gestionar pago
                       </>
                     )}
                   </Button>
