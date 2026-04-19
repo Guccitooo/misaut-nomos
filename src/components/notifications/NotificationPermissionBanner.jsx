@@ -68,7 +68,6 @@ export default function NotificationPermissionBanner({ user }) {
   return (
     <div
       className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4 z-50 animate-fade-in"
-      role="dialog"
       aria-label="Activar notificaciones"
     >
       <button
