@@ -12,9 +12,10 @@ export async function getEffectivePlan(userId) {
       estado: { $in: ['activo', 'en_prueba'] }
     });
     
-    if (!subs || subs.length === 0) return null;
+    // Proteger contra undefined o array vacío
+    if (!subs || (Array.isArray(subs) && subs.length === 0)) return null;
     
-    const sub = subs[0];
+    const sub = (Array.isArray(subs) ? subs[0] : subs);
     if (!sub) return null;
     
     const now = new Date();
@@ -39,7 +40,7 @@ export async function getEffectivePlan(userId) {
       subscription: sub
     };
   } catch (error) {
-    console.error('Error getting effective plan:', error);
+    console.error('[getEffectivePlan] Error:', error.message);
     return null;
   }
 }

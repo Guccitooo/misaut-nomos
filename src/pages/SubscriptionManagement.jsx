@@ -115,14 +115,20 @@ export default function SubscriptionManagementPage() {
 
       // Cargar plan efectivo
       if (sub) {
-        const planData = await getEffectivePlan(currentUser.id);
-        setEffectivePlan(planData);
+        try {
+          const planData = await getEffectivePlan(currentUser.id);
+          setEffectivePlan(planData);
 
-        // Cargar detalles del plan
-        const planId = planData?.planId || sub.plan_id;
-        if (planId) {
-          const plans = await base44.entities.SubscriptionPlan.filter({ plan_id: planId });
-          setPlan(plans[0] || null);
+          // Cargar detalles del plan
+          const planId = planData?.planId || sub.plan_id;
+          if (planId) {
+            const plans = (await base44.entities.SubscriptionPlan.filter({ plan_id: planId })) || [];
+            setPlan(plans[0] || null);
+          }
+        } catch (planError) {
+          console.warn('[loadSubscription] Error loading effective plan, using fallback:', planError.message);
+          setEffectivePlan(null);
+          setPlan(null);
         }
       }
 
@@ -236,45 +242,49 @@ export default function SubscriptionManagementPage() {
   };
 
   const handleUpgradePlan = async (newPlanId) => {
-    console.log('[UI] Button clicked - Starting upgrade to:', newPlanId);
+    console.log('[Upgrade] 1️⃣ Click detected - Starting upgrade to:', newPlanId);
+    console.log('[Upgrade] Current user:', user?.email);
+    console.log('[Upgrade] Current subscription:', subscription?.plan_id);
     setIsUpgrading(true);
     
     try {
-      console.log('[UI] Calling backend upgradeSubscription function...');
+      console.log('[Upgrade] 2️⃣ Calling backend upgradeSubscription function...');
       const response = await base44.functions.invoke('upgradeSubscription', {
         newPlanId
       });
 
-      console.log('[UI] Response received:', response.data);
+      console.log('[Upgrade] 3️⃣ Response received from backend:', response.data);
 
       if (response.data?.ok) {
-        console.log('[UI] ✅ Upgrade successful! Plan changed to:', response.data.plan);
+        console.log('[Upgrade] 4️⃣ ✅ Upgrade successful! Plan changed to:', response.data.plan);
         toast.success(`✅ Plan actualizado a ${response.data.plan}`, {
           description: `Se ha cobrado ${response.data.amountCharged?.toFixed(2)}€ prorrateado. Próximo cobro: ${new Date(response.data.nextBillingDate).toLocaleDateString('es-ES')}`
         });
         
-        // Reload subscription data without full page reload for better UX
+        console.log('[Upgrade] 5️⃣ Clearing cache and reloading subscription data...');
         sessionStorage.removeItem('current_user');
         setTimeout(() => {
           const currentUser = user;
           if (currentUser) {
             loadSubscription(currentUser).then(() => {
-              console.log('[UI] Subscription data reloaded');
+              console.log('[Upgrade] 6️⃣ ✅ Subscription data reloaded');
             });
           }
         }, 1500);
       } else {
-        console.error('[UI] ❌ Upgrade failed:', response.data?.error);
+        console.error('[Upgrade] 4️⃣ ❌ Upgrade failed:', response.data?.error);
         toast.error(response.data?.error || 'Error al mejorar el plan', {
           description: 'Verifica tu método de pago e intenta de nuevo'
         });
       }
     } catch (error) {
-      console.error('[UI] ❌ Exception caught:', error);
+      console.error('[Upgrade] 3️⃣ ❌ Exception caught:', error);
+      console.error('[Upgrade] Error stack:', error.stack);
       toast.error('Error al mejorar el plan', {
         description: error.message || 'Algo salió mal. Intenta de nuevo.'
       });
     } finally {
+      console.log('[Upgrade] 7️⃣ Finally block - resetting isUpgrading to false');
       setIsUpgrading(false);
     }
   };
