@@ -268,13 +268,13 @@ export default function SubscriptionManagementPage() {
         toast.error(response.data?.error || 'Error al mejorar el plan', {
           description: 'Verifica tu método de pago e intenta de nuevo'
         });
-        setIsUpgrading(false);
       }
     } catch (error) {
       console.error('[UI] ❌ Exception caught:', error);
       toast.error('Error al mejorar el plan', {
         description: error.message || 'Algo salió mal. Intenta de nuevo.'
       });
+    } finally {
       setIsUpgrading(false);
     }
   };
@@ -528,14 +528,18 @@ export default function SubscriptionManagementPage() {
                     </ul>
 
                     <Button
-                      className="w-full bg-white text-purple-700 hover:bg-purple-50 font-semibold"
-                      onClick={() => handleUpgradePlan('plan_adsplus')}
+                      className="w-full bg-white text-purple-700 hover:bg-purple-50 font-semibold transition-all duration-200"
+                      onClick={() => {
+                        console.log('[BUTTON] Upgrade button clicked');
+                        handleUpgradePlan('plan_adsplus');
+                      }}
                       disabled={isUpgrading}
+                      type="button"
                     >
                       {isUpgrading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Procesando...
+                          Procesando pago...
                         </>
                       ) : (
                         <>
