@@ -74,8 +74,16 @@ export default function SEOAnalysis() {
   if (error) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="p-8 text-center max-w-md">
-        <p className="text-red-500 font-semibold mb-4">{error}</p>
-        <Button onClick={load}>Reintentar</Button>
+        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Search className="w-6 h-6 text-red-500" />
+        </div>
+        <p className="text-red-500 font-semibold mb-2">Error al cargar datos SEO</p>
+        <p className="text-gray-500 text-sm mb-4">
+          {error.includes("429") || error.includes("500")
+            ? "Esta función solo está disponible en producción (misautonomos.es). El entorno de preview bloquea las llamadas a Google Search Console."
+            : error}
+        </p>
+        <Button onClick={load} variant="outline">Reintentar</Button>
       </Card>
     </div>
   );
