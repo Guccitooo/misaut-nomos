@@ -664,14 +664,13 @@ export default function ProfileOnboardingPage() {
                   </OnboardingTooltip>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <Checkbox
-                          checked={true}
-                          disabled
-                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                        />
-                        <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        disabled
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                        onChange={() => {}}
+                      />
                       <span className="text-sm font-medium text-gray-700">Chat directo (siempre activo)</span>
                     </div>
 
@@ -683,15 +682,12 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('telefono') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <Checkbox
-                          checked={formData.metodos_contacto.includes('telefono')}
-                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                        />
-                        {formData.metodos_contacto.includes('telefono') && (
-                          <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                        )}
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={formData.metodos_contacto.includes('telefono')}
+                        onChange={() => {}}
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                      />
                       <span className="text-sm font-medium text-gray-700">Teléfono</span>
                     </div>
 
@@ -703,15 +699,12 @@ export default function ProfileOnboardingPage() {
                         backgroundColor: formData.metodos_contacto.includes('whatsapp') ? '#EFF6FF' : 'white'
                       }}
                     >
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <Checkbox
-                          checked={formData.metodos_contacto.includes('whatsapp')}
-                          className="pointer-events-none data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                        />
-                        {formData.metodos_contacto.includes('whatsapp') && (
-                          <Check className="w-4 h-4 text-white absolute pointer-events-none" strokeWidth={3} />
-                        )}
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={formData.metodos_contacto.includes('whatsapp')}
+                        onChange={() => {}}
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                      />
                       <span className="text-sm font-medium text-gray-700">WhatsApp</span>
                     </div>
                   </div>
