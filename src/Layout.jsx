@@ -24,7 +24,8 @@ import {
   Headphones,
   Shield,
   Gift,
-  BookOpen
+  BookOpen,
+  Mail
 } from "lucide-react";
 import {
   Sidebar,
