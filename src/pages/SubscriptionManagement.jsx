@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,10 +40,13 @@ import { getEffectivePlan } from "@/utils/subscription";
 import { Gift } from "lucide-react";
 
 export default function SubscriptionManagementPage() {
+  // 1. HOOKS PRIMERO
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const [effectivePlan, setEffectivePlan] = useState(null);
+  const [plan, setPlan] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
@@ -53,19 +55,23 @@ export default function SubscriptionManagementPage() {
   const [openingPortal, setOpeningPortal] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  // Cargar facturas cuando hay suscripción activa
-  useEffect(() => {
-    if (subscription && (subscription?.estado === 'activo' || subscription?.estado === 'en_prueba' || subscription?.estado === 'cancelado')) {
-      loadInvoices();
+  // 2. FUNCIONES AUXILIARES (declaraciones hoisteables)
+  async function loadUser() {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser || null);
+      return currentUser;
+    } catch (error) {
+      console.error('Error loading user:', error);
+      base44.auth.redirectToLogin();
+      return null;
     }
-  }, [subscription]);
+  }
 
-  const loadInvoices = async () => {
+  async function loadInvoices() {
     setLoadingInvoices(true);
     try {
       const response = await base44.functions.invoke('getStripeInvoices', {});
@@ -77,97 +83,63 @@ export default function SubscriptionManagementPage() {
     } finally {
       setLoadingInvoices(false);
     }
-  };
+  }
 
-  const loadUser = async () => {
+  async function loadSubscription() {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser || null);
+      setSyncing(true);
+      // Sincronizar con Stripe
+      const syncResponse = await base44.functions.invoke('syncStripeSubscription', {});
+      if (syncResponse.data?.ok && syncResponse.data?.subscription) {
+        sessionStorage.removeItem('current_user');
+      }
+      setSyncing(false);
+
+      // Cargar suscripción de la BD
+      const subs = await base44.entities.Subscription.filter({
+        user_id: user.id
+      });
+      const sub = subs[0] || null;
+      setSubscription(sub);
+
+      // Cargar plan efectivo
+      if (sub) {
+        const planData = await getEffectivePlan(user.id);
+        setEffectivePlan(planData);
+
+        // Cargar detalles del plan
+        const planId = planData?.planId || sub.plan_id;
+        if (planId) {
+          const plans = await base44.entities.SubscriptionPlan.filter({ plan_id: planId });
+          setPlan(plans[0] || null);
+        }
+      }
+
+      // Cargar facturas si hay suscripción
+      if (sub && (sub.estado === 'activo' || sub.estado === 'en_prueba' || sub.estado === 'cancelado')) {
+        await loadInvoices();
+      }
     } catch (error) {
-      console.error('Error loading user:', error);
-      base44.auth.redirectToLogin();
+      console.error('Error loading subscription:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  // ✅ SINCRONIZAR CON STRIPE AL CARGAR - SIEMPRE
-  const { data: syncResult, isLoading: syncing, refetch: refetchSync } = useQuery({
-    queryKey: ['syncStripe', user?.id],
-    queryFn: async () => {
-      try {
-        console.log('🔄 Iniciando sincronización con Stripe...');
-        const response = await base44.functions.invoke('syncStripeSubscription', {});
-        console.log('🔄 Sincronización Stripe:', response.data);
-        
-        // Si la sincronización encontró suscripción, invalidar cache
-        if (response.data?.ok && response.data?.subscription) {
-          sessionStorage.removeItem('current_user');
-        }
-        
-        return response.data;
-      } catch (error) {
-        console.error('Error sincronizando con Stripe:', error);
-        return null;
+  // 3. EFFECTS
+  useEffect(() => {
+    async function init() {
+      const currentUser = await loadUser();
+      if (currentUser) {
+        await loadSubscription();
+      } else {
+        setLoading(false);
       }
-    },
-    enabled: !!user,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-  });
+    }
+    init();
+  }, []);
 
-  const { data: subscription, isLoading: loadingSubscription, refetch: refetchSubscription } = useQuery({
-    queryKey: ['subscription', user?.id, syncResult?.subscription?.id],
-    queryFn: async () => {
-      try {
-        if (syncResult?.subscription?.active) {
-          const subs = await base44.entities.Subscription.filter({
-            user_id: user.id
-          });
-          return subs[0] || null;
-        }
-        
-        const subs = await base44.entities.Subscription.filter({
-          user_id: user.id
-        });
-        
-        return subs[0] || null;
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-        return null;
-      }
-    },
-    enabled: !!user && !syncing,
-    retry: 2,
-    staleTime: 0,
-  });
-
-  const { data: effectivePlan } = useQuery({
-    queryKey: ['effectivePlan', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      return await getEffectivePlan(user.id);
-    },
-    enabled: !!user,
-  });
-
-  const { data: plan } = useQuery({
-    queryKey: ['plan', effectivePlan?.planId || subscription?.plan_id],
-    queryFn: async () => {
-      try {
-        const planId = effectivePlan?.planId || subscription?.plan_id;
-        if (!planId) return null;
-        const plans = await base44.entities.SubscriptionPlan.filter({
-          plan_id: planId
-        });
-        return plans[0] || null;
-      } catch (error) {
-        console.error('Error fetching plan:', error);
-        return null;
-      }
-    },
-    enabled: !!effectivePlan?.planId || !!subscription?.plan_id,
-  });
-
+  // 4. FUNCIONES DE GESTIÓN
   const handleFixSubscription = async () => {
     setIsFixing(true);
     try {
@@ -188,9 +160,7 @@ export default function SubscriptionManagementPage() {
         
         if (fixResponse.data.ok) {
           toast.success("Suscripción corregida, recargando...");
-          
-          await loadUser();
-          await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+          await loadSubscription();
         } else {
           toast.error("No se pudo corregir automáticamente");
         }
@@ -205,38 +175,17 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  const cancelSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const response = await base44.functions.invoke('cancelSubscription', {});
-      return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      toast.success(data.message);
-      setShowCancelDialog(false);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Error al cancelar la suscripción");
-    }
-  });
-
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
     try {
       const response = await base44.functions.invoke('cancelSubscription', {});
       
       if (response.data?.success) {
-        // 🔥 ACTUALIZACIÓN INMEDIATA
-        await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-        await refetchSubscription();
-        
+        await loadSubscription();
         toast.success('Suscripción cancelada correctamente', {
           description: 'Tu perfil ya no es visible en búsquedas'
         });
-        
         setShowCancelDialog(false);
-        
-        // 🔥 LIMPIAR CACHE
         sessionStorage.removeItem('current_user');
       } else {
         toast.error(response.data?.error || 'Error al cancelar');
@@ -255,8 +204,7 @@ export default function SubscriptionManagementPage() {
       const response = await base44.functions.invoke('reactivateSubscription', {});
       if (response.data.ok) {
         toast.success(response.data.message);
-        queryClient.invalidateQueries({ queryKey: ['subscription'] });
-        await loadUser();
+        await loadSubscription();
       } else {
         toast.error(response.data.error || "Error al reactivar");
       }
@@ -276,8 +224,7 @@ export default function SubscriptionManagementPage() {
 
       if (response.data?.ok) {
         toast.success(response.data.message);
-        queryClient.invalidateQueries({ queryKey: ['subscription'] });
-        await refetchSubscription();
+        await loadSubscription();
       } else {
         toast.error(response.data?.error || 'Error al mejorar el plan');
       }
@@ -286,6 +233,15 @@ export default function SubscriptionManagementPage() {
     } finally {
       setIsUpgrading(false);
     }
+  };
+
+  const getDaysLeft = (expirationDateString) => {
+    if (!expirationDateString) return 0;
+    const today = new Date();
+    const expiration = new Date(expirationDateString);
+    const diffTime = expiration.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
   const getStatusBadge = (estado) => {
@@ -303,16 +259,20 @@ export default function SubscriptionManagementPage() {
     }
   };
 
-  const getDaysLeft = (expirationDateString) => {
-    if (!expirationDateString) return 0;
-    const today = new Date();
-    const expiration = new Date(expirationDateString);
-    const diffTime = expiration.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
+  // 5. ESTADOS DERIVADOS (después de tener datos)
+  const displayPlanId = effectivePlan?.planId || subscription?.plan_id;
+  const displayPlanName = plan?.nombre || effectivePlan?.planName || subscription?.plan_nombre;
+  const isGifted = effectivePlan?.isGifted === true;
+  const isTrialing = subscription?.estado === 'en_prueba';
+  const expiryDate = subscription?.fecha_expiracion ? new Date(subscription.fecha_expiracion) : null;
+  const daysUntilExpiry = expiryDate ? Math.ceil((expiryDate - new Date()) / (1000*60*60*24)) : null;
+  const monthlyPrice = plan?.precio || subscription?.plan_precio || 0;
 
-  if (!user || loadingSubscription || syncing) {
+
+
+
+
+  if (loading || syncing) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-700" />
