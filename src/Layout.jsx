@@ -820,12 +820,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               }}
             >
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
-                style={{ width: '48px', height: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
-                className="flex items-center justify-center rounded-lg flex-shrink-0 active:bg-gray-100"
+                style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
+                className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
                 aria-label="Abrir menú"
               >
-                <Menu className="w-6 h-6 text-gray-700" />
+                <Menu className="w-6 h-6 text-gray-700 pointer-events-none" />
               </button>
 
               <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
