@@ -1,7 +1,62 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /mensajes
-Disallow: /mi-perfil
 
+# Páginas privadas / de usuario — no indexar
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /completar-perfil
+Disallow: /suscripcion
+Disallow: /pago-exitoso
+Disallow: /bienvenida
+Disallow: /mi-perfil
+Disallow: /notificaciones
+Disallow: /mensajes
+Disallow: /favoritos
+Disallow: /soporte
+Disallow: /solicitudes
+Disallow: /automatizaciones
+Disallow: /registro
+Disallow: /mi-campana
+Disallow: /mi-campana/
+Disallow: /plan-ads
+Disallow: /referidos
+Disallow: /facturas
+Disallow: /proyectos
+Disallow: /calendario
+Disallow: /trabajos
+Disallow: /mis-clientes
+Disallow: /clientes
+Disallow: /pagar
+Disallow: /visibilidad
+Disallow: /presupuestos
+Disallow: /configuracion-cookies
+
+# Bloquear URLs antiguas PascalCase (redirigen — evitar que Google las rastree)
+Disallow: /Search
+Disallow: /PricingPlans
+Disallow: /FAQ
+Disallow: /HelpCenter
+Disallow: /Autonomo
+Disallow: /Categoria
+Disallow: /PrivacyPolicy
+Disallow: /TermsConditions
+Disallow: /CookiePolicy
+Disallow: /LegalNotice
+Disallow: /Messages
+Disallow: /Favorites
+Disallow: /MyProfile
+Disallow: /ProfessionalDashboard
+Disallow: /ProfileOnboarding
+Disallow: /ClientOnboarding
+Disallow: /SubscriptionManagement
+Disallow: /PaymentSuccess
+Disallow: /Onboarding
+Disallow: /UserTypeSelection
+Disallow: /AdminDashboard
+Disallow: /AdminPayments
+Disallow: /Invoices
+
+# Sitemap
 Sitemap: https://misautonomos.es/sitemap.xml

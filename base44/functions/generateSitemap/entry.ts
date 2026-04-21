@@ -7,17 +7,17 @@ Deno.serve(async (req) => {
     const baseUrl = 'https://misautonomos.es';
     const today = new Date().toISOString().split('T')[0];
 
-    // Páginas estáticas públicas
+    // Páginas estáticas públicas — usar URLs ES canónicas
     const staticPages = [
-      { url: '/', priority: '1.0', changefreq: 'daily' },
-      { url: '/Search', priority: '1.0', changefreq: 'daily' },
-      { url: '/PricingPlans', priority: '0.9', changefreq: 'weekly' },
-      { url: '/FAQ', priority: '0.8', changefreq: 'monthly' },
-      { url: '/HelpCenter', priority: '0.8', changefreq: 'monthly' },
-      { url: '/PrivacyPolicy', priority: '0.5', changefreq: 'yearly' },
-      { url: '/TermsConditions', priority: '0.5', changefreq: 'yearly' },
-      { url: '/CookiePolicy', priority: '0.5', changefreq: 'yearly' },
-      { url: '/LegalNotice', priority: '0.5', changefreq: 'yearly' }
+      { url: '/buscar', priority: '1.0', changefreq: 'daily' },
+      { url: '/precios', priority: '0.9', changefreq: 'weekly' },
+      { url: '/preguntas-frecuentes', priority: '0.8', changefreq: 'monthly' },
+      { url: '/ayuda', priority: '0.8', changefreq: 'monthly' },
+      { url: '/blog', priority: '0.8', changefreq: 'weekly' },
+      { url: '/privacidad', priority: '0.4', changefreq: 'yearly' },
+      { url: '/terminos', priority: '0.4', changefreq: 'yearly' },
+      { url: '/cookies', priority: '0.3', changefreq: 'yearly' },
+      { url: '/aviso-legal', priority: '0.3', changefreq: 'yearly' }
     ];
 
     // Obtener perfiles profesionales activos
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     profiles.forEach(profile => {
       if (profile.slug_publico) {
         xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/Autonomo?slug=${encodeURIComponent(profile.slug_publico)}</loc>\n`;
+        xml += `    <loc>${baseUrl}/autonomo/${encodeURIComponent(profile.slug_publico)}</loc>\n`;
         xml += `    <lastmod>${profile.updated_date?.split('T')[0] || today}</lastmod>\n`;
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.9</priority>\n`;
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Añadir páginas de categorías
     categories.forEach(category => {
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/Categoria?name=${encodeURIComponent(category.name)}</loc>\n`;
+      xml += `    <loc>${baseUrl}/categoria/${encodeURIComponent(category.name.toLowerCase().replace(/\s+/g, '-'))}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;
       xml += `    <changefreq>weekly</changefreq>\n`;
       xml += `    <priority>0.8</priority>\n`;
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     // Añadir páginas de provincias
     uniqueProvinces.forEach(province => {
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/Search?provincia=${encodeURIComponent(province)}</loc>\n`;
+      xml += `    <loc>${baseUrl}/buscar?provincia=${encodeURIComponent(province)}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;
       xml += `    <changefreq>daily</changefreq>\n`;
       xml += `    <priority>0.7</priority>\n`;
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     uniqueCities.slice(0, 100).forEach(cityProvince => {
       const [city, prov] = cityProvince.split(', ');
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/Search?provincia=${encodeURIComponent(prov)}&ciudad=${encodeURIComponent(city)}</loc>\n`;
+      xml += `    <loc>${baseUrl}/buscar?provincia=${encodeURIComponent(prov)}&ciudad=${encodeURIComponent(city)}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;
       xml += `    <changefreq>daily</changefreq>\n`;
       xml += `    <priority>0.7</priority>\n`;
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     });
     topCombinations.sort((a, b) => b.count - a.count).slice(0, 50).forEach(combo => {
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/Search?categoria=${encodeURIComponent(combo.category)}&provincia=${encodeURIComponent(combo.province)}</loc>\n`;
+      xml += `    <loc>${baseUrl}/buscar?categoria=${encodeURIComponent(combo.category)}&provincia=${encodeURIComponent(combo.province)}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;
       xml += `    <changefreq>daily</changefreq>\n`;
       xml += `    <priority>0.8</priority>\n`;

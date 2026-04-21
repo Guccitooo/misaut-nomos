@@ -19,7 +19,22 @@ export default function SEOHead({
   const location = useLocation();
   const { language } = useLanguage();
   const baseUrl = "https://misautonomos.es";
-  const canonicalUrl = baseUrl + location.pathname;
+
+  // Páginas privadas que NO deben indexarse
+  const NOINDEX_PATHS = [
+    '/admin', '/dashboard', '/completar-perfil', '/suscripcion', '/pago-exitoso',
+    '/bienvenida', '/mi-perfil', '/notificaciones', '/mensajes', '/favoritos',
+    '/soporte', '/solicitudes', '/automatizaciones', '/registro', '/mi-campana',
+    '/plan-ads', '/referidos', '/facturas', '/proyectos', '/calendario', '/trabajos',
+    '/mis-clientes', '/clientes', '/pagar', '/visibilidad', '/presupuestos',
+    '/configuracion-cookies', '/registro-cliente', '/perfil',
+  ];
+  const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const shouldNoindex = noindex || isPrivatePage;
+
+  // "/" es alias de "/buscar" — canónica apunta siempre a /buscar
+  const rawPath = location.pathname === '/' ? '/buscar' : location.pathname;
+  const canonicalUrl = baseUrl + rawPath;
 
   useEffect(() => {
     // Title
@@ -44,8 +59,8 @@ export default function SEOHead({
     updateMetaTag('keywords', keywords);
     updateMetaTag('author', author);
     updateMetaTag('language', language === 'es' ? 'Spanish' : 'English');
-    updateMetaTag('robots', noindex ? 'noindex, nofollow' : 'index, follow');
-    updateMetaTag('googlebot', noindex ? 'noindex, nofollow' : 'index, follow');
+    updateMetaTag('robots', shouldNoindex ? 'noindex, nofollow' : 'index, follow');
+    updateMetaTag('googlebot', shouldNoindex ? 'noindex, nofollow' : 'index, follow');
     
     // Theme and color
     updateMetaTag('theme-color', '#3b82f6');
@@ -200,7 +215,7 @@ export default function SEOHead({
       customScript.remove();
     }
     
-  }, [title, description, image, canonicalUrl, keywords, type, author, language, publishedTime, modifiedTime, noindex, structuredData]);
+  }, [title, description, image, canonicalUrl, keywords, type, author, language, publishedTime, modifiedTime, noindex, shouldNoindex, structuredData]);
 
   return null;
 }
