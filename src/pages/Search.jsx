@@ -74,7 +74,7 @@ const QUICK_CATEGORIES = [
   { name: "Carpintero", icon: Hammer, color: "from-amber-500 to-yellow-500" },
 ];
 
-const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId, currentUser }) => {
+const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId, currentUser, priority }) => {
   const navigate = useNavigate();
 
   const handleContactDirect = async (e) => {
@@ -112,6 +112,10 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
 
   const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
   const isVerified = profile.identity_verified === true;
+  // Limitar URL de imagen a máx 200px para reducir peso (si es URL de Supabase)
+  const optimizedPhotoUrl = photoUrl && photoUrl.includes('supabase.co')
+    ? photoUrl + (photoUrl.includes('?') ? '&' : '?') + 'width=96&quality=70'
+    : photoUrl;
 
   return (
     <div 
@@ -132,14 +136,15 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       <div className="relative px-3 flex flex-col flex-1">
         {/* Avatar: solo desktop, a caballo entre header y contenido */}
         <div className="hidden md:block absolute -top-6 left-3" style={{ width: '48px', height: '48px' }}>
-          {photoUrl ? (
+          {optimizedPhotoUrl ? (
             <img
-              src={photoUrl}
+              src={optimizedPhotoUrl}
               alt={profile.business_name}
               width="48"
               height="48"
-              loading="lazy"
-              decoding="async"
+              loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : "low"}
+              decoding={priority ? "sync" : "async"}
               className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm"
               style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px' }}
             />
@@ -153,14 +158,15 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
         {/* Fila avatar+nombre — solo móvil */}
         <div className="md:hidden flex items-center gap-3 pt-3 pb-1">
           <div className="flex-shrink-0" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
-            {photoUrl ? (
+            {optimizedPhotoUrl ? (
               <img
-                src={photoUrl}
+                src={optimizedPhotoUrl}
                 alt={profile.business_name}
                 width="48"
                 height="48"
-                loading="lazy"
-                decoding="async"
+                loading={priority ? "eager" : "lazy"}
+                fetchPriority={priority ? "high" : "low"}
+                decoding={priority ? "sync" : "async"}
                 className="w-12 h-12 rounded-full object-cover"
                 style={{ width: '48px', height: '48px' }}
               />
@@ -321,12 +327,13 @@ export default function SearchPage() {
   });
 
   const { data: professionalUsers = [] } = useQuery({
-    queryKey: ['professionalUsers', profiles.length],
+    queryKey: ['professionalUsers', profiles.map(p => p.user_id).join(',')],
     queryFn: async () => {
+      if (profiles.length === 0) return [];
+      // Solo traer los usuarios necesarios con filter en lugar de list() completo
       const userIds = profiles.map(p => p.user_id);
-      if (userIds.length === 0) return [];
-      const allUsers = await base44.entities.User.list();
-      return allUsers.filter(u => userIds.includes(u.id));
+      const allUsers = await base44.entities.User.filter({ id: { $in: userIds } });
+      return allUsers;
     },
     enabled: profiles.length > 0,
     staleTime: 1000 * 60 * 10, gcTime: 1000 * 60 * 30, refetchOnWindowFocus: false,
@@ -342,8 +349,19 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 10, gcTime: 1000 * 60 * 30, refetchOnWindowFocus: false,
   });
 
+  // Orden aleatorio estable — calculado UNA SOLA VEZ cuando llegan los perfiles
+  const shuffledProfiles = useMemo(() => {
+    if (!profiles.length) return profiles;
+    const arr = [...profiles];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [profiles]);
+
   const filteredProfiles = useMemo(() => {
-    const filtered = profiles.filter(profile => {
+    return shuffledProfiles.filter(profile => {
       const matchesSearch = !debouncedSearchTerm ||
         profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -355,8 +373,7 @@ export default function SearchPage() {
       const matchesAvailability = filters.availability === "all" || profile.disponibilidad_tipo === filters.availability;
       return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad && matchesRating && matchesAvailability;
     });
-    return filtered.sort(() => Math.random() - 0.5);
-  }, [profiles, debouncedSearchTerm, filters]);
+  }, [shuffledProfiles, debouncedSearchTerm, filters]);
 
   const availableCities = useMemo(() => {
     if (filters.provincia === "all") return [];
@@ -409,14 +426,18 @@ export default function SearchPage() {
 
       <div className="min-h-screen" style={{ background: '#f8fafc', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
-        {/* ── HERO ── solo para visitantes no registrados */}
-        {!user && !loadingUser && (
+        {/* ── HERO ── 
+            Reservar espacio durante la carga para evitar CLS.
+            Se renderiza mientras loadingUser O cuando no hay usuario confirmado. */}
+        {loadingUser ? (
+          /* Placeholder con la misma altura aproximada del hero para evitar CLS */
+          <div style={{ minHeight: '420px', background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }} aria-hidden="true" />
+        ) : !user && (
           <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }} className="relative overflow-hidden">
-            {/* Decoración de fondo */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Decoración de fondo — sin filter:blur para reducir TBT */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
               <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full" />
               <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-white/5 rounded-full" />
-              <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-blue-400/10 rounded-full" />
             </div>
 
             <div className="relative max-w-5xl mx-auto px-4 py-10 md:py-20">
@@ -650,13 +671,13 @@ export default function SearchPage() {
           {isInitialLoading && (
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
               {[...Array(8)].map((_, idx) => (
-                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ height: '220px', minHeight: '220px', contain: 'layout style' }}>
-                  <div style={{ height: '48px', background: 'linear-gradient(90deg, #e5e7eb, #f3f4f6)' }} />
+                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ height: '220px', minHeight: '220px', contain: 'layout style paint' }}>
+                  <div style={{ height: '48px', background: '#e5e7eb' }} />
                   <div className="p-3 pt-8 space-y-2">
-                    <div className="h-4 w-3/4 bg-gray-100 rounded" style={{ minHeight: '16px' }} />
-                    <div className="h-3 w-1/2 bg-gray-100 rounded" style={{ minHeight: '12px' }} />
-                    <div className="h-3 w-full bg-gray-100 rounded mt-2" style={{ minHeight: '12px' }} />
-                    <div className="h-8 w-full bg-gray-100 rounded-lg mt-3" style={{ minHeight: '32px' }} />
+                    <div className="h-4 w-3/4 rounded" style={{ minHeight: '16px', background: '#f3f4f6' }} />
+                    <div className="h-3 w-1/2 rounded" style={{ minHeight: '12px', background: '#f3f4f6' }} />
+                    <div className="h-3 w-full rounded mt-2" style={{ minHeight: '12px', background: '#f3f4f6' }} />
+                    <div className="h-8 w-full rounded-lg mt-3" style={{ minHeight: '32px', background: '#f3f4f6' }} />
                   </div>
                 </div>
               ))}
@@ -723,7 +744,7 @@ export default function SearchPage() {
               {viewMode === "grid" ? (
                 <>
                   <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
-                    {filteredProfiles.slice(0, displayLimit).map((profile) => (
+                    {filteredProfiles.slice(0, displayLimit).map((profile, idx) => (
                       <ProfileCard
                         key={profile.id}
                         profile={profile}
@@ -733,6 +754,7 @@ export default function SearchPage() {
                         professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
                         currentUserId={user?.id}
                         currentUser={user}
+                        priority={idx < 4}
                       />
                     ))}
                   </div>

@@ -54,16 +54,15 @@ export default function HeroSection() {
         {/* Badge */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
           <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            background: "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: "999px",
-            padding: "6px 16px",
-            fontSize: "12px",
-            fontWeight: 600,
-            backdropFilter: "blur(8px)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: "999px",
+              padding: "6px 16px",
+              fontSize: "12px",
+              fontWeight: 600,
             maxWidth: "100%",
             flexWrap: "wrap",
             justifyContent: "center",
@@ -214,7 +213,6 @@ export default function HeroSection() {
                 border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: "16px",
                 padding: "16px",
-                backdropFilter: "blur(8px)",
                 boxSizing: "border-box",
               }}
             >
