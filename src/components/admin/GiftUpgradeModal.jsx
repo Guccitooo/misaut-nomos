@@ -31,16 +31,19 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
     setLoading(true);
     try {
       const giftedUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
-      const admin = await base44.auth.me();
 
-      await base44.entities.Subscription.update(subscriber.id, {
-        gifted_plan_id: giftPlan,
-        gifted_plan_name: targetPlan.name,
-        gifted_until: giftedUntil.toISOString(),
-        gifted_by_admin_id: admin.id,
-        gifted_at: new Date().toISOString(),
-        gift_reason: reason.trim()
+      // Usar backend function con asServiceRole para poder actualizar suscripción de otro usuario
+      const response = await base44.functions.invoke('giftUpgrade', {
+        subscriptionId: subscriber.id,
+        giftedPlanId: giftPlan,
+        giftedPlanName: targetPlan.name,
+        giftedUntil: giftedUntil.toISOString(),
+        giftReason: reason.trim()
       });
+
+      if (!response.data?.ok) {
+        throw new Error(response.data?.error || 'Error desconocido');
+      }
 
       // Enviar notificación
       try {
