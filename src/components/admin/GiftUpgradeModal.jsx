@@ -8,6 +8,7 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const plans = {
     'plan_trial': { name: 'Plan Trial', price: 0 },
@@ -20,10 +21,10 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
 
   const handleGift = async () => {
     if (!reason.trim()) {
-      toast.error('Añade un motivo interno para el regalo');
+      setError('Añade un motivo interno para el regalo');
       return;
     }
-
+    setError('');
     setLoading(true);
     try {
       const giftedUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
@@ -59,7 +60,7 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error('Error al aplicar regalo: ' + err.message);
+      setError('Error al aplicar regalo: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -109,14 +110,15 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
           <option value={365}>1 año</option>
         </select>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo interno</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo interno <span className="text-red-500">*</span></label>
         <textarea 
           value={reason} 
-          onChange={e => setReason(e.target.value)}
+          onChange={e => { setReason(e.target.value); setError(''); }}
           placeholder="Ej: Cortesía por problema técnico, campaña marketing, cliente VIP..."
           rows={2}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4"
+          className={`w-full border rounded-lg px-3 py-2 text-sm mb-2 ${error ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
         />
+        {error && <p className="text-red-600 text-xs mb-3 font-medium">⚠️ {error}</p>}
 
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-900 mb-4">
           <strong>ℹ️ Importante:</strong><br/>
