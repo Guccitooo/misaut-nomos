@@ -3,22 +3,11 @@ import { ONESIGNAL_APP_ID } from '../config/onesignal';
 let initialized = false;
 
 export const initOneSignal = () => {
+  // El SDK ya se inicializa desde index.html — evitar doble init
+  // Esta función se mantiene por compatibilidad pero no vuelve a llamar init
   if (initialized) return;
   if (typeof window === 'undefined') return;
-  // No inicializar si no se ha configurado el App ID real
   if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') return;
-
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: ONESIGNAL_APP_ID,
-      safari_web_id: '',
-      notifyButton: { enable: false },
-      allowLocalhostAsSecureOrigin: true,
-      serviceWorkerPath: '/OneSignalSDKWorker.js',
-      serviceWorkerParam: { scope: '/' }
-    });
-  });
   initialized = true;
 };
 
