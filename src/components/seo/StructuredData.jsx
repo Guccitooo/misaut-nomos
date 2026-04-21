@@ -163,7 +163,6 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
       document.head.appendChild(script);
     }
 
-    // Generar slug para URL canónica
     const slugify = (text) => {
       if (!text) return '';
       return text.toString().toLowerCase().trim()
@@ -172,54 +171,134 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
         .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     };
     const profileSlug = profile.slug_publico || slugify(profile.business_name);
-    const profileUrl = `https://misautonomos.es/Autonomo?slug=${profileSlug}`;
-    
+    // ✅ URL canónica con formato correcto /autonomo/:slug
+    const profileUrl = `https://misautonomos.es/autonomo/${profileSlug}`;
+
+    // ✅ Imagen: preferir la más específica del negocio
+    const imageUrl = profile.imagen_principal || profile.photos?.[0] || professionalUser?.profile_picture;
+
+    // ✅ openingHoursSpecification como array (requerido por Google)
+    const daysMap = {
+      laborables: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      festivos: ["Saturday", "Sunday"],
+      ambos: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    };
+    const days = daysMap[profile.disponibilidad_tipo] || daysMap.laborables;
+    const openingHours = days.map(day => ({
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": `https://schema.org/${day}`,
+      "opens": profile.horario_apertura || "09:00",
+      "closes": profile.horario_cierre || "18:00"
+    }));
+
+    // ✅ sameAs fusiona website + redes sociales sin sobreescribirse
+    const sameAsLinks = [
+      profile.website,
+      profile.social_links?.facebook,
+      profile.social_links?.instagram,
+      profile.social_links?.linkedin,
+      profile.social_links?.tiktok,
+    ].filter(Boolean).map(link =>
+      link.startsWith('http') ? link : `https://${link}`
+    );
+
+    // ✅ GeoCoordinates: usar coordenadas reales si existen, sino caer a ciudad/provincia
+    const geoBlock = profile.latitude && profile.longitude
+      ? {
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": profile.latitude,
+            "longitude": profile.longitude
+          }
+        }
+      : {};
+
+    // ✅ Área de servicio con radio (en metros)
+    const areaServed = {
+      "@type": "GeoCircle",
+      "geoMidpoint": {
+        "@type": "GeoCoordinates",
+        ...(profile.latitude && profile.longitude
+          ? { "latitude": profile.latitude, "longitude": profile.longitude }
+          : { "name": [profile.ciudad, profile.provincia].filter(Boolean).join(', ') }
+        )
+      },
+      "geoRadius": String((profile.radio_servicio_km || 10) * 1000)
+    };
+
+    // ✅ Reseñas individuales (máx 10, solo las que tienen comentario)
+    const reviewItems = reviews?.length > 0
+      ? reviews.slice(0, 10).map(review => {
+          // Calcular rating medio si no existe el campo rating directamente
+          const ratingVal = review.rating || (
+            review.rapidez && review.comunicacion && review.calidad && review.precio_satisfaccion
+              ? ((review.rapidez + review.comunicacion + review.calidad + review.precio_satisfaccion) / 4).toFixed(1)
+              : null
+          );
+          return {
+            "@type": "Review",
+            "author": { "@type": "Person", "name": review.client_name || "Cliente verificado" },
+            "datePublished": review.created_date?.split('T')[0],
+            ...(review.comment && { "reviewBody": review.comment }),
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": String(ratingVal || "5"),
+              "bestRating": "5",
+              "worstRating": "1"
+            }
+          };
+        })
+      : undefined;
+
     const schema = {
       "@context": "https://schema.org",
       "@type": "ProfessionalService",
       "@id": profileUrl,
       "name": profile.business_name,
-      "description": profile.descripcion_corta || profile.description || `${profile.business_name} - Profesional autónomo en ${profile.ciudad || profile.provincia}`,
-      "image": profile.imagen_principal || (profile.photos && profile.photos[0]) || professionalUser?.profile_picture,
+      "description": profile.descripcion_corta || profile.description || `${profile.business_name} - Profesional autónomo en ${profile.ciudad || profile.provincia || 'España'}`,
+      ...(imageUrl && { "image": imageUrl }),
       "url": profileUrl,
-      "mainEntityOfPage": {
-        "@type": "WebPage",
-        "@id": profileUrl
-      },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": profileUrl },
       "address": {
         "@type": "PostalAddress",
         "addressLocality": profile.ciudad || "",
         "addressRegion": profile.provincia || "",
         "addressCountry": "ES"
       },
-      "areaServed": {
-        "@type": "GeoCircle",
-        "geoMidpoint": {
-          "@type": "GeoCoordinates",
-          "name": `${profile.ciudad || ''}, ${profile.provincia || ''}`
-        },
-        "geoRadius": `${(profile.radio_servicio_km || 10) * 1000}`
-      },
+      ...geoBlock,
+      "areaServed": areaServed,
       ...(profile.telefono_contacto && { "telephone": profile.telefono_contacto }),
       ...(profile.email_contacto && { "email": profile.email_contacto }),
       "priceRange": profile.price_range || "€€",
       ...(profile.formas_pago?.length > 0 && { "paymentAccepted": profile.formas_pago.join(', ') }),
-      ...(profile.categories?.length > 0 && { 
+      ...(profile.categories?.length > 0 && {
         "knowsAbout": profile.categories,
         "hasOfferCatalog": {
           "@type": "OfferCatalog",
           "name": "Servicios profesionales",
-          "itemListElement": profile.categories.map((cat, idx) => ({
+          "itemListElement": profile.categories.map(cat => ({
             "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": cat
-            }
+            "itemOffered": { "@type": "Service", "name": cat }
           }))
         }
       }),
-      ...(profile.years_experience > 0 && { 
-        "foundingDate": new Date().getFullYear() - profile.years_experience
+      ...(profile.services_offered?.length > 0 && {
+        "makesOffer": profile.services_offered.map(s => ({
+          "@type": "Offer",
+          "name": s.name,
+          ...(s.description && { "description": s.description }),
+          ...(s.price && {
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": s.price,
+              "priceCurrency": "EUR",
+              "unitText": s.unit || "hora"
+            }
+          })
+        }))
+      }),
+      ...(profile.years_experience > 0 && {
+        "foundingDate": String(new Date().getFullYear() - profile.years_experience)
       }),
       ...(profile.certifications?.length > 0 && {
         "hasCredential": profile.certifications.map(cert => ({
@@ -228,58 +307,21 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
           "name": cert
         }))
       }),
-      ...(profile.website && { "sameAs": [profile.website] }),
-      ...(profile.social_links && { 
-        "sameAs": [
-          profile.social_links.facebook,
-          profile.social_links.instagram,
-          profile.social_links.linkedin,
-          profile.social_links.tiktok
-        ].filter(Boolean) 
-      }),
-      ...(profile.average_rating > 0 && {
+      ...(sameAsLinks.length > 0 && { "sameAs": sameAsLinks }),
+      ...(profile.average_rating > 0 && profile.total_reviews > 0 && {
         "aggregateRating": {
           "@type": "AggregateRating",
-          "ratingValue": profile.average_rating.toFixed(1),
-          "reviewCount": profile.total_reviews || 1,
+          "ratingValue": Number(profile.average_rating).toFixed(1),
+          "reviewCount": String(profile.total_reviews),
           "bestRating": "5",
           "worstRating": "1"
         }
       }),
-      ...(reviews && reviews.length > 0 && {
-        "review": reviews.slice(0, 10).map(review => ({
-          "@type": "Review",
-          "author": {
-            "@type": "Person",
-            "name": review.client_name || "Cliente verificado"
-          },
-          "datePublished": review.created_date?.split('T')[0],
-          ...(review.comment && { "reviewBody": review.comment }),
-          "reviewRating": {
-            "@type": "Rating",
-            "ratingValue": review.rating?.toString() || "5",
-            "bestRating": "5",
-            "worstRating": "1"
-          }
-        }))
-      }),
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": profile.disponibilidad_tipo === 'laborables' 
-          ? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-          : profile.disponibilidad_tipo === 'festivos'
-          ? ["Saturday", "Sunday"]
-          : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-        "opens": profile.horario_apertura || "09:00",
-        "closes": profile.horario_cierre || "18:00"
-      },
-      "isPartOf": {
-        "@type": "WebSite",
-        "name": "MisAutónomos",
-        "url": "https://misautonomos.es"
-      }
+      ...(reviewItems && { "review": reviewItems }),
+      "openingHoursSpecification": openingHours,
+      "isPartOf": { "@type": "WebSite", "name": "MisAutónomos", "url": "https://misautonomos.es" }
     };
-    
+
     script.textContent = JSON.stringify(schema);
 
     return () => {
@@ -320,7 +362,7 @@ export function ProfessionalPersonSchema({ profile, professionalUser }) {
       "jobTitle": profile.categories?.[0] || "Profesional autónomo",
       "description": profile.descripcion_corta,
       "image": professionalUser?.profile_picture || profile.imagen_principal,
-      "url": `https://misautonomos.es/Autonomo?slug=${profileSlug}`,
+      "url": `https://misautonomos.es/autonomo/${profileSlug}`,
       "address": {
         "@type": "PostalAddress",
         "addressLocality": profile.ciudad,
