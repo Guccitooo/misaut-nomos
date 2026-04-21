@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Briefcase, CreditCard, 
   BarChart2, Ticket, Settings, ChevronRight, Gift
@@ -16,7 +17,31 @@ const NAV_ITEMS = [
   { id: "verifications", label: "Verificaciones", icon: Settings, emoji: "🛡️" },
 ];
 
-export default function AdminLayout({ activeSection, onSectionChange, openTickets = 0, children }) {
+const SECTION_ROUTES = {
+  dashboard: "/admin",
+  users: "/admin",
+  pending: "/admin",
+  subscriptions: "/admin",
+  gifts: "/admin/regalos",
+  metrics: "/admin",
+  support: "/admin/soporte",
+  verifications: "/admin",
+  referrals: "/admin/referidos",
+};
+
+export default function AdminLayout({ activeSection, currentSection, onSectionChange, openTickets = 0, children }) {
+  const navigate = useNavigate();
+  const active = activeSection || currentSection;
+
+  const handleSectionChange = (id) => {
+    if (typeof onSectionChange === 'function') {
+      onSectionChange(id);
+    } else {
+      const route = SECTION_ROUTES[id];
+      if (route) navigate(route);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -29,9 +54,9 @@ export default function AdminLayout({ activeSection, onSectionChange, openTicket
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => handleSectionChange(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
-                activeSection === item.id
+                active === item.id
                   ? "bg-blue-600 text-white"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
@@ -57,9 +82,9 @@ export default function AdminLayout({ activeSection, onSectionChange, openTicket
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => handleSectionChange(item.id)}
               className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                activeSection === item.id ? "bg-blue-600 text-white" : "text-gray-600 bg-gray-100"
+                active === item.id ? "bg-blue-600 text-white" : "text-gray-600 bg-gray-100"
               }`}
             >
               {item.emoji} {item.label}
