@@ -1,8 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
     const { email, language, unsubToken } = await req.json();
 
     if (!email) {
@@ -10,6 +7,7 @@ Deno.serve(async (req) => {
     }
 
     const isEN = language === 'en';
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
     const html = `<!DOCTYPE html>
 <html>
@@ -54,14 +52,30 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: email,
-      subject: isEN ? '🎉 Welcome to MisAutónomos newsletter' : '🎉 Bienvenido a la newsletter de MisAutónomos',
-      body: html
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'MisAutónomos <onboarding@resend.dev>',
+        to: [email],
+        subject: isEN ? '🎉 Welcome to MisAutónomos newsletter' : '🎉 Bienvenido a la newsletter de MisAutónomos',
+        html,
+      }),
     });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('Resend error:', JSON.stringify(data));
+      return Response.json({ error: data.message || 'Email send failed' }, { status: 500 });
+    }
 
     return Response.json({ success: true });
   } catch (error) {
+    console.error('sendNewsletterWelcome error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
