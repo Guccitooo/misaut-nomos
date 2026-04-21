@@ -15,18 +15,10 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
     'plan_adsplus': { name: 'Plan Ads+', price: 33 }
   };
 
-  // Plan efectivo activo (puede ser gifted o real)
-  const effectivePlanId = subscriber.gifted_plan_id || subscriber.plan_id;
-  const currentPlan = plans[effectivePlanId] || { name: subscriber.plan_nombre || subscriber.gifted_plan_name || 'Desconocido', price: subscriber.plan_precio ?? 0 };
+  const currentPlan = plans[subscriber.plan_id] || { name: subscriber.plan_nombre || 'Desconocido', price: subscriber.plan_precio ?? 0 };
   const targetPlan = plans[giftPlan];
-  // Considerar upgrade si el plan destino tiene precio mayor, o si el plan actual es desconocido/trial
-  const isUpgrade = targetPlan && (targetPlan.price > (currentPlan.price ?? 0));
 
   const handleGift = async () => {
-    if (!isUpgrade) {
-      toast.error('Solo se puede regalar un upgrade (plan superior al actual)');
-      return;
-    }
     if (!reason.trim()) {
       toast.error('Añade un motivo interno para el regalo');
       return;
@@ -144,7 +136,7 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
           </button>
           <button 
             onClick={handleGift} 
-            disabled={loading || !isUpgrade} 
+            disabled={loading} 
             className="flex-1 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2.5 rounded-lg disabled:opacity-50"
           >
             {loading ? 'Aplicando...' : 'Regalar upgrade'}
