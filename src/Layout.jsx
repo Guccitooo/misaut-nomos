@@ -49,7 +49,7 @@ const CookieBanner = lazy(() => import("@/components/ui/CookieBanner"));
 const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
 const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner"));
-const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema"));
+const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema").catch(() => ({ default: () => null })));
 import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
