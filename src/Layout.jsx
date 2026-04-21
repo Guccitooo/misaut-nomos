@@ -44,11 +44,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Lazy load componentes no críticos
-const Footer = lazy(() => import("@/components/ui/Footer"));
-const CookieBanner = lazy(() => import("@/components/ui/CookieBanner"));
-const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop"));
-const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter"));
-const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner"));
+const Footer = lazy(() => import("@/components/ui/Footer").catch(() => ({ default: () => null })));
+const CookieBanner = lazy(() => import("@/components/ui/CookieBanner").catch(() => ({ default: () => null })));
+const ScrollToTop = lazy(() => import("@/components/ui/ScrollToTop").catch(() => ({ default: () => null })));
+const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter").catch(() => ({ default: () => null })));
+const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner").catch(() => ({ default: () => null })));
 const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema").catch(() => ({ default: () => null })));
 import PageTransitions from "@/components/ui/PageTransitions";
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
