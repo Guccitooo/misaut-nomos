@@ -10,13 +10,17 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
 
   const plans = {
+    'plan_trial': { name: 'Plan Trial', price: 0 },
     'plan_visibility': { name: 'Plan Visibilidad', price: 13 },
     'plan_adsplus': { name: 'Plan Ads+', price: 33 }
   };
 
-  const currentPlan = plans[subscriber.plan_id] || { name: subscriber.plan_nombre, price: subscriber.plan_precio };
+  // Plan efectivo activo (puede ser gifted o real)
+  const effectivePlanId = subscriber.gifted_plan_id || subscriber.plan_id;
+  const currentPlan = plans[effectivePlanId] || { name: subscriber.plan_nombre || subscriber.gifted_plan_name || 'Desconocido', price: subscriber.plan_precio ?? 0 };
   const targetPlan = plans[giftPlan];
-  const isUpgrade = targetPlan?.price > currentPlan?.price;
+  // Considerar upgrade si el plan destino tiene precio mayor, o si el plan actual es desconocido/trial
+  const isUpgrade = targetPlan && (targetPlan.price > (currentPlan.price ?? 0));
 
   const handleGift = async () => {
     if (!isUpgrade) {
