@@ -427,12 +427,18 @@ export default function SearchPage() {
       <div className="min-h-screen" style={{ background: '#f8fafc', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
         {/* ── HERO ── 
-            Reservar espacio durante la carga para evitar CLS.
-            Se renderiza mientras loadingUser O cuando no hay usuario confirmado. */}
-        {loadingUser ? (
-          /* Placeholder con la misma altura aproximada del hero para evitar CLS */
-          <div style={{ minHeight: '420px', background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }} aria-hidden="true" />
-        ) : !user && (
+            SIEMPRE se renderiza para reservar espacio y evitar CLS.
+            Cuando hay usuario se colapsa a height:0 sin layout shift. */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)',
+            overflow: 'hidden',
+            // Cuando hay usuario confirmado: colapsar sin mover el contenido de abajo
+            height: (!loadingUser && user) ? 0 : undefined,
+          }}
+          aria-hidden={(!loadingUser && user) ? true : undefined}
+        >
+          {/* Contenido real del hero — solo visible para visitantes */}
           <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }} className="relative overflow-hidden">
             {/* Decoración de fondo — sin filter:blur para reducir TBT */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -543,7 +549,7 @@ export default function SearchPage() {
               </button>
             </div>
           </div>
-        )}
+        </div>{/* fin hero wrapper */}
 
         {/* ── CONTENIDO PRINCIPAL ── */}
         <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible" id="results-section">
