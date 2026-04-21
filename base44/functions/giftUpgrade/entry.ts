@@ -15,7 +15,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Usar service role para poder actualizar la suscripción de cualquier usuario
+    // Leer la suscripción actual para el audit log
+    const sub = await base44.asServiceRole.entities.Subscription.get(subscriptionId);
+
+    // Actualizar suscripción con el regalo
     await base44.asServiceRole.entities.Subscription.update(subscriptionId, {
       gifted_plan_id: giftedPlanId,
       gifted_plan_name: giftedPlanName,
@@ -24,6 +27,31 @@ Deno.serve(async (req) => {
       gifted_at: new Date().toISOString(),
       gift_reason: giftReason || ''
     });
+
+    // Guardar en el registro de auditoría
+    try {
+      // Obtener email del usuario afectado
+      const targetUsers = await base44.asServiceRole.entities.User.filter({ id: sub.user_id });
+      const targetUser = targetUsers?.[0];
+
+      await base44.asServiceRole.entities.PlanAuditLog.create({
+        user_id: sub.user_id,
+        user_email: targetUser?.email || sub.user_id,
+        changed_by_id: user.id,
+        changed_by_email: user.email,
+        change_type: 'gift_upgrade',
+        plan_before: sub.plan_id,
+        plan_before_name: sub.plan_nombre,
+        plan_after: giftedPlanId,
+        plan_after_name: giftedPlanName,
+        reason: giftReason || '',
+        valid_until: giftedUntil,
+        subscription_id: subscriptionId
+      });
+      console.log(`[giftUpgrade] ✅ Audit log guardado para user=${sub.user_id}`);
+    } catch (e) {
+      console.error('[giftUpgrade] ❌ Error guardando audit log:', e.message);
+    }
 
     console.log(`[giftUpgrade] ✅ Regalo aplicado: sub=${subscriptionId}, plan=${giftedPlanId}, hasta=${giftedUntil}, admin=${user.email}`);
     return Response.json({ ok: true });

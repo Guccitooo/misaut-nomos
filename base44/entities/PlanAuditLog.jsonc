@@ -1,0 +1,98 @@
+{
+  "name": "PlanAuditLog",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario afectado"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del usuario afectado (snapshot)"
+    },
+    "changed_by_id": {
+      "type": "string",
+      "description": "ID de quien realiz\u00f3 el cambio (admin o el propio usuario)"
+    },
+    "changed_by_email": {
+      "type": "string",
+      "description": "Email de quien realiz\u00f3 el cambio"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "gift_upgrade",
+        "gift_revoke",
+        "gift_expire",
+        "plan_change",
+        "trial_start",
+        "subscription_cancel",
+        "subscription_reactivate"
+      ],
+      "description": "Tipo de cambio"
+    },
+    "plan_before": {
+      "type": "string",
+      "description": "Plan anterior (plan_id)"
+    },
+    "plan_before_name": {
+      "type": "string",
+      "description": "Nombre del plan anterior"
+    },
+    "plan_after": {
+      "type": "string",
+      "description": "Plan resultante (plan_id)"
+    },
+    "plan_after_name": {
+      "type": "string",
+      "description": "Nombre del plan resultante"
+    },
+    "reason": {
+      "type": "string",
+      "default": "",
+      "description": "Motivo del cambio"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hasta cu\u00e1ndo aplica (para regalos temporales)"
+    },
+    "subscription_id": {
+      "type": "string",
+      "description": "ID de la suscripci\u00f3n afectada"
+    }
+  },
+  "required": [
+    "user_id",
+    "changed_by_id",
+    "change_type"
+  ],
+  "security": {
+    "read": {
+      "rule": "auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "auth.role == 'admin'"
+    },
+    "update": {
+      "rule": "false"
+    },
+    "delete": {
+      "rule": "false"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "user_id",
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "change_type",
+        "created_date"
+      ]
+    }
+  ]
+}

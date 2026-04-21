@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Briefcase, CreditCard, 
-  BarChart2, Ticket, Settings, ChevronRight, Gift
+  BarChart2, Ticket, Settings, ChevronRight, Gift, Shield, Megaphone
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { id: "pending", label: "Pendientes", icon: Briefcase, emoji: "🔧" },
   { id: "subscriptions", label: "Suscripciones", icon: CreditCard, emoji: "💳" },
   { id: "gifts", label: "Regalos", icon: Gift, emoji: "🎁" },
+  { id: "audit", label: "Auditoría", icon: Shield, emoji: "📋" },
+  { id: "ads_briefings", label: "Briefings Ads+", icon: Megaphone, emoji: "📢" },
   { id: "metrics", label: "Métricas", icon: BarChart2, emoji: "📈" },
   { id: "support", label: "Soporte", icon: Ticket, emoji: "🎫" },
   { id: "verifications", label: "Verificaciones", icon: Settings, emoji: "🛡️" },

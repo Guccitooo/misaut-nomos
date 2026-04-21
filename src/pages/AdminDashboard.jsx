@@ -13,6 +13,8 @@ import AdminSubscriptionsTable from "@/components/admin/AdminSubscriptionsTable"
 import AdminMetrics from "@/components/admin/AdminMetrics";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import VerificationRequests from "@/components/admin/VerificationRequests";
+import AdminPlanAuditLog from "@/components/admin/AdminPlanAuditLog";
+import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings";
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -163,6 +165,14 @@ export default function AdminDashboardPage() {
 
       {activeSection === "verifications" && (
         <VerificationRequests />
+      )}
+
+      {activeSection === "audit" && (
+        <AdminPlanAuditLog />
+      )}
+
+      {activeSection === "ads_briefings" && (
+        <AdminAdsBriefings users={users} />
       )}
     </AdminLayout>
   );
