@@ -72,9 +72,10 @@ export default function SavedSearches({ user, currentFilters, resultsCount, onLo
             <Card key={search.id} className="p-3 flex items-center gap-3 bg-purple-50 border-purple-200 flex-shrink-0">
               <button
                 onClick={() => onLoadSearch(search.filters)}
+                aria-label={`Cargar búsqueda: ${search.search_name}`}
                 className="flex items-center gap-2 hover:text-purple-700 transition-colors"
               >
-                <Bookmark className="w-4 h-4 text-purple-600" />
+                <Bookmark className="w-4 h-4 text-purple-600" aria-hidden="true" />
                 <span className="text-sm font-medium">{search.search_name}</span>
                 <Badge variant="outline" className="text-xs">
                   {search.results_count}
@@ -83,10 +84,11 @@ export default function SavedSearches({ user, currentFilters, resultsCount, onLo
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={`Eliminar búsqueda guardada: ${search.search_name}`}
                 className="h-6 w-6 hover:bg-red-100 hover:text-red-600"
                 onClick={() => deleteMutation.mutate(search.id)}
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3 h-3" aria-hidden="true" />
               </Button>
             </Card>
           ))}
