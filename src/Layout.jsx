@@ -58,12 +58,20 @@ import { getEffectivePlan, isAdsPlus } from "@/utils/subscription";
 
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
-// Preload del logo para mejorar LCP
+
+// Versiones optimizadas via Supabase Image Transform (WebP + resize) — ~1.2 MB menos por carga
+const LOGO_48  = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/render/image/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png?width=48&height=48&quality=80&format=webp';
+const LOGO_96  = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/render/image/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png?width=96&height=96&quality=80&format=webp';
+const LOGO_32  = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/render/image/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png?width=32&height=32&quality=80&format=webp';
+const LOGO_64  = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/render/image/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png?width=64&height=64&quality=80&format=webp';
+
+// Preload del logo optimizado para mejorar LCP
 if (typeof window !== 'undefined') {
   const link = document.createElement('link');
   link.rel = 'preload';
   link.as = 'image';
-  link.href = LOGO_URL;
+  link.href = LOGO_48;
+  link.setAttribute('imagesrcset', `${LOGO_48} 1x, ${LOGO_96} 2x`);
   link.fetchPriority = 'high';
   document.head.appendChild(link);
 }
@@ -75,14 +83,15 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
       <SidebarHeader className="border-b border-gray-100 p-6">
         <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda de profesionales">
           <img
-            src={LOGO_URL}
+            src={LOGO_48}
+            srcSet={`${LOGO_48} 1x, ${LOGO_96} 2x`}
             alt="Logo MisAutónomos"
             className="w-12 h-12 rounded-lg"
             width="48"
             height="48"
             loading="eager"
             fetchPriority="high"
-            decoding="sync"
+            decoding="async"
             style={{ width: '48px', height: '48px' }}
           />
           <div>
@@ -607,7 +616,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-2">
-                      <img src={LOGO_URL} alt="" className="w-8 h-8 rounded" width="32" height="32" />
+                      <img src={LOGO_32} srcSet={`${LOGO_32} 1x, ${LOGO_64} 2x`} alt="" className="w-8 h-8 rounded" width="32" height="32" />
                       <span className="font-bold text-gray-900">MisAutónomos</span>
                     </div>
                     <button
@@ -833,7 +842,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
               </button>
 
               <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
-                <img src={LOGO_URL} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchpriority="high" decoding="async" />
+                <img src={LOGO_32} srcSet={`${LOGO_32} 1x, ${LOGO_64} 2x`} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchPriority="high" decoding="async" />
                 <span className="font-bold text-lg text-gray-900">MisAutónomos</span>
               </Link>
 
@@ -861,13 +870,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <Link to={createPageUrl("Search")} className="flex items-center gap-3" aria-label="Ir a búsqueda">
                       <img
-                        src={LOGO_URL}
+                        src={LOGO_48}
+                        srcSet={`${LOGO_48} 1x, ${LOGO_96} 2x`}
                         alt="Logo MisAutónomos"
                         className="w-12 h-12 rounded-lg"
                         width="48"
                         height="48"
                         loading="eager"
-                        fetchpriority="high"
+                        fetchPriority="high"
                         decoding="async"
                       />
                       <div style={{ minWidth: '150px' }}>
