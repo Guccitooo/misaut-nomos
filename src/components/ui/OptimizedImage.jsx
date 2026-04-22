@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ImageIcon } from 'lucide-react';
 
 const OptimizedImage = React.memo(function OptimizedImage({ 
@@ -39,13 +39,18 @@ const OptimizedImage = React.memo(function OptimizedImage({
       return;
     }
 
-    // Optimize Supabase images with parameters
+    // Optimize Supabase images via Image Transform endpoint (/render/image/)
     if (src.includes('supabase.co')) {
-      const url = new URL(src);
-      // Usa 2x para retina, pero nunca más del tamaño necesario
       const optimalWidth = width ? Math.min(width * 2, 1200) : 400;
       const optimalHeight = height ? Math.min(height * 2, 1200) : 400;
-      
+
+      // Convertir /storage/v1/object/public/ → /storage/v1/render/image/public/
+      const renderSrc = src.replace(
+        '/storage/v1/object/public/',
+        '/storage/v1/render/image/public/'
+      );
+      // Solo añadir params si la URL cambió (evitar double-transform)
+      const url = new URL(renderSrc);
       url.searchParams.set('width', optimalWidth.toString());
       url.searchParams.set('height', optimalHeight.toString());
       url.searchParams.set('quality', quality.toString());

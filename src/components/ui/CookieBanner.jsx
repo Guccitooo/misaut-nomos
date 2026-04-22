@@ -124,8 +124,8 @@ export default function CookieBanner() {
                 </h3>
                 <p className="text-xs md:text-sm text-gray-600 mt-1 leading-relaxed">
                   {t('cookies.bannerText') || 'Utilizamos cookies propias y de terceros para mejorar tu experiencia, analizar el uso de la plataforma y personalizar contenido. Puedes aceptar todas, rechazar las opcionales o configurar tus preferencias.'}{' '}
-                  <Link to="/cookies" className="text-blue-600 hover:underline font-medium" aria-label="Más información sobre nuestra política de cookies">
-                    {t('cookies.moreInfo') || 'Política de cookies'}
+                  <Link to="/cookies" className="text-blue-600 hover:underline font-medium" aria-label="Consulta nuestra política de cookies">
+                   {t('cookies.moreInfo') || 'Consulta nuestra política de cookies'}
                   </Link>
                 </p>
               </div>
