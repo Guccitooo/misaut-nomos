@@ -105,11 +105,11 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
                     }`}
                   >
                     {item.action ? (
-                      <button onClick={item.action} className="flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer">
+                      <button onClick={item.action} aria-label={item.title} className="flex items-center gap-3 px-4 py-3 w-full text-left cursor-pointer">
                         <item.icon className="w-5 h-5" aria-hidden="true" />
                         <span className="font-medium">{item.title}</span>
                         {item.badge && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} mensajes no leídos`}>
                             {item.badge}
                           </span>
                         )}
@@ -119,7 +119,7 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
                         <item.icon className="w-5 h-5" aria-hidden="true" />
                         <span className="font-medium">{item.title}</span>
                         {item.badge && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} unread`}>
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" aria-label={`${item.badge} mensajes no leídos`}>
                             {item.badge}
                           </span>
                         )}
@@ -165,11 +165,11 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
               <LanguageSwitcher />
             </div>
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors flex-shrink-0"
-              onClick={onLogout}
-              aria-label="Logout"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors flex-shrink-0"
+            onClick={onLogout}
+            aria-label="Cerrar sesión"
             >
               <LogOut className="w-4 h-4 text-gray-600" aria-hidden="true" />
             </Button>
@@ -713,6 +713,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           </Link>
                           <button
                             onClick={() => { handleLogin(); setMobileMenuOpen(false); }}
+                            aria-label="Iniciar sesión en MisAutónomos"
                             className="flex items-center justify-center gap-2 w-full rounded-xl font-semibold text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
                             style={{ padding: '14px', fontSize: '15px', touchAction: 'manipulation' }}
                           >
@@ -728,9 +729,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                       <>
                         <div className="mx-3 mt-2 border-t border-gray-100 pt-2">
                           <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 w-full rounded-xl text-red-600 hover:bg-red-50 active:bg-red-100"
-                            style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
+                          onClick={handleLogout}
+                          aria-label="Cerrar sesión"
+                          className="flex items-center gap-3 w-full rounded-xl text-red-600 hover:bg-red-50 active:bg-red-100"
+                          style={{ padding: '14px 16px', fontSize: '15px', touchAction: 'manipulation' }}
                           >
                             <LogOut className="w-5 h-5 flex-shrink-0" />
                             <span className="font-medium">{t('nav.logout')}</span>
@@ -796,6 +798,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     </Link>
                     <button
                       onClick={() => { handleLogin(); setJoinModalOpen(false); }}
+                      aria-label="Ya tengo cuenta, iniciar sesión"
                       className="w-full text-center text-sm text-gray-500 py-3 font-medium"
                       style={{ touchAction: 'manipulation' }}
                     >
@@ -844,7 +847,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     onClick={() => setJoinModalOpen(true)}
                     style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
                     className="flex items-center justify-center rounded-lg hover:bg-gray-100 text-blue-600"
-                    aria-label="Unirse"
+                    aria-label="Unirse a MisAutónomos"
                   >
                     <User className="w-5 h-5" />
                   </button>
@@ -879,7 +882,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           variant="ghost"
                           className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                           onClick={handleLogin}
-                          aria-label={t('nav.login')}
+                          aria-label="Iniciar sesión en MisAutónomos"
                         >
                           <User className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('nav.login')}
@@ -908,7 +911,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                           size="icon"
                           className="hover:bg-red-50 hover:text-red-600 transition-colors"
                           onClick={handleLogout}
-                          aria-label={t('nav.logout')}
+                          aria-label="Cerrar sesión"
                         >
                           <LogOut className="w-5 h-5" aria-hidden="true" />
                         </Button>
@@ -962,7 +965,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         key={item.title}
                         to={item.url}
                         className={`mobile-bottom-nav-item ${location.pathname === item.url ? 'active' : ''}`}
-                        aria-label={item.title}
+                        aria-label={`Ir a ${item.title}`}
                         aria-current={location.pathname === item.url ? 'page' : undefined}
                         style={{ touchAction: 'manipulation', flex: 1, minWidth: 0 }}
                       >
@@ -982,8 +985,8 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   <>
                     <Link
                       to={createPageUrl("Search")}
-                      className={`mobile-bottom-nav-item ${location.pathname === createPageUrl("Search") ? 'active' : ''}`}
-                      aria-label="Buscar"
+                        className={`mobile-bottom-nav-item ${location.pathname === createPageUrl("Search") ? 'active' : ''}`}
+                        aria-label="Buscar profesionales"
                       style={{ touchAction: 'manipulation', flex: 1, minWidth: 0 }}
                     >
                       <SearchIcon className="w-5 h-5" />
@@ -992,7 +995,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                     <button
                       onClick={() => setJoinModalOpen(true)}
                       className="mobile-bottom-nav-item"
-                      aria-label="Unirse"
+                      aria-label="Unirse a MisAutónomos"
                       style={{ touchAction: 'manipulation', border: 'none', background: 'none', cursor: 'pointer', flex: 1, minWidth: 0 }}
                     >
                       <Briefcase className="w-5 h-5" />
