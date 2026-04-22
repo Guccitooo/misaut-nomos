@@ -81,8 +81,8 @@ export default function SearchAutocomplete({ value, onChange, onSelect }) {
 
   return (
     <div ref={wrapperRef} className="relative flex-1">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="relative flex items-center">
+        <Search className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none" style={{ top: '50%', transform: 'translateY(-50%)' }} />
         <Input
           value={value}
           onChange={(e) => {
@@ -91,10 +91,10 @@ export default function SearchAutocomplete({ value, onChange, onSelect }) {
           }}
           onFocus={() => value && setShowSuggestions(true)}
           placeholder="Buscar profesional, servicio..."
-          className="pl-10 h-11 border-2 border-gray-200 rounded-lg"
+          className="pl-10 h-11 border-2 border-gray-200 rounded-lg w-full"
         />
         {loading && (
-          <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+          <Loader2 className="absolute right-3 w-4 h-4 text-gray-400 animate-spin" style={{ top: '50%', transform: 'translateY(-50%)' }} />
         )}
       </div>
 
