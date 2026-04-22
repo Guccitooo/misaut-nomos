@@ -26,16 +26,17 @@ export default function BriefingMensualPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
 
+  const [existingBriefingId, setExistingBriefingId] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     platform: "",
     goal: "",
-    services_to_highlight: [],
+    top_services: [],
     service_area: "",
     special_offer: "",
-    additional_material_urls: [],
-    testimonials: "",
-    budget_eur: 30, // Por defecto 30€ incluido en el plan
-    notes: ""
+    images_provided: [],
+    best_testimonials: "",
+    additional_notes: ""
   });
 
   useEffect(() => {
@@ -47,27 +48,42 @@ export default function BriefingMensualPage() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      const profiles = await base44.entities.ProfessionalProfile.filter({
-        user_id: currentUser.id
-      }).limit(1);
-      
-      if (profiles.length > 0) {
-        setProfessionalProfile(profiles[0]);
-        setFormData(prev => ({
-          ...prev,
-          service_area: profiles[0].service_area || '',
-          services_to_highlight: profiles[0].services_offered?.map(s => s.name) || []
-        }));
-      }
+      const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
-      // Cargar ClientInsights para recomendación
-      const insightsData = await base44.entities.ClientInsights.filter({
-        user_id: currentUser.id,
-        onboarding_completed: true
-      }).limit(1);
+      const [profiles, insightsData, existingBriefings] = await Promise.all([
+        base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id }),
+        base44.entities.ClientInsights.filter({ user_id: currentUser.id }),
+        base44.entities.AdsBriefing.filter({ professional_id: currentUser.id, month_year: currentMonthYear })
+      ]);
       
+      const profile = profiles[0] || null;
+      setProfessionalProfile(profile);
+
       if (insightsData.length > 0) {
         setInsights(insightsData[0]);
+      }
+
+      // Si ya existe un briefing este mes → modo edición
+      if (existingBriefings.length > 0) {
+        const b = existingBriefings[0];
+        setExistingBriefingId(b.id);
+        setIsEditMode(true);
+        setFormData({
+          platform: b.platform || "",
+          goal: b.goal || "",
+          top_services: b.top_services || [],
+          service_area: b.service_area || "",
+          special_offer: b.special_offer || "",
+          images_provided: b.images_provided || [],
+          best_testimonials: b.best_testimonials || "",
+          additional_notes: b.additional_notes || ""
+        });
+      } else if (profile) {
+        setFormData(prev => ({
+          ...prev,
+          service_area: profile.service_area || '',
+          top_services: profile.services_offered?.map(s => s.name) || []
+        }));
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -85,27 +101,68 @@ export default function BriefingMensualPage() {
     setSaving(true);
     
     try {
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-      
-      await base44.entities.AdsBriefing.create({
+      const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      const professionalName = professionalProfile?.business_name || user.full_name || user.email;
+
+      const briefingData = {
         professional_id: user.id,
-        month: currentMonth,
-        year: currentYear,
+        professional_name: professionalName,
+        month_year: currentMonthYear,
         platform: formData.platform,
         goal: formData.goal,
-        services_to_highlight: formData.services_to_highlight,
+        top_services: formData.top_services,
         service_area: formData.service_area,
         special_offer: formData.special_offer,
-        additional_material_urls: formData.additional_material_urls,
-        testimonials: formData.testimonials,
-        budget_eur: formData.budget_eur,
-        notes: formData.notes,
+        images_provided: formData.images_provided,
+        best_testimonials: formData.best_testimonials,
+        additional_notes: formData.additional_notes,
+        included_budget_eur: 30,
+        status: 'submitted',
         campaign_status: 'pending',
         submitted_at: new Date().toISOString()
-      });
+      };
+
+      if (isEditMode && existingBriefingId) {
+        await base44.entities.AdsBriefing.update(existingBriefingId, briefingData);
+      } else {
+        await base44.entities.AdsBriefing.create(briefingData);
+      }
+
+      // Notificar al admin por email
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'hola@misautonomos.es';
+      const platformLabelsMap = {
+        instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok',
+        google_search: 'Google Search', linkedin: 'LinkedIn'
+      };
+      const goalLabelsMap = {
+        more_calls: 'Más llamadas', more_leads: 'Más contactos por mensaje',
+        more_quotes: 'Más solicitudes de presupuesto', brand_awareness: 'Notoriedad',
+        website_traffic: 'Tráfico a mi perfil'
+      };
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: 'hola@misautonomos.es',
+          subject: `📋 Nuevo briefing Ads+ de ${professionalName}`,
+          body: `
+<h2>Nuevo briefing de campaña Ads+</h2>
+<p><strong>Profesional:</strong> ${professionalName}</p>
+<p><strong>Mes:</strong> ${currentMonthYear}</p>
+<p><strong>Red:</strong> ${platformLabelsMap[formData.platform] || formData.platform}</p>
+<p><strong>Objetivo:</strong> ${goalLabelsMap[formData.goal] || formData.goal}</p>
+<p><strong>Zona:</strong> ${formData.service_area || '—'}</p>
+<p><strong>Oferta especial:</strong> ${formData.special_offer || '—'}</p>
+<p><strong>Servicios a destacar:</strong> ${formData.top_services.join(', ') || '—'}</p>
+<p><strong>Testimonio:</strong> ${formData.best_testimonials || '—'}</p>
+<p><strong>Notas:</strong> ${formData.additional_notes || '—'}</p>
+<p><strong>Imágenes aportadas:</strong> ${formData.images_provided.length > 0 ? formData.images_provided.map(url => `<a href="${url}">${url}</a>`).join('<br>') : 'Ninguna'}</p>
+<br><a href="https://misautonomos.es/admin">Ver en el panel de administración →</a>
+          `
+        });
+      } catch (emailError) {
+        console.warn('Email al admin falló, pero el briefing fue guardado:', emailError);
+      }
       
-      toast.success("✅ Briefing enviado. Nuestro equipo lo revisará pronto.");
+      toast.success(isEditMode ? "✅ Briefing actualizado correctamente." : "✅ Briefing enviado. Nuestro equipo lo revisará pronto.");
       navigate("/mi-campana");
     } catch (error) {
       console.error("Error submitting briefing:", error);
@@ -128,10 +185,10 @@ export default function BriefingMensualPage() {
 
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData({
-        ...formData,
-        additional_material_urls: [...formData.additional_material_urls, file_url]
-      });
+      setFormData(prev => ({
+        ...prev,
+        images_provided: [...prev.images_provided, file_url]
+      }));
       toast.success("✅ Foto añadida");
     } catch (error) {
       toast.error("Error al subir la foto");
@@ -141,23 +198,20 @@ export default function BriefingMensualPage() {
   };
 
   const removeFile = (index) => {
-    const newFiles = [...formData.additional_material_urls];
-    newFiles.splice(index, 1);
-    setFormData({ ...formData, additional_material_urls: newFiles });
+    setFormData(prev => {
+      const newFiles = [...prev.images_provided];
+      newFiles.splice(index, 1);
+      return { ...prev, images_provided: newFiles };
+    });
   };
 
   const toggleService = (serviceName) => {
-    if (formData.services_to_highlight.includes(serviceName)) {
-      setFormData({
-        ...formData,
-        services_to_highlight: formData.services_to_highlight.filter(s => s !== serviceName)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        services_to_highlight: [...formData.services_to_highlight, serviceName]
-      });
-    }
+    setFormData(prev => ({
+      ...prev,
+      top_services: prev.top_services.includes(serviceName)
+        ? prev.top_services.filter(s => s !== serviceName)
+        : [...prev.top_services, serviceName]
+    }));
   };
 
   const platforms = [
@@ -227,9 +281,11 @@ export default function BriefingMensualPage() {
             <ChevronLeft className="w-4 h-4" />
             Volver a Mi campaña
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Configurar campaña mensual</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? "Editar campaña mensual" : "Configurar campaña mensual"}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Elige dónde y cómo quieres anunciarte este mes
+            {isEditMode ? "Modifica los datos de tu campaña de este mes" : "Elige dónde y cómo quieres anunciarte este mes"}
           </p>
         </div>
 
@@ -327,20 +383,20 @@ export default function BriefingMensualPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {professionalProfile.services_offered.map(service => (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => toggleService(service.name)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                        formData.services_to_highlight.includes(service.name)
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {service.name}
-                    </button>
-                  ))}
+                {professionalProfile.services_offered.map(service => (
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() => toggleService(service.name)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                      formData.top_services.includes(service.name)
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {service.name}
+                  </button>
+                ))}
                 </div>
               </CardContent>
             </Card>
@@ -396,7 +452,7 @@ export default function BriefingMensualPage() {
               </p>
             </CardHeader>
             <CardContent>
-              {formData.additional_material_urls.length < 5 && (
+              {formData.images_provided.length < 5 && (
                 <label className="cursor-pointer block mb-3">
                   <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-blue-500 transition-colors">
                     <input
@@ -412,7 +468,7 @@ export default function BriefingMensualPage() {
                       <>
                         <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm text-gray-600">
-                          Click para añadir ({formData.additional_material_urls.length}/5)
+                          Click para añadir ({formData.images_provided.length}/5)
                         </p>
                       </>
                     )}
@@ -420,9 +476,9 @@ export default function BriefingMensualPage() {
                 </label>
               )}
 
-              {formData.additional_material_urls.length > 0 && (
+              {formData.images_provided.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
-                  {formData.additional_material_urls.map((url, idx) => (
+                  {formData.images_provided.map((url, idx) => (
                     <div key={idx} className="relative group">
                       <img
                         src={url}
@@ -452,8 +508,8 @@ export default function BriefingMensualPage() {
             </CardHeader>
             <CardContent>
               <Textarea
-                value={formData.testimonials}
-                onChange={e => setFormData({ ...formData, testimonials: e.target.value })}
+                value={formData.best_testimonials}
+                onChange={e => setFormData({ ...formData, best_testimonials: e.target.value })}
                 placeholder="Ej: Reformé la cocina de María en 10 días y quedó encantada..."
                 rows={3}
                 className="w-full"
@@ -481,8 +537,8 @@ export default function BriefingMensualPage() {
             </CardHeader>
             <CardContent>
               <Textarea
-                value={formData.notes}
-                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                value={formData.additional_notes}
+                onChange={e => setFormData({ ...formData, additional_notes: e.target.value })}
                 placeholder="Cualquier otra información que quieras compartir..."
                 rows={2}
                 className="w-full"
@@ -499,12 +555,12 @@ export default function BriefingMensualPage() {
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                Enviando...
+                {isEditMode ? "Actualizando..." : "Enviando..."}
               </>
             ) : (
               <>
                 <Check className="w-5 h-5 mr-2" />
-                Enviar briefing
+                {isEditMode ? "Actualizar briefing" : "Enviar briefing"}
               </>
             )}
           </Button>

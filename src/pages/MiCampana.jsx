@@ -50,14 +50,14 @@ export default function MiCampanaPage() {
     }
   };
 
+  const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const currentMonth = new Date().getMonth() + 1;
+
   // Cargar insights
   const { data: insights, isLoading: loadingInsights } = useQuery({
     queryKey: ['clientInsights', user?.id],
     queryFn: async () => {
-      const results = await base44.entities.ClientInsights.filter({
-        user_id: user.id,
-        onboarding_completed: true
-      }).limit(1);
+      const results = await base44.entities.ClientInsights.filter({ user_id: user.id });
       return results[0] || null;
     },
     enabled: !!user && !loading,
@@ -65,20 +65,16 @@ export default function MiCampanaPage() {
   });
 
   // Cargar briefing del mes actual
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  
   const { data: currentBriefing, isLoading: loadingBriefing } = useQuery({
-    queryKey: ['adsBriefing', user?.id, currentMonth, currentYear],
+    queryKey: ['adsBriefing', user?.id, currentMonthYear],
     queryFn: async () => {
       const results = await base44.entities.AdsBriefing.filter({
         professional_id: user.id,
-        month: currentMonth,
-        year: currentYear
-      }).limit(1);
+        month_year: currentMonthYear
+      });
       return results[0] || null;
     },
-    enabled: !!user && !loading && !!insights,
+    enabled: !!user && !loading,
     staleTime: 1000 * 60 * 5
   });
 
@@ -86,10 +82,7 @@ export default function MiCampanaPage() {
   const { data: previousBriefings } = useQuery({
     queryKey: ['previousBriefings', user?.id],
     queryFn: async () => {
-      const results = await base44.entities.AdsBriefing.filter({
-        professional_id: user.id
-      }, '-created_date', 12);
-      return results || [];
+      return await base44.entities.AdsBriefing.filter({ professional_id: user.id }, '-created_date', 12) || [];
     },
     enabled: !!user && !loading,
     staleTime: 1000 * 60 * 10
@@ -233,6 +226,7 @@ export default function MiCampanaPage() {
 }
 
 function CampaignStatusCard({ briefing, user }) {
+  const navigate = useNavigate();
   const status = briefing.campaign_status || 'pending';
   
   const statusConfig = {
@@ -297,6 +291,14 @@ function CampaignStatusCard({ briefing, user }) {
                   Día {Math.ceil((new Date() - new Date(briefing.launch_date)) / (1000 * 60 * 60 * 24))} de campaña
                 </p>
               )}
+              {status === 'pending' && (
+                <button
+                  onClick={() => navigate('/mi-campana/briefing')}
+                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+                >
+                  ✏️ Editar briefing
+                </button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -339,8 +341,8 @@ function CampaignStatusCard({ briefing, user }) {
       </Card>
 
       {/* Métricas si está en vivo */}
-      {status === 'live' && briefing.metrics && (
-        <MetricsCard metrics={briefing.metrics} budget={briefing.budget_eur} />
+      {status === 'live' && briefing.campaign_metrics && (
+        <MetricsCard metrics={briefing.campaign_metrics} budget={briefing.included_budget_eur} />
       )}
 
       {/* Creatividades para aprobar */}
