@@ -42,9 +42,7 @@ export default function CookieBanner() {
   useEffect(() => {
     const stored = localStorage.getItem('cookie_consent');
     if (!stored) {
-      // En móvil retrasamos más para no interferir con LCP
-      const delay = window.innerWidth < 768 ? 3000 : 800;
-      setTimeout(() => setVisible(true), delay);
+      setTimeout(() => setVisible(true), 500);
     }
   }, []);
 
