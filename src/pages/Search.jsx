@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { differenceInDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -49,9 +49,9 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 import SearchAutocomplete from "../components/search/SearchAutocomplete";
-import SearchFilters from "../components/search/SearchFilters";
-import MapView from "../components/search/MapView";
 import SavedSearches from "../components/search/SavedSearches";
+const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
+const MapView = lazy(() => import("../components/search/MapView"));
 import { generateSlug } from "../utils/slugUtils";
 
 const useDebounce = (value, delay) => {
@@ -583,13 +583,15 @@ export default function SearchPage() {
                 </Button>
               </div>
               <div className={`${showFilters ? 'block' : 'hidden'}`}>
-                <SearchFilters
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  availableCities={availableCities}
-                  categories={categories}
-                  provinces={PROVINCIAS}
-                />
+                <Suspense fallback={null}>
+                  <SearchFilters
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    availableCities={availableCities}
+                    categories={categories}
+                    provinces={PROVINCIAS}
+                  />
+                </Suspense>
               </div>
             </div>
           )}
@@ -624,13 +626,15 @@ export default function SearchPage() {
               </div>
               {showFilters && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <SearchFilters
-                    filters={filters}
-                    onFilterChange={setFilters}
-                    availableCities={availableCities}
-                    categories={categories}
-                    provinces={PROVINCIAS}
-                  />
+                  <Suspense fallback={null}>
+                    <SearchFilters
+                      filters={filters}
+                      onFilterChange={setFilters}
+                      availableCities={availableCities}
+                      categories={categories}
+                      provinces={PROVINCIAS}
+                    />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -786,7 +790,9 @@ export default function SearchPage() {
                   )}
                 </>
               ) : (
-                <MapView profiles={filteredProfiles} onProfileClick={handleViewProfile} />
+                <Suspense fallback={<div className="h-96 bg-gray-100 rounded-xl animate-pulse" />}>
+                  <MapView profiles={filteredProfiles} onProfileClick={handleViewProfile} />
+                </Suspense>
               )}
             </>
           )}

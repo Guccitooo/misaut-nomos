@@ -4,18 +4,14 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from '@/App.jsx'
 import './globals.css'
 import '@/index.css'
-import './i18n'
-import { initOneSignal } from './services/onesignalService'
 
-// Inicializar OneSignal (solo si está configurado el App ID)
-initOneSignal();
+// i18n: diferido para no bloquear el bundle inicial
+import('./i18n');
 
-// Registrar Service Worker
+// Registrar Service Worker diferido (no bloquea renderizado)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(() => console.log('SW registrado'))
-      .catch(err => console.log('Error registrando SW:', err));
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
 
