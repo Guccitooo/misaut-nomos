@@ -54,39 +54,54 @@ const legalLinks = [
 
 function NewsletterInlineForm() {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { i18n } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !email.includes('@')) return;
-    setStatus('loading');
+    if (!email || !email.includes('@')) {
+      toast.error('Por favor introduce un email válido');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      const { NewsletterSubscriber } = await import('@/api/entities');
+      const { NewsletterSubscriber } = base44.entities;
       const normalizedEmail = email.toLowerCase().trim();
-      const existing = await NewsletterSubscriber.filter({ email: normalizedEmail });
-      
+
+      // Verificar si ya existe (protegido contra undefined)
+      let existing = [];
+      try {
+        const result = await NewsletterSubscriber.filter({ email: normalizedEmail });
+        existing = Array.isArray(result) ? result : [];
+      } catch (err) {
+        console.warn('[Newsletter] Filter falló, asumimos que no existe:', err);
+        existing = [];
+      }
+
       if (existing.length > 0) {
         if (existing[0].status === 'unsubscribed') {
           await NewsletterSubscriber.update(existing[0].id, { status: 'confirmed', confirmed_at: new Date().toISOString() });
           toast.success('¡Te hemos reactivado! Bienvenido de nuevo 🎉');
         } else {
-          toast.info('Ya estás suscrito, ¡gracias por seguir con nosotros! 💌');
+          toast.info('¡Ya estás suscrito! Gracias por seguir con nosotros 💌');
         }
-        setStatus('idle');
         setEmail('');
         return;
       }
 
-      const unsubscribeToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const genToken = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const unsubscribeToken = genToken();
+
       await NewsletterSubscriber.create({
         email: normalizedEmail,
         status: 'confirmed',
         language: i18n.language || 'es',
         source: 'footer',
-        confirmation_token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+        confirmation_token: genToken(),
         unsubscribe_token: unsubscribeToken,
-        confirmed_at: new Date().toISOString()
+        confirmed_at: new Date().toISOString(),
+        user_type_interest: 'ambos',
+        emails_sent: 0
       });
 
       // Enviar email de bienvenida (sin bloquear el UX)
@@ -97,12 +112,12 @@ function NewsletterInlineForm() {
       }).catch(err => console.warn('[Newsletter] Welcome email failed:', err));
 
       toast.success('¡Suscripción confirmada! Revisa tu email 📬');
-      setStatus('idle');
       setEmail('');
     } catch (err) {
       console.error('[Newsletter] Error:', err);
-      toast.error('Error al suscribirte. Inténtalo de nuevo.');
-      setStatus('idle');
+      toast.error('Error al suscribirte. Inténtalo de nuevo en unos segundos.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,15 +129,15 @@ function NewsletterInlineForm() {
         onChange={e => setEmail(e.target.value)}
         placeholder="tu@email.com"
         required
-        disabled={status === 'loading'}
+        disabled={isSubmitting}
         className="flex-1 bg-white/5 border border-white/10 rounded-l-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/30 border-r-0"
       />
       <button 
         type="submit" 
-        disabled={status === 'loading'}
+        disabled={isSubmitting}
         className="bg-white text-gray-900 text-xs font-medium px-3 py-1.5 rounded-r-lg hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap"
       >
-        {status === 'loading' ? '...' : 'Suscribirme'}
+        {isSubmitting ? 'Enviando...' : 'Suscribirme'}
       </button>
     </form>
   );
