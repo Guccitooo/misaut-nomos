@@ -124,7 +124,9 @@ const SidebarContentComponent = React.memo(function SidebarContentComponent({ na
                         )}
                       </button>
                     ) : (
-                      <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}>
+                      <Link to={item.url} className="flex items-center gap-3 px-4 py-3" aria-label={item.title}
+                        onMouseEnter={item.prefetch ? () => item.prefetch() : undefined}
+                      >
                         <item.icon className="w-5 h-5" aria-hidden="true" />
                         <span className="font-medium">{item.title}</span>
                         {item.badge && (
@@ -552,18 +554,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       return [
         { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: Home },
         { title: t('nav.messages'), url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-        { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users },
+        { title: t('nav.my_clients'), url: "/mis-clientes", icon: Users, prefetch: () => import('./pages/MisClientes') },
         { title: t('nav.quotes'), url: "/presupuestos", icon: FileText },
-        { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText },
+        { title: t('nav.invoices'), url: createPageUrl("Invoices"), icon: FileText, prefetch: () => import('./pages/Invoices') },
         { title: t('nav.visibility'), url: "/visibilidad", icon: Eye },
-        // ✅ Plan Ads+ → mostrar "Mi campaña" (solo si userPlan es 'plan_adsplus')
         userPlan === 'plan_adsplus' 
-          ? { title: 'Mi campaña', url: '/mi-campana', icon: Megaphone, badge: null }
+          ? { title: 'Mi campaña', url: '/mi-campana', icon: Megaphone, badge: null, prefetch: () => import('./pages/MiCampana') }
           : null,
         { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
         { title: t('nav.my_subscription'), url: createPageUrl("SubscriptionManagement"), icon: CreditCard },
         { title: 'Invita y gana', url: "/referidos", icon: Gift },
-        { title: t('nav.support'), url: "/soporte", icon: Headphones }
+        { title: t('nav.support'), url: "/soporte", icon: Headphones, prefetch: () => import('./pages/SupportChat') }
       ].filter(Boolean);
     }
     
@@ -575,7 +576,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
         { title: t('nav.my_profile'), url: createPageUrl("MyProfile"), icon: User },
         { title: t('nav.view_plans'), url: createPageUrl("PricingPlans"), icon: CreditCard },
         { title: t('nav.faq'), url: createPageUrl("FAQ"), icon: MessageSquare },
-        { title: t('nav.support'), url: "/soporte", icon: Headphones }
+        { title: t('nav.support'), url: "/soporte", icon: Headphones, prefetch: () => import('./pages/SupportChat') }
       ];
     }
     
@@ -659,6 +660,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         key={item.title}
                         to={item.url}
                         onClick={() => setMobileMenuOpen(false)}
+                        onMouseEnter={item.prefetch ? () => item.prefetch() : undefined}
                         className={`flex items-center gap-3 mx-2 rounded-xl ${
                           location.pathname === item.url
                             ? 'bg-blue-50 text-blue-700'
