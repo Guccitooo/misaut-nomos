@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Megaphone, Clock, CheckCircle, TrendingUp, Eye, MousePointer, UserPlus, Calendar, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import InsightsOnboarding from "@/components/ads/InsightsOnboarding";
+import CreativeReviewCard from "@/components/ads/CreativeReviewCard";
 import { getUserPlan, isAdsPlus } from "@/utils/subscription";
 
 const MONTH_NAMES = [
@@ -227,6 +228,10 @@ export default function MiCampanaPage() {
           <CampaignStatusCard 
             briefing={currentBriefing}
             user={user}
+            onReviewed={() => {
+              // Refrescar datos tras aprobar/pedir cambios
+              window.location.reload();
+            }}
           />
         )}
       </div>
@@ -234,7 +239,7 @@ export default function MiCampanaPage() {
   );
 }
 
-function CampaignStatusCard({ briefing, user }) {
+function CampaignStatusCard({ briefing, user, onReviewed }) {
   const navigate = useNavigate();
   const status = briefing.campaign_status || 'pending';
   
@@ -354,7 +359,7 @@ function CampaignStatusCard({ briefing, user }) {
 
       {/* Creatividades para aprobar */}
       {status === 'in_review' && briefing.ads_creative_urls && (
-        <CreativeReviewCard briefing={briefing} />
+        <CreativeReviewCard briefing={briefing} onReviewed={onReviewed} />
       )}
     </div>
   );
@@ -469,43 +474,5 @@ function MetricCard({ label, value, icon: Icon, highlight }) {
         {value}
       </p>
     </div>
-  );
-}
-
-function CreativeReviewCard({ briefing }) {
-  return (
-    <Card className="border-0 shadow-md">
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">Creatividades propuestas</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {briefing.ads_creative_urls.map((url, idx) => (
-            <img 
-              key={idx} 
-              src={url} 
-              alt={`Creatividad ${idx + 1}`}
-              className="rounded-lg w-full h-48 object-cover"
-            />
-          ))}
-        </div>
-        
-        {briefing.ads_copy && (
-          <div className="p-3 bg-gray-50 rounded-lg mb-4">
-            <p className="text-xs text-gray-500 mb-1 font-medium">COPY DEL ANUNCIO</p>
-            <p className="text-sm text-gray-900">{briefing.ads_copy}</p>
-          </div>
-        )}
-        
-        <div className="flex gap-2">
-          <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium">
-            ✓ Aprobar y lanzar
-          </Button>
-          <Button variant="outline" className="flex-1 border-gray-200 text-gray-700 text-sm font-medium">
-            Pedir cambios
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
