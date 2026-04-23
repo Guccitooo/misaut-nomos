@@ -488,8 +488,8 @@ export default function SubscriptionManagementPage() {
 
               {/* ACCIONES PRINCIPALES */}
               <div className="space-y-4 mb-6">
-                {/* UPGRADE si está en Plan Visibility */}
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_visibility' && (
+                {/* UPGRADE si está en Plan Visibility (y sin regalo Ads+) */}
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_visibility' && !effectivePlan?.isGifted && (
                   <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white">
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -543,8 +543,8 @@ export default function SubscriptionManagementPage() {
                   </div>
                 )}
 
-                {/* DOWNGRADE si está en Plan Ads+ */}
-                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_adsplus' && (
+                {/* DOWNGRADE si está en Plan Ads+ (plan real pagado) */}
+                {(subscription.estado === "activo" || subscription.estado === "en_prueba") && subscription.plan_id === 'plan_adsplus' && !effectivePlan?.isGifted && (
                   <div className="bg-white border border-gray-200 rounded-xl p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>

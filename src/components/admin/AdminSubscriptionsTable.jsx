@@ -83,7 +83,15 @@ export default function AdminSubscriptionsTable({ subscriptions, users }) {
                 return (
                   <tr key={sub.id} className={`hover:bg-gray-50 ${expiringSoon ? "bg-orange-50" : ""}`}>
                     <td className="px-4 py-3 text-xs text-gray-700">{userEmail}</td>
-                    <td className="px-4 py-3 text-xs font-medium text-gray-900">{sub.plan_nombre}</td>
+                    <td className="px-4 py-3 text-xs font-medium text-gray-900">
+                      {sub.plan_nombre}
+                      {sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > new Date() && (
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          <Gift className="w-2.5 h-2.5" />
+                          regalo: {sub.gifted_plan_name || sub.gifted_plan_id} hasta {new Date(sub.gifted_until).toLocaleDateString('es-ES', {day:'numeric', month:'numeric'})}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs text-gray-600">{sub.plan_precio ? `${sub.plan_precio}€/mes` : "—"}</td>
                     <td className="px-4 py-3">{getStatusBadge(sub.estado)}</td>
                     <td className="px-4 py-3 text-xs text-gray-500">{new Date(sub.fecha_inicio).toLocaleDateString("es-ES")}</td>

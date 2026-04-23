@@ -330,10 +330,14 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       // CAMBIO: cache extendido a 5 minutos (antes 60s) — el perfil no cambia con frecuencia
       const cached = sessionStorage.getItem('current_user');
       if (cached && !isPostPayment) {
-        const { user: cachedUser, profile: cachedProfile, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 300000) {
+        const parsed = JSON.parse(cached);
+        const { user: cachedUser, profile: cachedProfile, plan: cachedPlan, timestamp } = parsed;
+        // Solo usar cache si tiene el campo "plan" (caches viejos sin plan deben recargarse)
+        const hasPlanField = 'plan' in parsed;
+        if (hasPlanField && Date.now() - timestamp < 300000) {
           setUser(cachedUser);
           setProfessionalProfile(cachedProfile);
+          setUserPlan(cachedPlan || null);
           setLoadingUser(false);
           return;
         }
