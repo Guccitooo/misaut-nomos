@@ -150,6 +150,7 @@ export default function AdminAdsBriefings({ users = [] }) {
       {selectedBriefing && (
         <CampaignManageModal
           briefing={selectedBriefing}
+          users={users}
           onClose={() => setSelectedBriefing(null)}
           onUpdated={() => { refetch(); setSelectedBriefing(null); }}
         />
