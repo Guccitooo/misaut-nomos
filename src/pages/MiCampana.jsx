@@ -34,11 +34,19 @@ export default function MiCampanaPage() {
       }
       setUser(currentUser);
       
-      const plan = await getUserPlan(currentUser.id);
+      let plan = null;
+      try {
+        plan = await getUserPlan(currentUser.id);
+      } catch (planError) {
+        console.error("Error cargando plan:", planError);
+        toast.error(`Error al verificar tu suscripción: ${planError?.message || planError}`);
+        setLoading(false);
+        return;
+      }
       setUserPlan(plan);
       
       if (!isAdsPlus(plan)) {
-        toast.error("Necesitas el Plan Ads+ para acceder");
+        toast.error(`Necesitas el Plan Ads+ para acceder (plan actual: ${plan || 'ninguno'})`);
         navigate("/precios");
         return;
       }
@@ -46,6 +54,7 @@ export default function MiCampanaPage() {
       setLoading(false);
     } catch (error) {
       console.error("Error loading user:", error);
+      toast.error(`Error al cargar la página: ${error?.message || error}`);
       setLoading(false);
     }
   };
@@ -291,14 +300,12 @@ function CampaignStatusCard({ briefing, user }) {
                   Día {Math.ceil((new Date() - new Date(briefing.launch_date)) / (1000 * 60 * 60 * 24))} de campaña
                 </p>
               )}
-              {status === 'pending' && (
-                <button
-                  onClick={() => navigate('/mi-campana/briefing')}
-                  className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-800 underline"
-                >
-                  ✏️ Editar briefing
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/mi-campana/briefing')}
+                className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+              >
+                ✏️ Editar mi briefing del mes
+              </button>
             </div>
           </div>
         </CardContent>

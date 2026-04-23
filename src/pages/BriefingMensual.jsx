@@ -97,12 +97,17 @@ export default function BriefingMensualPage() {
       toast.error("Selecciona una red y un objetivo");
       return;
     }
+
+    if (!user) {
+      toast.error("Error: no hay sesión de usuario. Recarga la página.");
+      return;
+    }
     
     setSaving(true);
     
     try {
       const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-      const professionalName = professionalProfile?.business_name || user.full_name || user.email;
+      const professionalName = professionalProfile?.business_name || user?.full_name || user?.email;
 
       const briefingData = {
         professional_id: user.id,
@@ -110,12 +115,12 @@ export default function BriefingMensualPage() {
         month_year: currentMonthYear,
         platform: formData.platform,
         goal: formData.goal,
-        top_services: formData.top_services,
-        service_area: formData.service_area,
-        special_offer: formData.special_offer,
-        images_provided: formData.images_provided,
-        best_testimonials: formData.best_testimonials,
-        additional_notes: formData.additional_notes,
+        top_services: Array.isArray(formData.top_services) ? formData.top_services : [],
+        service_area: formData.service_area || '',
+        special_offer: formData.special_offer || '',
+        images_provided: Array.isArray(formData.images_provided) ? formData.images_provided : [],
+        best_testimonials: formData.best_testimonials || '',
+        additional_notes: formData.additional_notes || '',
         included_budget_eur: 30,
         status: 'submitted',
         campaign_status: 'pending',
@@ -166,7 +171,7 @@ export default function BriefingMensualPage() {
       navigate("/mi-campana");
     } catch (error) {
       console.error("Error submitting briefing:", error);
-      toast.error("Error al enviar el briefing");
+      toast.error(`Error al guardar el briefing: ${error?.message || JSON.stringify(error)}`);
     } finally {
       setSaving(false);
     }
@@ -287,6 +292,12 @@ export default function BriefingMensualPage() {
           <p className="text-sm text-gray-500 mt-1">
             {isEditMode ? "Modifica los datos de tu campaña de este mes" : "Elige dónde y cómo quieres anunciarte este mes"}
           </p>
+          {isEditMode && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              ✏️ <strong>Editando tu briefing de {new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' })}.</strong>{" "}
+              Puedes actualizar cualquier campo antes del día 5 del mes.
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
