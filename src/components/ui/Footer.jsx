@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Mail, Instagram, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
 
@@ -62,36 +63,48 @@ function NewsletterInlineForm() {
     setStatus('loading');
     try {
       const { NewsletterSubscriber } = await import('@/api/entities');
-      const existing = await NewsletterSubscriber.filter({ email: email.toLowerCase() }).limit(1);
+      const normalizedEmail = email.toLowerCase().trim();
+      const existing = await NewsletterSubscriber.filter({ email: normalizedEmail });
+      
       if (existing.length > 0) {
         if (existing[0].status === 'unsubscribed') {
           await NewsletterSubscriber.update(existing[0].id, { status: 'confirmed', confirmed_at: new Date().toISOString() });
+          toast.success('¡Te hemos reactivado! Bienvenido de nuevo 🎉');
+        } else {
+          toast.info('Ya estás suscrito, ¡gracias por seguir con nosotros! 💌');
         }
-        setStatus('success');
+        setStatus('idle');
+        setEmail('');
         return;
       }
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+      const unsubscribeToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
       await NewsletterSubscriber.create({
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         status: 'confirmed',
         language: i18n.language || 'es',
         source: 'footer',
-        confirmation_token: token,
-        unsubscribe_token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+        confirmation_token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+        unsubscribe_token: unsubscribeToken,
         confirmed_at: new Date().toISOString()
       });
-      setStatus('success');
-      setEmail('');
-    } catch { setStatus('idle'); }
-  };
 
-  if (status === 'success') {
-    return (
-      <div className="text-xs text-green-400 flex items-center gap-1.5 whitespace-nowrap">
-        <Check className="w-3.5 h-3.5" />¡Gracias! Revisa tu email.
-      </div>
-    );
-  }
+      // Enviar email de bienvenida (sin bloquear el UX)
+      base44.functions.invoke('sendNewsletterWelcome', {
+        email: normalizedEmail,
+        language: i18n.language || 'es',
+        unsubToken: unsubscribeToken
+      }).catch(err => console.warn('[Newsletter] Welcome email failed:', err));
+
+      toast.success('¡Suscripción confirmada! Revisa tu email 📬');
+      setStatus('idle');
+      setEmail('');
+    } catch (err) {
+      console.error('[Newsletter] Error:', err);
+      toast.error('Error al suscribirte. Inténtalo de nuevo.');
+      setStatus('idle');
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full md:w-auto md:min-w-[300px]">

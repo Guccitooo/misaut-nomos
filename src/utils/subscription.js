@@ -1,5 +1,6 @@
 /**
- * Helpers para gestionar suscripciones y detectar planes regalados
+ * Helpers para gestionar suscripciones y detectar planes regalados.
+ * Para nueva lógica de features, usar utils/planHelpers.js
  */
 
 export async function getEffectivePlan(userId) {
@@ -7,27 +8,26 @@ export async function getEffectivePlan(userId) {
   
   try {
     const { base44 } = await import('@/api/base44Client');
-    const subs = (await base44.entities.Subscription.filter({
-      user_id: userId
-    })) || [];
+    const result = await base44.entities.Subscription.filter({ user_id: userId });
+    const subs = Array.isArray(result) ? result : [];
     
-    if (!Array.isArray(subs) || subs.length === 0) return null;
+    if (subs.length === 0) return null;
     
     const sub = subs[0];
     if (!sub) return null;
     
     // Verificar que la suscripción está activa
     const estado = sub.estado?.toLowerCase();
-    const fechaExp = new Date(sub.fecha_expiracion);
+    const fechaExp = sub.fecha_expiracion ? new Date(sub.fecha_expiracion) : null;
     const now = new Date();
     
-    const isActive = (estado === 'activo' || estado === 'en_prueba') && fechaExp >= now;
-    if (!isActive) return null;
+    const isActive = fechaExp && (estado === 'activo' || estado === 'en_prueba') && fechaExp >= now;
+    const isCanceledButValid = fechaExp && (estado === 'cancelado') && fechaExp >= now;
     
-    const now_date = new Date();
+    if (!isActive && !isCanceledButValid) return null;
     
     // Si tiene regalo activo
-    if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now_date) {
+    if (sub.gifted_plan_id && sub.gifted_until && new Date(sub.gifted_until) > now) {
       return {
         planId: sub.gifted_plan_id,
         planName: sub.gifted_plan_name || sub.gifted_plan_id,
