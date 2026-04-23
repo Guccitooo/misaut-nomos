@@ -5,8 +5,7 @@ import App from '@/App.jsx'
 import './globals.css'
 import '@/index.css'
 
-// i18n: diferido para no bloquear el bundle inicial
-import('./i18n');
+import './i18n';
 
 // Registrar Service Worker diferido (no bloquea renderizado)
 if ('serviceWorker' in navigator) {
