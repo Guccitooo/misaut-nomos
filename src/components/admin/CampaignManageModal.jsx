@@ -39,7 +39,7 @@ function formatMonthYear(my) {
   return `${MONTH_NAMES[parseInt(month) - 1]} ${year}`;
 }
 
-export default function CampaignManageModal({ briefing, users, onClose, onUpdated }) {
+export default function CampaignManageModal({ briefing, users = [], onClose, onUpdated }) {
   const [activeTab, setActiveTab] = useState('briefing');
   const [adminUser, setAdminUser] = useState(null);
 
