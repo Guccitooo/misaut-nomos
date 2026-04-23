@@ -66,7 +66,7 @@ export default function MiCampanaPage() {
   const { data: insights, isLoading: loadingInsights } = useQuery({
     queryKey: ['clientInsights', user?.id],
     queryFn: async () => {
-      const results = await base44.entities.ClientInsights.filter({ user_id: user.id });
+      const results = await base44.entities.ClientInsights.filter({ professional_id: user.id });
       return results[0] || null;
     },
     enabled: !!user && !loading,

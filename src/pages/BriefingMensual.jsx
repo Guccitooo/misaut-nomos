@@ -52,7 +52,7 @@ export default function BriefingMensualPage() {
 
       const [profiles, insightsData, existingBriefings] = await Promise.all([
         base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id }),
-        base44.entities.ClientInsights.filter({ user_id: currentUser.id }),
+        base44.entities.ClientInsights.filter({ professional_id: currentUser.id }),
         base44.entities.AdsBriefing.filter({ professional_id: currentUser.id, month_year: currentMonthYear })
       ]);
       

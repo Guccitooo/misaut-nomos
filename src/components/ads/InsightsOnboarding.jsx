@@ -78,45 +78,54 @@ export default function InsightsOnboarding({ onComplete, user }) {
   };
 
   const handleSubmit = async () => {
+    if (!user?.id) {
+      toast.error("Error: no hay sesión de usuario. Recarga la página.");
+      return;
+    }
     setSaving(true);
     
     try {
+      // Mapear valores del formulario a los enums de la entidad ClientInsights
+      const clientTypeMap = { particulares: 'particular', empresas: 'company', ambos: 'both' };
+      const genderMap = { hombres: 'men', mujeres: 'women', ambos: 'both' };
+      const geoMap = { local: 'local_city', provincial: 'provincial', regional: 'regional', nacional: 'national', online: 'online_anywhere' };
+      const goalMap = { new_clients: 'new_clients', loyalty: 'retain_existing', increase_ticket: 'increase_ticket', expand_zone: 'expand_geography', new_services: 'new_services' };
+
       await base44.entities.ClientInsights.create({
-        user_id: user.id,
-        professional_profile_id: user.id,
+        professional_id: user.id,   // campo requerido
         onboarding_completed: true,
         completed_at: new Date().toISOString(),
-        
+        updated_at: new Date().toISOString(),
+
         // Paso 1
-        client_type: formData.client_type,
-        average_ticket: formData.average_ticket,
-        monthly_revenue: formData.monthly_revenue,
-        
+        client_type: clientTypeMap[formData.client_type] || 'both',
+        average_ticket_range: formData.average_ticket || '',
+        monthly_revenue_range: formData.monthly_revenue || '',
+
         // Paso 2
-        ideal_age_ranges: formData.ideal_age_ranges,
-        ideal_gender: formData.ideal_gender,
-        ideal_interests: formData.ideal_interests.join(", "),
-        
+        client_age_range: formData.ideal_age_ranges,
+        client_gender: genderMap[formData.ideal_gender] || 'both',
+        client_interests: formData.ideal_interests,
+
         // Paso 3
-        client_social_networks: formData.client_social_networks,
-        geographic_scope: formData.geographic_scope,
-        
+        preferred_platforms: formData.client_social_networks,
+        service_area_type: geoMap[formData.geographic_scope] || 'local_city',
+
         // Paso 4
-        current_channels: formData.current_channels,
+        client_sources_now: formData.current_channels,
         biggest_challenge: formData.biggest_challenge,
-        
+
         // Paso 5
-        six_month_goal: formData.six_month_goal,
-        differentiation: formData.differentiation,
-        
-        updated_at: new Date().toISOString()
+        business_goal_next_6m: goalMap[formData.six_month_goal] || 'new_clients',
+        unique_selling_point: formData.differentiation,
       });
       
+      console.log('[InsightsOnboarding] ✅ ClientInsights creado para professional_id:', user.id);
       toast.success("✅ Perfil de cliente guardado");
       onComplete();
     } catch (error) {
       console.error("Error saving insights:", error);
-      toast.error("Error al guardar. Inténtalo de nuevo.");
+      toast.error(`Error al guardar: ${error?.message || 'Inténtalo de nuevo.'}`);
     } finally {
       setSaving(false);
     }
