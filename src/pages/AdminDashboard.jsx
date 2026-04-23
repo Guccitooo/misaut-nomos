@@ -14,7 +14,7 @@ import AdminMetrics from "@/components/admin/AdminMetrics";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import VerificationRequests from "@/components/admin/VerificationRequests";
 import AdminPlanAuditLog from "@/components/admin/AdminPlanAuditLog";
-import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings";
+import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings.jsx";
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
