@@ -865,3 +865,32 @@ img[width="32"][height="32"] {
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL: Kill ALL Radix Select animations on mobile
+   Bulletproof override — works regardless of Tailwind purge or
+   component-level class order. Desktop (> 768px) unchanged.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  [data-radix-select-content],
+  [data-radix-popper-content-wrapper],
+  [data-radix-select-viewport],
+  [role="listbox"] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  [data-radix-select-content][data-state="open"],
+  [data-radix-select-content][data-state="closed"],
+  [data-radix-popper-content-wrapper][data-state="open"],
+  [data-radix-popper-content-wrapper][data-state="closed"] {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  [data-radix-select-item] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
