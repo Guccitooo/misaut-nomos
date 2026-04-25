@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
         const plan = plans[0] || { nombre: 'Plan Mensual', precio: 33 };
 
         // ✅ CREAR/ACTUALIZAR SUSCRIPCIÓN EN BD
+        // IMPORTANTE: no sobreescribir campos de regalo (gifted_*) — solo actualizar campos de Stripe
         const subscriptionData = {
             user_id: user.id,
             plan_id: planId,
@@ -135,14 +136,17 @@ Deno.serve(async (req) => {
             metodo_pago: 'stripe',
             stripe_subscription_id: stripeSubscription.id,
             stripe_customer_id: stripeCustomer.id
+            // ⚠️ No incluir gifted_* aquí para no borrarlos
         };
 
         const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: user.id });
         
         let subscriptionId;
+        let existingSub = null;
         if (existingSubs.length > 0) {
-            await base44.asServiceRole.entities.Subscription.update(existingSubs[0].id, subscriptionData);
-            subscriptionId = existingSubs[0].id;
+            existingSub = existingSubs[0];
+            await base44.asServiceRole.entities.Subscription.update(existingSub.id, subscriptionData);
+            subscriptionId = existingSub.id;
             console.log('✅ Suscripción actualizada en BD:', subscriptionId);
         } else {
             const newSub = await base44.asServiceRole.entities.Subscription.create(subscriptionData);
@@ -150,10 +154,20 @@ Deno.serve(async (req) => {
             console.log('✅ Suscripción creada en BD:', subscriptionId);
         }
 
+        // ✅ COMPROBAR SI HAY REGALO ACTIVO — tiene prioridad sobre el estado de Stripe
+        const now = new Date();
+        const hasActiveGift = existingSub?.gifted_plan_id && 
+                              existingSub?.gifted_until && 
+                              new Date(existingSub.gifted_until) > now;
+        
+        if (hasActiveGift) {
+            console.log('🎁 Regalo activo detectado:', existingSub.gifted_plan_id, '- hasta:', existingSub.gifted_until);
+        }
+
         // ✅ ACTUALIZAR USUARIO
         const userUpdateData = {
             user_type: 'professionnel',
-            subscription_status: estado,
+            subscription_status: hasActiveGift ? 'activo' : estado,
             subscription_start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString().split('T')[0],
             subscription_end_date: new Date(stripeSubscription.current_period_end * 1000).toISOString().split('T')[0]
         };
@@ -171,16 +185,16 @@ Deno.serve(async (req) => {
         let profileVisible = false;
         if (profiles.length > 0) {
             const profile = profiles[0];
-            // Solo visible si: onboarding completado + suscripción activa (no cancelada)
-            const shouldBeVisible = profile.onboarding_completed === true && isActive && !isCanceledAtPeriodEnd;
+            // Visible si: onboarding completado + (suscripción activa en Stripe O regalo activo)
+            const shouldBeVisible = profile.onboarding_completed === true && (isActive || hasActiveGift);
             
             await base44.asServiceRole.entities.ProfessionalProfile.update(profile.id, {
                 visible_en_busqueda: shouldBeVisible,
-                estado_perfil: isActive && !isCanceledAtPeriodEnd ? 'activo' : 'inactivo'
+                estado_perfil: (isActive || hasActiveGift) ? 'activo' : 'inactivo'
             });
             
             profileVisible = shouldBeVisible;
-            console.log('✅ Perfil actualizado - Visible:', shouldBeVisible, '- Cancelado:', isCanceledAtPeriodEnd);
+            console.log('✅ Perfil actualizado - Visible:', shouldBeVisible, '- Gift activo:', hasActiveGift);
         }
 
         console.log('✅ ========== SYNC COMPLETADO ==========');

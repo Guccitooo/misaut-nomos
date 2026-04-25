@@ -20,8 +20,23 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Subscription.update(sub.id, {
         gifted_plan_id: '',
         gifted_plan_name: '',
-        gifted_until: null
+        gifted_until: null,
+        gifted_by_admin_id: '',
+        gift_reason: ''
       });
+
+      // Si la suscripción base está cancelada/finalizada, desactivar el perfil
+      const isBaseActive = ['activo', 'en_prueba'].includes(sub.estado);
+      if (!isBaseActive) {
+        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: sub.user_id });
+        if (profiles.length > 0) {
+          await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+            visible_en_busqueda: false,
+            estado_perfil: 'inactivo'
+          });
+          console.log(`[expireGiftedPlans] ✅ Perfil desactivado para user=${sub.user_id}`);
+        }
+      }
 
       console.log(`[expireGiftedPlans] ✅ Regalo expirado: sub=${sub.id}, user=${sub.user_id}`);
 
