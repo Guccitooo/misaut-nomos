@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useAppData } from "@/lib/AppContext";
@@ -59,13 +59,26 @@ export default function FavoritesPage() {
     [rawFavorites, profiles]
   );
 
-  const handleRemoveFavorite = async (favoriteId) => {
-    try {
-      await base44.entities.Favorite.delete(favoriteId);
-      queryClient.invalidateQueries(['favorites', user?.id]);
-    } catch (error) {
-      console.error("Error removing favorite:", error);
-    }
+  const removeFavoriteMutation = useMutation({
+    mutationFn: (favoriteId) => base44.entities.Favorite.delete(favoriteId),
+    onMutate: async (favoriteId) => {
+      await queryClient.cancelQueries({ queryKey: ['favorites', user?.id] });
+      const previous = queryClient.getQueryData(['favorites', user?.id]);
+      queryClient.setQueryData(['favorites', user?.id], (old = []) =>
+        old.filter(f => f.id !== favoriteId)
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      queryClient.setQueryData(['favorites', user?.id], context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
+    },
+  });
+
+  const handleRemoveFavorite = (favoriteId) => {
+    removeFavoriteMutation.mutate(favoriteId);
   };
 
   const handleStartChat = (professionalId, professionalName) => {

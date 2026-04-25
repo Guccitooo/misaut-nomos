@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import ProfilePictureUpload from "../components/profile/ProfilePictureUpload";
@@ -849,20 +850,19 @@ export default function MyProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm">Ciudad</Label>
-                    <Select
-                      value={userData.city || ""}
-                      onValueChange={(value) => setUserData({ ...userData, city: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Selecciona tu ciudad" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
+                    <div className="mt-1">
+                      <MobileSelect
+                        value={userData.city || ""}
+                        onValueChange={(value) => setUserData({ ...userData, city: value })}
+                        placeholder="Selecciona tu ciudad"
+                        disabled={!isEditing}
+                        label="Ciudad"
+                      >
                         {Object.values(ciudadesPorProvincia).flat().sort().map((ciudad) => (
                           <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </MobileSelect>
+                    </div>
                   </div>
                 </div>
 
@@ -1342,24 +1342,19 @@ export default function MyProfilePage() {
                           {profileData.provincia ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           {t('province')}
                         </Label>
-                        <Select
-                          value={profileData.provincia}
-                          onValueChange={(value) => setProfileData({
-                            ...profileData,
-                            provincia: value,
-                            ciudad: ""
-                          })}
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder={t('selectProvincePlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
+                        <div className="mt-1">
+                          <MobileSelect
+                            value={profileData.provincia}
+                            onValueChange={(value) => setProfileData({ ...profileData, provincia: value, ciudad: "" })}
+                            placeholder={t('selectProvincePlaceholder')}
+                            disabled={!isEditing}
+                            label="Provincia"
+                          >
                             {provincias.map((prov) => (
                               <SelectItem key={prov} value={prov}>{prov}</SelectItem>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </MobileSelect>
+                        </div>
                       </div>
 
                       <div>
@@ -1367,20 +1362,19 @@ export default function MyProfilePage() {
                           {profileData.ciudad ? <CheckCircle className="w-4 h-4 text-green-600" /> : null}
                           {t('city')}
                         </Label>
-                        <Select
-                          value={profileData.ciudad}
-                          onValueChange={(value) => setProfileData({ ...profileData, ciudad: value })}
-                          disabled={!isEditing || !profileData.provincia}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder={profileData.provincia ? t('selectCityPlaceholder') : t('firstChooseProvince')} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
-                            {profileData.provincia && ciudadesPorProvincia[profileData.provincia]?.map((ciudad) => (
+                        <div className="mt-1">
+                          <MobileSelect
+                            value={profileData.ciudad}
+                            onValueChange={(value) => setProfileData({ ...profileData, ciudad: value })}
+                            placeholder={profileData.provincia ? t('selectCityPlaceholder') : t('firstChooseProvince')}
+                            disabled={!isEditing || !profileData.provincia}
+                            label="Ciudad"
+                          >
+                            {(profileData.provincia ? ciudadesPorProvincia[profileData.provincia] || [] : []).map((ciudad) => (
                               <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </MobileSelect>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
