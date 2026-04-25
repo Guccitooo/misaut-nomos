@@ -516,8 +516,8 @@ export default function SearchPage() {
                         setFilters(f => ({ ...f, category: name }));
                         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="flex items-center gap-2 text-white border border-white/20 flex-shrink-0 active:bg-white/20"
-                      style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 16px', fontSize: '14px', fontWeight: 500, minHeight: '44px', touchAction: 'manipulation', whiteSpace: 'nowrap' }}
+                      className="flex items-center gap-2 text-white border border-white/20 flex-shrink-0 md:hover:bg-white/20 md:active:bg-white/20"
+                      style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 16px', fontSize: '14px', fontWeight: 500, minHeight: '44px', touchAction: 'manipulation', whiteSpace: 'nowrap', WebkitTapHighlightColor: 'transparent', transition: 'none' }}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
                       {name}
@@ -596,10 +596,11 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* Filtros visita sin login — siempre visible pero compacto */}
+          {/* Filtros visita sin login */}
           {!user && (
             <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100" style={{ position: 'relative', zIndex: 10 }}>
-              <div className="flex gap-2 items-center flex-wrap">
+              {/* Toggle button — desktop only */}
+              <div className="hidden md:flex gap-2 items-center flex-wrap mb-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -610,7 +611,6 @@ export default function SearchPage() {
                   Filtros avanzados
                   {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full" />}
                 </Button>
-                {/* chips activos */}
                 {filters.category !== "all" && (
                   <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">
                     {filters.category}
@@ -624,8 +624,10 @@ export default function SearchPage() {
                   </span>
                 )}
               </div>
+
+              {/* Desktop: toggled by button above */}
               {showFilters && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="hidden md:block">
                   <Suspense fallback={null}>
                     <SearchFilters
                       filters={filters}
@@ -637,6 +639,20 @@ export default function SearchPage() {
                   </Suspense>
                 </div>
               )}
+
+              {/* Mobile: always visible, no toggle, no "Filtros avanzados" popover button */}
+              <div className="md:hidden">
+                <Suspense fallback={null}>
+                  <SearchFilters
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    availableCities={availableCities}
+                    categories={categories}
+                    provinces={PROVINCIAS}
+                    isMobile={true}
+                  />
+                </Suspense>
+              </div>
             </div>
           )}
 

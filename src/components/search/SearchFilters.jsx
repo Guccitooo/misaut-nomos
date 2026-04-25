@@ -16,7 +16,8 @@ export default function SearchFilters({
   onFilterChange,
   availableCities,
   categories,
-  provinces
+  provinces,
+  isMobile = false
 }) {
   const { t } = useLanguage();
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -72,7 +73,8 @@ export default function SearchFilters({
           </SelectContent>
         </Select>
 
-        <Popover open={showAdvanced} onOpenChange={setShowAdvanced}>
+        {/* "Filtros avanzados" popover — hidden on mobile (always-visible layout handles it) */}
+        {!isMobile && <Popover open={showAdvanced} onOpenChange={setShowAdvanced}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -145,7 +147,7 @@ export default function SearchFilters({
               </Button>
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover>}
 
         {activeFiltersCount > 0 && (
           <Button
