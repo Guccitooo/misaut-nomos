@@ -31,7 +31,7 @@ export default function SearchFilters({
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-slot="search-filters">
       <div className="flex flex-col md:flex-row gap-2.5 items-center">
         <Select value={filters.category} onValueChange={(val) => onFilterChange({ ...filters, category: val })}>
           <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[220px] font-medium hover:border-blue-300 transition-colors">

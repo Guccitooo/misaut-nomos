@@ -839,3 +839,29 @@ img[width="32"][height="32"] {
   font-family: 'Inter';
   font-display: swap;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE SEARCH FILTERS — FIX 1: readable placeholder text
+   FIX 2: no animation on select dropdowns
+   Scoped to max-width: 768px ONLY — desktop unchanged
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* FIX 1 — Dark, readable text in the filter select triggers */
+  [data-slot="search-filters"] [data-radix-select-trigger],
+  [data-slot="search-filters"] button[role="combobox"] {
+    color: #334155 !important;
+  }
+  /* Placeholder state (Radix sets data-placeholder on the span inside SelectValue) */
+  [data-slot="search-filters"] [data-placeholder],
+  [data-slot="search-filters"] span[data-placeholder] {
+    color: #334155 !important;
+    opacity: 1 !important;
+  }
+
+  /* FIX 2 — No open/close animation on SelectContent on mobile */
+  [data-slot="search-filters"] [data-radix-select-content],
+  [data-slot="search-filters"] [role="listbox"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
