@@ -7,6 +7,14 @@ import '@/index.css'
 
 import './i18n';
 
+// ── Dark mode: sync with system preference ──────────────────────────────────
+const applyColorScheme = (dark) => {
+  document.documentElement.classList.toggle('dark', dark);
+};
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+applyColorScheme(mq.matches);
+mq.addEventListener('change', e => applyColorScheme(e.matches));
+
 // Registrar Service Worker diferido (no bloquea renderizado)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

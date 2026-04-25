@@ -1,11 +1,16 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useScrollRestore } from "@/hooks/useScrollRestore";
 
 // Transición nativa-like: fade suave entre páginas
+// Also restores scroll position per tab so bottom-nav switches feel native.
 export default function PageTransitions({ children }) {
   const location = useLocation();
   const containerRef = useRef(null);
   const prevPathRef = useRef(location.pathname);
+
+  // Scroll position preservation across bottom-nav tabs
+  useScrollRestore();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -13,9 +18,6 @@ export default function PageTransitions({ children }) {
     if (prevPathRef.current === location.pathname) return;
 
     prevPathRef.current = location.pathname;
-
-    // Scroll al top en cada navegación
-    window.scrollTo({ top: 0, behavior: "instant" });
 
     // Fade in
     el.style.opacity = "0";

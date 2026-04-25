@@ -613,9 +613,27 @@ export default function MessagesPage() {
 
       setNewMessage("");
       setAttachments([]);
-      await base44.entities.Message.create(msgData);
-      await loadMessages();
+
+      // Optimistic UI: show message instantly before server confirms
+      const optimisticId = `optimistic_${Date.now()}`;
+      const optimisticMsg = {
+        ...msgData,
+        id: optimisticId,
+        created_date: new Date().toISOString(),
+        _optimistic: true,
+      };
+      setAllMessages(prev => [...prev, optimisticMsg]);
       scrollToBottom(true);
+
+      try {
+        await base44.entities.Message.create(msgData);
+        await loadMessages();
+        scrollToBottom(true);
+      } catch (err) {
+        // Roll back optimistic message on error
+        setAllMessages(prev => prev.filter(m => m.id !== optimisticId));
+        throw err;
+      }
 
       // Push + notificación en BD al destinatario
       const senderName = isProfessional
@@ -778,31 +796,37 @@ export default function MessagesPage() {
       toast.error("Valora todos los aspectos"); return;
     }
     const avg = (reviewData.rapidez + reviewData.comunicacion + reviewData.calidad + reviewData.precio_satisfaccion) / 4;
-    await base44.entities.Review.create({
-      ...reviewData, rating: avg,
-      professional_id: selectedOtherUserId,
-      client_id: user.id,
-      client_name: user.full_name || user.email,
-      conversation_id: selectedConvId,
-      is_verified: true, is_reported: false
-    });
-    // Update professional average
-    const allReviews = await base44.entities.Review.filter({ professional_id: selectedOtherUserId });
-    const newAvg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
-    const [prof] = await base44.entities.ProfessionalProfile.filter({ user_id: selectedOtherUserId });
-    if (prof) await base44.entities.ProfessionalProfile.update(prof.id, { average_rating: newAvg, total_reviews: allReviews.length });
-    // Notificar al profesional de la nueva reseña
-    notifyUser({
-      userId: selectedOtherUserId,
-      type: 'new_review',
-      ...pushTemplates.newReview(user.full_name || 'Un cliente', Math.round(avg)),
-      data: { type: 'new_review' },
-    });
 
+    // Optimistic UI: close dialog and mark as reviewed immediately
     setExistingReview(true);
     setShowReviewDialog(false);
     setReviewData({ rapidez: 0, comunicacion: 0, calidad: 0, precio_satisfaccion: 0, comment: "" });
     toast.success("¡Valoración publicada!");
+
+    try {
+      await base44.entities.Review.create({
+        ...reviewData, rating: avg,
+        professional_id: selectedOtherUserId,
+        client_id: user.id,
+        client_name: user.full_name || user.email,
+        conversation_id: selectedConvId,
+        is_verified: true, is_reported: false
+      });
+      // Update professional average in background
+      base44.entities.Review.filter({ professional_id: selectedOtherUserId }).then(async allReviews => {
+        const newAvg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
+        const [prof] = await base44.entities.ProfessionalProfile.filter({ user_id: selectedOtherUserId });
+        if (prof) await base44.entities.ProfessionalProfile.update(prof.id, { average_rating: newAvg, total_reviews: allReviews.length });
+      }).catch(() => {});
+      notifyUser({
+        userId: selectedOtherUserId,
+        type: 'new_review',
+        ...pushTemplates.newReview(user.full_name || 'Un cliente', Math.round(avg)),
+        data: { type: 'new_review' },
+      });
+    } catch {
+      // Silently fail — toast already shown, review UI already closed
+    }
   };
 
   const canLeaveReview = () => {
