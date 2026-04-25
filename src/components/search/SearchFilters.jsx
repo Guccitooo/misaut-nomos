@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Filter, Star, Clock } from "lucide-react";
+import { Filter, Star, Clock, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -33,45 +33,101 @@ export default function SearchFilters({
   return (
     <div className="space-y-3" data-slot="search-filters">
       <div className="flex flex-col md:flex-row gap-2.5 items-center">
-        <Select value={filters.category} onValueChange={(val) => onFilterChange({ ...filters, category: val })}>
-          <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[220px] font-medium hover:border-blue-300 transition-colors">
-            <SelectValue placeholder={t('allCategories')}>
-              {filters.category === "all" ? t('allCategories') : (t(filters.category) || filters.category)}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            <SelectItem value="all">{t('allCategories')}</SelectItem>
+
+        {/* ── CATEGORÍA ── */}
+        {/* Desktop: Radix Select */}
+        <div className="hidden md:block w-full md:w-[220px]">
+          <Select value={filters.category} onValueChange={(val) => onFilterChange({ ...filters, category: val })}>
+            <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg font-medium hover:border-blue-300 transition-colors">
+              <SelectValue placeholder={t('allCategories')}>
+                {filters.category === "all" ? t('allCategories') : (t(filters.category) || filters.category)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">{t('allCategories')}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Mobile: native <select> — iOS system picker, zero animation */}
+        <div className="md:hidden w-full relative">
+          <select
+            value={filters.category}
+            onChange={(e) => onFilterChange({ ...filters, category: e.target.value })}
+            className="w-full appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-3 pr-10 text-slate-900 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">{t('allCategories')}</option>
             {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.name}>{t(cat.name) || cat.name}</SelectItem>
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+        </div>
 
-        <Select value={filters.provincia} onValueChange={(val) => {
-          onFilterChange({ ...filters, provincia: val, ciudad: "all" });
-        }}>
-          <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors">
-            <SelectValue placeholder={t('allProvinces')} />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            <SelectItem value="all">{t('allProvinces')}</SelectItem>
+        {/* ── PROVINCIA ── */}
+        {/* Desktop: Radix Select */}
+        <div className="hidden md:block w-full md:w-[200px]">
+          <Select value={filters.provincia} onValueChange={(val) => {
+            onFilterChange({ ...filters, provincia: val, ciudad: "all" });
+          }}>
+            <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg font-medium hover:border-blue-300 transition-colors">
+              <SelectValue placeholder={t('allProvinces')} />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">{t('allProvinces')}</SelectItem>
+              {provinces.map((prov) => (
+                <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Mobile: native <select> */}
+        <div className="md:hidden w-full relative">
+          <select
+            value={filters.provincia}
+            onChange={(e) => onFilterChange({ ...filters, provincia: e.target.value, ciudad: "all" })}
+            className="w-full appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-3 pr-10 text-slate-900 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">{t('allProvinces')}</option>
             {provinces.map((prov) => (
-              <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+              <option key={prov} value={prov}>{prov}</option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+        </div>
 
-        <Select value={filters.ciudad} onValueChange={(val) => onFilterChange({ ...filters, ciudad: val })} disabled={filters.provincia === "all"}>
-          <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg md:w-[200px] font-medium hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <SelectValue placeholder={filters.provincia === "all" ? "Primero selecciona provincia" : t('allCities')} />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            <SelectItem value="all">{t('allCities')}</SelectItem>
+        {/* ── CIUDAD ── */}
+        {/* Desktop: Radix Select */}
+        <div className="hidden md:block w-full md:w-[200px]">
+          <Select value={filters.ciudad} onValueChange={(val) => onFilterChange({ ...filters, ciudad: val })} disabled={filters.provincia === "all"}>
+            <SelectTrigger className="h-11 border-2 border-gray-200 text-sm rounded-lg font-medium hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <SelectValue placeholder={filters.provincia === "all" ? "Primero selecciona provincia" : t('allCities')} />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">{t('allCities')}</SelectItem>
+              {availableCities.map((ciudad) => (
+                <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Mobile: native <select> */}
+        <div className="md:hidden w-full relative">
+          <select
+            value={filters.ciudad}
+            onChange={(e) => onFilterChange({ ...filters, ciudad: e.target.value })}
+            disabled={filters.provincia === "all"}
+            className="w-full appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-3 pr-10 text-slate-900 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="all">{filters.provincia === "all" ? "Primero selecciona provincia" : t('allCities')}</option>
             {availableCities.map((ciudad) => (
-              <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
+              <option key={ciudad} value={ciudad}>{ciudad}</option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+        </div>
 
         {/* "Filtros avanzados" popover — hidden on mobile (always-visible layout handles it) */}
         {!isMobile && <Popover open={showAdvanced} onOpenChange={setShowAdvanced}>

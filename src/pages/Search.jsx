@@ -412,9 +412,6 @@ export default function SearchPage() {
 
   return (
     <>
-      <div style={{ background: 'red', color: 'white', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>
-        DEBUG-TEST-MARKER-V1
-      </div>
       <SEOHead
         title={
           filters.category !== "all" && filters.provincia !== "all"
