@@ -50,6 +50,7 @@ import { useProfileTranslation } from "../components/profile/useProfileTranslati
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 import SearchAutocomplete from "../components/search/SearchAutocomplete";
 import SavedSearches from "../components/search/SavedSearches";
+import PullToRefresh from "../components/ui/PullToRefresh";
 const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
 const MapView = lazy(() => import("../components/search/MapView"));
 import { generateSlug } from "../utils/slugUtils";
@@ -558,7 +559,9 @@ export default function SearchPage() {
         </div>{/* fin hero wrapper */}
 
         {/* ── CONTENIDO PRINCIPAL ── */}
-        <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible" id="results-section">
+        <div id="results-section">
+        <PullToRefresh onRefresh={async () => { await loadUser(); }}>
+        <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible">
 
           {/* Barra de búsqueda (para usuarios logueados) */}
           {user && (
@@ -849,6 +852,8 @@ export default function SearchPage() {
               </div>
             </div>
           )}
+        </div>
+        </PullToRefresh>
         </div>
       </div>
     </>

@@ -8,6 +8,7 @@ import {
   User,
   Heart,
   Menu,
+  ArrowLeft,
   LogOut,
   Briefcase,
   LayoutDashboard,
@@ -837,15 +838,35 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 paddingTop: 'env(safe-area-inset-top, 0px)',
               }}
             >
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
-                style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
-                className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
-                aria-label="Abrir menú"
-              >
-                <Menu className="w-6 h-6 text-gray-700 pointer-events-none" />
-              </button>
+              {/* Show back button on child screens, hamburger on root nav tabs */}
+              {(() => {
+                const rootPaths = [
+                  '/buscar', '/mensajes', '/favoritos', '/mi-perfil',
+                  '/dashboard', '/mis-clientes', '/presupuestos', '/',
+                ];
+                const isChildScreen = user && !rootPaths.some(p => location.pathname === p || location.pathname === p + '/');
+                return isChildScreen ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
+                    className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
+                    aria-label="Volver"
+                  >
+                    <ArrowLeft className="w-6 h-6 text-gray-700 pointer-events-none" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
+                    style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
+                    className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
+                    aria-label="Abrir menú"
+                  >
+                    <Menu className="w-6 h-6 text-gray-700 pointer-events-none" />
+                  </button>
+                );
+              })()}
 
               <Link to={createPageUrl("Search")} className="flex items-center gap-2" aria-label="Inicio">
                 <img src={LOGO_32} srcSet={`${LOGO_32} 1x, ${LOGO_64} 2x`} alt="Logo MisAutónomos" className="w-8 h-8 rounded" width="32" height="32" loading="eager" fetchPriority="high" decoding="async" />
@@ -966,21 +987,21 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 {user ? (
                   <>
                     {(isProfessional ? [
-                      { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), icon: Home },
-                      { title: 'Chats', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: 'Clientes', url: "/mis-clientes", icon: Users },
-                      { title: 'Presupuestos', url: "/presupuestos", icon: FileText },
-                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                      { title: 'Inicio', url: createPageUrl("ProfessionalDashboard"), root: createPageUrl("ProfessionalDashboard"), icon: Home },
+                      { title: 'Chats', url: createPageUrl("Messages"), root: '/mensajes', icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Clientes', url: "/mis-clientes", root: '/mis-clientes', icon: Users },
+                      { title: 'Presupuestos', url: "/presupuestos", root: '/presupuestos', icon: FileText },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), root: createPageUrl("MyProfile"), icon: User },
                     ] : [
-                      { title: 'Buscar', url: createPageUrl("Search"), icon: SearchIcon },
-                      { title: 'Chats', url: createPageUrl("Messages"), icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
-                      { title: 'Guardados', url: createPageUrl("Favorites"), icon: Heart },
-                      { title: 'Perfil', url: createPageUrl("MyProfile"), icon: User },
+                      { title: 'Buscar', url: createPageUrl("Search"), root: '/buscar', icon: SearchIcon },
+                      { title: 'Chats', url: createPageUrl("Messages"), root: '/mensajes', icon: MessageSquare, badge: unreadCount > 0 ? unreadCount : null },
+                      { title: 'Guardados', url: createPageUrl("Favorites"), root: createPageUrl("Favorites"), icon: Heart },
+                      { title: 'Perfil', url: createPageUrl("MyProfile"), root: createPageUrl("MyProfile"), icon: User },
                     ]).map((item) => (
                       <Link
                         key={item.title}
-                        to={item.url}
-                        className={`mobile-bottom-nav-item ${location.pathname === item.url ? 'active' : ''}`}
+                        to={location.pathname === item.url || location.pathname.startsWith(item.url + '?') ? item.root : item.url}
+                        className={`mobile-bottom-nav-item ${location.pathname === item.url || location.pathname.startsWith(item.root) ? 'active' : ''}`}
                         aria-label={`Ir a ${item.title}`}
                         aria-current={location.pathname === item.url ? 'page' : undefined}
                         style={{ touchAction: 'manipulation', flex: 1, minWidth: 0 }}

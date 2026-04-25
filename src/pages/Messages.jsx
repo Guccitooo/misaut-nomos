@@ -24,6 +24,7 @@ import QuoteRequest from "../components/messages/QuoteRequest";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
 import SendQuoteDialog from "../components/messages/SendQuoteDialog";
 import { notifyUser, pushTemplates } from "@/services/pushNotifications";
+import PullToRefresh from "@/components/ui/PullToRefresh";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -907,7 +908,8 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 min-h-0">
+            <PullToRefresh onRefresh={loadMessages}>
             {loadingMessages ? (
               <ConvSkeleton />
             ) : filteredConversations.length === 0 ? (
@@ -959,6 +961,7 @@ export default function MessagesPage() {
                 );
               })
             )}
+            </PullToRefresh>
           </div>
         </div>
 

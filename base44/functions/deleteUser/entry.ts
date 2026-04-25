@@ -139,8 +139,21 @@ Deno.serve(async (req) => {
         console.log(`   ✅ ${totalMessages} mensaje(s) eliminado(s)`);
         if (totalMessages > 0) deletedItems.push(`${totalMessages} Mensajes`);
 
-        // 7. Eliminar reseñas
-        console.log('\n⭐ PASO 6: Eliminando reseñas...');
+        // 7. Eliminar configuración de facturación
+        console.log('\n🧾 PASO 6a: Eliminando datos de facturación...');
+        try {
+            const invoicingSettings = await base44.asServiceRole.entities.InvoicingSettings.filter({ professional_id: userId });
+            for (const s of invoicingSettings) {
+                await base44.asServiceRole.entities.InvoicingSettings.delete(s.id);
+            }
+            console.log(`   ✅ ${invoicingSettings.length} ajuste(s) de facturación eliminado(s)`);
+            if (invoicingSettings.length > 0) deletedItems.push('Datos de facturación');
+        } catch (error) {
+            console.log('   ⚠️ Error eliminando facturación:', error.message);
+        }
+
+        // 8. Eliminar reseñas
+        console.log('\n⭐ PASO 6b: Eliminando reseñas...');
         const clientReviews = await base44.asServiceRole.entities.Review.filter({
             client_id: userId
         });
