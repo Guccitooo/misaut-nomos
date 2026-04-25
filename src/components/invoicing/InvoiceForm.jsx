@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Eye, Sparkles, Download } from "lucide-react";
 import { useLanguage } from "../ui/LanguageSwitcher";
@@ -271,18 +272,17 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
             {clients.length > 0 && (
               <div>
                 <Label>{t('selectExistingClient') || 'Cliente guardado'}</Label>
-                <Select onValueChange={loadClientData}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('newClient') || 'Nuevo cliente...'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.client_name || client.company}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  onValueChange={loadClientData}
+                  placeholder={t('newClient') || 'Nuevo cliente...'}
+                  label={t('selectExistingClient') || 'Cliente guardado'}
+                >
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.client_name || client.company}
+                    </SelectItem>
+                  ))}
+                </MobileSelect>
               </div>
             )}
 
@@ -385,20 +385,16 @@ export default function InvoiceForm({ invoice, settings, clients = [], onSave, o
             </div>
             <div>
               <Label>{t('paymentMethod') || 'Método de pago'}</Label>
-              <Select
+              <MobileSelect
                 value={formData.payment_method}
                 onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+                label={t('paymentMethod') || 'Método de pago'}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Transferencia bancaria">{t('bankTransfer') || 'Transferencia'}</SelectItem>
-                  <SelectItem value="Tarjeta">{t('card')}</SelectItem>
-                  <SelectItem value="Efectivo">{t('cash')}</SelectItem>
-                  <SelectItem value="Bizum">Bizum</SelectItem>
-                </SelectContent>
-              </Select>
+                <SelectItem value="Transferencia bancaria">{t('bankTransfer') || 'Transferencia'}</SelectItem>
+                <SelectItem value="Tarjeta">{t('card')}</SelectItem>
+                <SelectItem value="Efectivo">{t('cash')}</SelectItem>
+                <SelectItem value="Bizum">Bizum</SelectItem>
+              </MobileSelect>
             </div>
           </div>
         </CardContent>

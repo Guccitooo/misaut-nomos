@@ -335,6 +335,15 @@ button, a, [role="button"] {
   -webkit-touch-callout: none;
 }
 
+/* ═══ OVERSCROLL — prevent iOS rubber-banding on body ═══ */
+html, body {
+  overscroll-behavior: none;
+}
+/* Allow natural scroll inside main content areas */
+main, [role="main"], .flex-1.overflow-y-auto, .overflow-y-auto, .overflow-auto {
+  overscroll-behavior-y: auto;
+}
+
 /* Aplicar overscroll-behavior a contenedores principales */
 main, [role="main"] {
   overscroll-behavior-y: contain;
