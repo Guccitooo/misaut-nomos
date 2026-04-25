@@ -835,13 +835,7 @@ img[width="32"][height="32"] {
   contain: layout style paint;
 }
 
-/* Skeleton: sin animation para reducir trabajo del hilo principal */
-@media (max-width: 768px) {
-  .animate-pulse {
-    animation: none !important;
-    background: #f3f4f6 !important;
-  }
-}
+/* Skeleton pulse allowed on mobile — needed for loading skeleton cards */
 
 /* Google Fonts: font-display swap para evitar FOIT */
 @font-face {

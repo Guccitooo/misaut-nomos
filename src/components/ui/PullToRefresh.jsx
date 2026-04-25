@@ -66,27 +66,26 @@ export default function PullToRefresh({ onRefresh, children }) {
     };
   }, [isPulling, pullDistance, isRefreshing]);
 
+  const showIndicator = pullDistance > 10 || isRefreshing;
+
   return (
-    <div ref={containerRef} className="relative h-full overflow-auto">
-      <div
-        className="absolute top-0 left-0 right-0 flex items-center justify-center transition-all duration-200 pointer-events-none"
-        style={{
-          height: `${pullDistance}px`,
-          opacity: pullDistance > 0 ? 1 : 0,
-        }}
-      >
-        {isRefreshing ? (
-          <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-        ) : (
-          <RefreshCw 
-            className="w-6 h-6 text-blue-600 transition-transform" 
-            style={{
-              transform: `rotate(${Math.min(pullDistance * 3, 360)}deg)`
-            }}
-          />
-        )}
-      </div>
-      <div style={{ paddingTop: isRefreshing ? '60px' : `${pullDistance}px`, transition: 'padding-top 200ms' }}>
+    <div ref={containerRef} className="relative">
+      {showIndicator && (
+        <div
+          className="flex items-center justify-center pointer-events-none"
+          style={{ height: isRefreshing ? '48px' : `${Math.max(pullDistance, 0)}px`, overflow: 'hidden', transition: 'height 200ms' }}
+        >
+          {isRefreshing ? (
+            <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+          ) : (
+            <RefreshCw
+              className="w-5 h-5 text-blue-400"
+              style={{ transform: `rotate(${Math.min(pullDistance * 3, 360)}deg)` }}
+            />
+          )}
+        </div>
+      )}
+      <div>
         {children}
       </div>
     </div>
