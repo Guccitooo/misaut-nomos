@@ -59,9 +59,19 @@ const FAQS = [
   },
 ];
 
+// Detectar si la app corre dentro de un webview nativo de iOS (App Store)
+const isNativeIOSApp = () => {
+  const ua = navigator.userAgent || "";
+  // Base44 wrapper sets a custom UA or the app runs standalone
+  const isStandalone = window.navigator.standalone === true;
+  const isInWebview = /(iPhone|iPad).*AppleWebKit(?!.*Safari)/i.test(ua);
+  return isStandalone || isInWebview;
+};
+
 export default function PricingPlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isNative = isNativeIOSApp();
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -129,6 +139,11 @@ export default function PricingPlansPage() {
   }, []);
 
   const handleSelectPlan = async (plan) => {
+    // En app nativa iOS no se puede usar Stripe — redirigir a web
+    if (isNative) {
+      window.open("https://misautonomos.es/precios", "_blank");
+      return;
+    }
     if (currentSubscription && user) {
       toast.error('Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.');
       navigate(createPageUrl("SubscriptionManagement"));
@@ -231,6 +246,24 @@ export default function PricingPlansPage() {
               Anual <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full ml-1">-20%</span>
             </span>
           </div>
+
+          {/* ── AVISO iOS NATIVO ── */}
+          {isNative && (
+            <div className="max-w-2xl mx-auto mb-8 bg-blue-50 border border-blue-200 rounded-2xl p-5 text-center">
+              <p className="text-sm font-semibold text-blue-900 mb-1">💳 Suscríbete desde la web</p>
+              <p className="text-sm text-blue-700 mb-3">
+                Para completar tu suscripción, visita nuestra web desde un navegador.
+              </p>
+              <a
+                href="https://misautonomos.es/precios"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-xl text-sm"
+              >
+                Ir a misautonomos.es/precios →
+              </a>
+            </div>
+          )}
 
           {/* ── 4. TARJETAS ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto items-start">
