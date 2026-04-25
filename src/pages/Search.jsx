@@ -704,17 +704,28 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Skeleton loading */}
+          {/* Skeleton loading — matches EXACT card shape for mobile (avatar+name row) and desktop (blue header) */}
           {isInitialLoading && (
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
               {[...Array(8)].map((_, idx) => (
-                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ height: '220px', minHeight: '220px', contain: 'layout style paint' }}>
-                  <div style={{ height: '48px', background: '#e5e7eb' }} />
-                  <div className="p-3 pt-8 space-y-2">
-                    <div className="h-4 w-3/4 rounded" style={{ minHeight: '16px', background: '#f3f4f6' }} />
-                    <div className="h-3 w-1/2 rounded" style={{ minHeight: '12px', background: '#f3f4f6' }} />
-                    <div className="h-3 w-full rounded mt-2" style={{ minHeight: '12px', background: '#f3f4f6' }} />
-                    <div className="h-8 w-full rounded-lg mt-3" style={{ minHeight: '32px', background: '#f3f4f6' }} />
+                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ minHeight: '200px', contain: 'layout style paint' }}>
+                  {/* Desktop: blue header bar */}
+                  <div className="hidden md:block" style={{ height: '48px', background: '#e5e7eb' }} />
+                  {/* Mobile: avatar + name row (matches real card mobile layout) */}
+                  <div className="md:hidden flex items-center gap-3 px-3 pt-3 pb-1">
+                    <div style={{ width: '48px', height: '48px', minWidth: '48px', borderRadius: '9999px', background: '#e5e7eb' }} />
+                    <div className="flex-1 space-y-2">
+                      <div style={{ height: '14px', width: '60%', borderRadius: '4px', background: '#e5e7eb' }} />
+                      <div style={{ height: '11px', width: '40%', borderRadius: '4px', background: '#f3f4f6' }} />
+                    </div>
+                  </div>
+                  {/* Shared content area */}
+                  <div className="px-3 pb-3 md:pt-8 pt-2 space-y-2">
+                    <div className="hidden md:block h-4 w-3/4 rounded" style={{ background: '#e5e7eb' }} />
+                    <div className="hidden md:block h-3 w-1/2 rounded" style={{ background: '#f3f4f6' }} />
+                    <div style={{ height: '11px', width: '55%', borderRadius: '4px', background: '#f3f4f6' }} />
+                    <div style={{ height: '32px', width: '100%', borderRadius: '6px', background: '#f3f4f6', marginTop: '8px' }} />
+                    <div style={{ height: '32px', width: '100%', borderRadius: '8px', background: '#e5e7eb', marginTop: '8px' }} />
                   </div>
                 </div>
               ))}
