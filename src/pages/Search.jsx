@@ -560,7 +560,6 @@ export default function SearchPage() {
 
         {/* ── CONTENIDO PRINCIPAL ── */}
         <div id="results-section">
-        <PullToRefresh onRefresh={async () => { await loadUser(); }}>
         <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible">
 
           {/* Barra de búsqueda (para usuarios logueados) */}
@@ -864,7 +863,6 @@ export default function SearchPage() {
             </div>
           )}
         </div>
-        </PullToRefresh>
         </div>
       </div>
     </>
