@@ -362,12 +362,23 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       if (currentUser) {
         // Usuarios sin user_type (entraron con Google sin pasar por onboarding) → asignar "client"
         if (!currentUser.user_type) {
-          try {
-            await base44.auth.updateMe({ user_type: "client" });
-            currentUser.user_type = "client";
-          } catch (e) {
-            console.warn('Failed to set user_type:', e);
-            currentUser.user_type = "client"; // Fallback local
+          // No asignar "client" automáticamente si está en flujo de registro profesional
+          const url = new URL(window.location.href);
+          const isProSignupFlow = url.searchParams.get('intent') === 'pro'
+            || url.searchParams.get('upgrade') === 'pro'
+            || url.searchParams.get('plan')
+            || url.pathname.includes('completar-perfil')
+            || url.pathname.includes('ProfileOnboarding')
+            || sessionStorage.getItem('pendingPlanId');
+
+          if (!isProSignupFlow) {
+            try {
+              await base44.auth.updateMe({ user_type: "client" });
+              currentUser.user_type = "client";
+            } catch (e) {
+              console.warn('Failed to set user_type:', e);
+              currentUser.user_type = "client";
+            }
           }
         }
 

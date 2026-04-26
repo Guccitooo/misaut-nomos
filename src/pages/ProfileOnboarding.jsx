@@ -397,6 +397,25 @@ export default function ProfileOnboardingPage() {
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 
+      // ✅ AUTO-RESUME: Si venía de un plan elegido en /precios, retomar el checkout
+      const pendingPlanId = sessionStorage.getItem('pendingPlanId');
+      if (pendingPlanId) {
+        sessionStorage.removeItem('pendingPlanId');
+        sessionStorage.removeItem('pendingPlanPrice');
+        try {
+          const checkoutRes = await base44.functions.invoke('createCheckoutSession', {
+            planId: pendingPlanId,
+          });
+          if (checkoutRes.data?.url) {
+            window.location.href = checkoutRes.data.url;
+            return;
+          }
+        } catch (checkoutErr) {
+          console.error('Auto-resume checkout failed:', checkoutErr);
+          // Cae al destino normal si falla
+        }
+      }
+
       // ✅ Procesar código de referido si existe en localStorage
       try {
         const referralCode = localStorage.getItem('referral_code');

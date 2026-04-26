@@ -9,6 +9,9 @@ import {
   TrendingUp, ChevronDown, ChevronUp, Zap, Rocket, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from "@/components/ui/dialog";
 import SEOHead from "../components/seo/SEOHead";
 import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 
@@ -75,6 +78,7 @@ export default function PricingPlansPage() {
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showConvertToProModal, setShowConvertToProModal] = useState({ open: false, plan: null });
   const [openFaq, setOpenFaq] = useState(null);
   const [stickyVisible, setStickyVisible] = useState(false);
   const [billing, setBilling] = useState("monthly"); // "monthly" | "annual"
@@ -144,21 +148,34 @@ export default function PricingPlansPage() {
       window.open("https://misautonomos.es/precios", "_blank");
       return;
     }
-    if (currentSubscription && user) {
+
+    // CASO 1: sin sesión → guardar intent y llevar al registro de autónomo
+    if (!user) {
+      sessionStorage.setItem('pendingPlanId', plan.plan_id);
+      sessionStorage.setItem('pendingPlanPrice', String(plan.precio));
+      navigate('/precios?login=1&plan=' + encodeURIComponent(plan.plan_id));
+      base44.auth.redirectToLogin('/completar-perfil?plan=' + encodeURIComponent(plan.plan_id));
+      return;
+    }
+
+    // CASO 2: logueado como cliente → ofrecer conversión a autónomo
+    if (user.user_type === 'client') {
+      setShowConvertToProModal({ open: true, plan });
+      return;
+    }
+
+    // CASO 3: ya es profesional → checkout directo
+    if (currentSubscription) {
       toast.error('Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.');
       navigate(createPageUrl("SubscriptionManagement"));
       return;
     }
-    if (!user) {
-      localStorage.setItem("pending_plan_selection", JSON.stringify({ plan_id: plan.plan_id, precio: plan.precio, timestamp: Date.now() }));
-      base44.auth.redirectToLogin(window.location.href);
-      return;
-    }
+
     setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Tiempo de espera agotado. Inténtalo de nuevo.")), 10000)
+        setTimeout(() => reject(new Error("Tiempo de espera agotado. Inténtalo de nuevo.")), 15000)
       );
       const response = await Promise.race([
         base44.functions.invoke("createCheckoutSession", {
@@ -174,8 +191,6 @@ export default function PricingPlansPage() {
       }
       if (response.data?.url) {
         window.location.href = response.data.url;
-      } else if (response.data?.sessionId) {
-        window.location.href = `https://checkout.stripe.com/pay/${response.data.sessionId}`;
       } else {
         throw new Error("No se pudo crear la sesión de pago");
       }
@@ -525,6 +540,37 @@ export default function PricingPlansPage() {
           </p>
         </div>
       </div>
+
+      {/* ── MODAL: Convertir cliente a autónomo ── */}
+      {showConvertToProModal?.open && (
+        <Dialog open onOpenChange={() => setShowConvertToProModal({ open: false, plan: null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Estos planes son para profesionales</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-gray-600">
+              Plan Visibilidad y Plan Ads+ son para autónomos que quieren conseguir clientes. Tu cuenta actual es de cliente.
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              ¿Quieres dar de alta tu perfil profesional? Mantendrás los datos de tu cuenta actual.
+            </p>
+            <DialogFooter className="flex gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowConvertToProModal({ open: false, plan: null })}>
+                Cancelar
+              </Button>
+              <Button onClick={() => {
+                if (showConvertToProModal.plan) {
+                  sessionStorage.setItem('pendingPlanId', showConvertToProModal.plan.plan_id);
+                  sessionStorage.setItem('pendingPlanPrice', String(showConvertToProModal.plan.precio));
+                }
+                navigate('/completar-perfil?upgrade=pro&plan=' + encodeURIComponent(showConvertToProModal.plan?.plan_id || ''));
+              }}>
+                Sí, registrarme como autónomo
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* ── 8. STICKY CTA MÓVIL ── */}
       {stickyVisible && !currentSubscription && (
