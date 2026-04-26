@@ -211,9 +211,9 @@ export default function PricingPlansPage() {
         {/* ── 1. BANNER URGENCIA ── */}
         <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white text-center py-3 px-4">
           <p className="text-sm font-semibold">
-            🚀 Oferta de lanzamiento — <strong>7 días gratis · luego 1€ el primer mes · sin tarjeta requerida</strong>
+            🚀 Oferta de lanzamiento — <strong>7 días gratis · luego 1€ el primer mes · luego precio normal</strong>
           </p>
-          <p className="text-xs text-green-100 mt-0.5">Sin permanencia · Cancela cuando quieras</p>
+          <p className="text-xs text-green-100 mt-0.5">Sin permanencia · Cancela cuando quieras antes del cobro</p>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 py-10">
@@ -265,6 +265,37 @@ export default function PricingPlansPage() {
             </div>
           )}
 
+          {/* ── 3.5 TIMELINE DE PRECIOS ── */}
+          <div className="max-w-3xl mx-auto mb-10 px-4">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 relative">
+                <div className="text-center">
+                  <div className="w-12 h-12 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-2">
+                    <span className="text-xl">🎁</span>
+                  </div>
+                  <p className="text-xs md:text-sm font-bold text-gray-900">Días 1–7</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Gratis total</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                    <span className="text-xl">⚡</span>
+                  </div>
+                  <p className="text-xs md:text-sm font-bold text-gray-900">Día 7–37</p>
+                  <p className="text-xs text-blue-600 font-semibold mt-0.5">Solo 1€</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                    <span className="text-xl">📅</span>
+                  </div>
+                  <p className="text-xs md:text-sm font-bold text-gray-900">Día 38+</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Plan elegido</p>
+                </div>
+                <div className="hidden md:block absolute top-6 left-[16.66%] right-[16.66%] h-0.5 bg-gradient-to-r from-green-200 via-blue-200 to-gray-200 -z-10" />
+              </div>
+              <p className="text-center text-xs text-gray-400 mt-4">Cancela cuando quieras · Sin permanencia · Necesitamos tu tarjeta para activar el trial</p>
+            </div>
+          </div>
+
           {/* ── 4. TARJETAS ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto items-start">
 
@@ -302,6 +333,7 @@ export default function PricingPlansPage() {
                         {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
+                      <p className="text-xs text-blue-600 font-medium mt-1">💳 Tarjeta necesaria para activar el trial</p>
                     </div>
 
                     {isCurrentPlan ? (
@@ -391,6 +423,7 @@ export default function PricingPlansPage() {
                         {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
+                      <p className="text-xs text-blue-600 font-medium mt-1">💳 Tarjeta necesaria para activar el trial</p>
                     </div>
 
                     {isCurrentPlan ? (
