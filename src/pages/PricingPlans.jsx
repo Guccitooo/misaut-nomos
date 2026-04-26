@@ -211,9 +211,9 @@ export default function PricingPlansPage() {
         {/* ── 1. BANNER URGENCIA ── */}
         <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white text-center py-3 px-4">
           <p className="text-sm font-semibold">
-            🚀 Oferta de lanzamiento — <strong>7 días gratis · Sin tarjeta de crédito requerida</strong>
+            🚀 Oferta de lanzamiento — <strong>7 días gratis · luego 1€ el primer mes · sin tarjeta requerida</strong>
           </p>
-          <p className="text-xs text-green-100 mt-0.5">Cancela cuando quieras durante la prueba</p>
+          <p className="text-xs text-green-100 mt-0.5">Sin permanencia · Cancela cuando quieras</p>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 py-10">
@@ -290,16 +290,18 @@ export default function PricingPlansPage() {
                     <p className="text-sm text-gray-500 mb-5">Hazte visible y consigue tus primeros clientes</p>
 
                     <div className="mb-6">
-                      <div className="flex items-end gap-1">
-                        <span className="text-5xl font-extrabold text-gray-900">{displayPrice}€</span>
-                        <span className="text-gray-500 text-base mb-2">/mes</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">🎁 7 días gratis</span>
                       </div>
-                      {billing === "annual" && (
-                        <p className="text-xs text-green-600 font-semibold mt-1">
-                          Facturado anual · Ahorra {getAnnualSaving(plan.precio)}€/año
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1">Los primeros 7 días son gratis</p>
+                      <div className="flex items-end gap-1 mt-2">
+                        <span className="text-4xl font-extrabold text-gray-900">1€</span>
+                        <span className="text-gray-500 text-base mb-1.5">el primer mes</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Luego <span className="font-semibold text-gray-700">{plan.precio}€/mes</span>
+                        {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
                     </div>
 
                     {isCurrentPlan ? (
@@ -377,16 +379,18 @@ export default function PricingPlansPage() {
                     </div>
 
                     <div className="mb-6">
-                      <div className="flex items-end gap-1">
-                        <span className="text-5xl font-extrabold text-gray-900">{displayPrice}€</span>
-                        <span className="text-gray-500 text-base mb-2">/mes</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">🎁 7 días gratis</span>
                       </div>
-                      {billing === "annual" && (
-                        <p className="text-xs text-green-600 font-semibold mt-1">
-                          Facturado anual · Ahorra {getAnnualSaving(plan.precio)}€/año
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1">Los primeros 7 días son gratis</p>
+                      <div className="flex items-end gap-1 mt-2">
+                        <span className="text-4xl font-extrabold text-gray-900">1€</span>
+                        <span className="text-gray-500 text-base mb-1.5">el primer mes</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Luego <span className="font-semibold text-gray-700">{plan.precio}€/mes</span>
+                        {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
                     </div>
 
                     {isCurrentPlan ? (
@@ -483,8 +487,8 @@ export default function PricingPlansPage() {
 
           {/* Legal */}
           <p className="text-xs text-gray-400 text-center max-w-2xl mx-auto">
-            Los primeros 7 días son gratis. Si no cancelas antes, se cobra automáticamente el plan elegido.
-            Plan Ads+: gestión publicitaria incluida en Instagram, Facebook y TikTok. Resultados sujetos a demanda local.
+          Los primeros 7 días son gratis. Tras el trial, se cobra 1€ el primer mes (cupón de bienvenida aplicado automáticamente). A partir del segundo mes, el precio normal del plan (13€/mes Visibilidad · 33€/mes Ads+). Si no cancelas antes del final del trial, no se cobra nada hasta el día 7.
+          Plan Ads+: gestión publicitaria incluida en Instagram, Facebook y TikTok. Resultados sujetos a demanda local.
           </p>
         </div>
       </div>
@@ -494,8 +498,8 @@ export default function PricingPlansPage() {
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 px-4 py-3 shadow-2xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-gray-900">Plan Ads+ · 33€/mes</p>
-              <p className="text-xs text-gray-400">7 días gratis · Sin tarjeta</p>
+              <p className="text-xs font-bold text-gray-900">Plan Ads+ · 1€ el primer mes</p>
+              <p className="text-xs text-gray-400">7 días gratis · luego 33€/mes</p>
             </div>
             <Button
               className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 h-11 rounded-xl shadow-lg flex-shrink-0"

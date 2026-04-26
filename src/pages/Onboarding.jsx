@@ -649,7 +649,11 @@ export default function OnboardingPage() {
                     Más Popular
                   </Badge>
                 </div>
-                <p className="text-3xl font-bold text-blue-900 mb-2">29€/mes</p>
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-green-600 mb-1">🎁 7 días gratis</p>
+                  <p className="text-3xl font-bold text-blue-900">1€ <span className="text-base font-normal text-gray-500">el primer mes</span></p>
+                  <p className="text-sm text-gray-500 mt-1">Luego 13€/mes · Sin permanencia</p>
+                </div>
                 <p className="text-sm text-gray-600 mb-4">
                   Acceso completo a la plataforma profesional
                 </p>

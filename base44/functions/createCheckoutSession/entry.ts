@@ -3,6 +3,12 @@ import Stripe from 'npm:stripe@17.5.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
+// Cupones de oferta intro: primer mes a 1€ tras el trial gratuito
+const INTRO_COUPONS = {
+  plan_visibility: 'EpLgdZzh',  // 12€ off, once
+  plan_adsplus: 'ZVdgrWDC',     // 32€ off, once
+};
+
 Deno.serve(async (req) => {
   console.log('🛒 ========== CREAR CHECKOUT SESSION ==========');
   
@@ -157,6 +163,15 @@ Deno.serve(async (req) => {
     // ✅ AÑADIR TRIAL SI CORRESPONDE
     if (offerTrial) {
       sessionParams.subscription_data.trial_period_days = trialDays;
+    }
+
+    // ✅ APLICAR CUPÓN INTRO (primer mes a 1€) — solo en alta nueva, no reactivación
+    const introCoupon = !isReactivation ? INTRO_COUPONS[planId] : null;
+    if (introCoupon) {
+      sessionParams.discounts = [{ coupon: introCoupon }];
+      console.log('🎁 Cupón intro aplicado:', introCoupon, '- Plan:', planId);
+    } else {
+      sessionParams.allow_promotion_codes = false;
     }
 
     console.log('📋 Creando sesión de checkout...');
