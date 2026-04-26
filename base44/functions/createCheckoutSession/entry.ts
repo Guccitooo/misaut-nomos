@@ -10,6 +10,7 @@ const INTRO_COUPONS = {
 };
 
 Deno.serve(async (req) => {
+  console.log('🆔 Function version: 2026-04-26-fix-coupon-v3');
   console.log('🛒 ========== CREAR CHECKOUT SESSION ==========');
   
   try {
@@ -179,8 +180,17 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('❌ Error general:', error.message);
     console.error('❌ Stack:', error.stack);
+    console.error('❌ Stripe error type:', error.type);
+    console.error('❌ Stripe error code:', error.code);
+    console.error('❌ Stripe error param:', error.param);
     return Response.json({ 
-      error: error.message || 'Error al crear la sesión de pago' 
+      error: error.message || 'Error al crear la sesión de pago',
+      debug: {
+        type: error.type || null,
+        code: error.code || null,
+        param: error.param || null,
+        raw: error.raw?.message || null
+      }
     }, { status: 500 });
   }
 });
