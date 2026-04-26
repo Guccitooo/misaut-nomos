@@ -530,15 +530,17 @@ button, a, [role="button"] {
 }
 
 /* Prevenir overflow horizontal global */
-/* NOTE: overflow-x:hidden on <html> implicitly sets overflow-y to auto on <html>,
-   which hijacks the viewport scroll container and breaks mouse-wheel scroll on desktop.
-   Fix: apply overflow-x:hidden only to body — html must remain overflow:visible. */
+/* ROOT CAUSE of broken desktop mouse-wheel scroll:
+   overflow-x:hidden on body (or html) promotes body to the scroll container on desktop
+   in Chrome/Safari, competing with the viewport scroll — wheel events are dispatched
+   to the viewport but body intercepts layout, causing no visible scroll.
+   Fix: NO overflow on html or body at all on desktop. Clip horizontal overflow only
+   on mobile via the media query below. */
 html {
   background-color: #ffffff;
   color-scheme: light dark;
 }
 body {
-  overflow-x: hidden;
   max-width: 100vw;
   background-color: #ffffff;
   color-scheme: light dark;
