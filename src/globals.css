@@ -530,7 +530,14 @@ button, a, [role="button"] {
 }
 
 /* Prevenir overflow horizontal global */
-html, body {
+/* NOTE: overflow-x:hidden on <html> implicitly sets overflow-y to auto on <html>,
+   which hijacks the viewport scroll container and breaks mouse-wheel scroll on desktop.
+   Fix: apply overflow-x:hidden only to body — html must remain overflow:visible. */
+html {
+  background-color: #ffffff;
+  color-scheme: light dark;
+}
+body {
   overflow-x: hidden;
   max-width: 100vw;
   background-color: #ffffff;
