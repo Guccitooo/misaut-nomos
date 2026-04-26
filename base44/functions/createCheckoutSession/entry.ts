@@ -101,17 +101,18 @@ Deno.serve(async (req) => {
 
     console.log('💼 Plan encontrado:', plan.nombre, '- Precio:', plan.precio);
 
+    if (!plan.stripe_price_id) {
+      console.error('❌ Plan sin stripe_price_id:', planId);
+      return Response.json({ 
+        error: 'Plan no configurado correctamente. Contacta soporte.' 
+      }, { status: 500 });
+    }
+
     // ✅ CONFIGURAR URLs - SIEMPRE ir a PaymentSuccess para verificar pago
     const baseUrl = req.headers.get('origin') || 'https://misautonomos.es';
     
     const successUrl = `${baseUrl}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/PricingPlans?canceled=true`;
-
-    // ✅ CONFIGURAR INTERVALO DE FACTURACIÓN - SIEMPRE MENSUAL
-    const interval = 'month';
-    const intervalCount = 1;
-    
-    console.log('📅 Intervalo configurado:', interval, 'x', intervalCount);
 
     // ✅ DETERMINAR SI OFRECER TRIAL
     const offerTrial = !user.has_used_trial && !isReactivation;
@@ -135,18 +136,7 @@ Deno.serve(async (req) => {
         trial_offered: offerTrial.toString()
       },
       line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: offerTrial ? `${plan.nombre} - 7 días gratis` : plan.nombre,
-            description: plan.descripcion || `Suscripción ${plan.nombre} MisAutónomos`,
-          },
-          unit_amount: Math.round(plan.precio * 100), // ✅ Usar precio del plan
-          recurring: {
-            interval: interval,
-            interval_count: intervalCount
-          }
-        },
+        price: plan.stripe_price_id,
         quantity: 1
       }],
       subscription_data: {
