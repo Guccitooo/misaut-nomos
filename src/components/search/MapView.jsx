@@ -165,7 +165,7 @@ export default function MapView({ profiles, onProfileClick }) {
     : [40.4168, -3.7038]; // Madrid por defecto
 
   return (
-    <Card className="h-[500px] overflow-hidden">
+    <Card className="h-[500px] relative" style={{ overflow: 'visible' }}>
       <MapContainer
         center={center}
         zoom={6}
@@ -177,9 +177,18 @@ export default function MapView({ profiles, onProfileClick }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
         {profilesWithCoords.map((profile) => (
-          <Marker key={profile.id} position={profile.coords}>
+          <Marker
+            key={profile.id}
+            position={profile.coords}
+            eventHandlers={{
+              click: () => onProfileClick(profile)
+            }}
+          >
             <Popup>
-              <div className="p-2 min-w-[200px]">
+              <div
+                className="p-2 min-w-[200px] cursor-pointer"
+                onClick={() => onProfileClick(profile)}
+              >
                 <h3 className="font-semibold text-sm mb-1">{profile.business_name}</h3>
                 <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
                   <MapPin className="w-3 h-3" />
@@ -192,7 +201,10 @@ export default function MapView({ profiles, onProfileClick }) {
                   </div>
                 )}
                 <Button
-                  onClick={() => onProfileClick(profile)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onProfileClick(profile);
+                  }}
                   size="sm"
                   className="w-full bg-blue-600 hover:bg-blue-700 h-8 text-xs"
                 >
