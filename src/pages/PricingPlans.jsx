@@ -9,9 +9,6 @@ import {
   TrendingUp, ChevronDown, ChevronUp, Zap, Rocket, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
-} from "@/components/ui/dialog";
 import SEOHead from "../components/seo/SEOHead";
 import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 
@@ -78,7 +75,6 @@ export default function PricingPlansPage() {
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showConvertToProModal, setShowConvertToProModal] = useState({ open: false, plan: null });
   const [openFaq, setOpenFaq] = useState(null);
   const [stickyVisible, setStickyVisible] = useState(false);
   const [billing, setBilling] = useState("monthly"); // "monthly" | "annual"
@@ -158,9 +154,11 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // CASO 2: logueado como cliente → ofrecer conversión a autónomo
+    // CASO 2: logueado como cliente → ir directo al alta de perfil profesional
     if (user.user_type === 'client') {
-      setShowConvertToProModal({ open: true, plan });
+      sessionStorage.setItem('pendingPlanId', plan.plan_id);
+      sessionStorage.setItem('pendingPlanPrice', String(plan.precio));
+      navigate(createPageUrl('ProfileOnboarding') + '?upgrade=pro&plan=' + encodeURIComponent(plan.plan_id));
       return;
     }
 
@@ -540,37 +538,6 @@ export default function PricingPlansPage() {
           </p>
         </div>
       </div>
-
-      {/* ── MODAL: Convertir cliente a autónomo ── */}
-      {showConvertToProModal?.open && (
-        <Dialog open onOpenChange={() => setShowConvertToProModal({ open: false, plan: null })}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Estos planes son para profesionales</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-gray-600">
-              Plan Visibilidad y Plan Ads+ son para autónomos que quieren conseguir clientes. Tu cuenta actual es de cliente.
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              ¿Quieres dar de alta tu perfil profesional? Mantendrás los datos de tu cuenta actual.
-            </p>
-            <DialogFooter className="flex gap-2 mt-4">
-              <Button variant="outline" onClick={() => setShowConvertToProModal({ open: false, plan: null })}>
-                Cancelar
-              </Button>
-              <Button onClick={() => {
-                if (showConvertToProModal.plan) {
-                  sessionStorage.setItem('pendingPlanId', showConvertToProModal.plan.plan_id);
-                  sessionStorage.setItem('pendingPlanPrice', String(showConvertToProModal.plan.precio));
-                }
-                navigate('/completar-perfil?upgrade=pro&plan=' + encodeURIComponent(showConvertToProModal.plan?.plan_id || ''));
-              }}>
-                Sí, registrarme como autónomo
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* ── 8. STICKY CTA MÓVIL ── */}
       {stickyVisible && !currentSubscription && (
