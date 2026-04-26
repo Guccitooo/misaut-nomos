@@ -160,9 +160,8 @@ Deno.serve(async (req) => {
     const introCoupon = !isReactivation ? INTRO_COUPONS[planId] : null;
     if (introCoupon) {
       sessionParams.discounts = [{ coupon: introCoupon }];
+      delete sessionParams.allow_promotion_codes;  // FIX: Stripe rechaza ambas keys simultáneamente
       console.log('🎁 Cupón intro aplicado:', introCoupon, '- Plan:', planId);
-    } else {
-      sessionParams.allow_promotion_codes = false;
     }
 
     console.log('📋 Creando sesión de checkout...');
