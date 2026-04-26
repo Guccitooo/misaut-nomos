@@ -351,8 +351,8 @@ export default function ProfileOnboardingPage() {
         price_range: "€€",
         average_rating: 0,
         total_reviews: 0,
-        estado_perfil: "activo",
-        visible_en_busqueda: shouldBeVisible,
+        estado_perfil: "pendiente",
+        visible_en_busqueda: false,
         onboarding_completed: true,
         acepta_terminos: formData.acepta_terminos,
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
@@ -410,9 +410,15 @@ export default function ProfileOnboardingPage() {
             window.location.href = checkoutRes.data.url;
             return;
           }
+          throw new Error(checkoutRes.data?.error || 'No se pudo crear la sesión de pago.');
         } catch (checkoutErr) {
           console.error('Auto-resume checkout failed:', checkoutErr);
-          // Cae al destino normal si falla
+          toast.error('No pudimos iniciar el pago. Te llevamos a planes para que completes la suscripción.', { duration: 4000 });
+          sessionStorage.setItem('pendingPlanId', pendingPlanId);
+          setTimeout(() => {
+            navigate(createPageUrl("PricingPlans") + "?retry=" + encodeURIComponent(pendingPlanId));
+          }, 1500);
+          return;
         }
       }
 
@@ -443,28 +449,15 @@ export default function ProfileOnboardingPage() {
       // ✅ Auto-suscribir a newsletter (fire-and-forget)
       autoSubscribeNewsletter({ email: formData.email_contacto, name: formData.business_name, user_type: "professionnel" }).catch(() => {});
 
-      // ✅ ACTIVACIÓN AUTOMÁTICA: Si tiene suscripción, activar perfil AHORA
-      if (shouldBeVisible || hasActiveSubscription) {
-        // Fix #14: welcome notification after completing onboarding
-        toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", {
-          duration: 5000
-        });
-        
-        // Forzar activación del perfil si existe suscripción
-        const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-        if (profiles[0]) {
-          await base44.entities.ProfessionalProfile.update(profiles[0].id, {
-            visible_en_busqueda: true,
-            estado_perfil: 'activo'
-          });
-          console.log('🔥 PERFIL ACTIVADO AUTOMÁTICAMENTE tras onboarding');
-        }
-        
+      if (hasActiveSubscription) {
+        // Caso raro: tenía suscripción activa de antes y ahora completa onboarding tarde
+        toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", { duration: 5000 });
         setTimeout(() => {
           navigate(createPageUrl("Search") + "?onboarding=completed");
         }, 2000);
       } else {
-        toast.warning("Perfil guardado. Activa tu suscripción para ser visible en búsquedas.");
+        // Flujo normal: onboarding completado SIN suscripción → ir a precios
+        toast.warning("Perfil guardado. Elige un plan para activar tu visibilidad.", { duration: 4000 });
         setTimeout(() => {
           navigate(createPageUrl("PricingPlans") + "?from=onboarding");
         }, 1500);
