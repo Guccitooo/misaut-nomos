@@ -643,6 +643,50 @@ body {
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ═══════════════════════════════════════════════════════════════
+   FIX iOS Safari — placeholders casi invisibles y inputs disabled
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Placeholders legibles en todos los navegadores (iOS Safari aplica opacity ~0.4) */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+  opacity: 1 !important;
+  -webkit-text-fill-color: #9ca3af;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* Inputs disabled — texto legible (no fantasma) en iOS Safari */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  -webkit-text-fill-color: #374151 !important; /* gray-700 */
+  opacity: 1 !important;
+  color: #374151 !important;
+}
+
+/* Contraste mínimo en labels */
+label {
+  color: #374151;
+}
+
 /* Safe area bottom utility */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);

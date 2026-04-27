@@ -864,7 +864,7 @@ export default function MyProfilePage() {
           <TabsContent value="personal">
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                   <User className="w-5 h-5 text-blue-700" />
                   {t('personalInformation')}
                 </CardTitle>
@@ -1022,7 +1022,7 @@ export default function MyProfilePage() {
             <TabsContent value="reviews">
               <Card className="shadow-sm border-0 bg-white">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                     <Star className="w-5 h-5 text-amber-500" />
                     Reseñas que he dejado
                   </CardTitle>
@@ -1075,7 +1075,7 @@ export default function MyProfilePage() {
                 {/* Identidad profesional */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                       <Building2 className="w-5 h-5 text-blue-700" />
                       {t('professionalIdentity')}
                     </CardTitle>
@@ -1295,7 +1295,7 @@ export default function MyProfilePage() {
                 {/* Servicios y descripción */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg">{t('servicesAndDescription')}</CardTitle>
+                    <CardTitle className="text-base md:text-lg text-gray-900 font-semibold">{t('servicesAndDescription')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -1388,7 +1388,7 @@ export default function MyProfilePage() {
                 {/* Ubicación */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                       <MapPin className="w-5 h-5 text-blue-700" />
                       {t('locationLabel')}
                     </CardTitle>
@@ -1441,7 +1441,7 @@ export default function MyProfilePage() {
                 {/* Tarifas y pagos */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                       <Euro className="w-5 h-5 text-blue-700" />
                       {t('ratesAndPayments')}
                     </CardTitle>
@@ -1562,7 +1562,7 @@ export default function MyProfilePage() {
                 {/* Galería de fotos */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                       <Camera className="w-5 h-5 text-blue-700" />
                       {t('photoGalleryTitle')} ({profileData.photos.length}/10)
                     </CardTitle>
@@ -1624,7 +1624,7 @@ export default function MyProfilePage() {
                 {/* Redes sociales */}
                 <Card className="shadow-sm border-0 bg-white">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2 text-gray-900 font-semibold">
                       <Globe className="w-5 h-5 text-blue-700" />
                       {t('socialNetworksLabel')}
                     </CardTitle>
