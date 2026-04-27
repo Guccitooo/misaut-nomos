@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, Save, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone, Eye, EyeOff, Pencil, Star } from "lucide-react";
+import { User, Building2, Save, X, Upload, Loader2, CheckCircle, CreditCard, Briefcase, MapPin, Clock, Euro, AlertCircle, Globe, Facebook, Instagram, Linkedin, Camera, Award, BarChart3, Music, MessageSquare, Phone, Eye, EyeOff, Pencil, Star, ChevronDown, Check } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -121,6 +122,7 @@ export default function MyProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [sheetOpen, setSheetOpen] = useState(false);
   
   const MAX_POLLING_ATTEMPTS = 10;
   const reactivationSuccess = searchParams.get("reactivation");
@@ -771,36 +773,92 @@ export default function MyProfilePage() {
         )}
 
         {/* TABS */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          {/* Tabs minimalistas con subrayado */}
-          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex min-w-max border-b border-gray-100">
-                {[
-                  { value: 'personal', icon: User, label: t('tabPersonal') || 'Información' },
-                  ...(!isProfessional ? [{ value: 'reviews', icon: Star, label: 'Mis reseñas', badge: myReviewsAsClient.length > 0 ? myReviewsAsClient.length : null }] : []),
-                  ...(isProfessional ? [
-                    { value: 'business', icon: Building2, label: t('tabProfile') || 'Perfil público' },
-                    { value: 'skills', icon: Award, label: t('tabSkills') || 'Especialidades' },
-                    { value: 'services', icon: Briefcase, label: t('tabServices') || 'Servicios' },
-                    { value: 'portfolio', icon: Camera, label: t('tabPortfolio') || 'Trabajos' },
-                    { value: 'availability', icon: Clock, label: t('tabAvailability') || 'Disponibilidad' },
-                    { value: 'faq', icon: BarChart3, label: t('tabFAQ') || 'FAQ' },
-                    { value: 'invoicing', icon: Euro, label: t('tabInvoicing') || 'Facturación' },
-                  ] : [])
-                ].map(({ value, icon: Icon, label, badge }) => (
-                  <button key={value} onClick={() => setActiveTab(value)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex-shrink-0 ${
-                      activeTab === value ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'
-                    }`}>
-                    <Icon className="w-4 h-4"/>
-                    <span className="hidden sm:inline">{label}</span>
-                    {badge && <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-bold">{badge}</span>}
-                  </button>
-                ))}
+        {(() => {
+          const tabsConfig = [
+            { value: 'personal', icon: User, label: t('tabPersonal') || 'Información' },
+            ...(!isProfessional ? [{ value: 'reviews', icon: Star, label: 'Mis reseñas', badge: myReviewsAsClient.length > 0 ? myReviewsAsClient.length : null }] : []),
+            ...(isProfessional ? [
+              { value: 'business', icon: Building2, label: t('tabProfile') || 'Perfil público' },
+              { value: 'skills', icon: Award, label: t('tabSkills') || 'Especialidades' },
+              { value: 'services', icon: Briefcase, label: t('tabServices') || 'Servicios' },
+              { value: 'portfolio', icon: Camera, label: t('tabPortfolio') || 'Trabajos' },
+              { value: 'availability', icon: Clock, label: t('tabAvailability') || 'Disponibilidad' },
+              { value: 'faq', icon: BarChart3, label: t('tabFAQ') || 'FAQ' },
+              { value: 'invoicing', icon: Euro, label: t('tabInvoicing') || 'Facturación' },
+            ] : [])
+          ];
+          const currentTab = tabsConfig.find(tb => tb.value === activeTab) || tabsConfig[0];
+          return (
+            <>
+              {/* MOBILE: selector estilo iOS (bottom sheet) */}
+              <div className="md:hidden mb-4">
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                  <SheetTrigger asChild>
+                    <button className="w-full bg-white border border-gray-200 rounded-xl px-4 py-4 flex items-center justify-between active:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <currentTab.icon className="w-5 h-5 text-blue-700" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs text-gray-500 leading-tight">Sección</p>
+                          <p className="text-base font-semibold text-gray-900 leading-tight">{currentTab.label}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto p-0">
+                    <SheetHeader className="px-4 pt-5 pb-3 border-b border-gray-100">
+                      <SheetTitle className="text-left text-lg">Ir a sección</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-2">
+                      {tabsConfig.map(({ value, icon: Icon, label, badge }) => (
+                        <button
+                          key={value}
+                          onClick={() => { setActiveTab(value); setSheetOpen(false); }}
+                          className={`w-full flex items-center gap-3 px-4 py-4 active:bg-gray-100 transition-colors ${
+                            activeTab === value ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            activeTab === value ? 'bg-blue-100' : 'bg-gray-100'
+                          }`}>
+                            <Icon className={`w-5 h-5 ${activeTab === value ? 'text-blue-700' : 'text-gray-600'}`} />
+                          </div>
+                          <span className={`flex-1 text-left text-base ${activeTab === value ? 'font-semibold text-blue-900' : 'text-gray-800'}`}>
+                            {label}
+                          </span>
+                          {badge && <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-bold">{badge}</span>}
+                          {activeTab === value && <Check className="w-5 h-5 text-blue-600" />}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="h-6" />
+                  </SheetContent>
+                </Sheet>
               </div>
-            </div>
-          </div>
+
+              {/* DESKTOP: tabs horizontales */}
+              <div className="hidden md:block bg-white border border-gray-100 rounded-xl overflow-hidden mb-4">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex min-w-max border-b border-gray-100">
+                    {tabsConfig.map(({ value, icon: Icon, label, badge }) => (
+                      <button key={value} onClick={() => setActiveTab(value)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex-shrink-0 ${
+                          activeTab === value ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'
+                        }`}>
+                        <Icon className="w-4 h-4"/>
+                        <span>{label}</span>
+                        {badge && <span className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-bold">{badge}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 
           {/* ==================== TAB: PERSONAL ==================== */}
           <TabsContent value="personal">
@@ -824,7 +882,7 @@ export default function MyProfilePage() {
 
                 <div>
                   <Label className="text-sm">{t('email')}</Label>
-                  <Input value={user.email} disabled className="bg-gray-50 mt-1" />
+                  <Input value={user.email} disabled className="bg-gray-50 mt-1 text-gray-700 disabled:opacity-100 disabled:cursor-default" />
                 </div>
 
                 <div>
