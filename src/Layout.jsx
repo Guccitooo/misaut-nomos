@@ -1003,7 +1003,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   </PageTransitions>
                 </Suspense>
 
-                {!location.pathname.startsWith("/soporte") && (
+                {!location.pathname.startsWith("/soporte") && !location.pathname.startsWith("/admin") && (
                   <Suspense fallback={null}>
                     <Footer />
                   </Suspense>
