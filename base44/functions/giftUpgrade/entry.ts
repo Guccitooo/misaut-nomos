@@ -18,14 +18,21 @@ Deno.serve(async (req) => {
     // Leer la suscripción actual para el audit log
     const sub = await base44.asServiceRole.entities.Subscription.get(subscriptionId);
 
-    // Actualizar suscripción con el regalo
+    // Calcular fecha_expiracion: max(actual, gifted_until)
+    const giftedUntilDate = new Date(giftedUntil);
+    const currentExpiration = sub.fecha_expiracion ? new Date(sub.fecha_expiracion) : new Date(0);
+    const newExpiration = giftedUntilDate > currentExpiration ? giftedUntilDate : currentExpiration;
+
+    // Actualizar suscripción con el regalo + asegurar estado activo y fecha_expiracion extendida
     await base44.asServiceRole.entities.Subscription.update(subscriptionId, {
       gifted_plan_id: giftedPlanId,
       gifted_plan_name: giftedPlanName,
       gifted_until: giftedUntil,
       gifted_by_admin_id: user.id,
       gifted_at: new Date().toISOString(),
-      gift_reason: giftReason || ''
+      gift_reason: giftReason || '',
+      estado: 'activo',
+      fecha_expiracion: newExpiration.toISOString(),
     });
 
     // Guardar en el registro de auditoría
@@ -53,7 +60,27 @@ Deno.serve(async (req) => {
       console.error('[giftUpgrade] ❌ Error guardando audit log:', e.message);
     }
 
-    console.log(`[giftUpgrade] ✅ Regalo aplicado: sub=${subscriptionId}, plan=${giftedPlanId}, hasta=${giftedUntil}, admin=${user.email}`);
+    // Crear notificación para el usuario receptor del regalo
+    try {
+      const targetUsers = await base44.asServiceRole.entities.User.filter({ id: sub.user_id });
+      const targetUser = targetUsers?.[0];
+      const adminName = user.full_name || user.email;
+      const formattedDate = new Date(giftedUntil).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: sub.user_id,
+        type: 'profile_approved',
+        title: `🎁 Regalo activado: ${giftedPlanName}`,
+        message: `${adminName} te ha regalado ${giftedPlanName} hasta el ${formattedDate}.${giftReason ? ' Motivo: ' + giftReason : ''}`,
+        is_read: false,
+        priority: 'high'
+      });
+      console.log(`[giftUpgrade] ✅ Notificación enviada a user=${sub.user_id}`);
+    } catch (e) {
+      console.error('[giftUpgrade] ❌ Error creando notificación:', e.message);
+    }
+
+    console.log(`[giftUpgrade] ✅ Regalo aplicado: sub=${subscriptionId}, plan=${giftedPlanId}, hasta=${giftedUntil}, admin=${user.email}, estado→activo, expiracion→${newExpiration.toISOString()}`);
     return Response.json({ ok: true });
 
   } catch (error) {

@@ -93,7 +93,17 @@ export default function AdminSubscriptionsTable({ subscriptions, users }) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">{sub.plan_precio ? `${sub.plan_precio}€/mes` : "—"}</td>
-                    <td className="px-4 py-3">{getStatusBadge(sub.estado)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(sub.estado)}
+                        {sub.gifted_until && new Date(sub.gifted_until) > new Date() && (
+                          <span className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            <Gift className="w-2.5 h-2.5" />
+                            Regalado hasta {new Date(sub.gifted_until).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-xs text-gray-500">{new Date(sub.fecha_inicio).toLocaleDateString("es-ES")}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">

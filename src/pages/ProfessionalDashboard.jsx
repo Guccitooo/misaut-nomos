@@ -255,6 +255,25 @@ export default function ProfessionalDashboardPage() {
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-0.5">Tu panel</h1>
           </motion.div>
 
+          {/* BANNER REGALO ACTIVO */}
+          {subscription?.gifted_plan_id && subscription?.gifted_until && new Date(subscription.gifted_until) > new Date() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-2xl p-4 md:p-5"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">🎁</span>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">Tienes {subscription.gifted_plan_name} cortesía de MisAutónomos</p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Activo hasta el <strong>{new Date(subscription.gifted_until).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* BANNER FOTO PRINCIPAL FALTANTE */}
           {hasActiveSub && profile && !profile.imagen_principal && (
             <motion.div
