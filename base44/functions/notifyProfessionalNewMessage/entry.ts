@@ -1,0 +1,162 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'MisAutónomos <hola@misautonomos.es>';
+const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
+
+/**
+ * Notifica al profesional cuando un cliente envía un mensaje
+ * Se dispara solo si el destinatario es un profesional
+ */
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json();
+
+    const { event, data } = body;
+
+    if (event?.type !== 'create') {
+      return Response.json({ ok: true, skipped: 'not_create' });
+    }
+
+    const msg = data;
+    if (!msg?.recipient_id || !msg?.sender_id || !msg?.content) {
+      return Response.json({ ok: true, skipped: 'invalid_message' });
+    }
+
+    // Obtener datos del profesional destinatario
+    const recipientUsers = await base44.asServiceRole.entities.User.filter({
+      id: msg.recipient_id
+    });
+    const recipient = recipientUsers?.[0];
+
+    // Verificar que es profesional
+    if (recipient?.user_type !== 'professionnel') {
+      return Response.json({ ok: true, skipped: 'recipient_not_professional' });
+    }
+
+    if (!recipient?.email) {
+      return Response.json({ ok: true, skipped: 'no_recipient_email' });
+    }
+
+    // Obtener nombre del cliente
+    let clientName = msg.client_name || msg.sender_name || 'Un cliente';
+    try {
+      const senders = await base44.asServiceRole.entities.User.filter({
+        id: msg.sender_id
+      });
+      if (senders?.[0]?.full_name) {
+        clientName = senders[0].full_name;
+      }
+    } catch (e) {
+      console.warn('Could not resolve client name:', e.message);
+    }
+
+    // URL del chat
+    const ctaUrl = `${APP_URL}/mensajes?conv=${msg.conversation_id || ''}`;
+
+    // HTML del email
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva solicitud de presupuesto</title>
+</head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <tr><td style="padding:24px 32px;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:white;">
+          <h1 style="margin:0;font-size:20px;font-weight:700;">📩 Nueva solicitud</h1>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:32px;">
+          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1f2937;">Tienes un nuevo mensaje de ${clientName}</h2>
+          
+          <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
+            Hola ${recipient.full_name || 'Profesional'},
+          </p>
+
+          <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
+            <strong>${clientName}</strong> te ha escrito pidiendo presupuesto o más información:
+          </p>
+
+          <!-- Message Preview -->
+          <div style="background:#f3f4f6;border-left:4px solid #10b981;border-radius:8px;padding:16px;margin:20px 0;">
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#374151;word-wrap:break-word;">
+              "${msg.content}"
+            </p>
+          </div>
+
+          <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
+            Responde rápidamente para cerrar más trabajos.
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align:center;margin:32px 0;">
+            <a href="${ctaUrl}" style="display:inline-block;background:#10b981;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+              Ver mensaje y responder
+            </a>
+          </div>
+
+          <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">
+            Accede a la plataforma para responder al cliente.
+          </p>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center;">
+          <p style="margin:0;">© 2026 MisAutónomos | Barcelona, España</p>
+          <p style="margin:8px 0 0;">Has recibido este email porque tienes una cuenta en MisAutónomos.</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    // Enviar email
+    if (!RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY no configurada');
+      return Response.json({ ok: true, skipped: 'no_resend_key' });
+    }
+
+    const resendResp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: recipient.email,
+        subject: `📩 Tienes una nueva solicitud de presupuesto`,
+        html
+      })
+    });
+
+    if (!resendResp.ok) {
+      const error = await resendResp.json();
+      console.error('Email send failed:', error);
+      return Response.json({ ok: true, status: 'email_failed' }, { status: 200 });
+    }
+
+    const result = await resendResp.json();
+    console.log(`✅ Email sent to ${recipient.email} for new message from ${clientName}:`, result.id);
+
+    return Response.json({ 
+      ok: true, 
+      status: 'email_sent',
+      messageId: result.id
+    });
+
+  } catch (error) {
+    console.error('notifyProfessionalNewMessage error:', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
