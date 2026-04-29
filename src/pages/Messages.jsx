@@ -403,10 +403,16 @@ export default function MessagesPage() {
   // ─── Mark as read ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedConvId || !user || !currentMessages.length) return;
-    const unread = currentMessages.filter(m => m.recipient_id === user.id && !m.is_read);
+    const unread = currentMessages.filter(m => m.recipient_id === user.id && !m.is_read && !m._optimistic);
     if (!unread.length) return;
-    Promise.all(unread.map(m => base44.entities.Message.update(m.id, { is_read: true })))
-      .then(() => loadMessages())
+    const ids = unread.map(m => m.id);
+    base44.functions.invoke('markMessagesAsRead', { messageIds: ids })
+      .then(() => {
+        // Actualizar estado local inmediatamente sin esperar a loadMessages
+        setAllMessages(prev => prev.map(m => ids.includes(m.id) ? { ...m, is_read: true } : m));
+        // Disparar evento para que Layout.jsx refresque el badge del header
+        window.dispatchEvent(new CustomEvent('messages:read', { detail: { count: ids.length } }));
+      })
       .catch(() => {});
   }, [selectedConvId, currentMessages.length]);
 

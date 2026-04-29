@@ -497,6 +497,13 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
     return () => clearInterval(interval);
   }, [user, loadUnreadCount]);
 
+  // Refrescar badge cuando Messages.jsx marca mensajes como leídos
+  useEffect(() => {
+    const handler = () => loadUnreadCount();
+    window.addEventListener('messages:read', handler);
+    return () => window.removeEventListener('messages:read', handler);
+  }, [loadUnreadCount]);
+
   // Suscribirse a cambios en tiempo real
   useEffect(() => {
     if (!user) return;
