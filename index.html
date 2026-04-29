@@ -22,8 +22,14 @@
       fetchpriority="high"
       crossorigin />
 
-    <!-- Google Fonts: carga no-bloqueante -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <!-- Preconnect adicional para cdn CDNs de terceros -->
+    <link rel="preconnect" href="https://www.google-analytics.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+    <!-- Google Fonts: preload solo peso 700 (hero h1) + swap — no-bloqueante -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" /></noscript>
 
     <link rel="icon" type="image/png" href="/logo-192.png" />
@@ -86,6 +92,12 @@
       .sk{background:#f3f4f6}
       /* Fonts sistema como fallback instantáneo */
       body{font-display:swap}
+      /* Reservar altura del hero de búsqueda para evitar CLS */
+      @media(max-width:767px){
+        .search-hero-placeholder{min-height:420px;background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 50%,#2563eb 100%)}
+      }
+      /* Texto del hero visible inmediatamente con fuente sistema */
+      h1{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff}
     </style>
   </head>
   <body>

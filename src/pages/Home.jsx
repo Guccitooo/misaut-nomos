@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import {
   Shield, Clock, CheckCircle, ArrowRight, ChevronDown
 } from "lucide-react";
 
 import HeroSection from "../components/home/HeroSection";
 import CategoriesGrid from "../components/home/CategoriesGrid";
-import TestimonialsSection from "../components/home/TestimonialsSection";
-import FinalCTASection from "../components/home/FinalCTASection";
+const TestimonialsSection = lazy(() => import("../components/home/TestimonialsSection"));
+const FinalCTASection = lazy(() => import("../components/home/FinalCTASection"));
 
 const HOW_IT_WORKS = [
   {
@@ -82,12 +80,8 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {HOW_IT_WORKS.map((step, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
                 className="relative group"
               >
                 <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow h-full">
@@ -102,7 +96,7 @@ export default function Home() {
                     <ArrowRight className="w-6 h-6" />
                   </div>
                 )}
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -129,12 +123,8 @@ export default function Home() {
           </div>
           <div className="grid sm:grid-cols-3 gap-6 md:gap-8">
             {WHY_US.map((item, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.35, delay: i * 0.1 }}
                 className="group text-center p-6 rounded-2xl border border-gray-100 hover:border-transparent hover:shadow-xl transition-all bg-white hover:bg-gradient-to-br hover:from-white hover:to-gray-50"
               >
                 <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mx-auto mb-5 shadow-md group-hover:scale-110 transition-transform`}>
@@ -142,13 +132,13 @@ export default function Home() {
                 </div>
                 <h3 className="font-bold text-gray-900 text-lg mb-2">{item.title}</h3>
                 <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.desc}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <TestimonialsSection />
+      <Suspense fallback={null}><TestimonialsSection /></Suspense>
 
       {/* ===== FAQ ===== */}
       <section className="py-16 md:py-20 bg-white">
@@ -164,13 +154,7 @@ export default function Home() {
 
           <div className="space-y-3">
             {FAQS.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: i * 0.08 }}
-              >
+              <div key={i}>
                 <div
                   className={`rounded-2xl border cursor-pointer transition-all duration-200 overflow-hidden ${openFaq === i ? "border-blue-200 bg-blue-50/50 shadow-sm" : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"}`}
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -184,23 +168,18 @@ export default function Home() {
                     </div>
                   </div>
                   {openFaq === i && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="px-5 pb-5 text-gray-600 leading-relaxed border-t border-blue-100 pt-4"
-                    >
+                    <div className="px-5 pb-5 text-gray-600 leading-relaxed border-t border-blue-100 pt-4">
                       {faq.a}
-                    </motion.div>
+                    </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <FinalCTASection />
+      <Suspense fallback={null}><FinalCTASection /></Suspense>
     </div>
   );
 }

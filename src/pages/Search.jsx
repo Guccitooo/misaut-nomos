@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
-import { differenceInDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -50,7 +49,7 @@ import { useProfileTranslation } from "../components/profile/useProfileTranslati
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 import SearchAutocomplete from "../components/search/SearchAutocomplete";
 import SavedSearches from "../components/search/SavedSearches";
-import PullToRefresh from "../components/ui/PullToRefresh";
+const PullToRefresh = lazy(() => import("../components/ui/PullToRefresh"));
 const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
 const MapView = lazy(() => import("../components/search/MapView"));
 import { generateSlug } from "../utils/slugUtils";
@@ -277,7 +276,8 @@ export default function SearchPage() {
     minRating: 0,
     availability: "all"
   });
-  const [displayLimit, setDisplayLimit] = useState(12);
+  // En móvil renderamos solo 6 tarjetas iniciales para reducir trabajo del main thread
+  const [displayLimit, setDisplayLimit] = useState(() => window.innerWidth < 768 ? 6 : 12);
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -409,6 +409,18 @@ export default function SearchPage() {
 
   const isInitialLoading = loadingProfiles || loadingCategories;
   const hasActiveFilters = filters.category !== "all" || filters.provincia !== "all" || filters.minRating > 0;
+
+  // Diferir la hidratación de filtros móvil hasta después del primer paint
+  const [filtersReady, setFiltersReady] = useState(false);
+  useEffect(() => {
+    const id = requestIdleCallback
+      ? requestIdleCallback(() => setFiltersReady(true), { timeout: 1500 })
+      : setTimeout(() => setFiltersReady(true), 300);
+    return () => {
+      if (requestIdleCallback) cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, []);
 
   return (
     <>
@@ -642,18 +654,20 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Mobile: always visible, no toggle, no "Filtros avanzados" popover button */}
+              {/* Mobile: deferred render until after first paint */}
               <div className="md:hidden">
-                <Suspense fallback={null}>
-                  <SearchFilters
-                    filters={filters}
-                    onFilterChange={setFilters}
-                    availableCities={availableCities}
-                    categories={categories}
-                    provinces={PROVINCIAS}
-                    isMobile={true}
-                  />
-                </Suspense>
+                {filtersReady && (
+                  <Suspense fallback={null}>
+                    <SearchFilters
+                      filters={filters}
+                      onFilterChange={setFilters}
+                      availableCities={availableCities}
+                      categories={categories}
+                      provinces={PROVINCIAS}
+                      isMobile={true}
+                    />
+                  </Suspense>
+                )}
               </div>
             </div>
           )}

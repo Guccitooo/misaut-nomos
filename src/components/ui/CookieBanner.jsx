@@ -42,7 +42,13 @@ export default function CookieBanner() {
   useEffect(() => {
     const stored = localStorage.getItem('cookie_consent');
     if (!stored) {
-      setTimeout(() => setVisible(true), 500);
+      // Mostrar banner solo después de que el LCP haya pintado — no bloquear render crítico
+      const show = () => setVisible(true);
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(show, { timeout: 3000 });
+      } else {
+        setTimeout(show, 1500);
+      }
     }
   }, []);
 
