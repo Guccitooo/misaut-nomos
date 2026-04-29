@@ -67,6 +67,7 @@ export default function CategoriaPage() {
 
   let categorySlug = null;
   let ciudadSlug = null;
+  let legacyRedirectPath = null;
 
   if (cityCategorySlug && cityCategorySlug.includes('-en-')) {
     const enIdx = cityCategorySlug.indexOf('-en-');
@@ -75,18 +76,22 @@ export default function CategoriaPage() {
   } else if (cityCategorySlug) {
     categorySlug = cityCategorySlug;
   } else {
-    // Legacy: ?name=X&ciudad=Y → redirigir a URL canónica
+    // Legacy: ?name=X&ciudad=Y → calcular redirect path
     const legacyName = urlParams.get("name");
     const legacyCiudad = urlParams.get("ciudad");
     if (legacyName) {
       categorySlug = slugify(legacyName);
       ciudadSlug = legacyCiudad ? slugify(legacyCiudad) : null;
-      const newPath = ciudadSlug
+      legacyRedirectPath = ciudadSlug
         ? `/categoria/${categorySlug}-en-${ciudadSlug}`
         : `/categoria/${categorySlug}`;
-      useEffect(() => { navigate(newPath, { replace: true }); }, []);
     }
   }
+
+  // Redirect legacy ?name=X&ciudad=Y — siempre al nivel superior (no condicional)
+  useEffect(() => {
+    if (legacyRedirectPath) navigate(legacyRedirectPath, { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ciudad legible: capitalizar cada palabra del slug
   const ciudadName = ciudadSlug
