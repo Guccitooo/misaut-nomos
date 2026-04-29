@@ -126,8 +126,13 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
       className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col overflow-hidden"
       style={{ minHeight: '200px', contain: 'layout style' }}
     >
-      {/* Header azul PEQUEÑO — solo desktop */}
-      <div className="hidden md:block bg-gradient-to-r from-blue-600 to-blue-500 rounded-t-xl relative flex-shrink-0" style={{ height: '48px', minHeight: '48px' }}>
+      {/* Header — azul normal, dorado para Ads+ */}
+      <div className={`hidden md:block rounded-t-xl relative flex-shrink-0 ${profile.is_ads_plus ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-blue-600 to-blue-500'}`} style={{ height: '48px', minHeight: '48px' }}>
+        {profile.is_ads_plus && (
+          <div className="absolute top-2 left-2 bg-white/25 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            ⭐ Destacado
+          </div>
+        )}
         {profile.tarifa_base > 0 && (
           <div className="absolute top-2 right-2 bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
             {profile.tarifa_base}€/h
@@ -176,8 +181,11 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
+              {profile.is_ads_plus && (
+                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">⭐ Destacado</span>
+              )}
               {isVerified && (
                 <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Identidad verificada">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
@@ -355,15 +363,19 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 10, gcTime: 1000 * 60 * 30, refetchOnWindowFocus: false,
   });
 
-  // Orden aleatorio estable — calculado UNA SOLA VEZ cuando llegan los perfiles
+  // Orden: Ads+ primero (por rating), luego resto en orden aleatorio estable
   const shuffledProfiles = useMemo(() => {
     if (!profiles.length) return profiles;
-    const arr = [...profiles];
-    for (let i = arr.length - 1; i > 0; i--) {
+    const ads = profiles.filter(p => p.is_ads_plus);
+    const rest = profiles.filter(p => !p.is_ads_plus);
+    // Ads+: ordenar por rating desc, luego fecha desc
+    ads.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0) || new Date(b.created_date) - new Date(a.created_date));
+    // Resto: orden aleatorio estable
+    for (let i = rest.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+      [rest[i], rest[j]] = [rest[j], rest[i]];
     }
-    return arr;
+    return [...ads, ...rest];
   }, [profiles]);
 
   const filteredProfiles = useMemo(() => {

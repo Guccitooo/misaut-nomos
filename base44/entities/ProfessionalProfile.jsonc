@@ -421,6 +421,11 @@
       "type": "string",
       "format": "date-time",
       "description": "\u00daltima prueba de WhatsApp realizada"
+    },
+    "is_ads_plus": {
+      "type": "boolean",
+      "default": false,
+      "description": "Tiene Plan Ads+ activo (pagado o regalado). Calculado por trigger al cambiar Subscription."
     }
   },
   "required": [
@@ -467,6 +472,11 @@
     {
       "fields": [
         "referral_code"
+      ]
+    },
+    {
+      "fields": [
+        "is_ads_plus"
       ]
     }
   ]

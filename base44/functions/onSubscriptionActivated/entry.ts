@@ -23,6 +23,13 @@ Deno.serve(async (req) => {
     const userId = data.user_id;
     if (!userId) return Response.json({ ok: true, skipped: 'no_user_id' });
 
+    // Sincronizar is_ads_plus siempre (independientemente de si hay referral)
+    try {
+      await base44.asServiceRole.functions.invoke('syncAdsPlusStatus', { userId });
+    } catch (e) {
+      console.warn('[onSubscriptionActivated] syncAdsPlusStatus falló (no crítico):', e.message);
+    }
+
     // Buscar perfil del referido
     const refProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: userId });
     const refProfile = refProfiles[0];

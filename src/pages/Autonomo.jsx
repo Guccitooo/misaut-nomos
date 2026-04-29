@@ -543,6 +543,11 @@ export default function AutonomoPage() {
                 {profile.categories?.[0] && (
                   <Badge className="bg-blue-50 text-blue-700 text-xs">{profile.categories[0]}</Badge>
                 )}
+                {profile.is_ads_plus && (
+                  <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
+                    ⭐ Destacado
+                  </Badge>
+                )}
                 {isVerified && (
                   <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs inline-flex items-center gap-1">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

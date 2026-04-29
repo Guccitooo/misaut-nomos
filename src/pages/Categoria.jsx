@@ -125,7 +125,7 @@ export default function CategoriaPage() {
     queryKey: ['categoryProfiles', categoryName, ciudadName],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      return allProfiles.filter(p => {
+      const filtered = allProfiles.filter(p => {
         const isVisible = p.visible_en_busqueda === true && p.onboarding_completed === true;
         const matchesCategory = !categoryName || p.categories?.some(c => 
           c.toLowerCase() === categoryName.toLowerCase() ||
@@ -137,6 +137,10 @@ export default function CategoriaPage() {
         
         return isVisible && matchesCategory && matchesCiudad;
       });
+      // Ads+ primero, luego por rating
+      const ads = filtered.filter(p => p.is_ads_plus).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+      const rest = filtered.filter(p => !p.is_ads_plus).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+      return [...ads, ...rest];
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -353,7 +357,7 @@ export default function CategoriaPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="bg-white hover:shadow-lg transition-all rounded-xl h-full">
+                    <Card className={`bg-white hover:shadow-lg transition-all rounded-xl h-full ${profile.is_ads_plus ? 'ring-1 ring-amber-300' : ''}`}>
                       <CardContent className="p-4 flex flex-col h-full">
                         <div className="flex items-start gap-3 mb-3">
                           <Avatar 
@@ -370,13 +374,19 @@ export default function CategoriaPage() {
                           </Avatar>
                           
                           <div className="flex-1 min-w-0">
-                            <h3 
-                              className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate"
-                              onClick={() => handleViewProfile(profile)}
-                            >
-                              {profile.business_name}
-                            </h3>
+                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                              <h3 
+                                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate"
+                                onClick={() => handleViewProfile(profile)}
+                              >
+                                {profile.business_name}
+                              </h3>
+                              {profile.is_ads_plus && (
+                                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">⭐ Destacado</span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
+
                               <MapPin className="w-3 h-3" />
                               <span className="truncate">{profile.ciudad || profile.provincia}</span>
                             </div>

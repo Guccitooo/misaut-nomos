@@ -60,24 +60,78 @@ Deno.serve(async (req) => {
       console.error('[giftUpgrade] ❌ Error guardando audit log:', e.message);
     }
 
-    // Crear notificación para el usuario receptor del regalo
+    // Cargar usuario receptor y perfil profesional (necesarios para los 3 pasos siguientes)
+    let targetUser = null;
+    let proProfile = null;
     try {
       const targetUsers = await base44.asServiceRole.entities.User.filter({ id: sub.user_id });
-      const targetUser = targetUsers?.[0];
-      const adminName = user.full_name || user.email;
-      const formattedDate = new Date(giftedUntil).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+      targetUser = targetUsers?.[0] || null;
+      const proProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: sub.user_id });
+      proProfile = proProfiles?.[0] || null;
+    } catch (e) {
+      console.warn('[giftUpgrade] ⚠️ Error cargando usuario/perfil:', e.message);
+    }
 
+    const recipientName = targetUser?.full_name || targetUser?.email || 'Usuario';
+    const hasProfile = !!(proProfile && proProfile.onboarding_completed);
+    const giftedAtDate = new Date();
+    const giftedUntilDate2 = new Date(giftedUntil);
+    const diffDays = Math.round((giftedUntilDate2 - giftedAtDate) / (1000 * 60 * 60 * 24));
+
+    // 1. Crear Message en BD (chat interno desde soporte)
+    try {
+      const msgContent = hasProfile
+        ? `¡Hola ${recipientName}! 👋 Te hemos regalado **${giftedPlanName} durante ${diffDays} días** como cortesía de MisAutónomos. 🎁 Tu perfil ya está activo y aparecerás destacado en los listados públicos.${giftReason ? ' ' + giftReason : ''}\n\n— Equipo MisAutónomos`
+        : `¡Hola ${recipientName}! 👋 Te hemos regalado **${giftedPlanName} durante ${diffDays} días** como cortesía de MisAutónomos. 🎁 Para empezar a aprovecharlo, completa tu perfil aquí: https://misautonomos.es/Onboarding\n\n— Equipo MisAutónomos`;
+
+      await base44.asServiceRole.entities.Message.create({
+        sender_id: 'support_team',
+        sender_name: 'Equipo MisAutónomos',
+        recipient_id: sub.user_id,
+        conversation_id: `support_${sub.user_id}`,
+        content: msgContent,
+        is_read: false,
+      });
+      console.log(`[giftUpgrade] ✅ Message de regalo creado para user=${sub.user_id}`);
+    } catch (e) {
+      console.error('[giftUpgrade] ❌ Error creando Message:', e.message);
+    }
+
+    // 2. Crear Notification mejorada
+    try {
       await base44.asServiceRole.entities.Notification.create({
         user_id: sub.user_id,
-        type: 'profile_approved',
-        title: `🎁 Regalo activado: ${giftedPlanName}`,
-        message: `${adminName} te ha regalado ${giftedPlanName} hasta el ${formattedDate}.${giftReason ? ' Motivo: ' + giftReason : ''}`,
+        type: 'welcome',
+        title: `🎁 Has recibido ${giftedPlanName} gratis`,
+        message: `Cortesía de MisAutónomos durante ${diffDays} días. Aparecerás destacado en los listados públicos.`,
+        link: hasProfile ? '/MyProfile' : '/Onboarding',
         is_read: false,
         priority: 'high'
       });
       console.log(`[giftUpgrade] ✅ Notificación enviada a user=${sub.user_id}`);
     } catch (e) {
-      console.error('[giftUpgrade] ❌ Error creando notificación:', e.message);
+      console.error('[giftUpgrade] ❌ Error creando Notification:', e.message);
+    }
+
+    // 3. Auto-activar perfil si es Plan Ads+ y tiene onboarding completado
+    if (giftedPlanId === 'plan_adsplus' && proProfile && proProfile.onboarding_completed) {
+      try {
+        await base44.asServiceRole.entities.ProfessionalProfile.update(proProfile.id, {
+          estado_perfil: 'activo',
+          visible_en_busqueda: true,
+        });
+        console.log(`[giftUpgrade] ✅ Perfil activado automáticamente para user=${sub.user_id}`);
+      } catch (e) {
+        console.error('[giftUpgrade] ❌ Error activando perfil:', e.message);
+      }
+    }
+
+    // Sincronizar is_ads_plus en ProfessionalProfile
+    try {
+      await base44.asServiceRole.functions.invoke('syncAdsPlusStatus', { userId: sub.user_id });
+      console.log(`[giftUpgrade] ✅ syncAdsPlusStatus ejecutado para user=${sub.user_id}`);
+    } catch (e) {
+      console.error('[giftUpgrade] ⚠️ syncAdsPlusStatus falló (no crítico):', e.message);
     }
 
     console.log(`[giftUpgrade] ✅ Regalo aplicado: sub=${subscriptionId}, plan=${giftedPlanId}, hasta=${giftedUntil}, admin=${user.email}, estado→activo, expiracion→${newExpiration.toISOString()}`);
