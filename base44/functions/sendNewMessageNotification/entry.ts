@@ -4,6 +4,20 @@ const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/pub
 const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
 const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
+/**
+ * Anonimiza el nombre del remitente según el tipo de chat
+ */
+function getSenderDisplayName(sender, chatCategory = 'client') {
+  if (!sender) return 'Un usuario';
+  const isAdmin = sender.role === 'admin' || sender.is_admin === true;
+  if (isAdmin) {
+    if (chatCategory === 'ads_briefing') return 'Equipo Plan Ads+';
+    if (chatCategory === 'support') return 'Equipo MisAutónomos';
+    return 'Equipo MisAutónomos';
+  }
+  return sender.full_name || 'Un usuario';
+}
+
 async function sendPush(recipientId, title, message, url) {
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
   if (!apiKey) return;
@@ -54,14 +68,20 @@ Deno.serve(async (req) => {
     const recipient = recipients[0];
     const recipientName = recipient.full_name || recipient.email.split('@')[0];
 
-    // Obtener nombre del remitente si no se pasó
+    // Obtener nombre del remitente con anonimización si es admin
     let displaySenderName = senderName;
     if (!displaySenderName) {
       const senders = await base44.asServiceRole.entities.User.filter({ id: senderId });
       if (senders.length > 0) {
-        // Buscar perfil profesional si existe
-        const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: senderId });
-        displaySenderName = profiles[0]?.business_name || senders[0].full_name || senders[0].email.split('@')[0];
+        const sender = senders[0];
+        // Si es admin, anonimizar según tipo de chat
+        if (sender.role === 'admin') {
+          displaySenderName = getSenderDisplayName(sender, 'client');
+        } else {
+          // Si no es admin, obtener nombre profesional o real
+          const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: senderId });
+          displaySenderName = profiles[0]?.business_name || sender.full_name || sender.email.split('@')[0];
+        }
       } else {
         displaySenderName = 'Un usuario';
       }

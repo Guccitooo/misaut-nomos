@@ -3,6 +3,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
 const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
+/**
+ * Anonimiza el nombre del remitente según el tipo de chat
+ */
+function getSenderDisplayName(sender, chatCategory = 'client') {
+  if (!sender) return 'Un usuario';
+  const isAdmin = sender.role === 'admin' || sender.is_admin === true;
+  if (isAdmin) {
+    if (chatCategory === 'ads_briefing') return 'Equipo Plan Ads+';
+    if (chatCategory === 'support') return 'Equipo MisAutónomos';
+    return 'Equipo MisAutónomos';
+  }
+  return sender.full_name || 'Un usuario';
+}
+
 async function sendPush(recipientId, title, body, url) {
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
   if (!apiKey) {
@@ -53,22 +67,28 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'invalid_message' });
     }
 
-    // Obtener nombre del remitente
+    // Obtener datos del remitente para validar anonimización
     let senderName = msg.professional_name || msg.client_name || 'Alguien';
+    let senderObj = null;
 
-    // Intentar obtener nombre real del perfil profesional
-    if (!senderName || senderName === 'Alguien') {
-      try {
+    try {
+      const users = await base44.asServiceRole.entities.User.filter({ id: msg.sender_id });
+      senderObj = users?.[0];
+      
+      // Si es admin, usar nombre anónimo según tipo de chat
+      if (senderObj?.role === 'admin') {
+        senderName = getSenderDisplayName(senderObj, msg.conversation_type || 'client');
+      } else {
+        // Si no es admin, intentar obtener nombre real
         const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: msg.sender_id });
         if (profiles[0]?.business_name) {
           senderName = profiles[0].business_name;
-        } else {
-          const users = await base44.asServiceRole.entities.User.filter({ id: msg.sender_id });
-          if (users[0]?.full_name) senderName = users[0].full_name;
+        } else if (senderObj?.full_name) {
+          senderName = senderObj.full_name;
         }
-      } catch (e) {
-        console.warn('Could not resolve sender name:', e.message);
       }
+    } catch (e) {
+      console.warn('Could not resolve sender:', e.message);
     }
 
     const preview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : (msg.content || '🎤 Mensaje de voz');

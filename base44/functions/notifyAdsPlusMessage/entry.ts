@@ -5,6 +5,18 @@ const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'Equipo Plan Ads+ <hola
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 /**
+ * Anonimiza el nombre del remitente según el tipo de chat
+ */
+function getSenderDisplayName(sender, chatCategory = 'ads_briefing') {
+  if (!sender) return 'Un usuario';
+  const isAdmin = sender.role === 'admin' || sender.is_admin === true;
+  if (isAdmin) {
+    return chatCategory === 'ads_briefing' ? 'Equipo Plan Ads+' : 'Equipo MisAutónomos';
+  }
+  return sender.full_name || 'Un usuario';
+}
+
+/**
  * Envía notificación por email cuando el admin envía un mensaje en chat de Briefing Ads+
  * Se dispara con delay de 5 minutos para agrupar múltiples mensajes en un solo email
  */
@@ -42,6 +54,9 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'no_recipient_email' });
     }
 
+    // Obtener nombre a mostrar del remitente (anónimo si es admin)
+    const senderDisplayName = getSenderDisplayName(msg.sender_obj || { role: 'admin' }, 'ads_briefing');
+
     // Generar preview del mensaje (primeros 50 caracteres)
     const messagePreview = msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : '');
 
@@ -68,14 +83,14 @@ Deno.serve(async (req) => {
 
         <!-- Body -->
         <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1f2937;">Tienes un nuevo mensaje 💬</h2>
+          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1f2937;">${senderDisplayName} tiene un mensaje para ti 💬</h2>
           
           <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
             Hola ${recipient.full_name || 'Profesional'},
           </p>
 
           <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
-            El Equipo Plan Ads+ te ha enviado un mensaje sobre tu campaña publicitaria:
+            ${senderDisplayName} te ha enviado un mensaje sobre tu campaña publicitaria:
           </p>
 
           <!-- Message Preview -->

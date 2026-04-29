@@ -5,6 +5,18 @@ const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'Soporte MisAutónomos 
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 /**
+ * Anonimiza el nombre del remitente según el tipo de chat
+ */
+function getSenderDisplayName(sender, chatCategory = 'support') {
+  if (!sender) return 'Equipo MisAutónomos';
+  const isAdmin = sender.role === 'admin' || sender.is_admin === true;
+  if (isAdmin) {
+    return 'Equipo MisAutónomos';
+  }
+  return sender.full_name || 'Un usuario';
+}
+
+/**
  * Notifica al usuario cuando admin responde en soporte
  */
 Deno.serve(async (req) => {
@@ -23,15 +35,19 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'invalid_message' });
     }
 
-    // Solo notificar si el sender tiene rol admin y es respuesta en soporte
+    // Obtener datos del sender
     const senders = await base44.asServiceRole.entities.User.filter({
       id: msg.sender_id
     });
     const sender = senders?.[0];
 
+    // Solo notificar si el sender tiene rol admin
     if (sender?.role !== 'admin') {
       return Response.json({ ok: true, skipped: 'sender_not_admin' });
     }
+
+    // Usar nombre anónimo para admin
+    const senderDisplayName = getSenderDisplayName(sender, 'support');
 
     // Obtener datos del usuario destinatario
     const recipientUsers = await base44.asServiceRole.entities.User.filter({
@@ -73,7 +89,7 @@ Deno.serve(async (req) => {
           </p>
 
           <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
-            Nuestro equipo de soporte ha respondido a tu consulta:
+            ${senderDisplayName} ha respondido a tu consulta:
           </p>
 
           <!-- Message Preview -->

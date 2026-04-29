@@ -5,6 +5,18 @@ const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'MisAutónomos <hola@mi
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 /**
+ * Anonimiza el nombre del remitente según el tipo de chat
+ */
+function getSenderDisplayName(sender, chatCategory = 'client') {
+  if (!sender) return 'Un usuario';
+  const isAdmin = sender.role === 'admin' || sender.is_admin === true;
+  if (isAdmin) {
+    return chatCategory === 'support' ? 'Equipo MisAutónomos' : 'Equipo MisAutónomos';
+  }
+  return sender.full_name || 'Un usuario';
+}
+
+/**
  * Notifica al profesional cuando un cliente envía un mensaje
  * Se dispara solo si el destinatario es un profesional
  */
@@ -39,15 +51,15 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'no_recipient_email' });
     }
 
-    // Obtener nombre del cliente
+    // Obtener nombre del cliente y anonimizar si es admin
     let clientName = msg.client_name || msg.sender_name || 'Un cliente';
+    let senderObj = null;
     try {
       const senders = await base44.asServiceRole.entities.User.filter({
         id: msg.sender_id
       });
-      if (senders?.[0]?.full_name) {
-        clientName = senders[0].full_name;
-      }
+      senderObj = senders?.[0];
+      clientName = getSenderDisplayName(senderObj, 'client');
     } catch (e) {
       console.warn('Could not resolve client name:', e.message);
     }
@@ -75,7 +87,7 @@ Deno.serve(async (req) => {
 
         <!-- Body -->
         <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1f2937;">Tienes un nuevo mensaje de ${clientName}</h2>
+          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1f2937;">Tienes un nuevo mensaje</h2>
           
           <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#4b5563;">
             Hola ${recipient.full_name || 'Profesional'},
