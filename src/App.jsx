@@ -97,6 +97,7 @@ const AdminSupport = lazy(() => import('./pages/AdminSupport'));
 const AdminNewsletter = lazy(() => import('./pages/AdminNewsletter'));
 const AdminReferrals = lazy(() => import('./pages/AdminReferrals'));
 const AdminGifts = lazy(() => import('./pages/AdminGifts'));
+const AdminEmails = lazy(() => import('./pages/AdminEmails'));
 const EmailUnsubscribe = lazy(() => import('./pages/EmailUnsubscribe'));
 const SEOAnalysis = lazy(() => import('./pages/SEOAnalysis'));
 const BlogList = lazy(() => import('./pages/BlogList'));
@@ -285,7 +286,9 @@ const AuthenticatedApp = () => {
           <Route path="/admin/newsletter" element={<Suspense fallback={<PageLoader />}><AdminNewsletter /></Suspense>} />
           <Route path="/admin/referidos" element={<Suspense fallback={<PageLoader />}><AdminReferrals /></Suspense>} />
           <Route path="/admin/regalos" element={<Suspense fallback={<PageLoader />}><AdminGifts /></Suspense>} />
+          <Route path="/admin/emails" element={<Suspense fallback={<PageLoader />}><AdminEmails /></Suspense>} />
           <Route path="/newsletter/unsubscribe" element={<Suspense fallback={<PageLoader />}><EmailUnsubscribe /></Suspense>} />
+          <Route path="/NewsletterUnsubscribe" element={<Suspense fallback={<PageLoader />}><EmailUnsubscribe /></Suspense>} />
 
           {/* ===== BLOG PÚBLICO ===== */}
           <Route path="/blog" element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>} />

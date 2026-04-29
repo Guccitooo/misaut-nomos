@@ -1,117 +1,138 @@
-import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function EmailUnsubscribe() {
-  const [status, setStatus] = useState('loading'); // loading | success | error | already
-  const [message, setMessage] = useState('');
+export default function EmailUnsubscribePage() {
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState('loading');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
+    const unsubscribe = async () => {
+      const token = searchParams.get('token');
 
-    if (!token) {
-      setStatus('error');
-      setMessage('Enlace de baja inválido o caducado.');
-      return;
-    }
+      if (!token) {
+        setStatus('error');
+        return;
+      }
 
-    (async () => {
       try {
-        const { NewsletterSubscriber } = base44.entities;
-        let results = [];
-        try {
-          results = await NewsletterSubscriber.filter({ unsubscribe_token: token });
-          if (!Array.isArray(results)) results = [];
-        } catch (err) {
-          console.warn('[Unsubscribe] Filter error:', err);
-          results = [];
-        }
+        // Decodificar token: "email:timestamp" en base64
+        const decoded = atob(token);
+        const [emailAddr] = decoded.split(':');
 
-        if (results.length === 0) {
-          setStatus('error');
-          setMessage('No encontramos una suscripción con ese enlace.');
+        setEmail(emailAddr);
+
+        // Buscar el subscriber
+        const subscribers = await base44.asServiceRole.entities.NewsletterSubscriber.filter({
+          email: emailAddr
+        });
+
+        if (!subscribers || subscribers.length === 0) {
+          setStatus('not_found');
           return;
         }
 
-        const subscriber = results[0];
-        if (subscriber.status === 'unsubscribed') {
-          setStatus('already');
-          return;
-        }
-
-        await NewsletterSubscriber.update(subscriber.id, {
+        // Marcar como unsubscribed
+        await base44.asServiceRole.entities.NewsletterSubscriber.update(subscribers[0].id, {
           status: 'unsubscribed',
           unsubscribed_at: new Date().toISOString()
         });
 
         setStatus('success');
-      } catch (err) {
-        console.error('[Unsubscribe] Error:', err);
+      } catch (error) {
+        console.error('Unsubscribe error:', error);
         setStatus('error');
-        setMessage('Ocurrió un error. Inténtalo de nuevo o contáctanos.');
       }
-    })();
-  }, []);
+    };
+
+    unsubscribe();
+  }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-10 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
         {status === 'loading' && (
-          <>
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">Procesando tu baja...</p>
-          </>
+          <div className="text-center">
+            <div className="animate-spin inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className="text-gray-600">Procesando...</p>
+          </div>
         )}
 
         {status === 'success' && (
-          <>
-            <CheckCircle className="w-14 h-14 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Te has dado de baja</h1>
-            <p className="text-gray-600 mb-2">
-              Has sido eliminado de nuestra newsletter correctamente. No recibirás más emails de nuestra parte.
-            </p>
-            <p className="text-gray-500 text-sm mb-8">
-              Puedes volver a suscribirte cuando quieras desde el footer de la web.
-            </p>
-            <Link
-              to="/"
-              className="inline-block bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Te has dado de baja</h2>
+            <p className="text-gray-600 mb-4">No volverás a recibir emails de marketing en <strong>{email}</strong>.</p>
+            <p className="text-sm text-gray-500 mb-6">Seguirás recibiendo notificaciones transaccionales importantes (confirmaciones, notificaciones de cuenta, etc).</p>
+            <Button
+              onClick={async () => {
+                // Reactivar si el usuario lo desea
+                const subscribers = await base44.asServiceRole.entities.NewsletterSubscriber.filter({
+                  email
+                });
+                if (subscribers && subscribers.length > 0) {
+                  await base44.asServiceRole.entities.NewsletterSubscriber.update(subscribers[0].id, {
+                    status: 'subscribed',
+                    unsubscribed_at: null
+                  });
+                  setStatus('resubscribed');
+                }
+              }}
+              variant="outline"
+              className="w-full mb-2"
             >
+              Reactivar suscripción
+            </Button>
+            <a href="/" className="text-blue-600 hover:text-blue-700 text-sm">
               Volver al inicio
-            </Link>
-          </>
+            </a>
+          </div>
         )}
 
-        {status === 'already' && (
-          <>
-            <CheckCircle className="w-14 h-14 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Ya estabas dado de baja</h1>
-            <p className="text-gray-600 mb-8">
-              Tu email ya estaba marcado como no suscrito. No recibes emails de nuestra newsletter.
-            </p>
-            <Link
-              to="/"
-              className="inline-block bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors"
-            >
+        {status === 'resubscribed' && (
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">¡Te has reactivado!</h2>
+            <p className="text-gray-600 mb-6">Volverás a recibir nuestros emails de marketing.</p>
+            <a href="/" className="text-blue-600 hover:text-blue-700 text-sm">
               Volver al inicio
-            </Link>
-          </>
+            </a>
+          </div>
         )}
 
         {status === 'error' && (
-          <>
-            <XCircle className="w-14 h-14 text-red-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Error</h1>
-            <p className="text-gray-600 mb-8">{message || 'Algo salió mal. Por favor inténtalo de nuevo.'}</p>
-            <a
-              href="mailto:hola@misautonomos.com"
-              className="inline-block bg-gray-100 text-gray-700 font-semibold px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors"
-            >
-              Contactar soporte
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <AlertCircle className="w-12 h-12 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-gray-600 mb-6">No pudimos procesar tu solicitud. Por favor, intenta de nuevo o contacta con soporte.</p>
+            <a href="/" className="text-blue-600 hover:text-blue-700 text-sm">
+              Volver al inicio
             </a>
-          </>
+          </div>
+        )}
+
+        {status === 'not_found' && (
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <AlertCircle className="w-12 h-12 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Email no encontrado</h2>
+            <p className="text-gray-600 mb-6">No encontramos este email en nuestro sistema.</p>
+            <a href="/" className="text-blue-600 hover:text-blue-700 text-sm">
+              Volver al inicio
+            </a>
+          </div>
         )}
       </div>
     </div>
