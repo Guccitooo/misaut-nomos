@@ -215,7 +215,8 @@ const AuthenticatedApp = () => {
           <Route path="/autonomo/:slug" element={<Pages.Autonomo />} />                {/* legacy: /autonomo/ruben-cardenas-torres */}
           <Route path="/autonomo/:cityCategory/:slug" element={<Pages.Autonomo />} />  {/* SEO: /autonomo/electricista-en-antequera/ruben-cardenas-torres */}
           <Route path="/categoria" element={<Pages.Categoria />} />
-          <Route path="/categoria/:slug" element={<Pages.Categoria />} />
+          <Route path="/categoria/:slug" element={<Pages.Categoria />} />            {/* legacy: ?name=X&ciudad=Y */}
+          <Route path="/categoria/:cityCategory" element={<Pages.Categoria />} />     {/* SEO: /categoria/electricistas-en-antequera */}
           <Route path="/precios" element={<Pages.PricingPlans />} />
           <Route path="/preguntas-frecuentes" element={<Pages.FAQ />} />
           <Route path="/preguntas-frecuentes/:slug" element={<Pages.FAQDetail />} />

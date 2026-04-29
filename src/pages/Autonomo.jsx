@@ -566,6 +566,18 @@ export default function AutonomoPage() {
                     {profile.ciudad ? `${profile.ciudad}, ${profile.provincia}` : profile.provincia}
                   </div>
                 )}
+
+              {/* Internal link → listado categoría+ciudad */}
+              {profile.categories?.[0] && profile.ciudad && (
+                <p className="text-xs mt-1.5">
+                  <a
+                    href={`/categoria/${slugify(profile.categories[0])}s-en-${slugify(profile.ciudad)}`}
+                    className="text-blue-600 hover:text-blue-700 underline font-medium"
+                  >
+                    Ver más {profile.categories[0].toLowerCase()}s en {profile.ciudad} →
+                  </a>
+                </p>
+              )}
               </div>
 
               <Button

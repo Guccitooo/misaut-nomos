@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Search as SearchIcon,
@@ -65,17 +65,48 @@ const CIUDADES_PRINCIPALES = [
 
 export default function CategoriaPage() {
   const navigate = useNavigate();
+  const params = useParams();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
 
-  // Leer query params
   const urlParams = new URLSearchParams(window.location.search);
-  const categorySlug = urlParams.get("name");
-  const ciudadParam = urlParams.get("ciudad");
+
+  // Detectar si el segmento dinámico es "categoria-en-ciudad" o solo "categoria"
+  const cityCategorySlug = params.slug || params.cityCategory;
+
+  let categorySlug = null;
+  let ciudadParam = null;
+
+  if (cityCategorySlug && cityCategorySlug.includes('-en-')) {
+    // Formato SEO nuevo: /categoria/electricistas-en-antequera
+    const parts = cityCategorySlug.split('-en-');
+    categorySlug = parts[0];
+    ciudadParam = parts.slice(1).join('-en-');
+  } else if (cityCategorySlug) {
+    // Solo categoría sin ciudad: /categoria/electricistas
+    categorySlug = cityCategorySlug;
+  } else {
+    // Legacy: ?name=X&ciudad=Y
+    categorySlug = urlParams.get("name");
+    ciudadParam = urlParams.get("ciudad");
+  }
 
   // Convertir slug a nombre de categoría
   const categoryName = CATEGORY_MAP[categorySlug] || categorySlug;
-  const ciudadName = ciudadParam ? ciudadParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : null;
+  const ciudadName = ciudadParam
+    ? ciudadParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : null;
+
+  // Redirect legacy URL (?name=X&ciudad=Y) → URL canónica nueva
+  useEffect(() => {
+    const isLegacyUrl = urlParams.get("name") || urlParams.get("ciudad");
+    if (isLegacyUrl && categorySlug) {
+      const newPath = ciudadParam
+        ? `/categoria/${categorySlug}-en-${slugify(ciudadParam)}`
+        : `/categoria/${categorySlug}`;
+      navigate(newPath, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadUser();
@@ -121,9 +152,9 @@ export default function CategoriaPage() {
 
   const handleCiudadChange = (ciudad) => {
     if (ciudad === "all") {
-      navigate(`${createPageUrl("Categoria")}?name=${categorySlug}`);
+      navigate(`/categoria/${categorySlug}`);
     } else {
-      navigate(`${createPageUrl("Categoria")}?name=${categorySlug}&ciudad=${slugify(ciudad)}`);
+      navigate(`/categoria/${categorySlug}-en-${slugify(ciudad)}`);
     }
   };
 
@@ -158,8 +189,8 @@ export default function CategoriaPage() {
   };
 
   // SEO
-  const canonicalUrl = ciudadName 
-    ? `https://misautonomos.es/categoria/${categorySlug}?ciudad=${slugify(ciudadName)}`
+  const canonicalUrl = ciudadName
+    ? `https://misautonomos.es/categoria/${categorySlug}-en-${slugify(ciudadName)}`
     : `https://misautonomos.es/categoria/${categorySlug}`;
   
   const seoTitle = ciudadName 
@@ -180,6 +211,41 @@ export default function CategoriaPage() {
       
       {/* Canonical */}
       <link rel="canonical" href={canonicalUrl} />
+
+      {/* Schema.org ItemList para rich snippets */}
+      {profiles.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": ciudadName ? `${categoryName}s en ${ciudadName}` : `${categoryName}s`,
+            "description": `Lista de ${profiles.length} ${categoryName?.toLowerCase()}s${ciudadName ? ` en ${ciudadName}` : ' verificados'} en MisAutónomos`,
+            "numberOfItems": profiles.length,
+            "itemListElement": profiles.slice(0, 20).map((profile, idx) => ({
+              "@type": "ListItem",
+              "position": idx + 1,
+              "item": {
+                "@type": "LocalBusiness",
+                "name": profile.business_name,
+                "url": `https://misautonomos.es/autonomo/${slugify(profile.categories?.[0] || '')}-en-${slugify(profile.ciudad || '')}/${profile.slug_publico}`,
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": profile.ciudad,
+                  "addressRegion": profile.provincia,
+                  "addressCountry": "ES"
+                },
+                ...(profile.average_rating > 0 ? {
+                  "aggregateRating": {
+                    "@type": "AggregateRating",
+                    "ratingValue": profile.average_rating,
+                    "reviewCount": profile.total_reviews || 0
+                  }
+                } : {})
+              }
+            }))
+          })
+        }} />
+      )}
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -247,18 +313,34 @@ export default function CategoriaPage() {
 
           {/* Sin resultados */}
           {!isLoading && profiles.length === 0 && (
-            <Card className="p-8 text-center rounded-xl">
-              <SearchIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                No hay {categoryName?.toLowerCase() || 'profesionales'} {ciudadName ? `en ${ciudadName}` : ''}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Prueba ampliando tu búsqueda a toda España
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
+                <Briefcase className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Aún no hay {categoryName?.toLowerCase()}s{ciudadName ? ` en ${ciudadName}` : ''}
+              </h2>
+              <p className="text-gray-600 max-w-md mx-auto mb-6">
+                Estamos creciendo cada día. Si eres {categoryName?.toLowerCase()}{ciudadName ? ` en ${ciudadName}` : ''},
+                registra tu perfil gratis y empieza a recibir clientes.
               </p>
-              <Button onClick={() => navigate(createPageUrl("Search"))}>
-                Ver todos los profesionales
-              </Button>
-            </Card>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => navigate(createPageUrl("PricingPlans"))} className="bg-blue-600 hover:bg-blue-700">
+                  Soy {categoryName?.toLowerCase()}, quiero registrarme
+                </Button>
+                <Button variant="outline" onClick={() => navigate(createPageUrl("Search"))}>
+                  Ver todos los profesionales
+                </Button>
+              </div>
+              {ciudadName && (
+                <p className="text-sm text-gray-600 mt-6">
+                  💡 También puedes ver{' '}
+                  <button onClick={() => navigate(`/categoria/${categorySlug}`)} className="text-blue-600 underline font-medium">
+                    {categoryName?.toLowerCase()}s en otras ciudades
+                  </button>
+                </p>
+              )}
+            </div>
           )}
 
           {/* Resultados */}
