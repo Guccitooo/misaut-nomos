@@ -446,8 +446,16 @@ export default function ProfileOnboardingPage() {
         console.log('Referral code generation failed (non-critical):', codeErr);
       }
 
-      // ✅ Auto-suscribir a newsletter (fire-and-forget)
-      autoSubscribeNewsletter({ email: formData.email_contacto, name: formData.business_name, user_type: "professionnel" }).catch(() => {});
+      // ✅ Auto-suscribir a newsletter (fire-and-forget, idempotente)
+      import('@/lib/newsletterAutoSubscribe').then(({ autoSubscribeToNewsletter }) => {
+        autoSubscribeToNewsletter({
+          email: user.email,
+          name: formData.business_name || user.full_name || '',
+          userTypeInterest: 'autonomo',
+          source: 'auto_signup_professional',
+          extraTags: ['professional']
+        });
+      }).catch(() => {});
 
       if (hasActiveSubscription) {
         // Caso raro: tenía suscripción activa de antes y ahora completa onboarding tarde

@@ -375,6 +375,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
             try {
               await base44.auth.updateMe({ user_type: "client" });
               currentUser.user_type = "client";
+              // Auto-suscripción al newsletter (fire-and-forget, idempotente)
+              import('@/lib/newsletterAutoSubscribe').then(({ autoSubscribeToNewsletter }) => {
+                autoSubscribeToNewsletter({
+                  email: currentUser.email,
+                  name: currentUser.full_name || '',
+                  userTypeInterest: 'cliente',
+                  source: 'auto_signup_client',
+                  extraTags: ['client']
+                });
+              }).catch(() => {});
             } catch (e) {
               console.warn('Failed to set user_type:', e);
               currentUser.user_type = "client";
