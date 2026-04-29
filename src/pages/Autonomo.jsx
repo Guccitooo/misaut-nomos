@@ -402,7 +402,7 @@ export default function AutonomoPage() {
             <p className="text-gray-600 mb-6">
               {t('profileNotFoundDescription') || 'El profesional que buscas no existe o ya no está disponible.'}
             </p>
-            <Button onClick={() => navigate(createPageUrl("Search"))} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => navigate(createPageUrl("Search"))} className="bg-blue-600 hover:bg-blue-700 text-white">
               {t('backToSearch') || 'Volver a búsqueda'}
             </Button>
           </CardContent>
@@ -498,7 +498,7 @@ export default function AutonomoPage() {
           <Button
             onClick={() => navigate(createPageUrl("Search"))}
             variant="ghost"
-            className="hover:bg-white mb-2"
+            className="hover:bg-white mb-2 text-gray-700 hover:text-gray-900 font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('backToSearch') || 'Volver a búsqueda'}

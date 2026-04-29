@@ -674,7 +674,7 @@ export default function SearchPage() {
                   <><span className="text-blue-600">{filteredProfiles.length}</span> profesionales</>
                 )}
               </h2>
-              <p className="text-xs text-gray-400">Verificados · Contacto directo · Sin comisiones</p>
+              <p className="text-xs text-gray-600">Verificados · Contacto directo · Sin comisiones</p>
             </div>
             {!isInitialLoading && filteredProfiles.length > 0 && (
               <div className="flex gap-1.5">

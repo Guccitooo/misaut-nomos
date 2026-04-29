@@ -692,6 +692,22 @@ label {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ACCESIBILIDAD WCAG AA — contraste mínimo en texto del cuerpo
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Headings siempre con máximo contraste a menos que se override explícitamente */
+h1:not([class*="text-"]),
+h2:not([class*="text-"]),
+h3:not([class*="text-"]) {
+  color: #111827; /* gray-900 */
+}
+
+/* Asegurar que botones ghost de shadcn sean legibles cuando no hay color explícito */
+button[class*="hover:bg-accent"]:not([class*="text-"]) {
+  color: #374151; /* gray-700 */
+}
+
 /* Ocultar bottom nav cuando hay un modal abierto */
 @media (max-width: 767px) {
   body.modal-open .mobile-bottom-nav,

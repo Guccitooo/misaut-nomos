@@ -188,7 +188,7 @@ export default function CategoriaPage() {
             <Button
               onClick={() => navigate(createPageUrl("Search"))}
               variant="ghost"
-              className="text-white hover:bg-white/10 mb-4"
+              className="text-white hover:bg-white/10 mb-4 font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('backToSearch') || 'Volver a búsqueda'}
