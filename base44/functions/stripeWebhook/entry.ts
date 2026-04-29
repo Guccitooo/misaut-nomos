@@ -192,13 +192,25 @@ Deno.serve(async (req) => {
                 });
 
                 // ✅ CRÍTICO: Renovación automática TRUE si NO está explícitamente cancelado
+                // ✅ VALIDACIÓN: Limitar trials anómalos a 90 días máximo
+                const MAX_TRIAL_DAYS = 90;
+                let fechaExpiracion = new Date(subscription.current_period_end * 1000);
+                const fechaInicio = new Date(subscription.current_period_start * 1000);
+                if (profileStatus.estado === 'en_prueba') {
+                    const diffDays = (fechaExpiracion - fechaInicio) / (1000 * 60 * 60 * 24);
+                    if (diffDays > MAX_TRIAL_DAYS) {
+                        console.warn(`🚨 Trial anómalo detectado: ${Math.round(diffDays)} días. Limitando a ${MAX_TRIAL_DAYS} días.`);
+                        fechaExpiracion = new Date(fechaInicio.getTime() + MAX_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+                    }
+                }
+
                 const subscriptionData = {
                     user_id: userId,
                     plan_id: planId,
                     plan_nombre: plan.nombre,
                     plan_precio: plan.precio,
-                    fecha_inicio: new Date(subscription.current_period_start * 1000).toISOString(),
-                    fecha_expiracion: new Date(subscription.current_period_end * 1000).toISOString(),
+                    fecha_inicio: fechaInicio.toISOString(),
+                    fecha_expiracion: fechaExpiracion.toISOString(),
                     estado: profileStatus.estado,
                     renovacion_automatica: subscription.cancel_at_period_end === false,
                     metodo_pago: 'stripe',
