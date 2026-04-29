@@ -48,6 +48,11 @@
       "type": "string",
       "description": "Comentario (opcional)"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n adicional de la experiencia con el profesional"
+    },
     "conversation_id": {
       "type": "string",
       "description": "ID de la conversaci\u00f3n desde la que se dej\u00f3 la rese\u00f1a"

@@ -16,6 +16,11 @@
     "message": {
       "type": "string"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n detallada de la alerta y las acciones recomendadas"
+    },
     "action_url": {
       "type": "string"
     },

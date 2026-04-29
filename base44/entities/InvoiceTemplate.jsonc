@@ -1,0 +1,88 @@
+{
+  "name": "InvoiceTemplate",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "template_name": {
+      "type": "string",
+      "description": "Nombre de la plantilla"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si es la plantilla por defecto"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL del logo"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Nombre de la empresa"
+    },
+    "company_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n de la empresa"
+    },
+    "company_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono de la empresa"
+    },
+    "company_email": {
+      "type": "string",
+      "description": "Email de la empresa"
+    },
+    "company_nif": {
+      "type": "string",
+      "description": "NIF/CIF de la empresa"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#2563EB",
+      "description": "Color principal"
+    },
+    "secondary_color": {
+      "type": "string",
+      "default": "#64748B",
+      "description": "Color secundario"
+    },
+    "footer_text": {
+      "type": "string",
+      "description": "Texto del pie de p\u00e1gina"
+    },
+    "payment_terms": {
+      "type": "string",
+      "description": "T\u00e9rminos de pago"
+    },
+    "bank_account": {
+      "type": "string",
+      "description": "N\u00famero de cuenta bancaria"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n o notas sobre el uso de esta plantilla"
+    }
+  },
+  "required": [
+    "professional_id",
+    "template_name"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    }
+  }
+}

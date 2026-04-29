@@ -115,6 +115,11 @@
       "type": "number",
       "description": "\u00daltimo n\u00famero de presupuesto emitido",
       "default": 0
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas internas sobre la configuraci\u00f3n de facturaci\u00f3n"
     }
   },
   "required": [

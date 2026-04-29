@@ -1,0 +1,212 @@
+{
+  "name": "ClientInsights",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "client_type": {
+      "type": "string",
+      "enum": [
+        "particular",
+        "company",
+        "both"
+      ],
+      "default": "particular",
+      "description": "Tipo principal de cliente"
+    },
+    "client_age_range": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "18-25",
+          "25-35",
+          "35-45",
+          "45-55",
+          "55-65",
+          "65+"
+        ]
+      },
+      "default": [],
+      "description": "Rango de edad de sus clientes"
+    },
+    "client_gender": {
+      "type": "string",
+      "enum": [
+        "men",
+        "women",
+        "both"
+      ],
+      "default": "both",
+      "description": "Sexo predominante del cliente t\u00edpico"
+    },
+    "client_interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Intereses/hobbies del cliente ideal"
+    },
+    "preferred_platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "instagram",
+          "facebook",
+          "tiktok",
+          "linkedin",
+          "youtube",
+          "google",
+          "whatsapp_status"
+        ]
+      },
+      "default": [],
+      "description": "Redes donde su cliente suele estar presente"
+    },
+    "client_sources_now": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "word_of_mouth",
+          "google",
+          "instagram",
+          "facebook",
+          "tiktok",
+          "linkedin",
+          "misautonomos",
+          "own_web",
+          "physical_store",
+          "other"
+        ]
+      },
+      "default": [],
+      "description": "C\u00f3mo consigue clientes actualmente (multi-select)"
+    },
+    "average_ticket_range": {
+      "type": "string",
+      "enum": [
+        "0-100",
+        "100-500",
+        "500-1000",
+        "1000-3000",
+        "3000+"
+      ],
+      "default": "",
+      "description": "Ticket medio por cliente"
+    },
+    "monthly_revenue_range": {
+      "type": "string",
+      "enum": [
+        "0-1000",
+        "1000-3000",
+        "3000-6000",
+        "6000-10000",
+        "10000+",
+        "prefer_not_to_say"
+      ],
+      "default": "",
+      "description": "Facturaci\u00f3n media mensual (opcional, anonimizado)"
+    },
+    "service_area_type": {
+      "type": "string",
+      "enum": [
+        "local_city",
+        "provincial",
+        "regional",
+        "national",
+        "online_anywhere"
+      ],
+      "default": "local",
+      "description": "\u00c1mbito geogr\u00e1fico del servicio"
+    },
+    "seasonality": {
+      "type": "string",
+      "enum": [
+        "none",
+        "summer_peak",
+        "winter_peak",
+        "christmas_peak",
+        "monthly_variable"
+      ],
+      "default": "none",
+      "description": "Si tiene estacionalidad marcada"
+    },
+    "works_weekends": {
+      "type": "boolean",
+      "default": false,
+      "description": "Trabaja fines de semana"
+    },
+    "business_goal_next_6m": {
+      "type": "string",
+      "enum": [
+        "new_clients",
+        "retain_existing",
+        "increase_ticket",
+        "expand_geography",
+        "new_services"
+      ],
+      "default": "",
+      "description": "Objetivo principal pr\u00f3ximos 6 meses"
+    },
+    "unique_selling_point": {
+      "type": "string",
+      "default": "",
+      "description": "Qu\u00e9 le diferencia de la competencia"
+    },
+    "biggest_challenge": {
+      "type": "string",
+      "default": "",
+      "description": "Mayor reto para conseguir clientes"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ha completado el cuestionario de insights"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cu\u00e1ndo complet\u00f3 el cuestionario"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima actualizaci\u00f3n"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre el perfil de clientes de este profesional"
+    }
+  },
+  "required": [
+    "professional_id"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id"
+      ],
+      "unique": true
+    }
+  ]
+}

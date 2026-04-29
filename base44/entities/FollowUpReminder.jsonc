@@ -1,0 +1,65 @@
+{
+  "name": "FollowUpReminder",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "ID del cliente"
+    },
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n relacionada"
+    },
+    "reminder_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha del recordatorio"
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensaje del recordatorio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "dismissed"
+      ],
+      "default": "pending",
+      "description": "Estado del recordatorio"
+    },
+    "context": {
+      "type": "string",
+      "description": "Contexto de la conversaci\u00f3n para el seguimiento"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n adicional o notas sobre este recordatorio de seguimiento"
+    }
+  },
+  "required": [
+    "client_id",
+    "reminder_date",
+    "message"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.client_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.client_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.client_id == auth.user_id || auth.role == 'admin'"
+    }
+  }
+}

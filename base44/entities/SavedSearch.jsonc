@@ -1,0 +1,64 @@
+{
+  "name": "SavedSearch",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario"
+    },
+    "search_name": {
+      "type": "string",
+      "description": "Nombre de la b\u00fasqueda guardada"
+    },
+    "filters": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "provincia": {
+          "type": "string"
+        },
+        "ciudad": {
+          "type": "string"
+        },
+        "minRating": {
+          "type": "number"
+        },
+        "availability": {
+          "type": "string"
+        }
+      },
+      "description": "Filtros aplicados"
+    },
+    "results_count": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de resultados cuando se guard\u00f3"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas personales sobre esta b\u00fasqueda guardada"
+    }
+  },
+  "required": [
+    "user_id",
+    "search_name",
+    "filters"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    }
+  }
+}

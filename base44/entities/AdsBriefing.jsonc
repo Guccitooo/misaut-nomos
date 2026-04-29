@@ -200,6 +200,11 @@
       ],
       "default": "standard",
       "description": "Presupuesto incluido en el plan"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n general de los objetivos y contexto de esta campa\u00f1a publicitaria"
     }
   },
   "required": [

@@ -1,0 +1,113 @@
+{
+  "name": "CRMAutomation",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre de la automatizaci\u00f3n"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "sequence",
+        "auto_tag",
+        "auto_reminder"
+      ],
+      "description": "Tipo de automatizaci\u00f3n"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si est\u00e1 activa"
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "enum": [
+            "client_created",
+            "status_changed",
+            "job_completed",
+            "jobs_count",
+            "days_inactive",
+            "birthday",
+            "contract_end",
+            "custom_date"
+          ]
+        },
+        "conditions": {
+          "type": "object"
+        }
+      },
+      "description": "Disparador de la automatizaci\u00f3n"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "add_tag",
+              "remove_tag",
+              "change_status",
+              "change_segment",
+              "create_reminder",
+              "send_email",
+              "create_activity"
+            ]
+          },
+          "delay_days": {
+            "type": "number"
+          },
+          "params": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "Acciones a ejecutar"
+    },
+    "execution_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Veces ejecutada"
+    },
+    "last_execution": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima ejecuci\u00f3n"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n del prop\u00f3sito y funcionamiento de esta automatizaci\u00f3n"
+    }
+  },
+  "required": [
+    "professional_id",
+    "name",
+    "type",
+    "trigger",
+    "actions"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    }
+  }
+}

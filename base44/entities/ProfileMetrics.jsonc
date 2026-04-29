@@ -1,0 +1,72 @@
+{
+  "name": "ProfileMetrics",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la m\u00e9trica"
+    },
+    "profile_views": {
+      "type": "number",
+      "default": 0,
+      "description": "Vistas al perfil ese d\u00eda"
+    },
+    "search_appearances": {
+      "type": "number",
+      "default": 0,
+      "description": "Veces que apareci\u00f3 en b\u00fasquedas ese d\u00eda"
+    },
+    "messages_received": {
+      "type": "number",
+      "default": 0,
+      "description": "Mensajes recibidos ese d\u00eda"
+    },
+    "contact_clicks": {
+      "type": "number",
+      "default": 0,
+      "description": "Clics en botones de contacto"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas o contexto sobre las m\u00e9tricas de este per\u00edodo"
+    }
+  },
+  "required": [
+    "professional_id",
+    "date"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id",
+        "date"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "date"
+      ]
+    }
+  ]
+}

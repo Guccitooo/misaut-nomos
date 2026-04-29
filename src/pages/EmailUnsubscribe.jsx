@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function NewsletterUnsubscribe() {
+export default function EmailUnsubscribe() {
   const [status, setStatus] = useState('loading'); // loading | success | error | already
   const [message, setMessage] = useState('');
 

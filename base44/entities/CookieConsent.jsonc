@@ -1,0 +1,81 @@
+{
+  "name": "CookieConsent",
+  "type": "object",
+  "properties": {
+    "consent_id": {
+      "type": "string",
+      "description": "Identificador \u00fanico del dispositivo/sesi\u00f3n"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario (si est\u00e1 autenticado)"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n IP del usuario"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "User agent del navegador"
+    },
+    "accepted_essential": {
+      "type": "boolean",
+      "default": true,
+      "description": "Cookies esenciales aceptadas (siempre true)"
+    },
+    "accepted_analytics": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cookies anal\u00edticas aceptadas"
+    },
+    "accepted_marketing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cookies de marketing aceptadas"
+    },
+    "legal_version": {
+      "type": "string",
+      "default": "cookies-v1",
+      "description": "Versi\u00f3n de la pol\u00edtica de cookies aceptada"
+    },
+    "language": {
+      "type": "string",
+      "description": "Idioma en el que se acept\u00f3 (es/en)"
+    },
+    "country": {
+      "type": "string",
+      "description": "Pa\u00eds del usuario (opcional)"
+    },
+    "consent_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del consentimiento"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre el consentimiento registrado"
+    }
+  },
+  "required": [
+    "consent_id",
+    "accepted_essential",
+    "accepted_analytics",
+    "accepted_marketing",
+    "legal_version"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "true"
+    },
+    "update": {
+      "rule": "true"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  }
+}

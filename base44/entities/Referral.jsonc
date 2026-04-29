@@ -58,6 +58,28 @@
     },
     "referred_subscription_id": {
       "type": "string"
+    },
+    "stripe_reward_applied": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la recompensa se aplic\u00f3 realmente en Stripe"
+    },
+    "stripe_reward_method": {
+      "type": "string",
+      "enum": [
+        "trial_extended",
+        "balance_credit"
+      ],
+      "description": "M\u00e9todo Stripe utilizado para aplicar la recompensa"
+    },
+    "stripe_reward_details": {
+      "type": "string",
+      "description": "JSON con la respuesta de Stripe para auditor\u00eda"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre este referido o el proceso de recompensa"
     }
   },
   "required": [

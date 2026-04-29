@@ -1,0 +1,40 @@
+{
+  "name": "TrialUsageLog",
+  "type": "object",
+  "properties": {
+    "identifier_type": {
+      "type": "string",
+      "enum": [
+        "nif",
+        "phone"
+      ],
+      "description": "Tipo de identificador (NIF o tel\u00e9fono)"
+    },
+    "identifier_hash": {
+      "type": "string",
+      "description": "Hash del NIF o tel\u00e9fono para registrar el uso de la prueba"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario que us\u00f3 la prueba"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre el uso del per\u00edodo de prueba"
+    }
+  },
+  "required": [
+    "identifier_type",
+    "identifier_hash",
+    "user_id"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "identifier_hash"
+      ],
+      "unique": true
+    }
+  ]
+}

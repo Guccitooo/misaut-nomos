@@ -66,6 +66,11 @@
       "type": "string",
       "description": "ID de cliente en Stripe"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre esta suscripci\u00f3n"
+    },
     "gifted_plan_id": {
       "type": "string",
       "default": "",

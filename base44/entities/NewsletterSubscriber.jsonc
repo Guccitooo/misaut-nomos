@@ -1,0 +1,136 @@
+{
+  "name": "NewsletterSubscriber",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email del suscriptor"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre (opcional)",
+      "default": ""
+    },
+    "source": {
+      "type": "string",
+      "description": "D\u00f3nde se suscribi\u00f3 (footer, blog, landing, popup)",
+      "default": "footer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "unsubscribed"
+      ],
+      "default": "confirmed",
+      "description": "Estado de la suscripci\u00f3n"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "default": "es",
+      "description": "Idioma preferido"
+    },
+    "user_type_interest": {
+      "type": "string",
+      "enum": [
+        "autonomo",
+        "cliente",
+        "ambos"
+      ],
+      "default": "ambos",
+      "description": "Tipo de contenido que le interesa"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Etiquetas para segmentaci\u00f3n"
+    },
+    "confirmation_token": {
+      "type": "string",
+      "description": "Token \u00fanico para confirmar suscripci\u00f3n (double opt-in)"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de confirmaci\u00f3n"
+    },
+    "unsubscribed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de baja"
+    },
+    "unsubscribe_token": {
+      "type": "string",
+      "description": "Token para dar de baja con un clic"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP al suscribirse (RGPD)",
+      "default": ""
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Navegador al suscribirse",
+      "default": ""
+    },
+    "emails_sent": {
+      "type": "number",
+      "default": 0,
+      "description": "Emails enviados a este suscriptor"
+    },
+    "last_email_sent": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltimo email enviado"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Notas adicionales sobre este suscriptor"
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "security": {
+    "read": {
+      "rule": "auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "true"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "email"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "status",
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "source"
+      ]
+    }
+  ]
+}

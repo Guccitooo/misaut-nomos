@@ -60,6 +60,11 @@
     "subscription_id": {
       "type": "string",
       "description": "ID de la suscripci\u00f3n afectada"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n adicional del cambio de plan para auditor\u00eda"
     }
   },
   "required": [

@@ -1,0 +1,63 @@
+{
+  "name": "SubscriptionPlan",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "ID \u00fanico del plan (plan_visibility, plan_adsplus)"
+    },
+    "nombre": {
+      "type": "string",
+      "description": "Nombre del plan"
+    },
+    "precio": {
+      "type": "number",
+      "description": "Precio del plan en euros"
+    },
+    "duracion_dias": {
+      "type": "number",
+      "description": "Duraci\u00f3n en d\u00edas (30 para mensual)"
+    },
+    "renovacion_automatica": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si se renueva autom\u00e1ticamente"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n detallada del plan y sus beneficios"
+    },
+    "stripe_price_id": {
+      "type": "string",
+      "description": "ID del precio en Stripe"
+    },
+    "incluye_ads": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si incluye gesti\u00f3n de campa\u00f1as publicitarias"
+    },
+    "ads_platforms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Plataformas publicitarias incluidas (Instagram, Facebook, TikTok)"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Caracter\u00edsticas incluidas en el plan"
+    }
+  },
+  "required": [
+    "plan_id",
+    "nombre",
+    "precio",
+    "duracion_dias"
+  ]
+}

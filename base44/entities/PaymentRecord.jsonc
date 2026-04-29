@@ -1,0 +1,123 @@
+{
+  "name": "PaymentRecord",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID del usuario que realiz\u00f3 el pago"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email del usuario"
+    },
+    "stripe_invoice_id": {
+      "type": "string",
+      "description": "ID de la factura en Stripe"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "ID de la suscripci\u00f3n en Stripe"
+    },
+    "stripe_payment_intent_id": {
+      "type": "string",
+      "description": "ID del payment intent en Stripe"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Importe pagado (en euros)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR",
+      "description": "Moneda del pago"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "ID del plan pagado"
+    },
+    "plan_nombre": {
+      "type": "string",
+      "description": "Nombre del plan"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha del pago"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Inicio del per\u00edodo pagado"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fin del per\u00edodo pagado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "pending",
+        "failed",
+        "refunded"
+      ],
+      "default": "succeeded",
+      "description": "Estado del pago"
+    },
+    "is_trial": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si es un pago de trial"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata adicional del pago",
+      "default": {}
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n o notas adicionales sobre este registro de pago"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "amount",
+    "payment_date"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.user_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "user_id",
+        "payment_date"
+      ]
+    },
+    {
+      "fields": [
+        "stripe_subscription_id"
+      ]
+    },
+    {
+      "fields": [
+        "status",
+        "payment_date"
+      ]
+    }
+  ]
+}

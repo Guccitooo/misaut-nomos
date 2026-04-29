@@ -1,0 +1,94 @@
+{
+  "name": "AutomationExecution",
+  "type": "object",
+  "properties": {
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "automation_id": {
+      "type": "string",
+      "description": "ID de la automatizaci\u00f3n"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID del cliente afectado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha programada de ejecuci\u00f3n"
+    },
+    "executed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de ejecuci\u00f3n real"
+    },
+    "action_index": {
+      "type": "number",
+      "default": 0,
+      "description": "\u00cdndice de la acci\u00f3n en la secuencia"
+    },
+    "action_type": {
+      "type": "string",
+      "description": "Tipo de acci\u00f3n ejecutada"
+    },
+    "result": {
+      "type": "string",
+      "description": "Resultado de la ejecuci\u00f3n"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error si fall\u00f3"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n del contexto o detalles de esta ejecuci\u00f3n de automatizaci\u00f3n"
+    }
+  },
+  "required": [
+    "professional_id",
+    "automation_id",
+    "client_id"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "authenticated"
+    },
+    "update": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "resource.professional_id == auth.user_id || auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "professional_id",
+        "status",
+        "scheduled_date"
+      ]
+    },
+    {
+      "fields": [
+        "automation_id",
+        "client_id"
+      ]
+    }
+  ]
+}
