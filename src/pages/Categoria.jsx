@@ -75,25 +75,18 @@ export default function CategoriaPage() {
   } else if (cityCategorySlug) {
     categorySlug = cityCategorySlug;
   } else {
-    // Legacy: ?name=X&ciudad=Y
+    // Legacy: ?name=X&ciudad=Y → redirigir a URL canónica
     const legacyName = urlParams.get("name");
     const legacyCiudad = urlParams.get("ciudad");
     if (legacyName) {
       categorySlug = slugify(legacyName);
       ciudadSlug = legacyCiudad ? slugify(legacyCiudad) : null;
-    }
-  }
-
-  // Redirect legacy ?name=X&ciudad=Y → URL canónica (hooks siempre al mismo nivel)
-  const isLegacy = !!urlParams.get("name");
-  useEffect(() => {
-    if (isLegacy && categorySlug) {
       const newPath = ciudadSlug
         ? `/categoria/${categorySlug}-en-${ciudadSlug}`
         : `/categoria/${categorySlug}`;
-      navigate(newPath, { replace: true });
+      useEffect(() => { navigate(newPath, { replace: true }); }, []);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   // Ciudad legible: capitalizar cada palabra del slug
   const ciudadName = ciudadSlug
@@ -113,7 +106,27 @@ export default function CategoriaPage() {
 
   // Resolver la categoría real desde las ServiceCategory
   const resolvedCategory = resolveCategoryBySlug(serviceCategories, categorySlug);
-  const categoryName = resolvedCategory?.name || null; // null si no está resuelta aún
+  const categoryName = resolvedCategory?.name || null;
+
+  // Redirect legacy: si tenemos categorías cargadas y el slug NO coincide exactamente,
+  // pedir al backend que resuelva el canonical y redirigir con replace.
+  useEffect(() => {
+    if (!categorySlug || !serviceCategories.length) return;
+    // Si ya hay match exacto, no necesitamos redirect
+    if (resolvedCategory && (resolvedCategory.slug === categorySlug || slugify(resolvedCategory.name) === categorySlug)) return;
+    // Si hay un match aproximado (no exacto), construir el redirect
+    if (resolvedCategory) {
+      const correctSlug = resolvedCategory.slug || slugify(resolvedCategory.name);
+      if (correctSlug && correctSlug !== categorySlug) {
+        const canonical = ciudadSlug
+          ? `/categoria/${correctSlug}-en-${ciudadSlug}`
+          : `/categoria/${correctSlug}`;
+        // Log fire-and-forget
+        base44.functions.invoke('resolveLegacySlug', { path: window.location.pathname }).catch(() => {});
+        navigate(canonical, { replace: true });
+      }
+    }
+  }, [serviceCategories, categorySlug, resolvedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cargar perfiles solo cuando tenemos el nombre de categoría
   const { data: profiles = [], isLoading } = useQuery({

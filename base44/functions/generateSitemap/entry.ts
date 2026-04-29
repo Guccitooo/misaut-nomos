@@ -116,14 +116,28 @@ Deno.serve(async (req) => {
       xml += '  </url>\n';
     });
 
-    // Añadir páginas de categorías
+    // Añadir páginas de categorías — usar slug canónico guardado en BD, no generar on-the-fly
     categories.forEach(category => {
+      const catSlug = category.slug || slugify(category.name);
+      if (!catSlug) return;
       xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/categoria/${encodeURIComponent(category.name.toLowerCase().replace(/\s+/g, '-'))}</loc>\n`;
+      xml += `    <loc>${baseUrl}/categoria/${catSlug}</loc>\n`;
       xml += `    <lastmod>${today}</lastmod>\n`;
       xml += `    <changefreq>weekly</changefreq>\n`;
       xml += `    <priority>0.8</priority>\n`;
       xml += '  </url>\n';
+      // Añadir combinaciones categoría-en-ciudad con slug canónico
+      const catProfiles = profiles.filter(p => p.categories?.includes(category.name) && p.ciudad);
+      const catCities = [...new Set(catProfiles.map(p => p.ciudad))];
+      catCities.slice(0, 20).forEach(city => {
+        const citySlug = slugify(city);
+        xml += '  <url>\n';
+        xml += `    <loc>${baseUrl}/categoria/${catSlug}-en-${citySlug}</loc>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += '  </url>\n';
+      });
     });
 
     // Añadir páginas de provincias

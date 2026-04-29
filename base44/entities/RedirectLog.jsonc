@@ -1,0 +1,67 @@
+{
+  "name": "RedirectLog",
+  "type": "object",
+  "properties": {
+    "from_path": {
+      "type": "string",
+      "description": "URL de origen (slug legacy)"
+    },
+    "to_path": {
+      "type": "string",
+      "description": "URL de destino (slug can\u00f3nico)"
+    },
+    "redirect_type": {
+      "type": "string",
+      "enum": [
+        "category",
+        "profile"
+      ],
+      "description": "Tipo de redirect"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "User agent del visitante"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de expiraci\u00f3n del log (30 d\u00edas)"
+    }
+  },
+  "required": [
+    "from_path",
+    "to_path"
+  ],
+  "security": {
+    "read": {
+      "rule": "auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "true"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "from_path"
+      ]
+    },
+    {
+      "fields": [
+        "redirect_type",
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "expires_at"
+      ]
+    }
+  ]
+}

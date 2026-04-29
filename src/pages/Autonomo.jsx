@@ -141,7 +141,16 @@ export default function AutonomoPage() {
         return { profile: found, redirect: found.slug_publico || cleanSlug };
       }
       
-      // 4. Búsqueda flexible por coincidencia parcial
+      // 4. Búsqueda por slug_publico_aliases (slugs viejos guardados)
+      found = allProfiles.find(p =>
+        p.slug_publico_aliases?.includes(slug) ||
+        p.slug_publico_aliases?.includes(cleanedInputSlug)
+      );
+      if (found) {
+        return { profile: found, redirect: found.slug_publico || generateSlug(found.business_name) };
+      }
+
+      // 5. Búsqueda flexible por coincidencia parcial
       found = allProfiles.find(p => {
         const nameSlug = generateSlug(p.business_name);
         return nameSlug.startsWith(cleanedInputSlug) || cleanedInputSlug.startsWith(nameSlug);
@@ -150,7 +159,16 @@ export default function AutonomoPage() {
         const cleanSlug = generateSlug(found.business_name);
         return { profile: found, redirect: found.slug_publico || cleanSlug };
       }
-      
+
+      // 6. Llamar backend para resolver slug legacy si nada coincide localmente
+      try {
+        const res = await base44.functions.invoke('resolveLegacySlug', { path: window.location.pathname });
+        if (res?.data?.found && res.data.canonical) {
+          // Retornar un objeto especial para que el efecto de redirect lo gestione
+          return { profile: null, redirect: null, externalRedirect: res.data.canonical };
+        }
+      } catch { /* silent */ }
+
       return { profile: null, redirect: null };
     },
     enabled: !!slug,
@@ -165,11 +183,15 @@ export default function AutonomoPage() {
 
   // Redirigir automáticamente a slug limpio si es diferente
   useEffect(() => {
+    if (profileData?.externalRedirect) {
+      navigate(profileData.externalRedirect, { replace: true });
+      return;
+    }
     if (redirectSlug && redirectSlug !== slug && profile) {
       const newUrl = createPageUrl("Autonomo") + `/${redirectSlug}`;
       window.history.replaceState({}, '', newUrl);
     }
-  }, [redirectSlug, slug, profile]);
+  }, [redirectSlug, slug, profile, profileData?.externalRedirect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect a URL canónica SEO si la actual no lo es (categoria-en-ciudad/nombre)
   useEffect(() => {

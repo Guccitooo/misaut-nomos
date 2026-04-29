@@ -262,6 +262,14 @@
       "description": "Slug para URL p\u00fablica",
       "default": ""
     },
+    "slug_publico_aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Slugs antiguos del profesional que deben seguir resolviendo (para redirects 301)",
+      "default": []
+    },
     "years_experience": {
       "type": "number",
       "description": "A\u00f1os de experiencia profesional",
@@ -482,6 +490,11 @@
     {
       "fields": [
         "is_ads_plus"
+      ]
+    },
+    {
+      "fields": [
+        "slug_publico"
       ]
     }
   ]
