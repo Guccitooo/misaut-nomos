@@ -57,29 +57,47 @@ const getInterlocutorName = (msg, otherUserId) => {
 // ─── Audio Bubble ─────────────────────────────────────────────────────────────
 const AudioBubble = ({ attachment, isMe }) => {
   const [playing, setPlaying] = useState(false);
-  const [realDuration, setRealDuration] = useState(attachment.duration || null);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(attachment.duration || 0);
   const audioRef = useRef(null);
 
-  const formatDuration = (secs) => {
-    if (!secs && secs !== 0) return '0:00';
-    const s = Math.round(secs);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const fmt = (s) => {
+    if (!s || isNaN(s)) return '0:00';
+    const sec = Math.round(s);
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   };
 
-  const handlePlay = () => {
+  const getAudio = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(attachment.url);
       audioRef.current.addEventListener('loadedmetadata', () => {
-        if (!attachment.duration) setRealDuration(Math.round(audioRef.current.duration));
+        if (isFinite(audioRef.current.duration)) setDuration(audioRef.current.duration);
       });
-      audioRef.current.addEventListener('ended', () => setPlaying(false));
+      audioRef.current.addEventListener('timeupdate', () => {
+        const d = audioRef.current.duration;
+        const t = audioRef.current.currentTime;
+        setCurrentTime(t);
+        setProgress(d && isFinite(d) ? (t / d) * 100 : 0);
+      });
+      audioRef.current.addEventListener('ended', () => { setPlaying(false); setProgress(0); setCurrentTime(0); });
     }
-    if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
-    } else {
-      audioRef.current.play();
-      setPlaying(true);
+    return audioRef.current;
+  };
+
+  const handlePlay = () => {
+    const audio = getAudio();
+    if (playing) { audio.pause(); setPlaying(false); }
+    else { audio.play(); setPlaying(true); }
+  };
+
+  const handleSeek = (e) => {
+    const audio = getAudio();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    if (audio.duration && isFinite(audio.duration)) {
+      audio.currentTime = ratio * audio.duration;
+      setProgress(ratio * 100);
     }
   };
 
@@ -87,11 +105,13 @@ const AudioBubble = ({ attachment, isMe }) => {
   const textColor = isMe ? 'text-blue-100' : 'text-gray-500';
   const btnBg = isMe ? 'bg-white/20 hover:bg-white/30' : 'bg-white hover:bg-gray-50 shadow-sm';
   const btnColor = isMe ? 'text-white' : 'text-blue-600';
-  const barBg = isMe ? 'bg-white/20' : 'bg-gray-200';
+  const trackBg = isMe ? 'bg-white/20' : 'bg-gray-200';
+  const fillBg = isMe ? 'bg-white' : 'bg-blue-500';
 
   return (
-    <div className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-w-[180px] max-w-[240px] ${bg}`}>
+    <div className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-w-[200px] max-w-[260px] ${bg}`}>
       <button
+        type="button"
         onClick={handlePlay}
         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${btnBg} ${btnColor}`}
       >
@@ -105,10 +125,17 @@ const AudioBubble = ({ attachment, isMe }) => {
           </svg>
         )}
       </button>
-      <div className={`flex-1 h-1 rounded-full ${barBg}`} />
-      <span className={`text-xs font-medium flex-shrink-0 ${textColor}`}>
-        {formatDuration(realDuration)}
-      </span>
+      <div className="flex-1 flex flex-col gap-1">
+        <div
+          className={`h-1.5 rounded-full cursor-pointer relative ${trackBg}`}
+          onClick={handleSeek}
+        >
+          <div className={`h-full rounded-full transition-all ${fillBg}`} style={{ width: `${progress}%` }} />
+        </div>
+        <span className={`text-[10px] font-medium ${textColor}`}>
+          {playing ? fmt(currentTime) : fmt(duration)}
+        </span>
+      </div>
     </div>
   );
 };
@@ -179,6 +206,7 @@ export default function MessagesPage() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [pendingAudio, setPendingAudio] = useState(null); // { blob, url, duration }
 
   const isProfessional = user?.user_type === "professionnel";
 
@@ -506,10 +534,16 @@ export default function MessagesPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      // Preferir opus/webm, fallback a lo que soporte el browser
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : '';
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       chunksRef.current = [];
-      mr.ondataavailable = e => chunksRef.current.push(e.data);
-      mr.start();
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.start(100); // timeslice 100ms para garantizar datos
       mediaRecorderRef.current = mr;
       setIsRecording(true);
       setRecordingSeconds(0);
@@ -522,61 +556,74 @@ export default function MessagesPage() {
   const stopRecording = () => {
     clearInterval(timerRef.current);
     const mr = mediaRecorderRef.current;
-    if (!mr) return;
+    if (!mr || mr.state === 'inactive') return;
 
-    // Capturar duration ANTES de parar (recordingSeconds puede mutar)
     const duration = recordingSeconds;
 
-    // Definir onstop ANTES de llamar a mr.stop()
-    mr.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-
+    mr.onstop = () => {
+      const mimeType = mr.mimeType || 'audio/webm';
+      const blob = new Blob(chunksRef.current, { type: mimeType });
       if (blob.size === 0) {
-        toast.error("No se grabó ningún audio. Inténtalo otra vez.");
-        setIsRecording(false);
-        setRecordingSeconds(0);
+        toast.error("No se grabó audio. Inténtalo otra vez.");
         return;
       }
-
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Audio = reader.result;
-        try {
-          const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
-          if (!otherUserId) return;
-
-          const profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName || "";
-          const clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email || "";
-
-          await createMessage({
-            conversation_id: selectedConvId,
-            sender_id: user.id,
-            recipient_id: otherUserId,
-            content: '',
-            professional_name: isProfessional ? (user.full_name || "") : profName,
-            client_name: !isProfessional ? clientName : "",
-            is_read: false,
-            attachments: [{
-              url: base64Audio,
-              type: 'audio',
-              name: `audio_${Date.now()}.webm`,
-              size: blob.size,
-              duration: duration
-            }]
-          });
-          await loadMessages();
-          scrollToBottom(true);
-        } catch {
-          toast.error("Error al enviar audio");
-        }
-      };
-      reader.readAsDataURL(blob);
+      // Crear URL de objeto local para previsualización
+      const previewUrl = URL.createObjectURL(blob);
+      setPendingAudio({ blob, url: previewUrl, duration });
     };
 
     mr.stop();
-    if (mr.stream) mr.stream.getTracks().forEach(track => track.stop());
+    if (mr.stream) mr.stream.getTracks().forEach(t => t.stop());
     setIsRecording(false);
     setRecordingSeconds(0);
+  };
+
+  const cancelPendingAudio = () => {
+    if (pendingAudio?.url) URL.revokeObjectURL(pendingAudio.url);
+    setPendingAudio(null);
+  };
+
+  const sendPendingAudio = async () => {
+    if (!pendingAudio) return;
+    const otherUserId = currentConv?.otherUserId || selectedOtherUserId;
+    if (!otherUserId) return;
+    setSending(true);
+    try {
+      // Subir el blob a storage (no base64, que puede superar límites de BD)
+      const ext = pendingAudio.blob.type.includes('ogg') ? 'ogg' : 'webm';
+      const file = new File([pendingAudio.blob], `audio_${Date.now()}.${ext}`, { type: pendingAudio.blob.type });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+      // Revocar URL local
+      URL.revokeObjectURL(pendingAudio.url);
+      setPendingAudio(null);
+
+      const profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName || "";
+      const clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email || "";
+
+      await createMessage({
+        conversation_id: selectedConvId,
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: '🎤 Mensaje de voz',
+        professional_name: isProfessional ? (user.full_name || "") : profName,
+        client_name: !isProfessional ? clientName : "",
+        is_read: false,
+        attachments: [{
+          url: file_url,
+          type: 'audio',
+          name: file.name,
+          size: pendingAudio.blob.size,
+          duration: pendingAudio.duration,
+        }]
+      });
+      await loadMessages();
+      scrollToBottom(true);
+    } catch {
+      toast.error("Error al enviar audio");
+    } finally {
+      setSending(false);
+    }
   };
 
   // ─── Send Message ─────────────────────────────────────────────────────────
@@ -1174,6 +1221,34 @@ export default function MessagesPage() {
                   </div>
                 )}
 
+                {/* ── Audio pendiente de enviar ── */}
+                {pendingAudio && (
+                  <div className="mb-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                    <AudioBubble attachment={pendingAudio} isMe={true} />
+                    <div className="flex gap-1 ml-auto flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={cancelPendingAudio}
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 flex items-center justify-center text-gray-500 hover:text-red-600 transition-colors"
+                        aria-label="Cancelar audio"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={sendPendingAudio}
+                        disabled={sending}
+                        className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition-colors disabled:opacity-50"
+                        aria-label="Enviar audio"
+                      >
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Input row (oculto mientras hay audio pendiente) ── */}
+                {!pendingAudio && (
                 <div className="flex items-end gap-1.5">
                   <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" accept="image/*,.pdf,.doc,.docx,.txt" />
 
@@ -1208,19 +1283,23 @@ export default function MessagesPage() {
                   )}
 
                   {isRecording ? (
-                    <Button type="button"
-                      onMouseUp={stopRecording} onTouchEnd={stopRecording}
+                    <button
+                      type="button"
+                      onClick={stopRecording}
                       className="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-white animate-pulse flex-shrink-0 text-xs font-semibold"
-                      aria-label={`Detener grabación - ${recordingSeconds} segundos`}>
+                      aria-label={`Detener grabación - ${recordingSeconds}s`}
+                    >
                       ⏹ {recordingSeconds}s
-                    </Button>
+                    </button>
                   ) : (
-                    <Button type="button"
-                      onMouseDown={startRecording} onTouchStart={startRecording}
-                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0"
-                      aria-label="Grabar mensaje de voz">
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0 text-base"
+                      aria-label="Grabar mensaje de voz"
+                    >
                       🎤
-                    </Button>
+                    </button>
                   )}
 
                   <textarea
@@ -1236,7 +1315,7 @@ export default function MessagesPage() {
                     rows={1}
                     className="flex-1 resize-none bg-gray-100 rounded-2xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-200 transition-all overflow-y-hidden"
                     style={{ minHeight: '40px', maxHeight: '96px' }}
-                    disabled={sending}
+                    disabled={sending || isRecording}
                   />
 
                   <Button
@@ -1248,6 +1327,7 @@ export default function MessagesPage() {
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </div>
+                )}
               </div>
             </>
           ) : (
