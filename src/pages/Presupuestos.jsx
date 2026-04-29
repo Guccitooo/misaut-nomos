@@ -94,7 +94,8 @@ export default function PresupuestosPage() {
       const { getQuotePDFBase64 } = await import('@/services/quotePdfGenerator');
       const pdfBase64 = getQuotePDFBase64(q);
 
-      const msg = await base44.entities.Message.create({
+      const { createMessage } = await import('@/lib/createMessage');
+      const msg = await createMessage({
         conversation_id: conversationId,
         sender_id: q.professional_id,
         recipient_id: q.client_id,

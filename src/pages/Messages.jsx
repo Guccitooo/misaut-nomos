@@ -24,6 +24,7 @@ import QuoteRequest from "../components/messages/QuoteRequest";
 import AIAssistantPro from "../components/ai/AIAssistantPro";
 import SendQuoteDialog from "../components/messages/SendQuoteDialog";
 import { notifyUser, pushTemplates } from "@/services/pushNotifications";
+import { createMessage } from "@/lib/createMessage";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -37,17 +38,19 @@ const formatRelativeTime = (dateStr) => {
   return format(date, "d MMM", { locale: es });
 };
 
-// Obtener nombre del interlocutor dado el otherUserId (quien NO soy yo).
-// Si el otro es el sender → usamos el nombre que él guardó al enviar (professional_name o client_name).
-// Si el otro es el recipient → igual, buscamos cualquier nombre disponible.
-// Clave: buscamos el nombre asociado al otherUserId, no al user_type.
+// Devuelve el nombre del REMITENTE de un mensaje.
+// Prioridad: sender_name (campo nuevo, fiable) > inferencia legacy.
+const getMessageSenderName = (msg, currentUserId) => {
+  if (msg.sender_name) return msg.sender_name;
+  // Fallback legacy: si es mensaje del otro, devolver client_name o professional_name
+  return msg.client_name || msg.professional_name || 'Usuario';
+};
+
+// Devuelve el nombre del INTERLOCUTOR (el otro) en una conversación dado el mensaje.
 const getInterlocutorName = (msg, otherUserId) => {
   if (!otherUserId) return null;
-  // Si el otro fue el remitente del mensaje, su nombre está en professional_name o client_name
-  if (msg.sender_id === otherUserId) {
-    return msg.professional_name || msg.client_name || null;
-  }
-  // Si el otro fue el destinatario, su nombre también puede estar guardado
+  // Si el otro fue el sender, usar sender_name si existe
+  if (msg.sender_id === otherUserId && msg.sender_name) return msg.sender_name;
   return msg.professional_name || msg.client_name || null;
 };
 
@@ -539,7 +542,7 @@ export default function MessagesPage() {
           const profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName || "";
           const clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email || "";
 
-          await base44.entities.Message.create({
+          await createMessage({
             conversation_id: selectedConvId,
             sender_id: user.id,
             recipient_id: otherUserId,
@@ -627,7 +630,7 @@ export default function MessagesPage() {
       scrollToBottom(true);
 
       try {
-        await base44.entities.Message.create(msgData);
+        await createMessage(msgData);
         await loadMessages();
         scrollToBottom(true);
       } catch (err) {
@@ -682,7 +685,7 @@ export default function MessagesPage() {
     if (!otherUserId) return;
     let profName = currentMessages.find(m => m.professional_name)?.professional_name || resolvedContactName;
     let clientName = currentMessages.find(m => m.client_name)?.client_name || user.full_name || user.email;
-    await base44.entities.Message.create({
+    await createMessage({
       conversation_id: selectedConvId,
       sender_id: user.id,
       recipient_id: otherUserId,
@@ -755,7 +758,7 @@ export default function MessagesPage() {
         clientName = clientName || user.full_name || user.email || "";
       }
 
-      await base44.entities.Message.create({
+      await createMessage({
         conversation_id: selectedConvId,
         sender_id: user.id,
         recipient_id: otherUserId,

@@ -96,6 +96,59 @@ Deno.serve(async (req) => {
       convUrl
     );
 
+    // Enviar email al destinatario
+    try {
+      const recipients = await base44.asServiceRole.entities.User.filter({ id: msg.recipient_id });
+      const recipient = recipients?.[0];
+      if (recipient?.email) {
+        const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+        if (RESEND_API_KEY) {
+          const displaySenderName = msg.sender_name || senderName;
+          const safeContent = (msg.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 500);
+          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;">
+        <tr><td style="padding:24px 32px;border-bottom:1px solid #E2E8F0;background:#0F172A;color:#FFFFFF;">
+          <span style="font-weight:700;font-size:18px;">MisAutónomos</span>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h2 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#0F172A;">💬 Nuevo mensaje de ${displaySenderName}</h2>
+          <div style="background:#F8FAFC;border-radius:12px;padding:16px 20px;margin:16px 0;border-left:4px solid #3B82F6;">
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;white-space:pre-wrap;">${safeContent}</p>
+          </div>
+          <p style="font-size:14px;color:#64748B;margin:16px 0;">Responde directamente desde la plataforma:</p>
+          <a href="${convUrl}" style="display:inline-block;background:#0F172A;color:#FFFFFF;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:10px;">Ver mensaje y responder</a>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #E2E8F0;background:#F8FAFC;font-size:11px;color:#94A3B8;">
+          Recibes este email porque alguien te ha escrito en MisAutónomos.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+          const resendResp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'MisAutónomos <onboarding@resend.dev>',
+              to: [recipient.email],
+              subject: `💬 ${displaySenderName} te ha escrito en MisAutónomos`,
+              html
+            })
+          });
+          if (!resendResp.ok) {
+            console.error('Email send failed:', await resendResp.text());
+          } else {
+            console.log('✅ Email enviado a', recipient.email);
+          }
+        }
+      }
+    } catch (emailErr) {
+      console.warn('Email notification failed (non-blocking):', emailErr.message);
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     console.error('onNewMessage error:', error.message);

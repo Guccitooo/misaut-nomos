@@ -90,7 +90,8 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
     try {
       const existing = await base44.entities.Message.filter({ conversation_id: conversationId }, '-created_date', 1);
       if (!existing || existing.length === 0) {
-        await base44.entities.Message.create({
+        const { createMessage } = await import('@/lib/createMessage');
+        await createMessage({
           conversation_id: conversationId,
           sender_id: currentUserId,
           recipient_id: profile.user_id,

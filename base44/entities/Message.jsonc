@@ -1,0 +1,175 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "ID unique de la conversation (combinaison des deux user_ids)"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "ID de l'exp\u00e9diteur"
+    },
+    "recipient_id": {
+      "type": "string",
+      "description": "ID du destinataire"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Nombre real del que env\u00eda el mensaje (resuelto al crear). Elimina ambig\u00fcedad con professional_name/client_name."
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Message lu ou non"
+    },
+    "professional_name": {
+      "type": "string",
+      "description": "Nom du professionnel (pour affichage)"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nom du client (pour affichage)"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          }
+        }
+      },
+      "default": [],
+      "description": "Archivos adjuntos"
+    },
+    "quote_request": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "budget": {
+          "type": "number"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "accepted",
+            "rejected",
+            "completed"
+          ],
+          "default": "pending"
+        },
+        "quote_amount": {
+          "type": "number"
+        },
+        "quote_notes": {
+          "type": "string"
+        },
+        "estimated_days": {
+          "type": "number"
+        },
+        "breakdown": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "concept": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "professional_responded": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "description": "Solicitud de presupuesto"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "sender_id",
+    "recipient_id",
+    "content"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "conversation_id",
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "sender_id",
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "recipient_id",
+        "is_read"
+      ]
+    }
+  ],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        {
+          "data.sender_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.sender_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
