@@ -45,6 +45,7 @@ import { useProfileTranslation } from "../components/profile/useProfileTranslati
 import { ActionButtonsProfile } from "../components/profile/ActionButtons";
 import { generateSlug, isSlugDirty } from "../utils/slugUtils";
 import { getProfileSeoUrl } from '@/lib/seoUrl';
+import CategoryCityLink from "../components/profile/CategoryCityLink";
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
@@ -452,7 +453,7 @@ export default function AutonomoPage() {
   const breadcrumbItems = [
     { name: "Inicio", url: "https://misautonomos.es" },
     { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" },
-    { name: categoryName, url: `https://misautonomos.es/categoria/${generateSlug(categoryName)}` },
+    { name: categoryName, url: `https://misautonomos.es/categoria/${generateSlug(profile.categories?.[0] || '')}` },
     { name: profile.business_name, url: canonicalUrl }
   ];
 
@@ -574,14 +575,7 @@ export default function AutonomoPage() {
 
               {/* Internal link → listado categoría+ciudad */}
               {profile.categories?.[0] && profile.ciudad && (
-                <p className="text-xs mt-1.5">
-                  <a
-                    href={`/categoria/${slugify(profile.categories[0])}s-en-${slugify(profile.ciudad)}`}
-                    className="text-blue-600 hover:text-blue-700 underline font-medium"
-                  >
-                    Ver más {profile.categories[0].toLowerCase()}s en {profile.ciudad} →
-                  </a>
-                </p>
+                <CategoryCityLink categoryName={profile.categories[0]} ciudad={profile.ciudad} />
               )}
               </div>
 

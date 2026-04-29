@@ -21,47 +21,38 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
-
-// Función para generar slug limpio (sin acentos, sin IDs aleatorios)
-function slugify(text) {
-  if (!text) return '';
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
-    .replace(/ñ/g, 'n')
-    .replace(/ç/g, 'c')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-');
-}
-
-// Mapeo de slugs a nombres de categoría
-const CATEGORY_MAP = {
-  'electricistas': 'Electricista',
-  'fontaneros': 'Fontanero',
-  'carpinteros': 'Carpintero',
-  'pintores': 'Pintor',
-  'jardineros': 'Jardinero',
-  'transportistas': 'Transportista',
-  'cerrajeros': 'Cerrajero',
-  'albaniles': 'Albañil / Reformas',
-  'albanil-reformas': 'Albañil / Reformas',
-  'limpieza': 'Autónomo de limpieza',
-  'aire-acondicionado': 'Instalador de aire acondicionado',
-  'mantenimiento': 'Mantenimiento general',
-  'piscinas': 'Mantenimiento de piscinas',
-  'asesoria': 'Asesoría o gestoría',
-  'multiservicios': 'Empresa multiservicios',
-};
+import { slugify } from "@/lib/seoUrl";
 
 const CIUDADES_PRINCIPALES = [
   "Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Zaragoza", "Bilbao",
   "Murcia", "Palma de Mallorca", "Alicante", "Córdoba", "Valladolid", "Vigo",
-  "Gijón", "Granada", "A Coruña", "Vitoria-Gasteiz", "Santa Cruz de Tenerife"
+  "Gijón", "Granada", "A Coruña", "Vitoria-Gasteiz", "Santa Cruz de Tenerife",
+  "Getafe", "Alcalá de Henares", "Fuenlabrada", "Leganés", "Móstoles", "Torrejón de Ardoz"
 ];
+
+// Normaliza texto para comparación: quita tildes y pone minúsculas
+function normalize(text) {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ñ/g, 'n');
+}
+
+// Dada una lista de ServiceCategory y un slug de URL, devuelve la categoría que coincide
+function resolveCategoryBySlug(categories, slug) {
+  if (!slug || !categories?.length) return null;
+  // 1. Match exacto por slug guardado
+  let found = categories.find(c => c.slug === slug);
+  if (found) return found;
+  // 2. Match por slug generado del name (fallback para categorías sin slug explícito)
+  found = categories.find(c => slugify(c.name) === slug);
+  if (found) return found;
+  // 3. Match normalizado (tolera pequeñas diferencias)
+  found = categories.find(c => normalize(c.slug) === normalize(slug) || normalize(slugify(c.name)) === normalize(slug));
+  return found || null;
+}
 
 export default function CategoriaPage() {
   const navigate = useNavigate();
@@ -75,82 +66,105 @@ export default function CategoriaPage() {
   const cityCategorySlug = params.slug || params.cityCategory;
 
   let categorySlug = null;
-  let ciudadParam = null;
+  let ciudadSlug = null;
 
   if (cityCategorySlug && cityCategorySlug.includes('-en-')) {
-    // Formato SEO nuevo: /categoria/electricistas-en-antequera
-    const parts = cityCategorySlug.split('-en-');
-    categorySlug = parts[0];
-    ciudadParam = parts.slice(1).join('-en-');
+    const enIdx = cityCategorySlug.indexOf('-en-');
+    categorySlug = cityCategorySlug.slice(0, enIdx);
+    ciudadSlug = cityCategorySlug.slice(enIdx + 4);
   } else if (cityCategorySlug) {
-    // Solo categoría sin ciudad: /categoria/electricistas
     categorySlug = cityCategorySlug;
   } else {
     // Legacy: ?name=X&ciudad=Y
-    categorySlug = urlParams.get("name");
-    ciudadParam = urlParams.get("ciudad");
+    const legacyName = urlParams.get("name");
+    const legacyCiudad = urlParams.get("ciudad");
+    if (legacyName) {
+      categorySlug = slugify(legacyName);
+      ciudadSlug = legacyCiudad ? slugify(legacyCiudad) : null;
+    }
   }
 
-  // Convertir slug a nombre de categoría
-  const categoryName = CATEGORY_MAP[categorySlug] || categorySlug;
-  const ciudadName = ciudadParam
-    ? ciudadParam.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    : null;
-
-  // Redirect legacy URL (?name=X&ciudad=Y) → URL canónica nueva
+  // Redirect legacy ?name=X&ciudad=Y → URL canónica (hooks siempre al mismo nivel)
+  const isLegacy = !!urlParams.get("name");
   useEffect(() => {
-    const isLegacyUrl = urlParams.get("name") || urlParams.get("ciudad");
-    if (isLegacyUrl && categorySlug) {
-      const newPath = ciudadParam
-        ? `/categoria/${categorySlug}-en-${slugify(ciudadParam)}`
+    if (isLegacy && categorySlug) {
+      const newPath = ciudadSlug
+        ? `/categoria/${categorySlug}-en-${ciudadSlug}`
         : `/categoria/${categorySlug}`;
       navigate(newPath, { replace: true });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Ciudad legible: capitalizar cada palabra del slug
+  const ciudadName = ciudadSlug
+    ? ciudadSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : null;
+
   useEffect(() => {
-    loadUser();
+    base44.auth.me().then(u => setUser(u)).catch(() => setUser(null));
   }, []);
 
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
-  };
+  // Cargar ServiceCategories para resolver slug → name
+  const { data: serviceCategories = [] } = useQuery({
+    queryKey: ['serviceCategories'],
+    queryFn: () => base44.entities.ServiceCategory.list(),
+    staleTime: 1000 * 60 * 30,
+  });
 
+  // Resolver la categoría real desde las ServiceCategory
+  const resolvedCategory = resolveCategoryBySlug(serviceCategories, categorySlug);
+  const categoryName = resolvedCategory?.name || null; // null si no está resuelta aún
+
+  // Cargar perfiles solo cuando tenemos el nombre de categoría
   const { data: profiles = [], isLoading } = useQuery({
-    queryKey: ['categoryProfiles', categoryName, ciudadName],
+    queryKey: ['categoryProfiles', categorySlug, ciudadSlug],
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
-      const filtered = allProfiles.filter(p => {
-        const isVisible = p.visible_en_busqueda === true && p.onboarding_completed === true;
-        const matchesCategory = !categoryName || p.categories?.some(c => 
-          c.toLowerCase() === categoryName.toLowerCase() ||
-          slugify(c) === categorySlug
-        );
-        const matchesCiudad = !ciudadName || 
-          p.ciudad?.toLowerCase() === ciudadName.toLowerCase() ||
-          slugify(p.ciudad || '') === slugify(ciudadName);
-        
-        return isVisible && matchesCategory && matchesCiudad;
+
+      return allProfiles.filter(p => {
+        // Solo perfiles activos y visibles
+        if (!p.visible_en_busqueda || !p.onboarding_completed) return false;
+        if (p.estado_perfil && p.estado_perfil !== 'activo') return false;
+
+        // Filtro de categoría: comparar por nombre (case-insensitive + sin tildes)
+        // Si tenemos categoryName del ServiceCategory, comparar con él;
+        // si no, comparar por slug generado del nombre de categoría del perfil
+        const matchesCategory = p.categories?.some(c => {
+          if (categoryName) {
+            return normalize(c) === normalize(categoryName);
+          }
+          // fallback: comparar slug generado
+          return slugify(c) === categorySlug || normalize(slugify(c)) === normalize(categorySlug);
+        });
+
+        if (!matchesCategory) return false;
+
+        // Filtro de ciudad (case-insensitive + sin tildes)
+        if (ciudadSlug) {
+          const profCiudadSlug = slugify(p.ciudad || '');
+          const profProvSlug = slugify(p.provincia || '');
+          if (normalize(profCiudadSlug) !== normalize(ciudadSlug) && normalize(profProvSlug) !== normalize(ciudadSlug)) {
+            return false;
+          }
+        }
+
+        return true;
+      }).sort((a, b) => {
+        // Ads+ primero, luego por rating
+        if (a.is_ads_plus && !b.is_ads_plus) return -1;
+        if (!a.is_ads_plus && b.is_ads_plus) return 1;
+        return (b.average_rating || 0) - (a.average_rating || 0);
       });
-      // Ads+ primero, luego por rating
-      const ads = filtered.filter(p => p.is_ads_plus).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-      const rest = filtered.filter(p => !p.is_ads_plus).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-      return [...ads, ...rest];
     },
+    // Ejecutar siempre que tengamos categorySlug, incluso antes de resolver categoryName
+    // (la query se refinará cuando categoryName esté disponible por el re-render)
+    enabled: !!categorySlug,
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      return await base44.entities.Favorite.filter({ client_id: user.id });
-    },
+    queryFn: () => base44.entities.Favorite.filter({ client_id: user.id }),
     enabled: !!user,
   });
 
@@ -163,17 +177,12 @@ export default function CategoriaPage() {
   };
 
   const handleViewProfile = (profile) => {
-    // URL SEO-friendly con path param: /autonomo/:slug
     const slug = profile.slug_publico || slugify(profile.business_name);
     navigate(`${createPageUrl("Autonomo")}/${slug}`);
   };
 
   const handleToggleFavorite = async (profile) => {
-    if (!user) {
-      base44.auth.redirectToLogin();
-      return;
-    }
-
+    if (!user) { base44.auth.redirectToLogin(); return; }
     try {
       const existing = favorites.filter(f => f.professional_id === profile.user_id);
       if (existing.length > 0) {
@@ -187,43 +196,42 @@ export default function CategoriaPage() {
         });
         toast.success("Añadido a favoritos");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al gestionar favoritos");
     }
   };
 
+  // Nombre visible: categoryName resuelto o placeholder mientras carga
+  const displayName = categoryName || (serviceCategories.length === 0 ? '…' : categorySlug);
+
   // SEO
-  const canonicalUrl = ciudadName
-    ? `https://misautonomos.es/categoria/${categorySlug}-en-${slugify(ciudadName)}`
+  const canonicalUrl = ciudadSlug
+    ? `https://misautonomos.es/categoria/${categorySlug}-en-${ciudadSlug}`
     : `https://misautonomos.es/categoria/${categorySlug}`;
-  
-  const seoTitle = ciudadName 
-    ? `${categoryName || 'Profesionales'} en ${ciudadName} - MisAutónomos`
-    : `${categoryName || 'Profesionales'} - Encuentra autónomos verificados | MisAutónomos`;
-  
+
+  const seoTitle = ciudadName
+    ? `${displayName} en ${ciudadName} - MisAutónomos`
+    : `${displayName} - Encuentra autónomos verificados | MisAutónomos`;
+
   const seoDescription = ciudadName
-    ? `Encuentra ${categoryName?.toLowerCase() || 'profesionales'} verificados en ${ciudadName}. Contacta directamente, pide presupuesto gratis.`
-    : `Directorio de ${categoryName?.toLowerCase() || 'profesionales'} autónomos en España. Compara precios, lee opiniones y contacta gratis.`;
+    ? `Encuentra ${displayName?.toLowerCase()} verificados en ${ciudadName}. Contacta directamente, pide presupuesto gratis.`
+    : `Directorio de ${displayName?.toLowerCase()} autónomos en España. Compara precios, lee opiniones y contacta gratis.`;
 
   return (
     <>
-      <SEOHead 
+      <SEOHead
         title={seoTitle}
         description={seoDescription}
-        keywords={`${categoryName?.toLowerCase()}, ${ciudadName?.toLowerCase() || 'españa'}, autónomo, profesional, presupuesto`}
+        keywords={`${displayName?.toLowerCase()}, ${ciudadName?.toLowerCase() || 'españa'}, autónomo, profesional, presupuesto`}
       />
-      
-      {/* Canonical */}
       <link rel="canonical" href={canonicalUrl} />
 
-      {/* Schema.org ItemList para rich snippets */}
       {profiles.length > 0 && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
-            "name": ciudadName ? `${categoryName}s en ${ciudadName}` : `${categoryName}s`,
-            "description": `Lista de ${profiles.length} ${categoryName?.toLowerCase()}s${ciudadName ? ` en ${ciudadName}` : ' verificados'} en MisAutónomos`,
+            "name": ciudadName ? `${displayName} en ${ciudadName}` : displayName,
             "numberOfItems": profiles.length,
             "itemListElement": profiles.slice(0, 20).map((profile, idx) => ({
               "@type": "ListItem",
@@ -231,7 +239,7 @@ export default function CategoriaPage() {
               "item": {
                 "@type": "LocalBusiness",
                 "name": profile.business_name,
-                "url": `https://misautonomos.es/autonomo/${slugify(profile.categories?.[0] || '')}-en-${slugify(profile.ciudad || '')}/${profile.slug_publico}`,
+                "url": `https://misautonomos.es/autonomo/${profile.slug_publico || slugify(profile.business_name)}`,
                 "address": {
                   "@type": "PostalAddress",
                   "addressLocality": profile.ciudad,
@@ -263,12 +271,12 @@ export default function CategoriaPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('backToSearch') || 'Volver a búsqueda'}
             </Button>
-            
+
             <h1 className="text-2xl md:text-4xl font-bold mb-2">
-              {categoryName || 'Profesionales'} {ciudadName ? `en ${ciudadName}` : 'en España'}
+              {displayName} {ciudadName ? `en ${ciudadName}` : 'en España'}
             </h1>
             <p className="text-blue-100 text-lg">
-              {profiles.length} profesionales verificados disponibles
+              {isLoading ? 'Buscando profesionales…' : `${profiles.length} profesional${profiles.length !== 1 ? 'es' : ''} disponible${profiles.length !== 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
@@ -322,15 +330,15 @@ export default function CategoriaPage() {
                 <Briefcase className="w-8 h-8 text-blue-600" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Aún no hay {categoryName?.toLowerCase()}s{ciudadName ? ` en ${ciudadName}` : ''}
+                Aún no hay profesionales de {displayName}{ciudadName ? ` en ${ciudadName}` : ''}
               </h2>
               <p className="text-gray-600 max-w-md mx-auto mb-6">
-                Estamos creciendo cada día. Si eres {categoryName?.toLowerCase()}{ciudadName ? ` en ${ciudadName}` : ''},
+                Estamos creciendo cada día. Si eres {displayName}{ciudadName ? ` en ${ciudadName}` : ''},
                 registra tu perfil gratis y empieza a recibir clientes.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={() => navigate(createPageUrl("PricingPlans"))} className="bg-blue-600 hover:bg-blue-700">
-                  Soy {categoryName?.toLowerCase()}, quiero registrarme
+                  Soy {displayName}, quiero registrarme
                 </Button>
                 <Button variant="outline" onClick={() => navigate(createPageUrl("Search"))}>
                   Ver todos los profesionales
@@ -340,7 +348,7 @@ export default function CategoriaPage() {
                 <p className="text-sm text-gray-600 mt-6">
                   💡 También puedes ver{' '}
                   <button onClick={() => navigate(`/categoria/${categorySlug}`)} className="text-blue-600 underline font-medium">
-                    {categoryName?.toLowerCase()}s en otras ciudades
+                    {displayName} en otras ciudades
                   </button>
                 </p>
               )}
@@ -360,7 +368,7 @@ export default function CategoriaPage() {
                     <Card className={`bg-white hover:shadow-lg transition-all rounded-xl h-full ${profile.is_ads_plus ? 'ring-1 ring-amber-300' : ''}`}>
                       <CardContent className="p-4 flex flex-col h-full">
                         <div className="flex items-start gap-3 mb-3">
-                          <Avatar 
+                          <Avatar
                             className="w-12 h-12 cursor-pointer"
                             onClick={() => handleViewProfile(profile)}
                           >
@@ -372,10 +380,10 @@ export default function CategoriaPage() {
                               </AvatarFallback>
                             )}
                           </Avatar>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <h3 
+                              <h3
                                 className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate"
                                 onClick={() => handleViewProfile(profile)}
                               >
@@ -386,7 +394,6 @@ export default function CategoriaPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
-
                               <MapPin className="w-3 h-3" />
                               <span className="truncate">{profile.ciudad || profile.provincia}</span>
                             </div>
@@ -396,7 +403,7 @@ export default function CategoriaPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleToggleFavorite(profile)}
-                            className={favorites.some(f => f.professional_id === profile.user_id) 
+                            className={favorites.some(f => f.professional_id === profile.user_id)
                               ? 'text-red-500' : 'text-gray-300'}
                           >
                             <Heart className={`w-4 h-4 ${favorites.some(f => f.professional_id === profile.user_id) ? 'fill-current' : ''}`} />
@@ -417,7 +424,7 @@ export default function CategoriaPage() {
                           </div>
                         )}
 
-                        <Button 
+                        <Button
                           onClick={() => handleViewProfile(profile)}
                           className="w-full bg-blue-600 hover:bg-blue-700"
                         >
@@ -434,7 +441,7 @@ export default function CategoriaPage() {
           {/* CTA */}
           {!isLoading && profiles.length > 0 && (
             <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white">
-              <h3 className="text-2xl font-bold mb-2">¿Eres {categoryName?.toLowerCase()}?</h3>
+              <h3 className="text-2xl font-bold mb-2">¿Eres {displayName}?</h3>
               <p className="text-blue-100 mb-5">Regístrate y consigue más clientes</p>
               <Button
                 onClick={() => navigate(createPageUrl("PricingPlans"))}
