@@ -292,7 +292,7 @@ export default function MessagesPage() {
         if (msg.sender_id !== otherUserId) continue;
         // El otro envió este mensaje — su nombre está en professional_name o client_name
         // Usamos el que NO sea el nombre del usuario actual
-        const name = msg.professional_name || msg.client_name || null;
+        const name = msg.sender_name || msg.professional_name || msg.client_name || null;
         if (name && name.trim()) {
           conv.contactName = name.trim();
           break;
