@@ -886,9 +886,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 return isChildScreen ? (
                   <button
                     type="button"
-                    onClick={() => navigate(-1)}
-                    style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
-                    className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
+                    onPointerDown={() => navigate(-1)}
+                    style={{ width: '56px', height: '56px', minWidth: '56px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: '-4px' }}
+                    className="inline-flex items-center justify-center rounded-lg flex-shrink-0 active:bg-gray-200"
                     aria-label="Volver"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-700 pointer-events-none" />
@@ -896,9 +896,9 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 ) : (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
-                    style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', zIndex: 46, position: 'relative' }}
-                    className="inline-flex items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 active:bg-gray-200 hover:bg-gray-100"
+                    onPointerDown={() => setMobileMenuOpen(true)}
+                    style={{ width: '56px', height: '56px', minWidth: '56px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', cursor: 'pointer', background: 'none', border: 'none', padding: 0, margin: '-4px' }}
+                    className="inline-flex items-center justify-center rounded-lg flex-shrink-0 active:bg-gray-200"
                     aria-label="Abrir menú"
                   >
                     <Menu className="w-6 h-6 text-gray-700 pointer-events-none" />
@@ -911,16 +911,17 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                 <span className="font-bold text-lg text-gray-900">MisAutónomos</span>
               </Link>
 
-              <div style={{ width: '44px', height: '44px' }} className="flex items-center justify-end flex-shrink-0">
+              <div style={{ width: '56px', height: '56px', margin: '-4px' }} className="flex items-center justify-end flex-shrink-0">
                 {user ? (
                   <Suspense fallback={<div className="w-9 h-9" />}>
                     <NotificationCenter user={user} />
                   </Suspense>
                 ) : (
                   <button
-                    onClick={() => setJoinModalOpen(true)}
-                    style={{ width: '44px', height: '44px', touchAction: 'manipulation' }}
-                    className="flex items-center justify-center rounded-lg hover:bg-gray-100 text-blue-600"
+                    type="button"
+                    onPointerDown={() => setJoinModalOpen(true)}
+                    style={{ width: '56px', height: '56px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', background: 'none', border: 'none', padding: 0 }}
+                    className="flex items-center justify-center rounded-lg text-blue-600"
                     aria-label="Unirse a MisAutónomos"
                   >
                     <User className="w-5 h-5" />

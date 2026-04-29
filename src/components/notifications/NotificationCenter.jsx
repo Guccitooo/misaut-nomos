@@ -116,16 +116,19 @@ export default function NotificationCenter({ user }) {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
+        <button
+          type="button"
+          style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', background: 'none', border: 'none', padding: 0 }}
+          className="relative w-14 h-14 flex items-center justify-center rounded-lg text-gray-700 active:bg-gray-100"
+          aria-label="Notificaciones"
+        >
+          <Bell className="w-5 h-5 pointer-events-none" />
           {unreadCount > 0 && (
-            <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500"
-            >
+            <span className="absolute top-2 right-2 h-4 w-4 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full pointer-events-none">
               {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
+            </span>
           )}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       
       <DropdownMenuContent align="end" className="w-80 md:w-96">
