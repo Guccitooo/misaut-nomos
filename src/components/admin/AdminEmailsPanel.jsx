@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,8 @@ export default function AdminEmailsPanel() {
     template: 'all'
   });
   const [testEmail, setTestEmail] = useState('');
-  const [testSubject, setTestSubject] = useState('');
   const [testTemplate, setTestTemplate] = useState('welcome');
+  const [testSubject, setTestSubject] = useState('Test Email');
   const [sending, setSending] = useState(false);
 
   const { data: logs, isLoading } = useQuery({
@@ -55,26 +55,28 @@ export default function AdminEmailsPanel() {
   });
 
   const handleTestEmail = async () => {
-    if (!testEmail || !testSubject) {
-      toast.error('Completa todos los campos');
+    if (!testEmail) {
+      toast.error('Ingresa un email');
       return;
     }
 
     setSending(true);
     try {
-      await base44.functions.invoke('sendEmail', {
+      await base44.functions.invoke('sendAndLog', {
         to: testEmail,
         subject: testSubject,
         template: testTemplate,
         vars: {
           name: 'Test User',
-          app_url: window.location.origin
+          ctaUrl: window.location.origin,
+          headline: 'Test Email',
+          body: '<p>Este es un email de prueba</p>',
+          ctaText: 'Ver más'
         },
         category: 'transactional'
       });
       toast.success('Email de prueba enviado');
       setTestEmail('');
-      setTestSubject('');
     } catch (error) {
       toast.error('Error: ' + error.message);
     } finally {
@@ -91,6 +93,7 @@ export default function AdminEmailsPanel() {
       bounced: 'bg-red-100 text-red-800',
       spam: 'bg-orange-100 text-orange-800',
       failed: 'bg-red-100 text-red-800',
+      queued: 'bg-yellow-100 text-yellow-800',
       skipped: 'bg-gray-100 text-gray-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
@@ -149,10 +152,10 @@ export default function AdminEmailsPanel() {
 
       {/* Test Email */}
       <Card className="p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">📧 Probar Email</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">📧 Enviar Email de Prueba</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email destinatario</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Destinatario</label>
             <Input
               type="email"
               placeholder="test@example.com"
@@ -161,32 +164,34 @@ export default function AdminEmailsPanel() {
               disabled={sending}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Asunto</label>
-            <Input
-              placeholder="Asunto del email"
-              value={testSubject}
-              onChange={(e) => setTestSubject(e.target.value)}
-              disabled={sending}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Template</label>
-            <Select value={testTemplate} onValueChange={setTestTemplate} disabled={sending}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="welcome">Bienvenida</SelectItem>
-                <SelectItem value="gift_received">Regalo recibido</SelectItem>
-                <SelectItem value="review_request">Solicitud reseña</SelectItem>
-                <SelectItem value="generic">Genérico</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Asunto</label>
+              <Input
+                placeholder="Asunto"
+                value={testSubject}
+                onChange={(e) => setTestSubject(e.target.value)}
+                disabled={sending}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Template</label>
+              <Select value={testTemplate} onValueChange={setTestTemplate} disabled={sending}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="welcome">Bienvenida</SelectItem>
+                  <SelectItem value="gift_received">Regalo</SelectItem>
+                  <SelectItem value="review_request">Reseña</SelectItem>
+                  <SelectItem value="generic">Genérico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Button onClick={handleTestEmail} disabled={sending} className="w-full">
             <Send className="w-4 h-4 mr-2" />
-            {sending ? 'Enviando...' : 'Enviar email de prueba'}
+            {sending ? 'Enviando...' : 'Enviar'}
           </Button>
         </div>
       </Card>
@@ -208,7 +213,6 @@ export default function AdminEmailsPanel() {
               <SelectItem value="delivered">Entregados</SelectItem>
               <SelectItem value="opened">Abiertos</SelectItem>
               <SelectItem value="bounced">Rechazados</SelectItem>
-              <SelectItem value="spam">Spam</SelectItem>
               <SelectItem value="failed">Fallidos</SelectItem>
             </SelectContent>
           </Select>
@@ -237,7 +241,7 @@ export default function AdminEmailsPanel() {
         </div>
       </Card>
 
-      {/* Lista de logs */}
+      {/* Tabla */}
       <Card className="p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Últimos emails</h3>
         {isLoading ? (
@@ -247,17 +251,20 @@ export default function AdminEmailsPanel() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Fecha</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Destinatario</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Asunto</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Template</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Fecha</th>
                 </tr>
               </thead>
               <tbody>
                 {logs && logs.length > 0 ? (
                   logs.map((log) => (
                     <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-gray-600 text-xs">
+                        {new Date(log.created_date).toLocaleDateString('es-ES')}
+                      </td>
                       <td className="py-3 px-4 text-gray-900">{log.to_email}</td>
                       <td className="py-3 px-4 text-gray-600">{log.subject}</td>
                       <td className="py-3 px-4 text-gray-600">{log.template}</td>
@@ -266,15 +273,12 @@ export default function AdminEmailsPanel() {
                           {log.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">
-                        {new Date(log.created_date).toLocaleDateString('es-ES')}
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan="5" className="py-8 text-center text-gray-500">
-                      No hay emails para mostrar
+                      No hay emails
                     </td>
                   </tr>
                 )}
