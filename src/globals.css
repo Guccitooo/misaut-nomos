@@ -537,6 +537,52 @@ body {
   html, body { background-color: #0f172a; }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PANEL — Force Light Theme Always (no dark mode)
+   ═══════════════════════════════════════════════════════════════ */
+.admin-light-theme,
+.admin-light-theme * {
+  color-scheme: light !important;
+}
+
+.admin-light-theme {
+  --background: 0 0% 100% !important;
+  --foreground: 222.2 84% 4.9% !important;
+  --card: 0 0% 100% !important;
+  --card-foreground: 222.2 84% 4.9% !important;
+  --popover: 0 0% 100% !important;
+  --popover-foreground: 222.2 84% 4.9% !important;
+  --primary: 221.2 83.2% 53.3% !important;
+  --primary-foreground: 210 40% 98% !important;
+  --secondary: 210 40% 96.1% !important;
+  --secondary-foreground: 222.2 47.4% 11.2% !important;
+  --muted: 210 40% 96.1% !important;
+  --muted-foreground: 215.4 16.3% 46.9% !important;
+  --accent: 210 40% 96.1% !important;
+  --accent-foreground: 222.2 47.4% 11.2% !important;
+  --destructive: 0 84.2% 60.2% !important;
+  --destructive-foreground: 210 40% 98% !important;
+  --border: 214.3 31.8% 91.4% !important;
+  --input: 214.3 31.8% 91.4% !important;
+  --ring: 221.2 83.2% 53.3% !important;
+  --chart-1: 12 76% 61% !important;
+  --chart-2: 173 58% 39% !important;
+  --chart-3: 197 37% 24% !important;
+  --chart-4: 43 74% 66% !important;
+  --chart-5: 27 87% 67% !important;
+  --sidebar-background: 0 0% 100% !important;
+  --sidebar-foreground: 222.2 47.4% 11.2% !important;
+  --sidebar-primary: 221.2 83.2% 53.3% !important;
+  --sidebar-primary-foreground: 210 40% 98% !important;
+  --sidebar-accent: 210 40% 96.1% !important;
+  --sidebar-accent-foreground: 222.2 47.4% 11.2% !important;
+  --sidebar-border: 214.3 31.8% 91.4% !important;
+  --sidebar-ring: 221.2 83.2% 53.3% !important;
+
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
 /* Fix overflow horizontal en móvil */
 @media (max-width: 768px) {
   #root,

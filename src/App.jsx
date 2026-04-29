@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { AppProvider } from '@/lib/AppContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { Suspense, lazy, React, Component } from 'react';
+import AdminThemeWrapper from '@/components/admin/AdminThemeWrapper';
 
 // ErrorBoundary para capturar errores en producción
 class ErrorBoundary extends Component {
@@ -316,8 +317,10 @@ function App() {
         <AppProvider>
           <QueryClientProvider client={queryClientInstance}>
             <Router>
-              <NavigationTracker />
-              <AuthenticatedApp />
+              <AdminThemeWrapper>
+                <NavigationTracker />
+                <AuthenticatedApp />
+              </AdminThemeWrapper>
             </Router>
             <Toaster />
             <VisualEditAgent />
