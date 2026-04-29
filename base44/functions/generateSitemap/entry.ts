@@ -99,6 +99,23 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Añadir blog posts publicados
+    const blogPosts = await base44.asServiceRole.entities.BlogPost.filter({ status: 'published' }, '-publish_date', 200);
+    blogPosts.forEach(post => {
+      xml += '  <url>\n';
+      xml += `    <loc>${baseUrl}/blog/${post.slug}</loc>\n`;
+      xml += `    <lastmod>${(post.updated_date || post.publish_date || today).split('T')[0]}</lastmod>\n`;
+      xml += `    <changefreq>monthly</changefreq>\n`;
+      xml += `    <priority>0.7</priority>\n`;
+      if (post.featured_image) {
+        xml += `    <image:image>\n`;
+        xml += `      <image:loc>${post.featured_image}</image:loc>\n`;
+        xml += `      <image:title>${post.title_es}</image:title>\n`;
+        xml += `    </image:image>\n`;
+      }
+      xml += '  </url>\n';
+    });
+
     // Añadir páginas de categorías
     categories.forEach(category => {
       xml += '  <url>\n';

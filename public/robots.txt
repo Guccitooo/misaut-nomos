@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-# Páginas privadas / de usuario — no indexar
+# Rutas privadas — no indexar
 Disallow: /admin
 Disallow: /admin/
 Disallow: /dashboard
@@ -19,7 +19,6 @@ Disallow: /solicitudes
 Disallow: /automatizaciones
 Disallow: /registro
 Disallow: /mi-campana
-Disallow: /mi-campana/
 Disallow: /plan-ads
 Disallow: /referidos
 Disallow: /facturas
@@ -28,35 +27,27 @@ Disallow: /calendario
 Disallow: /trabajos
 Disallow: /mis-clientes
 Disallow: /clientes
+Disallow: /clientes/
 Disallow: /pagar
 Disallow: /visibilidad
 Disallow: /presupuestos
 Disallow: /configuracion-cookies
+Disallow: /perfil
 
-# Bloquear URLs antiguas PascalCase (redirigen — evitar que Google las rastree)
-Disallow: /Search
-Disallow: /PricingPlans
-Disallow: /FAQ
-Disallow: /HelpCenter
-Disallow: /Autonomo
-Disallow: /Categoria
-Disallow: /PrivacyPolicy
-Disallow: /TermsConditions
-Disallow: /CookiePolicy
-Disallow: /LegalNotice
-Disallow: /Messages
-Disallow: /Favorites
-Disallow: /MyProfile
-Disallow: /ProfessionalDashboard
-Disallow: /ProfileOnboarding
-Disallow: /ClientOnboarding
-Disallow: /SubscriptionManagement
-Disallow: /PaymentSuccess
-Disallow: /Onboarding
-Disallow: /UserTypeSelection
-Disallow: /AdminDashboard
-Disallow: /AdminPayments
-Disallow: /Invoices
+# Rutas públicas explícitamente permitidas
+Allow: /buscar
+Allow: /autonomo/
+Allow: /categoria/
+Allow: /blog/
+Allow: /blog
+Allow: /precios
+Allow: /preguntas-frecuentes
+Allow: /ayuda
+Allow: /privacidad
+Allow: /terminos
+Allow: /cookies
+Allow: /aviso-legal
+Allow: /inicio
 
 # Sitemap
 Sitemap: https://misautonomos.es/sitemap.xml
