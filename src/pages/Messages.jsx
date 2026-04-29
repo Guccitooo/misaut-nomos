@@ -1101,6 +1101,25 @@ export default function MessagesPage() {
                     </a>
                   )}
 
+                  {/* Botón "Pedir reseña" para profesionales */}
+                  {isProfessional && selectedOtherUserId && (
+                    <Button
+                      onClick={async () => {
+                        const link = `${window.location.origin}/valorar/${user.id}`;
+                        const msg = `Hola! Me gustaría pedirte que dejes una valoración sobre mi trabajo. Solo tarda 2 minutos 🙏\n${link}`;
+                        setNewMessage(msg);
+                        toast.success("Mensaje preparado — revísalo y pulsa enviar");
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="h-8 border-amber-300 text-amber-700 hover:bg-amber-50"
+                      title="Pedir reseña a este cliente"
+                    >
+                      <Star className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline ml-1 text-xs">Pedir reseña</span>
+                    </Button>
+                  )}
+
                   {canLeaveReview() && (
                     <Button onClick={() => setShowReviewDialog(true)} size="sm" className="bg-amber-500 hover:bg-amber-600 h-8">
                       <Star className="w-3.5 h-3.5" />

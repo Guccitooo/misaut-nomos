@@ -16,6 +16,8 @@ import SEOHead from "../components/seo/SEOHead";
 import ReferralBanner from "../components/referrals/ReferralBanner";
 import PullToRefresh from "../components/ui/PullToRefresh";
 import { getEffectivePlan, isAdsPlus } from "@/utils/subscription";
+import VerificationBanner from "../components/trust/VerificationBanner";
+import VerificationPromptModal from "../components/trust/VerificationPromptModal";
 
 function computeProfilePct(profile) {
   if (!profile) return 0;
@@ -255,6 +257,14 @@ export default function ProfessionalDashboardPage() {
             <p className="text-sm text-gray-500">{greeting}, {displayName} 👋</p>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-0.5">Tu panel</h1>
           </motion.div>
+
+          {/* BANNER VERIFICACIÓN DE IDENTIDAD */}
+          {hasActiveSub && profile && (
+            <VerificationBanner profile={profile} />
+          )}
+
+          {/* MODAL ÚNICO VERIFICACIÓN */}
+          {profile && <VerificationPromptModal profile={profile} />}
 
           {/* BANNER FOTO PRINCIPAL FALTANTE */}
           {hasActiveSub && profile && !profile.imagen_principal && (

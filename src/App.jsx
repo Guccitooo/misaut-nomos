@@ -114,6 +114,7 @@ const MiCampana = lazy(() => import('./pages/MiCampana'));
 const BriefingMensual = lazy(() => import('./pages/BriefingMensual'));
 const PlanAds = lazy(() => import('./pages/PlanAds'));
 const AcceptQuote = lazy(() => import('./pages/AcceptQuote'));
+const LeaveReview = lazy(() => import('./pages/LeaveReview'));
 
 // Sin spinner de carga — renderizar directamente
 const PageLoader = () => null;
@@ -237,6 +238,7 @@ const AuthenticatedApp = () => {
           <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><SupportChat /></Suspense>} />
           <Route path="/presupuestos" element={<Pages.Presupuestos />} />
           <Route path="/presupuesto/:quoteId" element={<Suspense fallback={<PageLoader />}><AcceptQuote /></Suspense>} />
+          <Route path="/valorar/:professionalId" element={<Suspense fallback={<PageLoader />}><LeaveReview /></Suspense>} />
           <Route path="/pedir-presupuesto" element={<Pages.RequestQuote />} />
           <Route path="/solicitudes" element={<Pages.QuoteRequests />} />
           <Route path="/notificaciones" element={<Pages.Notifications />} />

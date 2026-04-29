@@ -45,6 +45,7 @@ import ServicesSection from "../components/profile/ServicesSection";
 import AvailabilityCalendar from "../components/profile/AvailabilityCalendar";
 import IdentityVerificationWidget from "../components/verification/IdentityVerificationWidget";
 import ReferralBanner from "../components/referrals/ReferralBanner";
+import VerificationBanner from "../components/trust/VerificationBanner";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -770,6 +771,13 @@ export default function MyProfilePage() {
         {isProfessional && profile && (
           <div className="mb-4">
             <ReferralBanner profile={profile} />
+          </div>
+        )}
+
+        {/* BANNER VERIFICACIÓN */}
+        {isProfessional && profile && (
+          <div className="mb-4">
+            <VerificationBanner profile={profile} />
           </div>
         )}
 

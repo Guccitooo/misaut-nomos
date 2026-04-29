@@ -868,9 +868,34 @@ export default function AutonomoPage() {
             </Card>
           )}
 
-          {/* RESEÑAS */}
+          {/* RESEÑAS — bloque prominente con rating summary */}
           <Card className="border-0 shadow-sm rounded-xl bg-white p-4">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">{t('clientReviews') || 'Opiniones de clientes'}</h3>
+            {/* Rating hero */}
+            {profile.average_rating > 0 && profile.total_reviews > 0 ? (
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+                <div className="text-4xl font-extrabold text-gray-900">{profile.average_rating?.toFixed(1)}</div>
+                <div>
+                  <div className="flex gap-0.5 mb-0.5">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} className={`w-5 h-5 ${s <= Math.round(profile.average_rating) ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500">{profile.total_reviews} reseña{profile.total_reviews !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            ) : null}
+
+            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              {t('clientReviews') || 'Opiniones de clientes'}
+            </h3>
+
+            {reviews.length === 0 && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-4 text-sm text-gray-500 text-center">
+                Aún no tiene reseñas — sé el primero en dejarla tras contactar
+              </div>
+            )}
+
             <ReviewSection professionalId={profile.user_id} reviews={reviews} currentUser={user} />
           </Card>
         </div>
