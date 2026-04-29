@@ -255,6 +255,30 @@ export default function ProfessionalDashboardPage() {
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-0.5">Tu panel</h1>
           </motion.div>
 
+          {/* BANNER FOTO PRINCIPAL FALTANTE */}
+          {hasActiveSub && profile && !profile.imagen_principal && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 md:p-5"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">📸</span>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">Tu perfil necesita una foto principal</p>
+                  <p className="text-xs text-gray-600 mt-0.5">Los perfiles con foto reciben <strong>3× más contactos</strong>. Sin foto tu perfil pierde visibilidad.</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold flex-shrink-0 text-xs"
+                  onClick={() => navigate(createPageUrl("MyProfile") + "?section=photo")}
+                >
+                  Añadir foto
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
           {/* ALERTA SUSCRIPCIÓN */}
           {!hasActiveSub && (
             <motion.div

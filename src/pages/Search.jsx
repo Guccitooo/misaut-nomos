@@ -54,6 +54,7 @@ const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
 const MapView = lazy(() => import("../components/search/MapView"));
 import { generateSlug } from "../utils/slugUtils";
 import { getProfileSeoUrl } from '@/lib/seoUrl';
+import InitialsAvatar from "@/components/ui/InitialsAvatar";
 
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -112,7 +113,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
     return cleaned;
   };
 
-  const photoUrl = professionalUser?.profile_picture || profile.imagen_principal;
+  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
   const isVerified = profile.identity_verified === true;
   // Limitar URL de imagen a máx 200px para reducir peso (si es URL de Supabase)
   const optimizedPhotoUrl = photoUrl && photoUrl.includes('supabase.co')
@@ -151,9 +152,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
               style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px' }}
             />
           ) : (
-            <div className="w-12 h-12 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-white font-bold text-base shadow-sm" style={{ width: '48px', height: '48px' }}>
-              {profile.business_name?.[0]?.toUpperCase()}
-            </div>
+            <InitialsAvatar name={profile.business_name || ""} size={48} className="border-2 border-white shadow-sm" />
           )}
         </div>
 
@@ -173,9 +172,7 @@ const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite
                 style={{ width: '48px', height: '48px' }}
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-base" style={{ width: '48px', height: '48px' }}>
-                {profile.business_name?.[0]?.toUpperCase()}
-              </div>
+              <InitialsAvatar name={profile.business_name || ""} size={48} />
             )}
           </div>
           <div className="flex-1 min-w-0">

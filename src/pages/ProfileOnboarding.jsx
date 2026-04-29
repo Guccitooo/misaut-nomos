@@ -220,7 +220,7 @@ export default function ProfileOnboardingPage() {
     }
 
     if (formData.photos.length === 0) {
-      errors.photos = "Sube al menos 1 foto de tus trabajos";
+      errors.photos = "Sube al menos 1 foto de tus trabajos — los perfiles con foto reciben 3× más contactos";
     }
 
     if (!formData.acepta_terminos) {

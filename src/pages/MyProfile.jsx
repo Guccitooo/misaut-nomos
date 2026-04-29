@@ -765,6 +765,25 @@ export default function MyProfilePage() {
           </Card>
         )}
 
+        {/* BANNER FOTO PRINCIPAL FALTANTE */}
+        {isProfessional && profile && !profile.imagen_principal && (
+          <div className="mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">📸</span>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-sm">Añade una foto principal a tu perfil</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Los perfiles con foto reciben <strong>3× más contactos</strong>. Sube una foto en la pestaña <strong>Trabajos</strong> para activarla.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab("portfolio")}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors"
+            >
+              Añadir foto
+            </button>
+          </div>
+        )}
+
         {/* PROFILE COMPLETENESS */}
         {isProfessional && profile && !isEditing && (
           <div className="mb-6">

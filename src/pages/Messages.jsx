@@ -532,9 +532,12 @@ export default function MessagesPage() {
 
   // ─── Audio Recording ──────────────────────────────────────────────────────
   const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Tu navegador no soporta grabación de audio");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Preferir opus/webm, fallback a lo que soporte el browser
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
@@ -543,13 +546,19 @@ export default function MessagesPage() {
       const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.start(100); // timeslice 100ms para garantizar datos
+      mr.start(100);
       mediaRecorderRef.current = mr;
       setIsRecording(true);
       setRecordingSeconds(0);
       timerRef.current = setInterval(() => setRecordingSeconds(s => s + 1), 1000);
-    } catch {
-      toast.error("No se pudo acceder al micrófono");
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        toast.error("Permite el acceso al micrófono para enviar audios. Ve a Ajustes del navegador → Permisos del sitio → Micrófono.", { duration: 6000 });
+      } else if (err.name === 'NotFoundError') {
+        toast.error("No se encontró ningún micrófono. Conecta un micrófono e inténtalo de nuevo.");
+      } else {
+        toast.error("No se pudo acceder al micrófono: " + err.message);
+      }
     }
   };
 
@@ -1010,7 +1019,9 @@ export default function MessagesPage() {
                       </div>
                       <p className={`text-xs truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
                         {conv.lastMessage.sender_id === user?.id && <span className="mr-1">Tú:</span>}
-                        {conv.lastMessage.content}
+                        {conv.lastMessage.attachments?.some(a => a.type === 'audio')
+                          ? '🎤 Mensaje de voz'
+                          : conv.lastMessage.content || (conv.lastMessage.attachments?.length ? '📎 Archivo adjunto' : '')}
                       </p>
                     </div>
                   </button>
@@ -1155,8 +1166,8 @@ export default function MessagesPage() {
                               </div>
                             )}
 
-                            {/* Burbuja de texto: no mostrar si el mensaje es solo audio */}
-                            {!(msg.attachments?.length > 0 && msg.attachments[0]?.type === 'audio' && !msg.content) && (
+                            {/* Burbuja de texto: no mostrar si el mensaje es solo audio (o tiene el placeholder de voz) */}
+                            {!(msg.attachments?.some(a => a.type === 'audio') && (!msg.content || msg.content === '🎤 Mensaje de voz')) && (
                               <div className={`relative px-4 py-2.5 shadow-sm ${
                                 isMe
                                   ? 'bg-blue-600 text-white rounded-[18px] rounded-br-[4px]'
@@ -1283,19 +1294,35 @@ export default function MessagesPage() {
                   )}
 
                   {isRecording ? (
-                    <button
-                      type="button"
-                      onClick={stopRecording}
-                      className="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-white animate-pulse flex-shrink-0 text-xs font-semibold"
-                      aria-label={`Detener grabación - ${recordingSeconds}s`}
-                    >
-                      ⏹ {recordingSeconds}s
-                    </button>
+                    <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-2xl px-3 h-10 flex-shrink-0">
+                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+                      <span className="text-red-700 text-xs font-semibold tabular-nums min-w-[28px]">
+                        {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { clearInterval(timerRef.current); if (mediaRecorderRef.current?.state !== 'inactive') { mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop()); mediaRecorderRef.current.stop(); } setIsRecording(false); setRecordingSeconds(0); chunksRef.current = []; }}
+                        className="text-gray-400 hover:text-gray-600 ml-0.5"
+                        aria-label="Cancelar grabación"
+                        title="Cancelar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopRecording}
+                        className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white flex-shrink-0 transition-colors"
+                        aria-label="Enviar grabación"
+                        title="Detener y enviar"
+                      >
+                        <Send className="w-3 h-3" />
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
                       onClick={startRecording}
-                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0 text-base"
+                      className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 flex-shrink-0 text-base transition-colors"
                       aria-label="Grabar mensaje de voz"
                     >
                       🎤
