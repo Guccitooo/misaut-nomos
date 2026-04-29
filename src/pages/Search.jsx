@@ -54,6 +54,7 @@ import PullToRefresh from "../components/ui/PullToRefresh";
 const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
 const MapView = lazy(() => import("../components/search/MapView"));
 import { generateSlug } from "../utils/slugUtils";
+import { getProfileSeoUrl } from '@/lib/seoUrl';
 
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -388,9 +389,7 @@ export default function SearchPage() {
   }, [filters.provincia]);
 
   const handleViewProfile = (profile) => {
-    // URL SEO-friendly: /autonomo/:slug
-    const slug = profile.slug_publico || generateSlug(profile.business_name);
-    navigate(`/autonomo/${slug}`);
+    navigate(getProfileSeoUrl(profile));
   };
 
   const handleToggleFavorite = async (profile) => {

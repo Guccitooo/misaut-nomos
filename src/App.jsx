@@ -212,7 +212,8 @@ const AuthenticatedApp = () => {
           {/* ===== RUTAS PÚBLICAS (ES) ===== */}
           <Route path="/buscar" element={<Pages.Search />} />
           <Route path="/autonomo" element={<Pages.Autonomo />} />
-          <Route path="/autonomo/:slug" element={<Pages.Autonomo />} />
+          <Route path="/autonomo/:slug" element={<Pages.Autonomo />} />                {/* legacy: /autonomo/ruben-cardenas-torres */}
+          <Route path="/autonomo/:cityCategory/:slug" element={<Pages.Autonomo />} />  {/* SEO: /autonomo/electricista-en-antequera/ruben-cardenas-torres */}
           <Route path="/categoria" element={<Pages.Categoria />} />
           <Route path="/categoria/:slug" element={<Pages.Categoria />} />
           <Route path="/precios" element={<Pages.PricingPlans />} />

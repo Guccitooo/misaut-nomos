@@ -44,6 +44,7 @@ import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
 import { ActionButtonsProfile } from "../components/profile/ActionButtons";
 import { generateSlug, isSlugDirty } from "../utils/slugUtils";
+import { getProfileSeoUrl } from '@/lib/seoUrl';
 
 // Función para generar slug limpio (sin acentos, sin IDs)
 function slugify(text) {
@@ -83,6 +84,7 @@ export default function AutonomoPage() {
   const [copiedPhone, setCopiedPhone] = useState(false);
 
   // Leer slug de path param (:slug) o fallback a query param (?slug=xxx)
+  // cityCategory es el segmento "categoria-en-ciudad" de la ruta SEO (puede ser undefined en ruta legacy)
   const urlParams = new URLSearchParams(window.location.search);
   const slug = params.slug || urlParams.get("slug");
 
@@ -163,11 +165,20 @@ export default function AutonomoPage() {
   // Redirigir automáticamente a slug limpio si es diferente
   useEffect(() => {
     if (redirectSlug && redirectSlug !== slug && profile) {
-      // Actualizar URL a la forma SEO-friendly con path param
       const newUrl = createPageUrl("Autonomo") + `/${redirectSlug}`;
       window.history.replaceState({}, '', newUrl);
     }
   }, [redirectSlug, slug, profile]);
+
+  // Redirect a URL canónica SEO si la actual no lo es (categoria-en-ciudad/nombre)
+  useEffect(() => {
+    if (!profile || loadingProfile) return;
+    const canonicalUrl = getProfileSeoUrl(profile);
+    const currentPath = window.location.pathname;
+    if (canonicalUrl !== currentPath && canonicalUrl !== '/autonomo') {
+      navigate(canonicalUrl, { replace: true });
+    }
+  }, [profile, loadingProfile, navigate]);
 
   const { data: professionalUser } = useQuery({
     queryKey: ['professionalUser', profile?.user_id],
@@ -520,6 +531,13 @@ export default function AutonomoPage() {
               
               <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900 mb-1">{profile.business_name}</h1>
+              {(profile.categories?.[0] || profile.ciudad) && (
+                <p className="text-sm text-gray-600 mb-1">
+                  {profile.categories?.[0]}
+                  {profile.categories?.[0] && profile.ciudad && ' en '}
+                  {profile.ciudad}
+                </p>
+              )}
 
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 {profile.categories?.[0] && (

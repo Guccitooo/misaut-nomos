@@ -48,12 +48,31 @@ Deno.serve(async (req) => {
       xml += '  </url>\n';
     });
 
+    // Helper slugify (equivalente Deno del helper frontend)
+    const slugify = (text) => {
+      if (!text) return '';
+      return text.toString()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/ñ/g, 'n')
+        .replace(/[^a-z0-9\s-]/g, '').trim()
+        .replace(/\s+/g, '-').replace(/-+/g, '-');
+    };
+    const getProfileSeoUrl = (profile) => {
+      const nameSlug = profile.slug_publico || slugify(profile.business_name || '');
+      if (!nameSlug) return null;
+      const categoria = profile.categories?.[0];
+      const ciudad = profile.ciudad;
+      if (categoria && ciudad) return `/autonomo/${slugify(categoria)}-en-${slugify(ciudad)}/${nameSlug}`;
+      return `/autonomo/${nameSlug}`;
+    };
+
     // Añadir perfiles profesionales con imágenes
     profiles.forEach(profile => {
-      if (profile.slug_publico) {
+      const profileUrl = getProfileSeoUrl(profile);
+      if (profileUrl) {
         xml += '  <url>\n';
-        xml += `    <loc>${baseUrl}/autonomo/${encodeURIComponent(profile.slug_publico)}</loc>\n`;
-        xml += `    <lastmod>${profile.updated_date?.split('T')[0] || today}</lastmod>\n`;
+        xml += `    <loc>${baseUrl}${profileUrl}</loc>\n`;
+        xml += `    <lastmod>${(profile.updated_date || today).split('T')[0]}</lastmod>\n`;
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.9</priority>\n`;
         
