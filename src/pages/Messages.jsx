@@ -40,7 +40,12 @@ const formatRelativeTime = (dateStr) => {
 
 // Devuelve el nombre del REMITENTE de un mensaje.
 // Prioridad: sender_name (campo nuevo, fiable) > inferencia legacy.
-const getMessageSenderName = (msg, currentUserId) => {
+// ESPECIAL: Para chats de Briefing, el admin siempre se llama "Equipo Plan Ads+"
+const getMessageSenderName = (msg, currentUserId, conversationId) => {
+  // Si es un chat de Briefing y el remitente es admin, devolver "Equipo Plan Ads+"
+  if (conversationId?.startsWith('briefing_') && msg.sender_name === 'Equipo MisAutónomos') {
+    return 'Equipo Plan Ads+';
+  }
   if (msg.sender_name) return msg.sender_name;
   // Fallback legacy: si es mensaje del otro, devolver client_name o professional_name
   return msg.client_name || msg.professional_name || 'Usuario';
@@ -308,53 +313,62 @@ export default function MessagesPage() {
     });
 
     // Determine contact name: buscar en los mensajes el nombre del interlocutor (otherUserId).
-    // Estrategia: mirar mensajes donde el OTHER fue el sender — su nombre estará en professional_name o client_name.
-    // Si no hay mensajes del otro, mirar mensajes míos — también guardan ambos nombres.
-    // Prioridad final: profilesCache con datos reales del User entity.
-    const myId = user?.id;
-    Object.values(convMap).forEach(conv => {
-      const otherUserId = conv.otherUserId;
-      
-      // 1. Buscar en mensajes donde el otro fue sender (nombre más fiable)
-      for (const msg of conv.messages) {
-        if (msg.sender_id !== otherUserId) continue;
-        // El otro envió este mensaje — su nombre está en professional_name o client_name
-        // Usamos el que NO sea el nombre del usuario actual
-        const name = msg.sender_name || msg.professional_name || msg.client_name || null;
-        if (name && name.trim()) {
-          conv.contactName = name.trim();
-          break;
-        }
-      }
+       // Estrategia: mirar mensajes donde el OTHER fue el sender — su nombre estará en professional_name o client_name.
+       // Si no hay mensajes del otro, mirar mensajes míos — también guardan ambos nombres.
+       // Prioridad final: profilesCache con datos reales del User entity.
+       // ESPECIAL: Para chats de Briefing, si el otro es el admin, mostrar "Equipo Plan Ads+"
+       const myId = user?.id;
+       Object.values(convMap).forEach(conv => {
+         const otherUserId = conv.otherUserId;
 
-      // 2. Si no encontramos nada, buscar en mensajes míos (también guardan ambos nombres)
-      if (!conv.contactName) {
-        for (const msg of conv.messages) {
-          if (msg.sender_id !== myId) continue;
-          // Yo envié este mensaje — los campos professional_name/client_name corresponden al otro
-          // Si soy profesional → client_name es el nombre del cliente (el otro)
-          // Si soy cliente → professional_name es el nombre del pro (el otro)
-          const myType = user?.user_type;
-          const name = myType === 'professionnel' 
-            ? (msg.client_name || msg.professional_name)
-            : (msg.professional_name || msg.client_name);
-          if (name && name.trim()) {
-            conv.contactName = name.trim();
-            break;
-          }
-        }
-      }
+         // 1. Buscar en mensajes donde el otro fue sender (nombre más fiable)
+         for (const msg of conv.messages) {
+           if (msg.sender_id !== otherUserId) continue;
+           // El otro envió este mensaje — su nombre está en professional_name o client_name
+           // Usamos el que NO sea el nombre del usuario actual
+           let name = msg.sender_name || msg.professional_name || msg.client_name || null;
+           // ESPECIAL: Para Briefing, si es "Equipo MisAutónomos" → "Equipo Plan Ads+"
+           if (conv.conversationId?.startsWith('briefing_') && name === 'Equipo MisAutónomos') {
+             name = 'Equipo Plan Ads+';
+           }
+           if (name && name.trim()) {
+             conv.contactName = name.trim();
+             break;
+           }
+         }
 
-      // 3. Fallback: profilesCache (buscado via User/ProfessionalProfile entity)
-      if (!conv.contactName) {
-        const cached = profilesCache[otherUserId];
-        if (cached) {
-          conv.contactName = cached.business_name || cached.full_name || cached.email?.split('@')[0] || null;
-        }
-      }
+         // 2. Si no encontramos nada, buscar en mensajes míos (también guardan ambos nombres)
+         if (!conv.contactName) {
+           for (const msg of conv.messages) {
+             if (msg.sender_id !== myId) continue;
+             // Yo envié este mensaje — los campos professional_name/client_name corresponden al otro
+             // Si soy profesional → client_name es el nombre del cliente (el otro)
+             // Si soy cliente → professional_name es el nombre del pro (el otro)
+             const myType = user?.user_type;
+             let name = myType === 'professionnel' 
+               ? (msg.client_name || msg.professional_name)
+               : (msg.professional_name || msg.client_name);
+             // ESPECIAL: Para Briefing, si es "Equipo MisAutónomos" → "Equipo Plan Ads+"
+             if (conv.conversationId?.startsWith('briefing_') && name === 'Equipo MisAutónomos') {
+               name = 'Equipo Plan Ads+';
+             }
+             if (name && name.trim()) {
+               conv.contactName = name.trim();
+               break;
+             }
+           }
+         }
 
-      conv.contactName = conv.contactName || "...";
-    });
+         // 3. Fallback: profilesCache (buscado via User/ProfessionalProfile entity)
+         if (!conv.contactName) {
+           const cached = profilesCache[otherUserId];
+           if (cached) {
+             conv.contactName = cached.business_name || cached.full_name || cached.email?.split('@')[0] || null;
+           }
+         }
+
+         conv.contactName = conv.contactName || "...";
+       });
 
     return Object.values(convMap).sort((a, b) =>
       new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
@@ -448,8 +462,9 @@ export default function MessagesPage() {
   useEffect(() => {
     // Buscar nombres faltantes para TODAS las conversaciones, no solo las que muestran "..."
     // porque puede que el nombre en el mensaje esté vacío aunque el usuario exista
+    // EXCEPTO chats de Briefing: no buscar datos del admin para no exponer datos personales
     const missingIds = conversations
-      .filter(c => c.otherUserId && !profilesCache[c.otherUserId])
+      .filter(c => c.otherUserId && !profilesCache[c.otherUserId] && !c.conversationId?.startsWith('briefing_'))
       .map(c => c.otherUserId);
 
     if (!missingIds.length) return;
@@ -495,6 +510,13 @@ export default function MessagesPage() {
       setProfessionalSlug(null);
       return;
     }
+    // Para chats de Briefing Ads+, NO mostrar datos de contacto del admin
+    if (selectedConvId?.startsWith('briefing_')) {
+      setProfessionalPhone(null);
+      setProfessionalHasWhatsapp(false);
+      setProfessionalSlug(null);
+      return;
+    }
     const loadProfessionalInfo = async () => {
       try {
         const profiles = await base44.entities.ProfessionalProfile.filter({ user_id: selectedOtherUserId });
@@ -506,7 +528,7 @@ export default function MessagesPage() {
       } catch {}
     };
     loadProfessionalInfo();
-  }, [selectedOtherUserId]);
+  }, [selectedOtherUserId, selectedConvId]);
 
   // ─── Existing review ──────────────────────────────────────────────────────
   const [existingReview, setExistingReview] = useState(null);
@@ -520,6 +542,8 @@ export default function MessagesPage() {
   // ─── Resolved contact name for open chat header ───────────────────────────
   const resolvedContactName = useMemo(() => {
     if (!selectedConvId) return "";
+    // Para chats de Briefing Ads+, el admin siempre se muestra como "Equipo Plan Ads+"
+    if (selectedConvId?.startsWith('briefing_')) return "Equipo Plan Ads+";
     if (currentConv?.contactName && currentConv.contactName !== "...") return currentConv.contactName;
     const cached = profilesCache[selectedOtherUserId];
     if (cached) return cached.business_name || cached.full_name || cached.email?.split('@')[0] || "Usuario";
@@ -1053,9 +1077,14 @@ export default function MessagesPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className={`font-semibold text-gray-900 text-sm truncate ${professionalSlug ? 'hover:text-blue-600 transition-colors' : ''}`}>
-                      {resolvedContactName || "..."}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className={`font-semibold text-gray-900 text-sm truncate ${professionalSlug ? 'hover:text-blue-600 transition-colors' : ''}`}>
+                        {resolvedContactName || "..."}
+                      </h3>
+                      {selectedConvId?.startsWith('briefing_') && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">Ads+</span>
+                      )}
+                    </div>
                     <span className="text-xs text-green-500 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                       En línea
@@ -1150,15 +1179,15 @@ export default function MessagesPage() {
                       return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isSameSender ? 'mt-0.5' : 'mt-3'}`}>
                           {!isMe && (
-                            <div className="w-8 flex-shrink-0 mr-2 self-end">
-                              {isLastInGroup ? (
-                                <Avatar className="w-7 h-7">
-                                  <AvatarFallback className="bg-gray-200 text-gray-600 text-xs font-bold">
-                                    {(resolvedContactName || "?").charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ) : <div className="w-7" />}
-                            </div>
+                           <div className="w-8 flex-shrink-0 mr-2 self-end">
+                             {isLastInGroup ? (
+                               <Avatar className="w-7 h-7">
+                                 <AvatarFallback className={`text-xs font-bold ${selectedConvId?.startsWith('briefing_') ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                   {selectedConvId?.startsWith('briefing_') ? '⚡' : (resolvedContactName || "?").charAt(0).toUpperCase()}
+                                 </AvatarFallback>
+                               </Avatar>
+                             ) : <div className="w-7" />}
+                           </div>
                           )}
 
                           <div className={`max-w-[75%] md:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>

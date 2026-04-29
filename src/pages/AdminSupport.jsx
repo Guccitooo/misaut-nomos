@@ -13,17 +13,21 @@ export default function AdminSupport() {
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // Cargar TODOS los mensajes de conversaciones de soporte
+  // Cargar TODOS los mensajes de conversaciones de soporte Y Briefing
   // Las conversaciones de soporte tienen conversation_id que empieza con "support_"
+  // Las conversaciones de Briefing Ads+ tienen conversation_id que empieza con "briefing_"
   const { data: allMessages = [], isLoading } = useQuery({
     queryKey: ['adminSupportMessages'],
     queryFn: async () => {
       // Traemos mensajes enviados por usuarios a soporte y respuestas del equipo
-      const [fromUsers, fromSupport] = await Promise.all([
+      const [fromUsers, fromSupport, allMsgs] = await Promise.all([
         base44.entities.Message.filter({ recipient_id: 'support_team' }, '-created_date', 1000),
         base44.entities.Message.filter({ sender_id: 'support_team' }, '-created_date', 1000),
+        base44.entities.Message.list('-created_date', 500),
       ]);
-      return [...fromUsers, ...fromSupport];
+      // También incluir chats de Briefing Ads+
+      const briefingMsgs = allMsgs.filter(m => m.conversation_id?.startsWith('briefing_'));
+      return [...fromUsers, ...fromSupport, ...briefingMsgs];
     },
     refetchInterval: 4000,
   });
@@ -33,7 +37,7 @@ export default function AdminSupport() {
     const map = {};
     for (const msg of allMessages) {
       const cid = msg.conversation_id;
-      if (!cid?.startsWith('support_')) continue;
+      if (!cid?.startsWith('support_') && !cid?.startsWith('briefing_')) continue;
       if (!map[cid]) {
         map[cid] = { conversationId: cid, messages: [], lastMsg: null, unread: 0 };
       }
@@ -50,14 +54,24 @@ export default function AdminSupport() {
     return Object.values(map)
       .map(conv => {
         // Nombre del usuario: sacarlo del mensaje (client_name del mensaje del usuario)
-        const userMsg = conv.messages.find(m => m.sender_id !== 'support_team');
+        const isBriefing = conv.conversationId?.startsWith('briefing_');
+        const userMsg = isBriefing 
+          ? conv.messages.find(m => m.sender_id !== 'support_team' && m.sender_id !== m.recipient_id)
+          : conv.messages.find(m => m.sender_id !== 'support_team');
         return {
           ...conv,
-          userName: userMsg?.client_name || userMsg?.professional_name || 'Usuario',
+          isBriefing,
+          userName: isBriefing 
+            ? userMsg?.client_name || 'Profesional Ads+'
+            : userMsg?.client_name || userMsg?.professional_name || 'Usuario',
           userId: userMsg?.sender_id,
         };
       })
       .sort((a, b) => {
+        // Briefing chats al inicio
+        if (a.isBriefing && !b.isBriefing) return -1;
+        if (!a.isBriefing && b.isBriefing) return 1;
+        // Después, ordenar por sin leer y fecha
         if (a.unread > 0 && b.unread === 0) return -1;
         if (a.unread === 0 && b.unread > 0) return 1;
         return new Date(b.lastMsg?.created_date) - new Date(a.lastMsg?.created_date);
@@ -174,9 +188,14 @@ export default function AdminSupport() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className={`text-sm truncate ${conv.unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
-                        {conv.userName}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-sm truncate ${conv.unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                          {conv.userName}
+                        </p>
+                        {conv.isBriefing && (
+                          <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0">Ads+</span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 truncate">
                         {conv.lastMsg?.sender_id === 'support_team' ? '✓ ' : ''}{conv.lastMsg?.content}
                       </p>
@@ -220,8 +239,13 @@ export default function AdminSupport() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">{activeConv?.userName}</p>
-                <p className="text-xs text-gray-500">Chat de soporte</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900 text-sm">{activeConv?.userName}</p>
+                  {activeConv?.isBriefing && (
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded font-semibold">⚡ Ads+</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">{activeConv?.isBriefing ? 'Chat de campaña Ads+' : 'Chat de soporte'}</p>
               </div>
             </div>
 
