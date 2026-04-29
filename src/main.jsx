@@ -1,3 +1,17 @@
+// Polyfill requestIdleCallback — Safari (iOS/macOS) no la implementa
+if (typeof window !== 'undefined' && !window.requestIdleCallback) {
+  window.requestIdleCallback = function(cb, options) {
+    var start = Date.now();
+    return setTimeout(function() {
+      cb({
+        didTimeout: false,
+        timeRemaining: function() { return Math.max(0, 50 - (Date.now() - start)); }
+      });
+    }, (options && options.timeout) ? Math.min(options.timeout, 1) : 1);
+  };
+  window.cancelIdleCallback = function(id) { clearTimeout(id); };
+}
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
