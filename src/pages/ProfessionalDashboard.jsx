@@ -13,6 +13,7 @@ import {
   ExternalLink, Sparkles, TrendingUp, Circle, Star, Gift, Megaphone
 } from "lucide-react";
 import SEOHead from "../components/seo/SEOHead";
+import ReferralBanner from "../components/referrals/ReferralBanner";
 import PullToRefresh from "../components/ui/PullToRefresh";
 import { getEffectivePlan, isAdsPlus } from "@/utils/subscription";
 
@@ -254,25 +255,6 @@ export default function ProfessionalDashboardPage() {
             <p className="text-sm text-gray-500">{greeting}, {displayName} 👋</p>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mt-0.5">Tu panel</h1>
           </motion.div>
-
-          {/* BANNER REGALO ACTIVO */}
-          {subscription?.gifted_plan_id && subscription?.gifted_until && new Date(subscription.gifted_until) > new Date() && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-2xl p-4 md:p-5"
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">🎁</span>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">Tienes {subscription.gifted_plan_name} cortesía de MisAutónomos</p>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    Activo hasta el <strong>{new Date(subscription.gifted_until).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* BANNER FOTO PRINCIPAL FALTANTE */}
           {hasActiveSub && profile && !profile.imagen_principal && (
@@ -553,24 +535,7 @@ export default function ProfessionalDashboardPage() {
           {/* WIDGET REFERIDOS */}
           {hasActiveSub && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: subscription?.plan_id === 'plan_adsplus' ? 0.42 : 0.38 }}>
-              <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 rounded-2xl border border-amber-100 p-5 relative overflow-hidden">
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-amber-200/40 rounded-full blur-2xl pointer-events-none" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Gift className="w-5 h-5 text-amber-600" />
-                    <h3 className="font-semibold text-gray-900 text-sm">Invita a un colega → gana 1 mes gratis</h3>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Llevas <strong>{profile?.referral_count || 0} referidos</strong> y has ganado <strong>{profile?.referral_months_earned || 0} meses</strong> gratis. ¡Sin límite!
-                  </p>
-                  <button
-                    onClick={() => navigate("/referidos")}
-                    className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition-colors"
-                  >
-                    <Gift className="w-3.5 h-3.5" /> Ir a mis referidos
-                  </button>
-                </div>
-              </div>
+              <ReferralBanner profile={profile} />
             </motion.div>
           )}
 

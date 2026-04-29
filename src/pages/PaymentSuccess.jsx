@@ -204,6 +204,17 @@ export default function PaymentSuccessPage() {
                 ¡Pago confirmado!
               </h1>
               <p className="text-gray-600 mb-4">{message}</p>
+              {/* CTA Referidos */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-left">
+                <p className="text-sm font-bold text-gray-900 mb-1">🎁 ¿Conoces a otro autónomo?</p>
+                <p className="text-xs text-gray-600">Invítale con tu código personal y os lleváis 1 mes gratis los dos.</p>
+                <button
+                  onClick={() => navigate("/referidos")}
+                  className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-900"
+                >
+                  Ver mi código de referido →
+                </button>
+              </div>
               <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Redirigiendo...

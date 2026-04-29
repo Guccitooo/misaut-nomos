@@ -358,7 +358,15 @@ export default function ProfileOnboardingPage() {
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
         consiente_contacto_clientes: formData.consiente_contacto_clientes,
         slug_publico: formData.business_name.toLowerCase().replace(/\s+/g, '-'),
-        certifications: []
+        certifications: [],
+        // Capturar código de referido desde localStorage si existe y no ha expirado
+        referred_by_code: (() => {
+          try {
+            const code = localStorage.getItem('referral_code');
+            const expires = parseInt(localStorage.getItem('referral_expires') || '0');
+            return (code && Date.now() < expires) ? code : '';
+          } catch { return ''; }
+        })(),
       };
 
       if (existingProfile) {

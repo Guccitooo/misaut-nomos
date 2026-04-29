@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Copy, Check, Gift, Users, Calendar, CheckCircle } from "lucide-react";
+import { Copy, Check, Gift, Users, Calendar, Trophy } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import ReferralBanner from "@/components/referrals/ReferralBanner";
 
-function generateReferralCode(name) {
-  const prefix = 'MA';
-  const cleanName = (name || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
-  const initials = cleanName.substring(0, 3).padEnd(3, 'X');
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${prefix}-${initials}${random}`;
+const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function makeCode() {
+  let code = 'MA-';
+  for (let i = 0; i < 6; i++) code += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
+  return code;
 }
 
 function StatusBadge({ status }) {
   const config = {
-    pending: { label: "En proceso (7 días)", cls: "bg-amber-50 text-amber-700" },
-    qualified: { label: "Cualificado", cls: "bg-blue-50 text-blue-700" },
-    rewarded: { label: "✓ 1 mes ganado", cls: "bg-green-50 text-green-700" },
+    pending:   { label: "Pendiente", cls: "bg-amber-50 text-amber-700 border border-amber-200" },
+    qualified: { label: "Cualificado", cls: "bg-blue-50 text-blue-700 border border-blue-200" },
+    rewarded:  { label: "✓ 1 mes ganado", cls: "bg-green-50 text-green-700 border border-green-200" },
     cancelled: { label: "Cancelado", cls: "bg-gray-100 text-gray-500" },
   };
   const c = config[status] || config.pending;
@@ -26,12 +26,10 @@ export default function ReferralsPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [referrals, setReferrals] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const load = async () => {
     setLoading(true);
@@ -43,17 +41,13 @@ export default function ReferralsPage() {
       let profiles = await base44.entities.ProfessionalProfile.filter({ user_id: currentUser.id });
       let prof = profiles[0] || null;
 
-      if (!prof) { setLoading(false); return; }
-
-      // Backfill: generar referral_code si no existe
-      if (!prof.referral_code) {
-        let code;
-        let exists = true;
-        let attempts = 0;
-        while (exists && attempts < 10) {
-          code = generateReferralCode(prof.business_name || currentUser.full_name || 'MA');
+      if (prof && !prof.referral_code) {
+        // Generar código si falta (backfill client-side)
+        let code, attempts = 0;
+        while (attempts < 10) {
+          code = makeCode();
           const check = await base44.entities.ProfessionalProfile.filter({ referral_code: code });
-          exists = check.length > 0;
+          if (check.length === 0) break;
           attempts++;
         }
         await base44.entities.ProfessionalProfile.update(prof.id, { referral_code: code });
@@ -62,9 +56,19 @@ export default function ReferralsPage() {
 
       setProfile(prof);
 
-      const refs = await base44.entities.Referral.filter({ referrer_id: currentUser.id });
-      refs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      setReferrals(refs);
+      if (prof) {
+        const refs = await base44.entities.Referral.filter({ referrer_id: currentUser.id });
+        refs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        setReferrals(refs);
+      }
+
+      // Leaderboard: top 10 por referral_count (solo profesionales activos)
+      const allProfs = await base44.entities.ProfessionalProfile.filter({ visible_en_busqueda: true });
+      const sorted = allProfs
+        .filter(p => (p.referral_count || 0) > 0)
+        .sort((a, b) => (b.referral_count || 0) - (a.referral_count || 0))
+        .slice(0, 10);
+      setLeaderboard(sorted);
     } catch (e) {
       console.error(e);
     } finally {
@@ -72,29 +76,14 @@ export default function ReferralsPage() {
     }
   };
 
-  const refLink = profile?.referral_code
-    ? `https://misautonomos.es/r/${profile.referral_code}`
-    : "";
-
-  const copyLink = () => {
-    if (!refLink) return;
-    navigator.clipboard.writeText(refLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareText = "¡Únete a MisAutónomos con mi código y consigue 30 días extra de prueba gratis!";
-  const shareWA = () => window.open(`https://wa.me/?text=${encodeURIComponent(shareText + " " + refLink)}`);
-  const shareEmail = () => window.open(`mailto:?subject=${encodeURIComponent("Únete a MisAutónomos")}&body=${encodeURIComponent(shareText + "\n\n" + refLink)}`);
-  const shareX = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(refLink)}`);
-  const shareLinkedIn = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(refLink)}`);
-
-  const qualified = referrals.filter((r) => ["qualified", "rewarded"].includes(r.status)).length;
-  const pending = referrals.filter((r) => r.status === "pending").length;
+  const qualified = referrals.filter(r => ["qualified", "rewarded"].includes(r.status)).length;
+  const pending = referrals.filter(r => r.status === "pending").length;
   const monthsEarned = profile?.referral_months_earned || 0;
 
+  const medals = ["🥇", "🥈", "🥉"];
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-24">
       <SEOHead title="Invita y gana — MisAutónomos" noindex />
 
       {/* Header */}
@@ -104,137 +93,152 @@ export default function ReferralsPage() {
             <Gift className="w-5 h-5 text-amber-500" /> Invita y gana
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Por cada autónomo que se una con tu código, ganas 1 mes gratis
+            Invita a otro autónomo y os lleváis 1 mes gratis los dos
           </p>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
 
-        {/* Link + compartir */}
-        <section className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
-          <p className="text-xs text-gray-400 mb-1">Tu link personal</p>
-          <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2.5 mb-4">
-            {loading ? (
-              <div className="flex items-center gap-2 text-gray-400 flex-1">
-                <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full flex-shrink-0" />
-                <span className="text-sm">Generando tu link...</span>
+        {/* BANNER PRINCIPAL */}
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 flex items-center justify-center">
+            <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-gray-700 rounded-full" />
+          </div>
+        ) : profile ? (
+          <ReferralBanner profile={profile} />
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+            <p className="text-sm font-medium text-amber-900">Solo disponible para profesionales con perfil activo.</p>
+          </div>
+        )}
+
+        {/* MÉTRICAS */}
+        {profile && (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-1">
+                <Users className="w-3.5 h-3.5" /> Cualificados
               </div>
-            ) : (
-              <span className="flex-1 text-sm text-white truncate">{refLink || "—"}</span>
-            )}
-            <button
-              onClick={copyLink}
-              disabled={!refLink || loading}
-              className="bg-white text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-gray-100 transition-colors flex-shrink-0 disabled:opacity-40"
-            >
-              {copied ? <><Check className="w-4 h-4" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar</>}
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-400 mb-2">Compartir por:</p>
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={shareWA} disabled={!refLink} className="bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
-              WhatsApp
-            </button>
-            <button onClick={shareEmail} disabled={!refLink} className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
-              Email
-            </button>
-            <button onClick={shareX} disabled={!refLink} className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
-              Twitter/X
-            </button>
-            <button onClick={shareLinkedIn} disabled={!refLink} className="bg-blue-800 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-medium px-3 py-2 rounded-lg">
-              LinkedIn
-            </button>
-          </div>
-
-          {/* Banner informativo — cómo se aplica el mes gratis */}
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2 text-xs text-blue-900">
-            <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-            <div>
-              <strong>Cómo se aplica tu mes gratis:</strong>
-              <ul className="mt-1 space-y-0.5 list-disc list-inside">
-                <li>Si estás en periodo de prueba: se añaden 30 días más a tu prueba</li>
-                <li>Si ya estás pagando: se aplica 1 mes de descuento automáticamente en tu próxima factura</li>
-              </ul>
-              La recompensa se aplica a los 7 días de que tu referido se haya registrado activamente.
+              <p className="text-2xl font-bold text-gray-900">{qualified}</p>
+              {pending > 0 && <p className="text-xs text-amber-600 mt-0.5">{pending} pendientes</p>}
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-1">
+                <Calendar className="w-3.5 h-3.5" /> Meses ganados
+              </div>
+              <p className="text-2xl font-bold text-gray-900">{monthsEarned}</p>
+              <p className="text-xs text-gray-500 mt-0.5">de 12 máx.</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
+              <div className="flex items-center gap-1.5 text-amber-700 text-xs mb-1">
+                <Gift className="w-3.5 h-3.5" /> Usados
+              </div>
+              <p className="text-2xl font-bold text-amber-900">{profile.referral_months_used || 0}</p>
+              <p className="text-xs text-amber-700 mt-0.5">aplicados</p>
             </div>
           </div>
-        </section>
+        )}
 
-        {/* Métricas */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-1">
-              <Users className="w-3.5 h-3.5" /> Referidos
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{qualified}</p>
-            {pending > 0 && (
-              <p className="text-xs text-amber-600 mt-0.5">{pending} en proceso</p>
-            )}
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-1">
-              <Calendar className="w-3.5 h-3.5" /> Meses ganados
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{monthsEarned}</p>
-            <p className="text-xs text-gray-500 mt-0.5">gratis acumulados</p>
-          </div>
-          <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
-            <div className="flex items-center gap-1.5 text-amber-700 text-xs mb-1">
-              <Gift className="w-3.5 h-3.5" /> Sin límite
-            </div>
-            <p className="text-sm font-bold text-amber-900">¡Cuantos más, mejor!</p>
-            <p className="text-xs text-amber-700 mt-0.5">Sin tope de meses</p>
-          </div>
-        </div>
-
-        {/* Cómo funciona */}
+        {/* CÓMO FUNCIONA */}
         <section className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Cómo funciona</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">¿Cómo funciona?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { n: 1, title: "Comparte tu link", desc: "Envíalo a otros autónomos por WhatsApp, email o redes." },
-              { n: 2, title: "Se registran con tu código", desc: "Reciben 30 días extra de prueba (90 días en total)." },
-              { n: 3, title: "Ganas 1 mes gratis", desc: "Cuando el referido lleva 7 días activo, se añade 1 mes a tu suscripción." },
+              { n: 1, title: "Comparte tu enlace", desc: "Envíalo a otros autónomos por WhatsApp, email o redes sociales." },
+              { n: 2, title: "Se registran y suscriben", desc: "Cuando tu referido pasa a plan de pago, los dos ganáis 1 mes gratis." },
+              { n: 3, title: "Se aplica automáticamente", desc: "30 días extra se añaden a tu suscripción sin hacer nada. Hasta 12 meses acumulables." },
             ].map(({ n, title, desc }) => (
-              <div key={n}>
-                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm mb-2">{n}</div>
-                <p className="font-medium text-sm text-gray-900 mb-0.5">{title}</p>
-                <p className="text-xs text-gray-500">{desc}</p>
+              <div key={n} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm flex-shrink-0">{n}</div>
+                <div>
+                  <p className="font-medium text-sm text-gray-900 mb-0.5">{title}</p>
+                  <p className="text-xs text-gray-500">{desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Historial */}
-        <section className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-900 mb-3">Historial de referidos</h2>
-          {loading ? (
-            <div className="text-center py-10">
-              <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-gray-600 rounded-full mx-auto" />
-            </div>
-          ) : referrals.length === 0 ? (
-            <div className="text-center py-10">
-              <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Aún no has invitado a nadie</p>
-              <p className="text-xs text-gray-500 mt-1">Comparte tu link y empieza a ganar meses gratis</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {referrals.map((r) => (
-                <div key={r.id} className="flex items-center justify-between py-3">
+        {/* LEADERBOARD */}
+        {leaderboard.length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-500" /> Top referidores del mes
+            </h2>
+            <div className="space-y-2">
+              {leaderboard.map((p, idx) => (
+                <div key={p.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${idx === 0 ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
+                  <span className="text-lg w-7 text-center flex-shrink-0">
+                    {medals[idx] || `#${idx + 1}`}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-gray-900 truncate">{r.referred_name || r.referred_email}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(r.created_date).toLocaleDateString("es-ES")}
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {p.business_name ? p.business_name.split(' ').slice(0, 2).join(' ') : 'Profesional'}
+                      {p.user_id === user?.id && <span className="ml-1 text-xs text-blue-600 font-normal">(tú)</span>}
                     </p>
+                    <p className="text-xs text-gray-500">{p.ciudad || p.provincia || 'España'}</p>
                   </div>
-                  <StatusBadge status={r.status} />
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-gray-900">{p.referral_count}</p>
+                    <p className="text-xs text-gray-500">referidos</p>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
+          </section>
+        )}
+
+        {/* HISTORIAL */}
+        {profile && (
+          <section className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-semibold text-gray-900 mb-3">Mis referidos</h2>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-gray-600 rounded-full mx-auto" />
+              </div>
+            ) : referrals.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-700">Aún no has invitado a nadie</p>
+                <p className="text-xs text-gray-500 mt-1">Comparte tu enlace y empieza a ganar meses gratis</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {referrals.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-gray-900 truncate">
+                        {r.referred_name || r.referred_email || "Nuevo profesional"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(r.created_date).toLocaleDateString("es-ES")}
+                      </p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* FAQ */}
+        <section className="bg-white rounded-2xl border border-gray-100 p-5">
+          <h2 className="font-semibold text-gray-900 mb-4">Preguntas frecuentes</h2>
+          <div className="space-y-4">
+            {[
+              { q: "¿Cuándo se aplica el mes gratis?", a: "Cuando tu referido pasa de periodo de prueba a plan de pago, el sistema lo detecta automáticamente y añade 30 días a tu suscripción." },
+              { q: "¿Hay un límite de referidos?", a: "Puedes invitar a cuantos quieras, pero el máximo de meses gratis acumulables es 12 por cuenta." },
+              { q: "¿Qué gana el referido?", a: "El referido también recibe beneficios al suscribirse con tu código. Ambos ganáis 1 mes gratis cuando se produce la conversión a pago." },
+              { q: "¿Cómo se aplica si ya tengo suscripción activa?", a: "Se extiende automáticamente la fecha de renovación de tu suscripción 30 días adicionales." },
+            ].map(({ q, a }) => (
+              <div key={q}>
+                <p className="text-sm font-semibold text-gray-900 mb-1">{q}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
       </div>

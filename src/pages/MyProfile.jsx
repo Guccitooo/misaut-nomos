@@ -44,6 +44,7 @@ import AIAssistantPro from "../components/ai/AIAssistantPro";
 import ServicesSection from "../components/profile/ServicesSection";
 import AvailabilityCalendar from "../components/profile/AvailabilityCalendar";
 import IdentityVerificationWidget from "../components/verification/IdentityVerificationWidget";
+import ReferralBanner from "../components/referrals/ReferralBanner";
 
 const isSubscriptionActive = (estado, fechaExpiracion) => {
   if (!estado) return false;
@@ -763,6 +764,13 @@ export default function MyProfilePage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* BANNER REFERIDOS */}
+        {isProfessional && profile && (
+          <div className="mb-4">
+            <ReferralBanner profile={profile} />
+          </div>
         )}
 
         {/* BANNER FOTO PRINCIPAL FALTANTE */}
