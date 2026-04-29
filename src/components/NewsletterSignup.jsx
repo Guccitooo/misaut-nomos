@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Mail, Check, Loader2 } from 'lucide-react';
+import { notifyAdminEvent } from '@/lib/notifyAdmin';
 
 export default function NewsletterSignup({ variant = 'footer', source = 'footer' }) {
   const [email, setEmail] = useState('');
@@ -59,6 +60,15 @@ export default function NewsletterSignup({ variant = 'footer', source = 'footer'
           unsubToken
         });
       } catch {}
+
+      // Notificar admin
+      notifyAdminEvent({
+        event: 'newsletter_signup',
+        title: '📧 Nuevo suscriptor newsletter (formulario)',
+        body: `<strong>${email}</strong> se ha suscrito como <em>${userType}</em> desde el formulario.`,
+        data: { email, userType, source },
+        userEmail: email
+      });
 
       setStatus('success');
       setEmail('');

@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 import Stripe from 'npm:stripe@14.10.0';
 
@@ -252,6 +251,26 @@ Deno.serve(async (req) => {
                 console.log(`📧 Usuario: ${email}`);
                 console.log(`🆔 User ID: ${userId}`);
                 console.log(`💳 Subscription ID: ${subscription.id}`);
+
+                // Notificar admin nueva suscripción (fire-and-forget)
+                fetch(new URL('/notifyAdmin', req.url).toString(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    event: 'new_subscription',
+                    severity: 'high',
+                    title: '💰 Nueva suscripción',
+                    body: `<strong>${email}</strong> ha empezado plan <strong>${plan.nombre}</strong> (${subscription.status}).`,
+                    data: {
+                      user_id: userId,
+                      email,
+                      stripe_customer_id: subscription.customer,
+                      stripe_subscription_id: subscription.id,
+                      plan: plan.nombre,
+                      status: subscription.status
+                    }
+                  })
+                }).catch(() => {});
                 break;
             }
 
@@ -358,6 +377,19 @@ Deno.serve(async (req) => {
                 }
 
                 console.log('✅ Suscripción finalizada y perfil oculto');
+
+                // Notificar admin cancelación (fire-and-forget)
+                fetch(new URL('/notifyAdmin', req.url).toString(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    event: 'subscription_cancelled',
+                    severity: 'medium',
+                    title: '🔴 Suscripción cancelada/finalizada',
+                    body: `La suscripción de usuario <strong>${dbSub.user_id}</strong> ha sido eliminada por Stripe.`,
+                    data: { user_id: dbSub.user_id, stripe_subscription_id: subscription.id }
+                  })
+                }).catch(() => {});
                 break;
             }
 
@@ -397,6 +429,19 @@ Deno.serve(async (req) => {
                 }
 
                 console.log('⚠️ Pago fallido procesado');
+
+                // Notificar admin pago fallido (fire-and-forget)
+                fetch(new URL('/notifyAdmin', req.url).toString(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    event: 'payment_failed',
+                    severity: 'high',
+                    title: '❌ Pago fallido',
+                    body: `Fallo de pago en suscripción <strong>${subscription.id}</strong>.`,
+                    data: { stripe_subscription_id: subscription.id }
+                  })
+                }).catch(() => {});
                 break;
             }
 

@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { notifyAdminEvent } from "./notifyAdmin";
 
 /**
  * Suscribe a un usuario al newsletter automáticamente.
@@ -28,6 +29,13 @@ export async function autoSubscribeToNewsletter({
       confirmation_token: 'auto_' + Math.random().toString(36).substring(2, 14),
       confirmed_at: new Date().toISOString(),
       unsubscribe_token: 'unsub_' + Math.random().toString(36).substring(2, 16),
+    });
+    notifyAdminEvent({
+      event: 'newsletter_signup',
+      title: '📧 Nuevo suscriptor newsletter',
+      body: `<strong>${name || email}</strong> se ha suscrito como <em>${userTypeInterest}</em>.`,
+      data: { email, name, userTypeInterest, source },
+      userEmail: email
     });
   } catch (err) {
     // Silencioso: no rompe el flujo de registro

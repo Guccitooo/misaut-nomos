@@ -385,6 +385,16 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                   extraTags: ['client']
                 });
               }).catch(() => {});
+              // Notificar admin nuevo cliente
+              import('@/lib/notifyAdmin').then(({ notifyAdminEvent }) => {
+                notifyAdminEvent({
+                  event: 'new_client',
+                  title: '👤 Nuevo cliente registrado',
+                  body: `<strong>${currentUser.full_name || currentUser.email}</strong> se ha registrado como cliente.`,
+                  data: { email: currentUser.email, name: currentUser.full_name, id: currentUser.id },
+                  userEmail: currentUser.email
+                });
+              }).catch(() => {});
             } catch (e) {
               console.warn('Failed to set user_type:', e);
               currentUser.user_type = "client";

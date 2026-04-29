@@ -456,6 +456,22 @@ export default function ProfileOnboardingPage() {
           extraTags: ['professional']
         });
       }).catch(() => {});
+      // Notificar admin nuevo profesional
+      import('@/lib/notifyAdmin').then(({ notifyAdminEvent }) => {
+        notifyAdminEvent({
+          event: 'new_professional',
+          title: '🛠️ Nuevo profesional registrado',
+          body: `<strong>${formData.business_name}</strong> ha completado su perfil. Categorías: ${(formData.categories || []).join(', ')} · Ciudad: ${formData.ciudad || 'no indicada'}.`,
+          data: {
+            email: user.email,
+            business_name: formData.business_name,
+            categories: formData.categories,
+            ciudad: formData.ciudad,
+            user_id: user.id
+          },
+          userEmail: user.email
+        });
+      }).catch(() => {});
 
       if (hasActiveSubscription) {
         // Caso raro: tenía suscripción activa de antes y ahora completa onboarding tarde
