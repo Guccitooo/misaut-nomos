@@ -128,7 +128,7 @@ export default function ReferralsPage() {
                 <Calendar className="w-3.5 h-3.5" /> Meses ganados
               </div>
               <p className="text-2xl font-bold text-gray-900">{monthsEarned}</p>
-              <p className="text-xs text-gray-500 mt-0.5">de 12 máx.</p>
+              <p className="text-xs text-gray-500 mt-0.5">de 24 máx.</p>
             </div>
             <div className="bg-amber-50 rounded-xl border border-amber-100 p-4">
               <div className="flex items-center gap-1.5 text-amber-700 text-xs mb-1">
@@ -147,7 +147,7 @@ export default function ReferralsPage() {
             {[
               { n: 1, title: "Comparte tu enlace", desc: "Envíalo a otros autónomos por WhatsApp, email o redes sociales." },
               { n: 2, title: "Se registran y suscriben", desc: "Cuando tu referido pasa a plan de pago, los dos ganáis 1 mes gratis." },
-              { n: 3, title: "Se aplica automáticamente", desc: "30 días extra se añaden a tu suscripción sin hacer nada. Hasta 12 meses acumulables." },
+              { n: 3, title: "Se aplica automáticamente", desc: "30 días extra se añaden a tu suscripción sin hacer nada. Hasta 24 meses acumulables." },
             ].map(({ n, title, desc }) => (
               <div key={n} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm flex-shrink-0">{n}</div>
@@ -229,7 +229,7 @@ export default function ReferralsPage() {
           <div className="space-y-4">
             {[
               { q: "¿Cuándo se aplica el mes gratis?", a: "Cuando tu referido pasa de periodo de prueba a plan de pago, el sistema lo detecta automáticamente y añade 30 días a tu suscripción." },
-              { q: "¿Hay un límite de referidos?", a: "Puedes invitar a cuantos quieras, pero el máximo de meses gratis acumulables es 12 por cuenta." },
+              { q: "¿Hay un límite de referidos?", a: "Puedes invitar a cuantos quieras, pero el máximo de meses gratis acumulables es 24 por cuenta." },
               { q: "¿Qué gana el referido?", a: "El referido también recibe beneficios al suscribirse con tu código. Ambos ganáis 1 mes gratis cuando se produce la conversión a pago." },
               { q: "¿Cómo se aplica si ya tengo suscripción activa?", a: "Se extiende automáticamente la fecha de renovación de tu suscripción 30 días adicionales." },
             ].map(({ q, a }) => (

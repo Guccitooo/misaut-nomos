@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const MAX_MONTHS = 12;
+const MAX_MONTHS = 24;
 
 Deno.serve(async (req) => {
   try {

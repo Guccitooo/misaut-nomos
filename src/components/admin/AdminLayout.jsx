@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { id: "gifts", label: "Regalos", icon: Gift, emoji: "🎁" },
   { id: "audit", label: "Auditoría", icon: Shield, emoji: "📋" },
   { id: "ads_briefings", label: "Briefings Ads+", icon: Megaphone, emoji: "📢" },
+  { id: "referrals", label: "Referidos", icon: Gift, emoji: "🤝" },
   { id: "metrics", label: "Métricas", icon: BarChart2, emoji: "📈" },
   { id: "support", label: "Soporte", icon: Ticket, emoji: "🎫" },
   { id: "verifications", label: "Verificaciones", icon: Settings, emoji: "🛡️" },

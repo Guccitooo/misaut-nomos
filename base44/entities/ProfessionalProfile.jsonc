@@ -381,6 +381,11 @@
       "description": "Meses gratis ya aplicados",
       "default": 0
     },
+    "referral_visits": {
+      "type": "number",
+      "description": "Veces que alguien visit\u00f3 la landing con este c\u00f3digo de referido",
+      "default": 0
+    },
     "referred_by_code": {
       "type": "string",
       "description": "C\u00f3digo con el que se registr\u00f3 este usuario (si vino por referido)",

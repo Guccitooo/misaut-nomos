@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const MAX_MONTHS = 24;
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -19,6 +21,50 @@ Deno.serve(async (req) => {
     // Verificar que el usuario no fue ya referido
     const existing = await base44.asServiceRole.entities.Referral.filter({ referred_id: user.id });
     if (existing.length > 0) return Response.json({ ok: false, reason: 'already_referred' });
+
+    // Verificar cap de meses del referidor
+    const referrerMonths = referrer.referral_months_earned || 0;
+    if (referrerMonths >= MAX_MONTHS) {
+      return Response.json({ ok: false, reason: 'referrer_cap_reached' });
+    }
+
+    // Anti-fraude: comprobar que el CIF/NIF y teléfono del referido no están ya en el sistema
+    const referredProfiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: user.id });
+    const referredProfile = referredProfiles[0];
+    if (referredProfile) {
+      // Comprobar CIF/NIF duplicado
+      if (referredProfile.cif_nif) {
+        const logs = await base44.asServiceRole.entities.TrialUsageLog.filter({
+          identifier_type: 'nif',
+          identifier_hash: referredProfile.cif_nif.toUpperCase()
+        });
+        if (logs.length > 0 && logs[0].user_id !== user.id) {
+          return Response.json({ ok: false, reason: 'nif_already_used' });
+        }
+        // Registrar uso
+        await base44.asServiceRole.entities.TrialUsageLog.create({
+          identifier_type: 'nif',
+          identifier_hash: referredProfile.cif_nif.toUpperCase(),
+          user_id: user.id
+        }).catch(() => {});
+      }
+      // Comprobar teléfono duplicado
+      if (referredProfile.telefono_contacto) {
+        const phoneClean = referredProfile.telefono_contacto.replace(/\D/g, '');
+        const phoneLogs = await base44.asServiceRole.entities.TrialUsageLog.filter({
+          identifier_type: 'phone',
+          identifier_hash: phoneClean
+        });
+        if (phoneLogs.length > 0 && phoneLogs[0].user_id !== user.id) {
+          return Response.json({ ok: false, reason: 'phone_already_used' });
+        }
+        await base44.asServiceRole.entities.TrialUsageLog.create({
+          identifier_type: 'phone',
+          identifier_hash: phoneClean,
+          user_id: user.id
+        }).catch(() => {});
+      }
+    }
 
     // Extender trial del nuevo usuario 30 días
     const subs = await base44.asServiceRole.entities.Subscription.filter({ user_id: user.id });

@@ -15,6 +15,7 @@ import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import VerificationRequests from "@/components/admin/VerificationRequests";
 import AdminPlanAuditLog from "@/components/admin/AdminPlanAuditLog";
 import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings.jsx";
+import AdminReferralWidget from "@/components/admin/AdminReferralWidget";
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -127,12 +128,17 @@ export default function AdminDashboardPage() {
   return (
     <AdminLayout activeSection={activeSection} onSectionChange={setActiveSection} openTickets={openTickets}>
       {activeSection === "dashboard" && (
-        <AdminBusinessDashboard
-          users={users}
-          profiles={profiles}
-          subscriptions={subscriptions}
-          paymentRecords={paymentRecords}
-        />
+        <>
+          <AdminBusinessDashboard
+            users={users}
+            profiles={profiles}
+            subscriptions={subscriptions}
+            paymentRecords={paymentRecords}
+          />
+          <div className="mt-6">
+            <AdminReferralWidget />
+          </div>
+        </>
       )}
 
       {activeSection === "users" && (
@@ -173,6 +179,13 @@ export default function AdminDashboardPage() {
 
       {activeSection === "ads_briefings" && (
         <AdminAdsBriefings users={users} />
+      )}
+
+      {activeSection === "referrals" && (
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">🎁 Programa de referidos</h2>
+          <AdminReferralWidget />
+        </div>
       )}
     </AdminLayout>
   );
