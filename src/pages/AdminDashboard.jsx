@@ -16,6 +16,7 @@ import VerificationRequests from "@/components/admin/VerificationRequests";
 import AdminPlanAuditLog from "@/components/admin/AdminPlanAuditLog";
 import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings.jsx";
 import AdminReferralWidget from "@/components/admin/AdminReferralWidget";
+import AdminEmailsPanel from "@/components/admin/AdminEmailsPanel";
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -186,6 +187,10 @@ export default function AdminDashboardPage() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">🎁 Programa de referidos</h2>
           <AdminReferralWidget />
         </div>
+      )}
+
+      {activeSection === "emails" && (
+        <AdminEmailsPanel />
       )}
     </AdminLayout>
   );
