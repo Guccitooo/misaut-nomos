@@ -1,6 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
+// === EMAIL BLOCKLIST TEMPORAL — vence 2026-05-01 23:59 UTC ===
+const EMAIL_BLOCKLIST_NP = ["rubencardenastorres@gmail.com"];
+const BLOCKLIST_EXPIRES_AT_NP = new Date("2026-05-01T23:59:00Z");
+function isBlockedRecipientNP(toEmail) {
+  if (new Date() > BLOCKLIST_EXPIRES_AT_NP) return false;
+  if (!toEmail) return false;
+  return EMAIL_BLOCKLIST_NP.some(b => b.toLowerCase() === String(toEmail).trim().toLowerCase());
+}
+// === FIN BLOCKLIST ===
+
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'MisAutónomos <hola@misautonomos.es>';
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
@@ -149,6 +160,11 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) {
       console.warn('RESEND_API_KEY no configurada');
       return Response.json({ ok: true, skipped: 'no_resend_key' });
+    }
+
+    if (isBlockedRecipientNP(recipient.email)) {
+      console.log('[email-blocklist v1] BLOCKED send to:', recipient.email, 'subject: nueva_solicitud_presupuesto', 'template: notifyProfessionalNewMessage');
+      return Response.json({ ok: true, skipped: 'blocklist' });
     }
 
     const resendResp = await fetch('https://api.resend.com/emails', {

@@ -2,6 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
+// === EMAIL BLOCKLIST TEMPORAL — vence 2026-05-01 23:59 UTC ===
+const EMAIL_BLOCKLIST = ["rubencardenastorres@gmail.com"];
+const BLOCKLIST_EXPIRES_AT = new Date("2026-05-01T23:59:00Z");
+function isBlockedRecipient(toEmail) {
+  if (new Date() > BLOCKLIST_EXPIRES_AT) return false;
+  if (!toEmail) return false;
+  const normalized = String(toEmail).trim().toLowerCase();
+  return EMAIL_BLOCKLIST.some(blocked => blocked.toLowerCase() === normalized);
+}
+// === FIN BLOCKLIST ===
+
 const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'Equipo MisAutónomos <hola@misautonomos.com>';
 const EMAIL_REPLY_TO = Deno.env.get('EMAIL_REPLY_TO') || 'hola@misautonomos.com';
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
@@ -167,6 +178,23 @@ Deno.serve(async (req) => {
 
     for (const toEmail of toArray) {
       try {
+        // Comprobar blocklist temporal
+        if (isBlockedRecipient(toEmail)) {
+          console.log('[email-blocklist v1] BLOCKED send to:', toEmail, 'subject:', subject, 'template:', template || 'unknown');
+          await base44.asServiceRole.entities.EmailLog.create({
+            to_email: toEmail,
+            user_id: user.id,
+            subject,
+            template: template || 'blocked-by-blocklist',
+            category,
+            status: 'skipped',
+            error_message: 'Bloqueado por blocklist temporal',
+            sent_at: new Date().toISOString()
+          }).catch(e => console.error('[email-blocklist v1] No se pudo registrar en EmailLog:', e));
+          results.push({ email: toEmail, status: 'skipped', reason: 'blocklist' });
+          continue;
+        }
+
         // Comprobar unsubscribed si es marketing
         if (category === 'marketing') {
           const subs = await base44.asServiceRole.entities.NewsletterSubscriber.filter({

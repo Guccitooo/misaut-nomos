@@ -1,6 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ONESIGNAL_APP_ID = 'e178adb2-38e8-4397-9239-833be611ed27';
+
+// === EMAIL BLOCKLIST TEMPORAL — vence 2026-05-01 23:59 UTC ===
+const EMAIL_BLOCKLIST_OM = ["rubencardenastorres@gmail.com"];
+const BLOCKLIST_EXPIRES_AT_OM = new Date("2026-05-01T23:59:00Z");
+function isBlockedRecipientOM(toEmail) {
+  if (new Date() > BLOCKLIST_EXPIRES_AT_OM) return false;
+  if (!toEmail) return false;
+  return EMAIL_BLOCKLIST_OM.some(b => b.toLowerCase() === String(toEmail).trim().toLowerCase());
+}
+// === FIN BLOCKLIST ===
 const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
 /**
@@ -121,11 +131,14 @@ Deno.serve(async (req) => {
       const recipients = await base44.asServiceRole.entities.User.filter({ id: msg.recipient_id });
       const recipient = recipients?.[0];
       if (recipient?.email) {
-        const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-        if (RESEND_API_KEY) {
-          const displaySenderName = msg.sender_name || senderName;
-          const safeContent = (msg.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 500);
-          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+        if (isBlockedRecipientOM(recipient.email)) {
+          console.log('[email-blocklist v1] BLOCKED send to:', recipient.email, 'subject: new_message', 'template: onNewMessage');
+        } else {
+          const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+          if (RESEND_API_KEY) {
+            const displaySenderName = msg.sender_name || senderName;
+            const safeContent = (msg.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 500);
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:32px 16px;">
     <tr><td align="center">
@@ -148,22 +161,23 @@ Deno.serve(async (req) => {
     </td></tr>
   </table>
 </body></html>`;
-          const resendResp = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: 'MisAutónomos <onboarding@resend.dev>',
-              to: [recipient.email],
-              subject: `💬 ${displaySenderName} te ha escrito en MisAutónomos`,
-              html
-            })
-          });
-          if (!resendResp.ok) {
-            console.error('Email send failed:', await resendResp.text());
-          } else {
-            console.log('✅ Email enviado a', recipient.email);
+            const resendResp = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'MisAutónomos <onboarding@resend.dev>',
+                to: [recipient.email],
+                subject: `💬 ${displaySenderName} te ha escrito en MisAutónomos`,
+                html
+              })
+            });
+            if (!resendResp.ok) {
+              console.error('Email send failed:', await resendResp.text());
+            } else {
+              console.log('✅ Email enviado a', recipient.email);
+            }
           }
-        }
+        } // end else (not blocked)
       }
     } catch (emailErr) {
       console.warn('Email notification failed (non-blocking):', emailErr.message);
