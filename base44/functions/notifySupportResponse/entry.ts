@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'Soporte MisAutónomos <soporte@misautonomos.es>';
+const EMAIL_FROM = 'Soporte MisAutónomos <soporte@misautonomos.es>';
+const EMAIL_REPLY_TO = 'soporte@misautonomos.es';
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 /**
@@ -141,6 +142,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: EMAIL_FROM,
+        reply_to: EMAIL_REPLY_TO,
         to: recipient.email,
         subject: 'Tenemos respuesta para ti — Soporte MisAutónomos',
         html

@@ -152,7 +152,7 @@ function generateMidwayEmail(userName, daysLeft) {
       </ul>
       
       <div class="cta">
-        <a href="https://misautonomos.es/MyProfile" class="button">
+        <a href="https://misautonomos.es/mi-perfil" class="button">
           Optimizar mi perfil →
         </a>
       </div>
@@ -234,7 +234,7 @@ function generateEndingEmail(userName, endDate, monthlyPrice) {
       </p>
       
       <div class="cta">
-        <a href="https://misautonomos.es/SubscriptionManagement" class="button">
+        <a href="https://misautonomos.es/suscripcion" class="button">
           Revisar mi suscripción →
         </a>
       </div>
