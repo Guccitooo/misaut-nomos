@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'MisAutónomos <onboarding@resend.dev>',
+        from: 'MisAutónomos <hola@misautonomos.es>',
+        reply_to: 'hola@misautonomos.es',
         to: [email],
         subject: isEN ? '🎉 Welcome to MisAutónomos newsletter' : '🎉 Bienvenido a la newsletter de MisAutónomos',
         html,

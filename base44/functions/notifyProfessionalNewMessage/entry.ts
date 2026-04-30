@@ -12,7 +12,6 @@ function isBlockedRecipientNP(toEmail) {
 }
 // === FIN BLOCKLIST ===
 
-const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'MisAutónomos <hola@misautonomos.es>';
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 /**
@@ -174,7 +173,8 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: 'MisAutónomos <hola@misautonomos.es>',
+        reply_to: 'hola@misautonomos.es',
         to: recipient.email,
         subject: `📩 Tienes una nueva solicitud de presupuesto`,
         html

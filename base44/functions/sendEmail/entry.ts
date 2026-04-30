@@ -2,6 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
+// === FROM CENTRALIZADO — NO modificar sin actualizar también DNS Resend ===
+const CANONICAL_EMAIL_FROM = "MisAutónomos <hola@misautonomos.es>";
+const CANONICAL_REPLY_TO = "hola@misautonomos.es";
+// === FIN FROM CENTRALIZADO ===
+
 // === EMAIL BLOCKLIST TEMPORAL — vence 2026-05-01 23:59 UTC ===
 const EMAIL_BLOCKLIST = ["rubencardenastorres@gmail.com"];
 const BLOCKLIST_EXPIRES_AT = new Date("2026-05-01T23:59:00Z");
@@ -13,8 +18,9 @@ function isBlockedRecipient(toEmail) {
 }
 // === FIN BLOCKLIST ===
 
-const EMAIL_FROM = Deno.env.get('EMAIL_FROM_ADDRESS') || 'Equipo MisAutónomos <hola@misautonomos.com>';
-const EMAIL_REPLY_TO = Deno.env.get('EMAIL_REPLY_TO') || 'hola@misautonomos.com';
+// FROM/REPLY_TO: usar siempre la constante canónica, ignorar env vars de dominio incorrecto
+const EMAIL_FROM = CANONICAL_EMAIL_FROM;
+const EMAIL_REPLY_TO = CANONICAL_REPLY_TO;
 const APP_URL = Deno.env.get('VITE_APP_URL') || 'https://misautonomos.es';
 
 // Templates HTML simples (inline para evitar file I/O en Deno serverless)

@@ -82,7 +82,8 @@ async function sendEmail(to, subject, html) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'MisAutónomos Ads+ <onboarding@resend.dev>',
+      from: 'MisAutónomos <hola@misautonomos.es>',
+      reply_to: 'hola@misautonomos.es',
       to: [to],
       subject,
       html,

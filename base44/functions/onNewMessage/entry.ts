@@ -165,7 +165,8 @@ Deno.serve(async (req) => {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                from: 'MisAutónomos <onboarding@resend.dev>',
+                from: 'MisAutónomos <hola@misautonomos.es>',
+              reply_to: 'hola@misautonomos.es',
                 to: [recipient.email],
                 subject: `💬 ${displaySenderName} te ha escrito en MisAutónomos`,
                 html
