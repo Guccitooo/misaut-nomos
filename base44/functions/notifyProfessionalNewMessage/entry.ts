@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
 
         <!-- Footer -->
         <tr><td style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center;">
-          <p style="margin:0;">© 2026 MisAutónomos | Barcelona, España</p>
+          <p style="margin:0;">© 2026 MisAutónomos | misautonomos.es</p>
           <p style="margin:8px 0 0;">Has recibido este email porque tienes una cuenta en MisAutónomos.</p>
         </td></tr>
 
