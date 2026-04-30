@@ -1,53 +1,77 @@
 User-agent: *
-Allow: /
 
-# Rutas privadas — no indexar
-Disallow: /admin
-Disallow: /admin/
-Disallow: /dashboard
-Disallow: /dashboard/
+# ── Áreas privadas de usuario ──────────────────────────────────
+Disallow: /Tickets
+Disallow: /tickets
+Disallow: /soporte
+Disallow: /Invoices
+Disallow: /facturas
+Disallow: /UserTypeSelection
+Disallow: /registro
+Disallow: /ProfileOnboarding
 Disallow: /completar-perfil
+Disallow: /MyProfile
+Disallow: /mi-perfil
+Disallow: /mensajes
+Disallow: /favoritos
+Disallow: /notificaciones
+Disallow: /dashboard
 Disallow: /suscripcion
 Disallow: /pago-exitoso
 Disallow: /bienvenida
-Disallow: /mi-perfil
-Disallow: /notificaciones
-Disallow: /mensajes
-Disallow: /favoritos
-Disallow: /soporte
 Disallow: /solicitudes
 Disallow: /automatizaciones
-Disallow: /registro
 Disallow: /mi-campana
 Disallow: /plan-ads
 Disallow: /referidos
-Disallow: /facturas
 Disallow: /proyectos
 Disallow: /calendario
 Disallow: /trabajos
 Disallow: /mis-clientes
 Disallow: /clientes
-Disallow: /clientes/
 Disallow: /pagar
 Disallow: /visibilidad
 Disallow: /presupuestos
 Disallow: /configuracion-cookies
+Disallow: /registro-cliente
 Disallow: /perfil
+Disallow: /presupuesto
+Disallow: /ClientOnboarding
+Disallow: /HelpCenter
 
-# Rutas públicas explícitamente permitidas
-Allow: /buscar
-Allow: /autonomo/
-Allow: /categoria/
-Allow: /blog/
-Allow: /blog
-Allow: /precios
-Allow: /preguntas-frecuentes
-Allow: /ayuda
-Allow: /privacidad
-Allow: /terminos
-Allow: /cookies
-Allow: /aviso-legal
-Allow: /inicio
+# ── Panel de administración ────────────────────────────────────
+Disallow: /admin
+Disallow: /admin/
 
-# Sitemap
+# ── URLs legacy en inglés (PascalCase) ────────────────────────
+Disallow: /Autonomo
+Disallow: /Search
+Disallow: /Messages
+Disallow: /Favorites
+Disallow: /PricingPlans
+Disallow: /FAQ
+Disallow: /FAQDetail
+Disallow: /UserTypeSelection
+Disallow: /Home
+Disallow: /PrivacyPolicy
+Disallow: /TermsConditions
+Disallow: /CookiePolicy
+Disallow: /LegalNotice
+Disallow: /Notifications
+Disallow: /ProfessionalDashboard
+Disallow: /ProfessionalProfile
+Disallow: /SubscriptionManagement
+Disallow: /PaymentSuccess
+Disallow: /Onboarding
+Disallow: /AdminDashboard
+Disallow: /AdminPayments
+Disallow: /AdminTickets
+Disallow: /AdminFAQ
+Disallow: /AdminMessagesStats
+Disallow: /AdminSupport
+
+# ── Parámetros de búsqueda/filtros (no canónicos) ─────────────
+Disallow: /buscar?*
+Disallow: /categoria?*
+
 Sitemap: https://misautonomos.es/sitemap.xml

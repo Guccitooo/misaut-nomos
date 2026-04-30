@@ -28,6 +28,9 @@ export default function SEOHead({
     '/plan-ads', '/referidos', '/facturas', '/proyectos', '/calendario', '/trabajos',
     '/mis-clientes', '/clientes', '/pagar', '/visibilidad', '/presupuestos',
     '/configuracion-cookies', '/registro-cliente', '/perfil',
+    // Rutas privadas adicionales (Search Console)
+    '/Tickets', '/tickets', '/Invoices', '/UserTypeSelection',
+    '/ProfileOnboarding', '/MyProfile', '/presupuesto',
   ];
   const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const shouldNoindex = noindex || isPrivatePage;

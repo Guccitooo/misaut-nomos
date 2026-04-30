@@ -204,10 +204,15 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
 
-  // Redirect from old domain to new domain
+  // Redirect from old domain to new domain + www/http → canonical https (sin www)
   useEffect(() => {
-    if (window.location.hostname === 'autonomosmil.es' || window.location.hostname === 'www.autonomosmil.es') {
-      window.location.replace('https://misautonomos.es' + window.location.pathname + window.location.search);
+    const { hostname, protocol, pathname, search, hash } = window.location;
+    const isOldDomain = hostname === 'autonomosmil.es' || hostname === 'www.autonomosmil.es';
+    const isWww = hostname === 'www.misautonomos.es';
+    const isHttp = protocol === 'http:' && (hostname === 'misautonomos.es' || hostname === 'www.misautonomos.es');
+    
+    if (isOldDomain || isWww || isHttp) {
+      window.location.replace('https://misautonomos.es' + pathname + search + hash);
     }
   }, []);
 

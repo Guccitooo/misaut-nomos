@@ -178,6 +178,7 @@ export default function ClientOnboardingPage() {
         title="Crea tu cuenta gratis - MisAutónomos"
         description="Encuentra y contacta autónomos en segundos. Registro gratuito."
         keywords="crear cuenta cliente, buscar autónomos, servicios profesionales España"
+        noindex={true}
       />
 
       {/* Fondo */}

@@ -140,47 +140,9 @@ Deno.serve(async (req) => {
       });
     });
 
-    // Añadir páginas de provincias
-    uniqueProvinces.forEach(province => {
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/buscar?provincia=${encodeURIComponent(province)}</loc>\n`;
-      xml += `    <lastmod>${today}</lastmod>\n`;
-      xml += `    <changefreq>daily</changefreq>\n`;
-      xml += `    <priority>0.7</priority>\n`;
-      xml += '  </url>\n';
-    });
-
-    // Añadir páginas de ciudades
-    uniqueCities.slice(0, 100).forEach(cityProvince => {
-      const [city, prov] = cityProvince.split(', ');
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/buscar?provincia=${encodeURIComponent(prov)}&ciudad=${encodeURIComponent(city)}</loc>\n`;
-      xml += `    <lastmod>${today}</lastmod>\n`;
-      xml += `    <changefreq>daily</changefreq>\n`;
-      xml += `    <priority>0.7</priority>\n`;
-      xml += '  </url>\n';
-    });
-
-    // Añadir combinaciones categoría + provincia (top 50)
-    const topCombinations = [];
-    categories.forEach(cat => {
-      uniqueProvinces.forEach(prov => {
-        const count = profiles.filter(p => 
-          p.categories?.includes(cat.name) && p.provincia === prov
-        ).length;
-        if (count > 0) {
-          topCombinations.push({ category: cat.name, province: prov, count });
-        }
-      });
-    });
-    topCombinations.sort((a, b) => b.count - a.count).slice(0, 50).forEach(combo => {
-      xml += '  <url>\n';
-      xml += `    <loc>${baseUrl}/buscar?categoria=${encodeURIComponent(combo.category)}&provincia=${encodeURIComponent(combo.province)}</loc>\n`;
-      xml += `    <lastmod>${today}</lastmod>\n`;
-      xml += `    <changefreq>daily</changefreq>\n`;
-      xml += `    <priority>0.8</priority>\n`;
-      xml += '  </url>\n';
-    });
+    // NOTA: URLs con query params (?provincia=, ?ciudad=, ?categoria=) NO se incluyen en el sitemap
+    // porque no son canónicas — Google las trata como duplicados y diluyen el crawl budget.
+    // Las páginas de categoría-ciudad canónicas ya se generan arriba como /categoria/slug-en-ciudad.
 
     xml += '</urlset>';
 

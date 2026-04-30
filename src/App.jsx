@@ -177,9 +177,36 @@ const LEGACY_REDIRECTS = {
   '/adminmessagesstats': '/admin/mensajes',
 };
 
+// Rutas legacy en inglés con 301 explícito (para que React Router las capture antes del fallback)
+// /Autonomo → /buscar (Google tiene esta URL indexada con tráfico)
+const EXPLICIT_301s = {
+  '/Autonomo': '/buscar',
+  '/autonomo': '/buscar',
+  '/Search': '/buscar',
+  '/Messages': '/mensajes',
+  '/Favorites': '/favoritos',
+  '/PricingPlans': '/precios',
+  '/MyProfile': '/mi-perfil',
+  '/Tickets': '/soporte',
+  '/Invoices': '/facturas',
+  '/UserTypeSelection': '/registro',
+  '/ProfileOnboarding': '/completar-perfil',
+  '/AdminDashboard': '/admin',
+  '/HelpCenter': '/ayuda',
+  '/ClientOnboarding': '/registro-cliente',
+};
+
 // Componente que comprueba si la ruta actual es una URL antigua y redirige.
 const LegacyRedirect = () => {
   const location = useLocation();
+  
+  // Primero: chequear exact-case 301s explícitos
+  const explicit = EXPLICIT_301s[location.pathname];
+  if (explicit) {
+    return <Navigate to={explicit + location.search + location.hash} replace />;
+  }
+
+  // Segundo: lowercase legacy map
   const lower = location.pathname.toLowerCase();
   const target = LEGACY_REDIRECTS[lower];
   if (target && target !== location.pathname) {
