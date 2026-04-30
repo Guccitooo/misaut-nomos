@@ -36,6 +36,19 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'invalid_message' });
     }
 
+    // [email-quote-guard v1] Solo enviar este email verde si es una solicitud de presupuesto real
+    const isQuoteRequest = msg.quote_request
+                           && typeof msg.quote_request === 'object'
+                           && Object.keys(msg.quote_request).length > 0;
+    const isBriefingConversation = typeof msg.conversation_id === 'string'
+                                   && msg.conversation_id.startsWith('briefing_');
+
+    if (!isQuoteRequest || isBriefingConversation) {
+      console.log('[email-quote-guard v1] SKIP quote email. quote_request:', msg.quote_request, 'conversation_id:', msg.conversation_id);
+      return Response.json({ ok: true, skipped: 'not_a_quote_request' });
+    }
+    console.log('[email-quote-guard v1] SEND quote email. message:', msg.id);
+
     // Obtener datos del profesional destinatario
     const recipientUsers = await base44.asServiceRole.entities.User.filter({
       id: msg.recipient_id
