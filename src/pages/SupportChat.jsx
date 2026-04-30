@@ -47,6 +47,7 @@ export default function SupportChat() {
       base44.entities.Message.create({
         conversation_id: conversationId,
         sender_id: "support_team",
+        sender_name: "Equipo MisAutónomos",
         recipient_id: user.id,
         content: "¡Hola! 👋 Soy el equipo de soporte de MisAutónomos. ¿En qué podemos ayudarte?",
         professional_name: "Soporte MisAutónomos",
@@ -73,6 +74,7 @@ export default function SupportChat() {
       return await base44.entities.Message.create({
         conversation_id: conversationId,
         sender_id: user.id,
+        sender_name: user.full_name || user.email || 'Usuario',
         recipient_id: "support_team",
         content: text,
         professional_name: "Soporte MisAutónomos",

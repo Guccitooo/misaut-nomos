@@ -106,12 +106,15 @@ export default function AdminSupport() {
   const sendMutation = useMutation({
     mutationFn: async (text) => {
       if (!activeConv) return;
+      const isBriefing = selectedConvId?.startsWith('briefing_');
+      const senderName = isBriefing ? 'Equipo Plan Ads+' : 'Equipo MisAutónomos';
       return await base44.entities.Message.create({
         conversation_id: selectedConvId,
         sender_id: 'support_team',
+        sender_name: senderName,
         recipient_id: activeConv.userId,
         content: text,
-        professional_name: 'Soporte MisAutónomos',
+        professional_name: senderName,
         client_name: activeConv.userName,
         is_read: false,
         attachments: [],
