@@ -1,22 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, XCircle } from "lucide-react";
-import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 
 import AdminLayout from "@/components/admin/AdminLayout";
-import AdminBusinessDashboard from "@/components/admin/AdminBusinessDashboard";
-import AdminUsersTable from "@/components/admin/AdminUsersTable";
-import AdminPendingProfiles from "@/components/admin/AdminPendingProfiles";
-import AdminSubscriptionsTable from "@/components/admin/AdminSubscriptionsTable";
-import AdminMetrics from "@/components/admin/AdminMetrics";
-import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
-import VerificationRequests from "@/components/admin/VerificationRequests";
-import AdminPlanAuditLog from "@/components/admin/AdminPlanAuditLog";
-import AdminAdsBriefings from "@/components/admin/AdminAdsBriefings.jsx";
-import AdminReferralWidget from "@/components/admin/AdminReferralWidget";
-import AdminEmailsPanel from "@/components/admin/AdminEmailsPanel";
+
+const AdminBusinessDashboard = lazy(() => import("@/components/admin/AdminBusinessDashboard"));
+const AdminUsersTable = lazy(() => import("@/components/admin/AdminUsersTable"));
+const AdminPendingProfiles = lazy(() => import("@/components/admin/AdminPendingProfiles"));
+const AdminSubscriptionsTable = lazy(() => import("@/components/admin/AdminSubscriptionsTable"));
+const AdminMetrics = lazy(() => import("@/components/admin/AdminMetrics"));
+const AdminSupportTickets = lazy(() => import("@/components/admin/AdminSupportTickets"));
+const VerificationRequests = lazy(() => import("@/components/admin/VerificationRequests"));
+const AdminPlanAuditLog = lazy(() => import("@/components/admin/AdminPlanAuditLog"));
+const AdminAdsBriefings = lazy(() => import("@/components/admin/AdminAdsBriefings"));
+const AdminReferralWidget = lazy(() => import("@/components/admin/AdminReferralWidget"));
+const AdminEmailsPanel = lazy(() => import("@/components/admin/AdminEmailsPanel"));
+
+const SectionLoader = () => (
+  <div className="flex items-center justify-center py-24">
+    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+  </div>
+);
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -128,6 +134,7 @@ export default function AdminDashboardPage() {
 
   return (
     <AdminLayout activeSection={activeSection} onSectionChange={setActiveSection} openTickets={openTickets}>
+      <Suspense fallback={<SectionLoader />}>
       {activeSection === "dashboard" && (
         <>
           <AdminBusinessDashboard
@@ -192,6 +199,7 @@ export default function AdminDashboardPage() {
       {activeSection === "emails" && (
         <AdminEmailsPanel />
       )}
+      </Suspense>
     </AdminLayout>
   );
 }
