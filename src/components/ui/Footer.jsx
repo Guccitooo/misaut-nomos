@@ -224,9 +224,9 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Contacto</h4>
             <ul className="space-y-3">
               <li>
-                <a href="mailto:hola@misautonomos.com" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+                <a href="mailto:hola@misautonomos.es" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
                   <Mail className="w-4 h-4 flex-shrink-0" />
-                  hola@misautonomos.com
+                  hola@misautonomos.es
                 </a>
               </li>
               <li className="text-sm text-gray-500 pt-1">
