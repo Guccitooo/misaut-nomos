@@ -37,8 +37,9 @@ const platformLinks = [
   { label: "Sobre nosotros", to: createPageUrl("Home") },
   { label: "Cómo funciona", to: createPageUrl("DashboardProInfo") },
   { label: "Para autónomos", to: createPageUrl("PricingPlans") },
-  { label: "Para clientes", to: createPageUrl("ClientOnboarding") },
-  { label: "Centro de ayuda", to: createPageUrl("FAQ") },
+  { label: "Para clientes", to: "/registro-cliente" },
+  { label: "Preguntas frecuentes", to: "/preguntas-frecuentes" },
+  { label: "Centro de ayuda", to: "/ayuda" },
 ];
 
 const resourceLinks = [

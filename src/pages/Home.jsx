@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -175,6 +175,12 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Link to="/preguntas-frecuentes" className="inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-800 transition-colors text-sm">
+              Ver todas las preguntas frecuentes <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
