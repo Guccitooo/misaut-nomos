@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, Search, Edit, Trash2, Copy, BookOpen, Eye, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BlogPostEditor from '@/components/blog/BlogPostEditor';
+
+const BlogPostEditor = lazy(() => import('@/components/blog/BlogPostEditor'));
 
 const STATUS_LABELS = {
   draft: { label: 'Borrador', cls: 'bg-gray-100 text-gray-700' },
@@ -66,6 +67,7 @@ export default function AdminBlogPage() {
   if (!user) return null;
   if (editing !== null) {
     return (
+      <Suspense fallback={<div className="p-8 text-center text-gray-500">Cargando editor...</div>}>
       <BlogPostEditor
         post={editing || null}
         allPosts={posts}
@@ -81,6 +83,7 @@ export default function AdminBlogPage() {
         }}
         onCancel={() => setEditing(null)}
       />
+      </Suspense>
     );
   }
 
