@@ -1,24 +1,20 @@
 User-agent: *
 
-# ── Áreas privadas de usuario ──────────────────────────────────
-Disallow: /Tickets
-Disallow: /tickets
-Disallow: /soporte
-Disallow: /Invoices
-Disallow: /facturas
-Disallow: /UserTypeSelection
-Disallow: /registro
-Disallow: /ProfileOnboarding
-Disallow: /completar-perfil
-Disallow: /MyProfile
-Disallow: /mi-perfil
-Disallow: /mensajes
+# ── Panel de administración ────────────────────────────────────
+Disallow: /admin
+Disallow: /admin/
+
+# ── Áreas privadas de usuario (rutas en español) ───────────────
 Disallow: /favoritos
 Disallow: /notificaciones
-Disallow: /dashboard
-Disallow: /suscripcion
+Disallow: /mensajes
+Disallow: /mi-perfil
 Disallow: /pago-exitoso
-Disallow: /bienvenida
+Disallow: /pago-completado
+Disallow: /soporte
+Disallow: /soporte/
+Disallow: /facturas
+Disallow: /presupuestos
 Disallow: /solicitudes
 Disallow: /automatizaciones
 Disallow: /mi-campana
@@ -26,49 +22,42 @@ Disallow: /plan-ads
 Disallow: /referidos
 Disallow: /proyectos
 Disallow: /calendario
-Disallow: /trabajos
 Disallow: /mis-clientes
 Disallow: /clientes
 Disallow: /pagar
 Disallow: /visibilidad
-Disallow: /presupuestos
-Disallow: /configuracion-cookies
+Disallow: /dashboard
+Disallow: /completar-perfil
+Disallow: /suscripcion
+Disallow: /bienvenida
+Disallow: /registro
 Disallow: /registro-cliente
+Disallow: /configuracion-cookies
 Disallow: /perfil
 Disallow: /presupuesto
+
+# ── URLs legacy en inglés (redirigen a español, bloquear igualmente) ──
+Disallow: /Tickets
+Disallow: /TicketDetail
+Disallow: /Invoices
+Disallow: /Favorites
+Disallow: /Notifications
+Disallow: /Messages
+Disallow: /MyProfile
+Disallow: /PaymentSuccess
+Disallow: /AdminFAQ
+Disallow: /UserTypeSelection
+Disallow: /ProfileOnboarding
 Disallow: /ClientOnboarding
 Disallow: /HelpCenter
-
-# ── Panel de administración ────────────────────────────────────
-Disallow: /admin
-Disallow: /admin/
-
-# ── URLs legacy en inglés (PascalCase) ────────────────────────
-Disallow: /Autonomo
-Disallow: /Search
-Disallow: /Messages
-Disallow: /Favorites
-Disallow: /PricingPlans
-Disallow: /FAQ
-Disallow: /FAQDetail
-Disallow: /UserTypeSelection
-Disallow: /Home
-Disallow: /PrivacyPolicy
-Disallow: /TermsConditions
-Disallow: /CookiePolicy
-Disallow: /LegalNotice
-Disallow: /Notifications
-Disallow: /ProfessionalDashboard
-Disallow: /ProfessionalProfile
-Disallow: /SubscriptionManagement
-Disallow: /PaymentSuccess
-Disallow: /Onboarding
 Disallow: /AdminDashboard
 Disallow: /AdminPayments
 Disallow: /AdminTickets
-Disallow: /AdminFAQ
 Disallow: /AdminMessagesStats
 Disallow: /AdminSupport
+Disallow: /Autonomo
+Disallow: /Search
+Disallow: /PricingPlans
 
 # ── Parámetros de búsqueda/filtros (no canónicos) ─────────────
 Disallow: /buscar?*

@@ -180,20 +180,28 @@ const LEGACY_REDIRECTS = {
 // Rutas legacy en inglés con 301 explícito (para que React Router las capture antes del fallback)
 // /Autonomo → /buscar (Google tiene esta URL indexada con tráfico)
 const EXPLICIT_301s = {
+  // Rutas en inglés → español (301 permanente)
   '/Autonomo': '/buscar',
   '/autonomo': '/buscar',
   '/Search': '/buscar',
   '/Messages': '/mensajes',
   '/Favorites': '/favoritos',
+  '/Notifications': '/notificaciones',
   '/PricingPlans': '/precios',
   '/MyProfile': '/mi-perfil',
   '/Tickets': '/soporte',
+  '/TicketDetail': '/soporte',
   '/Invoices': '/facturas',
+  '/Jobs': '/trabajos',
+  '/FAQ': '/preguntas-frecuentes',
+  '/LegalNotice': '/aviso-legal',
+  '/PaymentSuccess': '/pago-exitoso',
   '/UserTypeSelection': '/registro',
   '/ProfileOnboarding': '/completar-perfil',
-  '/AdminDashboard': '/admin',
-  '/HelpCenter': '/ayuda',
   '/ClientOnboarding': '/registro-cliente',
+  '/AdminDashboard': '/admin',
+  '/AdminFAQ': '/admin/faq',
+  '/HelpCenter': '/ayuda',
 };
 
 // Componente que comprueba si la ruta actual es una URL antigua y redirige.

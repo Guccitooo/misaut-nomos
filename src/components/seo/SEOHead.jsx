@@ -22,15 +22,16 @@ export default function SEOHead({
 
   // Páginas privadas que NO deben indexarse
   const NOINDEX_PATHS = [
-    '/admin', '/dashboard', '/completar-perfil', '/suscripcion', '/pago-exitoso',
+    '/admin', '/dashboard', '/completar-perfil', '/suscripcion', '/pago-exitoso', '/pago-completado',
     '/bienvenida', '/mi-perfil', '/notificaciones', '/mensajes', '/favoritos',
     '/soporte', '/solicitudes', '/automatizaciones', '/registro', '/mi-campana',
-    '/plan-ads', '/referidos', '/facturas', '/proyectos', '/calendario', '/trabajos',
+    '/plan-ads', '/referidos', '/facturas', '/proyectos', '/calendario',
     '/mis-clientes', '/clientes', '/pagar', '/visibilidad', '/presupuestos',
     '/configuracion-cookies', '/registro-cliente', '/perfil',
-    // Rutas privadas adicionales (Search Console)
-    '/Tickets', '/tickets', '/Invoices', '/UserTypeSelection',
+    // Rutas privadas adicionales (Search Console legacy en inglés)
+    '/Tickets', '/tickets', '/TicketDetail', '/Invoices', '/UserTypeSelection',
     '/ProfileOnboarding', '/MyProfile', '/presupuesto',
+    '/Favorites', '/Notifications', '/Messages', '/PaymentSuccess', '/AdminFAQ',
   ];
   const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const shouldNoindex = noindex || isPrivatePage;
