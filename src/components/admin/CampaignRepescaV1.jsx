@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Users, Send, Eye, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Users, Send, Eye, CheckCircle, XCircle, AlertTriangle, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CAMPAIGN_TAG = 'repesca_v1_sent';
@@ -66,6 +66,7 @@ export default function CampaignRepescaV1() {
   const [loadingAudience, setLoadingAudience] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [result, setResult] = useState(null);
 
@@ -80,6 +81,26 @@ export default function CampaignRepescaV1() {
       toast.error('Error al calcular audiencia: ' + e.message);
     } finally {
       setLoadingAudience(false);
+    }
+  };
+
+  const handleTestSend = async () => {
+    setSendingTest(true);
+    try {
+      const me = await base44.auth.me();
+      await base44.functions.invoke('sendAndLog', {
+        to: me.email,
+        subject: `[TEST] ${CAMPAIGN_SUBJECT}`,
+        template: 'raw_html',
+        html: buildHtml(me.full_name ? me.full_name.split(' ')[0] : 'Admin'),
+        category: 'transactional',
+        vars: {},
+      });
+      toast.success(`Email de prueba enviado a ${me.email}`);
+    } catch (e) {
+      toast.error('Error al enviar prueba: ' + e.message);
+    } finally {
+      setSendingTest(false);
     }
   };
 
@@ -172,6 +193,16 @@ export default function CampaignRepescaV1() {
         >
           <Eye className="w-4 h-4" />
           {loadingAudience ? 'Calculando...' : 'Previsualizar audiencia'}
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={handleTestSend}
+          disabled={sendingTest || sending}
+          className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+        >
+          <FlaskConical className="w-4 h-4" />
+          {sendingTest ? 'Enviando...' : 'Enviarme prueba'}
         </Button>
 
         {audience && audience.length > 0 && !sending && (
