@@ -224,11 +224,17 @@ Deno.serve(async (req) => {
         }
 
         // Renderizar template
-        let html = templates[template] || templates.welcome;
-        html = interpolateTemplate(html, {
-          app_url: APP_URL,
-          ...vars
-        });
+        // Si el template es 'raw_html', se usa directamente el campo html de vars
+        let html;
+        if (template === 'raw_html' && vars.__html) {
+          html = vars.__html;
+        } else {
+          html = templates[template] || templates.welcome;
+          html = interpolateTemplate(html, {
+            app_url: APP_URL,
+            ...vars
+          });
+        }
 
         // Token de unsubscribe
         let unsubscribeToken = null;

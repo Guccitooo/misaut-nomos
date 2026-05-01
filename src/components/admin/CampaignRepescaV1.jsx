@@ -1,0 +1,304 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Users, Send, Eye, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
+
+const CAMPAIGN_TAG = 'repesca_v1_sent';
+const CAMPAIGN_SUBJECT = 'Te dejaste algo a medias en MisAutónomos 👋';
+
+// Blocklist específica de esta campaña
+const CAMPAIGN_BLOCKLIST = [
+  'gucciahmedben@gmail.com',
+  'yahyarayan25@gmail.com',
+  'anisbenchellal@gmail.com',
+  'edxikol@gmail.com',
+  'guccito67@gmail.com',
+  'missautonomos@gmail.com',
+];
+
+const buildHtml = (name) => `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Te dejaste algo a medias</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a2e;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+      <tr><td style="padding:32px 32px 0 32px;">
+        <img src="https://misautonomos.es/logo.png" alt="MisAutónomos" width="48" height="48" style="display:block;">
+      </td></tr>
+      <tr><td style="padding:24px 32px 8px 32px;">
+        <h1 style="margin:0;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:700;">Te dejaste algo a medias en MisAutónomos 👋</h1>
+      </td></tr>
+      <tr><td style="padding:16px 32px;font-size:16px;line-height:1.6;color:#3a3a4e;">
+        <p style="margin:0 0 16px 0;">Hola${name ? ` ${name}` : ''},</p>
+        <p style="margin:0 0 16px 0;">Mirando los registros vimos que te diste de alta hace un tiempo pero no llegaste a terminar de crear tu cuenta. Queríamos preguntarte directamente: <strong>¿hubo algo que no te convenció, o simplemente se quedó en el tintero?</strong></p>
+        <p style="margin:0 0 16px 0;">En serio, lo preguntamos para mejorar la plataforma.</p>
+        <p style="margin:0 0 16px 0;">Y si lo dejaste por el precio o por probar sin compromiso, te dejamos algo: <strong>el primer mes en el Plan Ads+ por solo 1 €</strong> (en vez de 33 €). Lo justo para que veas si te llegan clientes reales antes de pagar el precio normal.</p>
+      </td></tr>
+      <tr><td align="center" style="padding:8px 32px 24px 32px;">
+        <a href="https://misautonomos.es/precios?utm_source=email&utm_medium=email&utm_campaign=repesca_v1" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-size:16px;font-weight:600;">Activar mi cuenta por 1 € →</a>
+      </td></tr>
+      <tr><td style="padding:0 32px 16px 32px;font-size:15px;line-height:1.6;color:#3a3a4e;">
+        <p style="margin:0 0 12px 0;">Sin trampas, sin permanencia oculta. Si en algún momento ves que no es para ti, te das de baja desde tu perfil con un click.</p>
+        <p style="margin:0 0 24px 0;">Si tienes cualquier duda, contéstanos a este email — nos llega directamente.</p>
+        <p style="margin:0;">Un saludo,<br><strong>Equipo MisAutónomos</strong></p>
+      </td></tr>
+      <tr><td style="padding:24px 32px;border-top:1px solid #eef0f3;font-size:12px;color:#8a8fa3;text-align:center;">
+        Recibes este email porque te diste de alta en MisAutónomos. <a href="https://misautonomos.es/newsletter/unsubscribe?email=${encodeURIComponent('')}" style="color:#8a8fa3;text-decoration:underline;">Darse de baja</a><br>
+        © 2026 MisAutónomos · misautonomos.es
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export default function CampaignRepescaV1() {
+  const [audience, setAudience] = useState(null);
+  const [loadingAudience, setLoadingAudience] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [result, setResult] = useState(null);
+
+  const fetchAudience = async () => {
+    setLoadingAudience(true);
+    setAudience(null);
+    setResult(null);
+    try {
+      // Cargar todos los users
+      const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+
+      // Filtrar: client, cliente, null o vacío como user_type
+      const clientUsers = allUsers.filter((u) => {
+        const t = (u.user_type || '').toLowerCase();
+        return t === 'client' || t === 'cliente' || t === '';
+      });
+
+      // Excluir blocklist específica de campaña
+      const afterBlocklist = clientUsers.filter(
+        (u) => !CAMPAIGN_BLOCKLIST.includes((u.email || '').toLowerCase())
+      );
+
+      // Excluir los que ya tienen el tag
+      const effective = afterBlocklist.filter((u) => {
+        const tags = Array.isArray(u.tags) ? u.tags : [];
+        return !tags.includes(CAMPAIGN_TAG);
+      });
+
+      setAudience(effective);
+    } catch (e) {
+      toast.error('Error al calcular audiencia: ' + e.message);
+    } finally {
+      setLoadingAudience(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!audience || audience.length === 0) return;
+    setShowConfirm(false);
+    setSending(true);
+    setResult(null);
+
+    let ok = 0;
+    let failed = 0;
+    let skippedBlocklist = 0;
+
+    setProgress({ done: 0, total: audience.length });
+
+    for (let i = 0; i < audience.length; i++) {
+      const user = audience[i];
+      setProgress({ done: i, total: audience.length });
+
+      try {
+        const res = await base44.functions.invoke('sendAndLog', {
+          to: user.email,
+          subject: CAMPAIGN_SUBJECT,
+          template: 'raw_html',
+          html: buildHtml(user.full_name ? user.full_name.split(' ')[0] : ''),
+          category: 'marketing',
+          vars: {},
+        });
+
+        // Verificar resultado: sendAndLog devuelve { results: [{status, email, ...}] }
+        const emailResult = res?.data?.results?.[0];
+        if (emailResult?.status === 'skipped') {
+          skippedBlocklist++;
+        } else if (emailResult?.status === 'sent') {
+          // Añadir tag de idempotencia
+          const currentTags = Array.isArray(user.tags) ? user.tags : [];
+          if (!currentTags.includes(CAMPAIGN_TAG)) {
+            await base44.asServiceRole.entities.User.update(user.id, {
+              tags: [...currentTags, CAMPAIGN_TAG],
+            });
+          }
+          ok++;
+        } else {
+          failed++;
+        }
+      } catch (e) {
+        failed++;
+      }
+
+      // Rate limit: max ~5/s → esperar 200ms entre cada uno
+      if (i < audience.length - 1) {
+        await sleep(200);
+      }
+    }
+
+    setProgress({ done: audience.length, total: audience.length });
+    setResult({ ok, failed, skippedBlocklist, skippedTag: 0 });
+    setSending(false);
+    toast.success(`Campaña completada: ${ok} enviados, ${failed} fallidos`);
+
+    // Refrescar audiencia para mostrar estado actualizado
+    await fetchAudience();
+  };
+
+  return (
+    <Card className="p-6 border-2 border-blue-100">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+          <Send className="w-5 h-5 text-blue-600" />
+        </div>
+        <div>
+          <h3 className="font-bold text-gray-900">Repesca Clientes V1</h3>
+          <p className="text-xs text-gray-500">Audiencia: clientes sin onboarding · Tag: {CAMPAIGN_TAG}</p>
+        </div>
+        <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-semibold">Lista para enviar</span>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm text-gray-700">
+        <p><strong>Asunto:</strong> {CAMPAIGN_SUBJECT}</p>
+        <p className="mt-1"><strong>Audiencia objetivo:</strong> users con user_type = client / cliente / vacío, excluyendo {CAMPAIGN_BLOCKLIST.length} emails bloqueados y quienes ya tengan el tag.</p>
+      </div>
+
+      {/* Acciones */}
+      <div className="flex gap-3 mb-4 flex-wrap">
+        <Button
+          variant="outline"
+          onClick={fetchAudience}
+          disabled={loadingAudience || sending}
+          className="gap-2"
+        >
+          <Eye className="w-4 h-4" />
+          {loadingAudience ? 'Calculando...' : 'Previsualizar audiencia'}
+        </Button>
+
+        {audience && audience.length > 0 && !sending && (
+          <Button
+            className="gap-2 bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => setShowConfirm(true)}
+            disabled={sending}
+          >
+            <Send className="w-4 h-4" />
+            Enviar campaña ({audience.length} destinatarios)
+          </Button>
+        )}
+      </div>
+
+      {/* Progreso */}
+      {sending && (
+        <div className="mb-4 bg-blue-50 rounded-lg p-4 flex items-center gap-3">
+          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-blue-800 font-semibold">
+            Enviando {progress.done} / {progress.total}...
+          </span>
+        </div>
+      )}
+
+      {/* Resultado */}
+      {result && (
+        <div className="mb-4 bg-green-50 rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-semibold text-green-800">{result.ok} enviados OK</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <XCircle className="w-4 h-4 text-red-500" />
+            <span className="text-sm font-semibold text-red-700">{result.failed} fallidos</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-500" />
+            <span className="text-sm font-semibold text-yellow-700">{result.skippedBlocklist} bloqueados</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-gray-400" />
+            <span className="text-sm font-semibold text-gray-600">{result.skippedTag} ya tenían tag</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tabla de audiencia */}
+      {audience && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-semibold text-gray-700">
+              Audiencia efectiva: <strong>{audience.length}</strong> destinatarios
+            </span>
+          </div>
+          {audience.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">Sin destinatarios (todos ya tienen el tag o están bloqueados).</p>
+          ) : (
+            <div className="overflow-auto max-h-64 rounded border border-gray-200">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">Email</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">Nombre</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">user_type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {audience.map((u) => (
+                    <tr key={u.id} className="border-t border-gray-100 hover:bg-gray-50">
+                      <td className="py-2 px-3 text-gray-800">{u.email}</td>
+                      <td className="py-2 px-3 text-gray-600">{u.full_name || '—'}</td>
+                      <td className="py-2 px-3 text-gray-500">{u.user_type || '(vacío)'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal confirmación */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">⚠️ Confirmar envío</h3>
+            <p className="text-gray-600 mb-6">
+              Vas a enviar <strong>{audience.length} emails</strong> reales a clientes. Esta acción no se puede deshacer. ¿Confirmar?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleSend}
+              >
+                Sí, enviar ahora
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </Card>
+  );
+}

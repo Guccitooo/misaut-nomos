@@ -6,7 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Send, Filter, BarChart3, Eye, X } from 'lucide-react';
+import { Mail, Send, Filter, BarChart3, Eye, X, Megaphone } from 'lucide-react';
+import CampaignRepescaV1 from './CampaignRepescaV1';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -221,6 +222,15 @@ export default function AdminEmailsPanel() {
             <BarChart3 className="w-8 h-8 text-red-500" />
           </div>
         </Card>
+      </div>
+
+      {/* ── CAMPAÑAS ── */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Megaphone className="w-5 h-5 text-orange-500" />
+          <h3 className="text-base font-bold text-gray-900">Campañas</h3>
+        </div>
+        <CampaignRepescaV1 />
       </div>
 
       {/* Filtros */}

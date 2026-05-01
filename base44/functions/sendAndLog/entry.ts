@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
       subject,
       template,
       vars = {},
+      html = null,
       category = 'transactional',
       user_id = null,
       campaign_id = null
@@ -101,11 +102,16 @@ Deno.serve(async (req) => {
         });
 
         // 3. Llamar a sendEmail existente
+        // Si template=raw_html, pasar el HTML via vars.__html para que sendEmail lo use directamente
+        const sendVars = (template === 'raw_html' && html)
+          ? { ...vars, __html: html }
+          : vars;
+
         const sendRes = await base44.functions.invoke('sendEmail', {
           to: toEmail,
           subject,
           template,
-          vars,
+          vars: sendVars,
           category,
           metadata: { logId: emailLog.id, campaign_id }
         });
