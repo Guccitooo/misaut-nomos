@@ -74,27 +74,8 @@ export default function CampaignRepescaV1() {
     setAudience(null);
     setResult(null);
     try {
-      // Cargar todos los users
-      const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
-
-      // Filtrar: client, cliente, null o vacío como user_type
-      const clientUsers = allUsers.filter((u) => {
-        const t = (u.user_type || '').toLowerCase();
-        return t === 'client' || t === 'cliente' || t === '';
-      });
-
-      // Excluir blocklist específica de campaña
-      const afterBlocklist = clientUsers.filter(
-        (u) => !CAMPAIGN_BLOCKLIST.includes((u.email || '').toLowerCase())
-      );
-
-      // Excluir los que ya tienen el tag
-      const effective = afterBlocklist.filter((u) => {
-        const tags = Array.isArray(u.tags) ? u.tags : [];
-        return !tags.includes(CAMPAIGN_TAG);
-      });
-
-      setAudience(effective);
+      const res = await base44.functions.invoke('getCampaignAudience', {});
+      setAudience(res.data.audience || []);
     } catch (e) {
       toast.error('Error al calcular audiencia: ' + e.message);
     } finally {
@@ -133,10 +114,10 @@ export default function CampaignRepescaV1() {
         if (emailResult?.status === 'skipped') {
           skippedBlocklist++;
         } else if (emailResult?.status === 'sent') {
-          // Añadir tag de idempotencia
+          // Añadir tag de idempotencia via SDK normal (admin puede actualizar users)
           const currentTags = Array.isArray(user.tags) ? user.tags : [];
           if (!currentTags.includes(CAMPAIGN_TAG)) {
-            await base44.asServiceRole.entities.User.update(user.id, {
+            await base44.entities.User.update(user.id, {
               tags: [...currentTags, CAMPAIGN_TAG],
             });
           }
