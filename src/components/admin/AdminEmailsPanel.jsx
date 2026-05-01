@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Mail, Send, Filter, BarChart3, Eye, X, Megaphone } from 'lucide-react';
 import CampaignRepescaV1 from './CampaignRepescaV1';
 import CampaignWinbackV1 from './CampaignWinbackV1';
+import CampaignBlogPlataformasV1 from './CampaignBlogPlataformasV1';
 import CampaignMetrics from './CampaignMetrics';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -235,6 +236,7 @@ export default function AdminEmailsPanel() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <CampaignRepescaV1 />
           <CampaignWinbackV1 />
+          <CampaignBlogPlataformasV1 />
         </div>
       </div>
 
