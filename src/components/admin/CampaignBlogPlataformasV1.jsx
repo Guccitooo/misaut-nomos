@@ -96,22 +96,13 @@ export default function CampaignBlogPlataformasV1() {
     setAudience(null);
     setResult(null);
     try {
-      const users = [];
-      for (const userId of TARGET_USER_IDS) {
-        try {
-          const records = await base44.asServiceRole.entities.User.filter({ id: userId });
-          if (records && records.length > 0) {
-            users.push(records[0]);
-          } else {
-            users.push({ id: userId, email: '(no encontrado)', full_name: '', tags: [] });
-          }
-        } catch {
-          users.push({ id: userId, email: '(error cargando)', full_name: '', tags: [] });
-        }
-      }
+      // Una sola query con todos los IDs — evita 11 fetches en paralelo
+      const records = await base44.entities.User.filter({ id: { $in: TARGET_USER_IDS } });
+      const userMap = new Map((records || []).map(u => [u.id, u]));
+      const users = TARGET_USER_IDS.map(uid => userMap.get(uid) || { id: uid, email: '(no encontrado)', full_name: '', tags: [] });
       setAudience(users);
     } catch (e) {
-      toast.error('Error al calcular audiencia: ' + e.message);
+      toast.error('No se pudo cargar la audiencia. ' + e.message);
     } finally {
       setLoadingAudience(false);
     }
@@ -168,7 +159,7 @@ export default function CampaignBlogPlataformasV1() {
       // Guard idempotencia: recargar tags frescos antes de enviar
       let freshTags = [];
       try {
-        const fresh = await base44.asServiceRole.entities.User.filter({ id: user.id });
+        const fresh = await base44.entities.User.filter({ id: user.id });
         freshTags = Array.isArray(fresh?.[0]?.tags) ? fresh[0].tags : [];
       } catch { /* continuar */ }
 
@@ -194,7 +185,7 @@ export default function CampaignBlogPlataformasV1() {
         if (emailResult?.status === 'skipped') {
           skippedBlocklist++;
         } else if (emailResult?.status === 'sent') {
-          await base44.asServiceRole.entities.User.update(user.id, {
+          await base44.entities.User.update(user.id, {
             tags: [...freshTags, CAMPAIGN_TAG],
           });
           ok++;
@@ -307,11 +298,16 @@ export default function CampaignBlogPlataformasV1() {
       {/* Tabla de audiencia */}
       {audience && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-semibold text-gray-700">
-              Audiencia total: <strong>{audience.length}</strong> · Pendientes: <strong>{pendingAudience.length}</strong>
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-semibold text-gray-700">
+                Audiencia total: <strong>{audience.length}</strong> · Pendientes: <strong>{pendingAudience.length}</strong>
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={fetchAudience} disabled={loadingAudience} className="text-xs gap-1 h-7">
+              🔄 Recargar
+            </Button>
           </div>
           <div className="overflow-auto max-h-64 rounded border border-gray-200">
             <table className="w-full text-xs">
