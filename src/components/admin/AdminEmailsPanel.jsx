@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Mail, Send, Filter, BarChart3, Eye, X, Megaphone } from 'lucide-react';
 import CampaignRepescaV1 from './CampaignRepescaV1';
+import CampaignWinbackV1 from './CampaignWinbackV1';
 import CampaignMetrics from './CampaignMetrics';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -231,7 +232,10 @@ export default function AdminEmailsPanel() {
           <Megaphone className="w-5 h-5 text-orange-500" />
           <h3 className="text-base font-bold text-gray-900">Campañas</h3>
         </div>
-        <CampaignRepescaV1 />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <CampaignRepescaV1 />
+          <CampaignWinbackV1 />
+        </div>
       </div>
 
       {/* ── MÉTRICAS DE CAMPAÑAS ── */}
