@@ -111,6 +111,19 @@ export default function BlogPostPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
+      {/* Hero image — full width, above everything */}
+      {post.featured_image && (
+        <div className="w-full max-h-[480px] overflow-hidden bg-gray-100">
+          <img
+            src={post.featured_image}
+            alt={post.title_es}
+            className="w-full h-full object-cover"
+            style={{ maxHeight: '480px', width: '100%', display: 'block' }}
+          />
+        </div>
+      )}
+
+      {/* Back link */}
       <div className="max-w-3xl mx-auto px-4 pt-6">
         <Link to="/blog" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
           <ArrowLeft className="w-4 h-4" /> Volver al blog
@@ -121,30 +134,28 @@ export default function BlogPostPage() {
         <CategoryBadge category={post.category} />
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-3 tracking-tight leading-tight">{post.title_es}</h1>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mt-4 pb-6 border-b border-gray-100">
+        {post.excerpt_es && (
+          <p className="mt-3 text-lg text-gray-500 leading-relaxed">{post.excerpt_es}</p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mt-5 pb-6 border-b border-gray-100">
           <div className="flex items-center gap-2">
             {post.author_avatar ? (
-              <img src={post.author_avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+              <img src={post.author_avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-semibold">
+              <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-semibold">
                 {post.author_name?.[0] || 'M'}
               </div>
             )}
             <span className="font-medium text-gray-700">{post.author_name || 'Equipo MisAutónomos'}</span>
           </div>
-          <span>·</span>
+          <span className="text-gray-300">·</span>
           {post.publish_date && (
             <span>{new Date(post.publish_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           )}
-          <span>·</span>
+          <span className="text-gray-300">·</span>
           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{post.read_time_minutes} min lectura</span>
         </div>
-
-        {post.featured_image && (
-          <div className="aspect-video rounded-2xl overflow-hidden bg-gray-100 mt-6">
-            <img src={post.featured_image} alt={post.title_es} className="w-full h-full object-cover" />
-          </div>
-        )}
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-10">
           <div>
