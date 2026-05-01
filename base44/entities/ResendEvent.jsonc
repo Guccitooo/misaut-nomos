@@ -1,0 +1,72 @@
+{
+  "name": "ResendEvent",
+  "type": "object",
+  "properties": {
+    "resend_message_id": {
+      "type": "string",
+      "description": "ID del mensaje en Resend"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "delivered",
+        "opened",
+        "clicked",
+        "bounced",
+        "complained",
+        "sent",
+        "delivery_delayed"
+      ],
+      "description": "Tipo de evento"
+    },
+    "to_email": {
+      "type": "string",
+      "description": "Email destinatario"
+    },
+    "raw_payload": {
+      "type": "object",
+      "description": "Payload crudo del webhook",
+      "default": {}
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cu\u00e1ndo se recibi\u00f3 el evento"
+    },
+    "email_log_id": {
+      "type": "string",
+      "description": "FK al EmailLog (opcional)"
+    }
+  },
+  "required": [
+    "resend_message_id",
+    "event_type"
+  ],
+  "security": {
+    "read": {
+      "rule": "auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "true"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "resend_message_id"
+      ]
+    },
+    {
+      "fields": [
+        "event_type",
+        "received_at"
+      ]
+    }
+  ]
+}

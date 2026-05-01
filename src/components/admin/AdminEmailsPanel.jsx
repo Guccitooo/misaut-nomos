@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Mail, Send, Filter, BarChart3, Eye, X, Megaphone } from 'lucide-react';
 import CampaignRepescaV1 from './CampaignRepescaV1';
+import CampaignMetrics from './CampaignMetrics';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -232,6 +233,9 @@ export default function AdminEmailsPanel() {
         </div>
         <CampaignRepescaV1 />
       </div>
+
+      {/* ── MÉTRICAS DE CAMPAÑAS ── */}
+      <CampaignMetrics />
 
       {/* Filtros */}
       <Card className="p-4">
