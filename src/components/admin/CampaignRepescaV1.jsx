@@ -29,8 +29,13 @@ const buildHtml = (name) => `<!DOCTYPE html>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-      <tr><td style="padding:32px 32px 0 32px;">
-        <img src="https://misautonomos.es/logo.png" alt="MisAutónomos" width="48" height="48" style="display:block;">
+      <tr><td style="padding:32px 32px 8px 32px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="background:#2563eb;border-radius:10px;width:40px;height:40px;text-align:center;vertical-align:middle;color:#ffffff;font-size:20px;font-weight:800;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:40px;">M</td>
+            <td style="padding-left:12px;font-size:18px;font-weight:700;color:#1a1a2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:-0.2px;">MisAutónomos</td>
+          </tr>
+        </table>
       </td></tr>
       <tr><td style="padding:24px 32px 8px 32px;">
         <h1 style="margin:0;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:700;">Te dejaste algo a medias en MisAutónomos 👋</h1>
