@@ -53,12 +53,8 @@ export default function AdminDashboardPage() {
 
   const { data: subscriptions = [], isLoading: loadingSubscriptions } = useQuery({
     queryKey: ['allSubscriptions'],
-    queryFn: async () => {
-      const subs = await base44.entities.Subscription.list();
-      const userIds = new Set(users.map(u => u.id));
-      return subs.filter(s => userIds.has(s.user_id));
-    },
-    enabled: users.length > 0,
+    queryFn: () => base44.entities.Subscription.list(),
+    enabled: !!user,
     staleTime: 1000 * 60 * 2,
   });
 
