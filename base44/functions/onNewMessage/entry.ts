@@ -102,17 +102,19 @@ Deno.serve(async (req) => {
     }
 
     const preview = msg.content?.length > 80 ? msg.content.slice(0, 80) + '...' : (msg.content || '🎤 Mensaje de voz');
-    const convUrl = msg.conversation_id
-      ? `https://misautonomos.es/mensajes?conv=${msg.conversation_id}`
-      : 'https://misautonomos.es/mensajes';
+    // Link relativo para notificaciones in-app (navigate), absoluto solo para push/email
+    const convPath = msg.conversation_id
+      ? `/mensajes?conv=${msg.conversation_id}`
+      : '/mensajes';
+    const convUrl = `https://misautonomos.es${convPath}`;
 
-    // Crear notificación en BD
+    // Crear notificación en BD — usar ruta relativa para que navigate() funcione en el cliente
     base44.asServiceRole.entities.Notification.create({
       user_id: msg.recipient_id,
       type: 'new_message',
       title: `💬 Mensaje de ${senderName}`,
       message: preview,
-      link: convUrl,
+      link: convPath,
       is_read: false,
       priority: 'medium',
       metadata: { conversationId: msg.conversation_id, senderId: msg.sender_id },

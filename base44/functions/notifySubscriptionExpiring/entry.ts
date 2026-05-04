@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
@@ -43,7 +42,7 @@ Deno.serve(async (req) => {
                     type: 'subscription_expiring',
                     title: '⚠️ Tu suscripción expira pronto',
                     message: `Tu plan ${subscription.plan_nombre} expira en 3 días. Renuévalo para seguir recibiendo clientes.`,
-                    link: '/SubscriptionManagement',
+                    link: '/suscripcion',
                     sendEmail: true,
                     emailSubject: '⚠️ Tu suscripción en Misautónomos expira en 3 días',
                     emailBody: `
@@ -107,7 +106,7 @@ Deno.serve(async (req) => {
       </p>
       
       <div class="cta">
-        <a href="https://misautonomos.es/SubscriptionManagement" class="button">
+        <a href="https://misautonomos.es/suscripcion" class="button">
           Renovar mi suscripción →
         </a>
       </div>

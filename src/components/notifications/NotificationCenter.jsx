@@ -86,8 +86,33 @@ export default function NotificationCenter({ user }) {
 
     // Redirigir si tiene link
     if (notification.link) {
-      navigate(notification.link);
       setIsOpen(false);
+      // Normalizar URL: si es absoluta, extraer solo el path+search
+      let target = notification.link;
+      try {
+        const url = new URL(target);
+        target = url.pathname + url.search + url.hash;
+      } catch {
+        // ya es relativa, usarla tal cual
+      }
+      // Corregir rutas legacy que ya no existen
+      const LEGACY_MAP = {
+        '/Messages': '/mensajes',
+        '/messages': '/mensajes',
+        '/Notifications': '/notificaciones',
+        '/notifications': '/notificaciones',
+        '/Dashboard': '/dashboard',
+        '/ProfessionalDashboard': '/dashboard',
+        '/SubscriptionManagement': '/suscripcion',
+        '/subscriptionmanagement': '/suscripcion',
+        '/MyProfile': '/mi-perfil',
+        '/myprofile': '/mi-perfil',
+      };
+      const pathOnly = target.split('?')[0];
+      if (LEGACY_MAP[pathOnly]) {
+        target = LEGACY_MAP[pathOnly] + target.slice(pathOnly.length);
+      }
+      navigate(target);
     }
   };
 
@@ -221,7 +246,7 @@ export default function NotificationCenter({ user }) {
                 variant="ghost"
                 className="w-full text-xs"
                 onClick={() => {
-                  navigate('/notifications');
+                  navigate('/notificaciones');
                   setIsOpen(false);
                 }}
               >

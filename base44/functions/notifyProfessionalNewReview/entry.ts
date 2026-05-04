@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       </p>
 
       <div class="cta-section">
-        <a href="https://misautonomos.es/MyProfile" class="cta-button">
+        <a href="https://misautonomos.es/mi-perfil" class="cta-button">
           👁️ Ver mi perfil público
         </a>
       </div>
@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
       type: "new_review",
       title: "Nueva valoración recibida",
       message: `${clientName} te valoró con ${rating}/5 estrellas`,
-      link: `/MyProfile`,
+      link: `/mi-perfil`,
       priority: "medium"
     });
 
