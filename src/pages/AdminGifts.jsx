@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Gift, X, RefreshCw, Plus } from 'lucide-react';
+import { Gift, X, RefreshCw, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
 import GiftUpgradeModal from '@/components/admin/GiftUpgradeModal';
@@ -10,6 +10,8 @@ export default function AdminGiftsPage() {
   const [user, setUser] = useState(null);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState(null);
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -92,6 +94,33 @@ export default function AdminGiftsPage() {
     setGiftModalOpen(true);
   };
 
+  const searchAndGift = async () => {
+    if (!searchEmail.trim()) return;
+    setSearching(true);
+    try {
+      const users = await base44.entities.User.filter({ email: searchEmail.trim().toLowerCase() });
+      if (users.length === 0) {
+        toast.error('No se encontró ningún usuario con ese email');
+        setSearching(false);
+        return;
+      }
+      const foundUser = users[0];
+      // Buscar suscripción existente
+      const subs = await base44.entities.Subscription.filter({ user_id: foundUser.id });
+      if (subs.length > 0) {
+        openGiftModal({ ...subs[0], name: foundUser.full_name, email: foundUser.email });
+      } else {
+        // Sin suscripción — pasar userId directamente
+        openGiftModal({ userId: foundUser.id, user_id: foundUser.id, name: foundUser.full_name, email: foundUser.email });
+      }
+      setSearchEmail('');
+    } catch (err) {
+      toast.error('Error buscando usuario: ' + err.message);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   if (!user || isLoading) {
     return (
       <AdminLayout activeSection="gifts" onSectionChange={() => {}}>
@@ -112,12 +141,35 @@ export default function AdminGiftsPage() {
               Usuarios con planes regalados temporalmente
             </p>
           </div>
-          <button 
-            onClick={refetch}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={refetch}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Actualizar
+            </button>
+          </div>
+        </div>
+
+        {/* Buscar cualquier usuario para regalar */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <Gift className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <input
+            type="email"
+            value={searchEmail}
+            onChange={e => setSearchEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && searchAndGift()}
+            placeholder="Email del usuario a regalar (cliente, profesional o sin cuenta)"
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={searchAndGift}
+            disabled={searching || !searchEmail.trim()}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
           >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar
+            {searching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            Regalar plan
           </button>
         </div>
 

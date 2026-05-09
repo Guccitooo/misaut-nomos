@@ -16,7 +16,11 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
     'plan_adsplus': { name: 'Plan Ads+', price: 33 }
   };
 
-  const currentPlan = plans[subscriber.plan_id] || { name: subscriber.plan_nombre || 'Desconocido', price: subscriber.plan_precio ?? 0 };
+  // subscriber puede tener: { id (subscriptionId), user_id, plan_id, ... } o { userId, name, email } (sin suscripción)
+  const hasSubscription = !!subscriber.plan_id;
+  const currentPlan = hasSubscription
+    ? (plans[subscriber.plan_id] || { name: subscriber.plan_nombre || 'Sin plan', price: subscriber.plan_precio ?? 0 })
+    : { name: 'Sin suscripción', price: 0 };
   const targetPlan = plans[giftPlan];
 
   const handleGift = async () => {
@@ -29,14 +33,12 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
     try {
       const giftedUntil = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
 
+      const payload = hasSubscription
+        ? { subscriptionId: subscriber.id, giftedPlanId: giftPlan, giftedPlanName: targetPlan.name, giftedUntil: giftedUntil.toISOString(), giftReason: reason.trim() }
+        : { userId: subscriber.userId || subscriber.user_id, giftedPlanId: giftPlan, giftedPlanName: targetPlan.name, giftedUntil: giftedUntil.toISOString(), giftReason: reason.trim() };
+
       // Usar backend function con asServiceRole para poder actualizar suscripción de otro usuario
-      const response = await base44.functions.invoke('giftUpgrade', {
-        subscriptionId: subscriber.id,
-        giftedPlanId: giftPlan,
-        giftedPlanName: targetPlan.name,
-        giftedUntil: giftedUntil.toISOString(),
-        giftReason: reason.trim()
-      });
+      const response = await base44.functions.invoke('giftUpgrade', payload);
 
       if (!response.data?.ok) {
         throw new Error(response.data?.error || 'Error desconocido');
@@ -123,9 +125,12 @@ export default function GiftUpgradeModal({ subscriber, onClose, onSuccess }) {
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-900 mb-4">
           <strong>ℹ️ Importante:</strong><br/>
           • El usuario verá beneficios de {targetPlan?.name} durante {duration} días<br/>
-          • Stripe NO cambiará — se le sigue cobrando {currentPlan.name}<br/>
+          {hasSubscription
+            ? <>• Stripe NO cambiará — se le sigue cobrando {currentPlan.name}<br/></>
+            : <>• Se creará una suscripción manual (sin cobro en Stripe)<br/></>
+          }
           • Recibirá email y notificación push del regalo<br/>
-          • Al expirar, volverá automáticamente a {currentPlan.name}
+          • Al expirar, {hasSubscription ? `volverá automáticamente a ${currentPlan.name}` : 'su suscripción quedará inactiva'}
         </div>
 
         <div className="flex gap-2">

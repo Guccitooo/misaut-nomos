@@ -9,22 +9,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { subscriptionId, giftedPlanId, giftedPlanName, giftedUntil, giftReason } = await req.json();
+    const { subscriptionId, userId: directUserId, giftedPlanId, giftedPlanName, giftedUntil, giftReason } = await req.json();
 
-    if (!subscriptionId || !giftedPlanId || !giftedUntil) {
+    if ((!subscriptionId && !directUserId) || !giftedPlanId || !giftedUntil) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Leer la suscripción actual para el audit log
-    const sub = await base44.asServiceRole.entities.Subscription.get(subscriptionId);
+    const giftedUntilDate = new Date(giftedUntil);
+    let sub;
+
+    if (subscriptionId) {
+      // Caso normal: ya tiene suscripción
+      sub = await base44.asServiceRole.entities.Subscription.get(subscriptionId);
+    } else {
+      // Caso nuevo: buscar suscripción existente por userId o crear una nueva
+      const existingSubs = await base44.asServiceRole.entities.Subscription.filter({ user_id: directUserId });
+      if (existingSubs.length > 0) {
+        sub = existingSubs[0];
+      } else {
+        // Crear suscripción nueva para este usuario
+        sub = await base44.asServiceRole.entities.Subscription.create({
+          user_id: directUserId,
+          plan_id: 'plan_visibility',
+          plan_nombre: 'Plan Visibilidad',
+          plan_precio: 0,
+          fecha_inicio: new Date().toISOString(),
+          fecha_expiracion: giftedUntilDate.toISOString(),
+          estado: 'activo',
+          renovacion_automatica: false,
+          metodo_pago: 'manual',
+        });
+      }
+    }
 
     // Calcular fecha_expiracion: max(actual, gifted_until)
-    const giftedUntilDate = new Date(giftedUntil);
     const currentExpiration = sub.fecha_expiracion ? new Date(sub.fecha_expiracion) : new Date(0);
     const newExpiration = giftedUntilDate > currentExpiration ? giftedUntilDate : currentExpiration;
 
     // Actualizar suscripción con el regalo + asegurar estado activo y fecha_expiracion extendida
-    await base44.asServiceRole.entities.Subscription.update(subscriptionId, {
+    await base44.asServiceRole.entities.Subscription.update(sub.id, {
       gifted_plan_id: giftedPlanId,
       gifted_plan_name: giftedPlanName,
       gifted_until: giftedUntil,
