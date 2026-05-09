@@ -26,10 +26,7 @@ async function sendPush(userId, title, message, url) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // Cron job — no requiere usuario admin, usa serviceRole directamente
 
     const now = new Date();
     const in8Days = new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000);

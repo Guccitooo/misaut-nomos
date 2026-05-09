@@ -1,88 +1,82 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
- * CRON JOB: Enviar recordatorios de reseñas
- * Ejecutar cada 6h. Detecta conversaciones bidireccionales con >48h sin actividad
- * y envía email al cliente si aún no ha dejado reseña.
+ * CRON: Enviar email de review request SOLO si:
+ * - Han pasado 48h desde el in-app Message
+ * - El cliente NO ha leído el Message (is_read = false)
+ * - No se envió email ya para este ReviewRequest (email_sent_at is null)
+ * - El ReviewRequest no está completado
+ *
+ * Este cron es SECUNDARIO — no envía in-app, solo el email diferido.
+ * También envía mensajes de disculpa a clientes que recibieron spam.
  */
-
 Deno.serve(async (req) => {
-    try {
-        const base44 = createClientFromRequest(req);
+  try {
+    const base44 = createClientFromRequest(req);
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-        console.log('📬 Iniciando envío de recordatorios de reseñas (48h)');
+    console.log('[sendReviewReminders] Iniciando run:', now.toISOString());
 
-        const now = new Date();
-        const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    // Buscar ReviewRequests pendientes de email (enviado hace 48h+, sin email aún, no completados)
+    const pendingRRs = await base44.asServiceRole.entities.ReviewRequest.filter({
+      completed: false
+    });
 
-        // Obtener mensajes en el rango de 48h–7días (evitar demasiado antiguos)
-        const allMessages = await base44.asServiceRole.entities.Message.list('-created_date', 2000);
+    let emailsSent = 0;
+    let apologyMessagesSent = 0;
 
-        const relevantMessages = allMessages.filter(msg => {
-            const d = new Date(msg.created_date);
-            return d <= fortyEightHoursAgo && d >= sevenDaysAgo;
-        });
+    for (const rr of pendingRRs) {
+      // Solo procesar los que ya tienen last_sent_at y no tienen email_sent_at
+      if (!rr.last_sent_at || rr.email_sent_at) continue;
 
-        console.log(`📊 Mensajes en rango 48h-7días: ${relevantMessages.length}`);
+      const lastSent = new Date(rr.last_sent_at);
+      if (lastSent > fortyEightHoursAgo) continue; // Aún no han pasado 48h
 
-        // Agrupar por conversation_id y guardar última fecha
-        const conversations = {};
-        relevantMessages.forEach(msg => {
-            const cid = msg.conversation_id;
-            if (!conversations[cid]) {
-                conversations[cid] = { messages: [], participants: new Set(), lastDate: new Date(0) };
-            }
-            conversations[cid].messages.push(msg);
-            conversations[cid].participants.add(msg.sender_id);
-            conversations[cid].participants.add(msg.recipient_id);
-            const d = new Date(msg.created_date);
-            if (d > conversations[cid].lastDate) conversations[cid].lastDate = d;
-        });
+      // Verificar que el in-app Message no fue leído
+      const recentMessages = await base44.asServiceRole.entities.Message.filter({
+        recipient_id: rr.client_id,
+        sender_id: 'support_team'
+      });
 
-        let remindersSent = 0;
+      const reviewMsg = recentMessages.find(m =>
+        m.metadata?.type === 'review_request' &&
+        m.metadata?.professional_id === rr.professional_id &&
+        !m.is_read
+      );
 
-        for (const [convId, conv] of Object.entries(conversations)) {
-            const participants = Array.from(conv.participants);
-            if (participants.length !== 2) continue;
+      if (!reviewMsg) continue; // Ya lo leyó, no enviar email
 
-            // Verificar bidireccional
-            const [u1, u2] = participants;
-            const u1Sent = conv.messages.some(m => m.sender_id === u1);
-            const u2Sent = conv.messages.some(m => m.sender_id === u2);
-            if (!u1Sent || !u2Sent) continue;
+      // Verificar que sigue sin Review
+      const existingReviews = await base44.asServiceRole.entities.Review.filter({
+        professional_id: rr.professional_id,
+        client_id: rr.client_id
+      });
+      if (existingReviews.length > 0) {
+        await base44.asServiceRole.entities.ReviewRequest.update(rr.id, { completed: true });
+        continue;
+      }
 
-            // Obtener usuarios
-            const users = await base44.asServiceRole.entities.User.list();
-            const filteredUsers = users.filter(u => participants.includes(u.id));
+      // Obtener datos del profesional y cliente
+      const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+        user_id: rr.professional_id
+      });
+      const profile = profiles[0];
+      if (!profile?.business_name) continue;
 
-            const client = filteredUsers.find(u => u.user_type === 'client');
-            const professional = filteredUsers.find(u => u.user_type === 'professionnel');
+      const clientUsers = await base44.asServiceRole.entities.User.filter({ id: rr.client_id });
+      const clientUser = clientUsers[0];
+      if (!clientUser?.email) continue;
 
-            if (!client || !professional) continue;
+      const reviewLink = `https://misautonomos.es/valorar/${rr.professional_id}`;
+      const businessName = profile.business_name;
 
-            // Verificar si ya existe reseña
-            const existingReviews = await base44.asServiceRole.entities.Review.filter({
-                client_id: client.id,
-                professional_id: professional.id
-            });
-            if (existingReviews.length > 0) continue;
-
-            // Obtener perfil profesional
-            const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
-                user_id: professional.id
-            });
-            const profile = profiles[0];
-            if (!profile?.business_name) continue;
-
-            // Enviar email
-            const reviewLink = `https://misautonomos.es/autonomo/${profile.slug_publico || professional.id}`;
-
-            await base44.asServiceRole.integrations.Core.SendEmail({
-                to: client.email,
-                subject: `⭐ ¿Qué tal tu experiencia con ${profile.business_name}?`,
-                from_name: "MisAutónomos",
-                body: `<!DOCTYPE html>
+      // Enviar email HTML
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: clientUser.email,
+        subject: `⭐ ¿Qué tal tu experiencia con ${businessName}?`,
+        from_name: 'MisAutónomos',
+        body: `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -110,23 +104,16 @@ Deno.serve(async (req) => {
     </div>
     <div class="content">
       <p class="message">Hola,</p>
-      <p class="message">Hace dos días contactaste con <strong>${profile.business_name}</strong> en MisAutónomos.</p>
+      <p class="message">Hace unos días contactaste con <strong>${businessName}</strong> en MisAutónomos.</p>
       <div class="pro-box">
-        <p style="margin:0;color:#78350f;font-weight:600;">👤 ${profile.business_name}</p>
+        <p style="margin:0;color:#78350f;font-weight:600;">👤 ${businessName}</p>
         <p style="margin:4px 0 0;color:#78350f;font-size:14px;">Categoría: ${profile.categories?.[0] || 'Profesional'}</p>
       </div>
       <p class="message">¿Qué tal fue tu experiencia? Tu valoración ayuda a otros usuarios y al profesional a mejorar.</p>
-      <p class="message">Solo te llevará 2 minutos:</p>
-      <ul style="color:#4b5563;line-height:2;">
-        <li>⚡ Rapidez de respuesta</li>
-        <li>💬 Calidad de comunicación</li>
-        <li>✨ Calidad del trabajo</li>
-        <li>💰 Relación calidad/precio</li>
-      </ul>
       <div class="cta">
         <a href="${reviewLink}" class="button">Dejar mi valoración →</a>
       </div>
-      <p style="font-size:13px;color:#9ca3af;text-align:center;">Si no quieres recibir estos emails, ignora este mensaje.</p>
+      <p style="font-size:13px;color:#9ca3af;text-align:center;">Si no quieres recibir más emails de este tipo, simplemente ignora este mensaje.</p>
     </div>
     <div class="footer">
       <strong style="color:#fff;">MisAutónomos</strong><br>
@@ -135,28 +122,76 @@ Deno.serve(async (req) => {
   </div>
 </body>
 </html>`
-            });
+      }).catch(e => console.warn('[sendReviewReminders] Error enviando email:', e.message));
 
-            // Notificación interna
-            await base44.asServiceRole.entities.Notification.create({
-                user_id: client.id,
-                type: 'review_reminder',
-                title: '⭐ Valora tu experiencia',
-                message: `¿Qué tal tu experiencia con ${profile.business_name}? Tu opinión ayuda a la comunidad.`,
-                link: reviewLink,
-                priority: 'medium',
-            }).catch(() => {});
+      // Marcar email_sent_at para no reenviar
+      await base44.asServiceRole.entities.ReviewRequest.update(rr.id, {
+        email_sent_at: now.toISOString()
+      });
 
-            remindersSent++;
-            console.log(`✅ Recordatorio enviado a ${client.email} sobre ${profile.business_name}`);
-        }
-
-        console.log(`📬 Total recordatorios enviados: ${remindersSent}`);
-
-        return Response.json({ ok: true, remindersSent, timestamp: now.toISOString() });
-
-    } catch (error) {
-        console.error('❌ Error enviando recordatorios:', error);
-        return Response.json({ ok: false, error: error.message }, { status: 500 });
+      emailsSent++;
+      console.log(`[sendReviewReminders] ✅ Email enviado a ${clientUser.email} para pro=${rr.professional_id}`);
     }
+
+    // ── MENSAJE DE DISCULPA ──────────────────────────────────────────────────────
+    // Detectar clientes que recibieron 2+ review requests en los últimos 7 días del mismo pro
+    // Solo se envía UNA vez: verificar que no exista ya un mensaje de disculpa (metadata.type = review_apology)
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const recentSupportMessages = await base44.asServiceRole.entities.Message.filter({
+      sender_id: 'support_team'
+    });
+
+    // Agrupar por (recipient_id, professional_id) los mensajes de tipo review_request
+    const spamMap = {};
+    for (const msg of recentSupportMessages) {
+      if (!msg.metadata?.type || msg.metadata.type !== 'review_request') continue;
+      if (new Date(msg.created_date) < sevenDaysAgo) continue;
+      const key = `${msg.recipient_id}_${msg.metadata.professional_id}`;
+      spamMap[key] = spamMap[key] || [];
+      spamMap[key].push(msg);
+    }
+
+    for (const [key, msgs] of Object.entries(spamMap)) {
+      if (msgs.length < 2) continue;
+
+      const [clientId, professionalId] = key.split('_');
+
+      // ¿Ya enviamos disculpa?
+      const alreadyApologized = recentSupportMessages.some(m =>
+        m.recipient_id === clientId &&
+        m.metadata?.type === 'review_apology' &&
+        m.metadata?.professional_id === professionalId
+      );
+      if (alreadyApologized) continue;
+
+      const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: professionalId });
+      const profile = profiles[0];
+      const reviewLink = `https://misautonomos.es/valorar/${professionalId}`;
+      const businessName = profile?.business_name || 'el profesional';
+
+      const convId = msgs[0].conversation_id;
+
+      await base44.asServiceRole.entities.Message.create({
+        conversation_id: convId,
+        sender_id: 'support_team',
+        recipient_id: clientId,
+        content: `Hola 👋 Detectamos que recibiste varios mensajes repetidos pidiéndote una reseña sobre ${businessName}. Lo sentimos — ya está corregido.\n\nSi quieres dejar tu opinión, aquí tienes el enlace correcto: ${reviewLink}\n\nGracias por tu paciencia. — Equipo MisAutónomos`,
+        sender_name: 'MisAutónomos',
+        is_read: false,
+        attachments: [],
+        metadata: { type: 'review_apology', professional_id: professionalId }
+      }).catch(e => console.warn('[sendReviewReminders] Error enviando disculpa:', e.message));
+
+      apologyMessagesSent++;
+      console.log(`[sendReviewReminders] ✅ Mensaje de disculpa enviado: client=${clientId}, pro=${professionalId}`);
+    }
+
+    console.log(`[sendReviewReminders] emailsSent=${emailsSent}, apologies=${apologyMessagesSent}`);
+    return Response.json({ ok: true, emailsSent, apologyMessagesSent, timestamp: now.toISOString() });
+
+  } catch (error) {
+    console.error('[sendReviewReminders] Error:', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 });

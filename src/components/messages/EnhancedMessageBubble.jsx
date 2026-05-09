@@ -3,6 +3,44 @@ import { Play, Pause, Reply, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import { Link } from "react-router-dom";
+
+// Renderiza markdown simple en mensajes de support_team (review requests, etc.)
+function MessageMarkdown({ content, isOwn }) {
+  return (
+    <ReactMarkdown
+      className={`text-sm break-words leading-relaxed [&>p]:mb-1 [&>p:last-child]:mb-0 [&>ul]:ml-4 [&>ul]:list-disc`}
+      components={{
+        a: ({ href, children }) => {
+          const isInternal = href?.startsWith('/') || href?.startsWith('https://misautonomos.es');
+          const path = href?.replace('https://misautonomos.es', '');
+          if (isInternal && path) {
+            return (
+              <Link
+                to={path}
+                className={`underline font-medium ${isOwn ? 'text-blue-100' : 'text-blue-600 hover:text-blue-800'}`}
+              >
+                {children}
+              </Link>
+            );
+          }
+          return (
+            <a href={href} target="_blank" rel="noopener noreferrer"
+              className={`underline font-medium ${isOwn ? 'text-blue-100' : 'text-blue-600 hover:text-blue-800'}`}
+            >
+              {children}
+            </a>
+          );
+        },
+        p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 export default function EnhancedMessageBubble({ 
   message, 
@@ -189,9 +227,10 @@ export default function EnhancedMessageBubble({
               </div>
             )}
 
-            {message.type === 'text' && <p className="text-sm break-words">{message.content}</p>}
             {(!message.type || message.type === 'text') && !message.audioData && !message.imageData && (
-              <p className="text-sm break-words">{message.content}</p>
+              message.sender_id === 'support_team'
+                ? <MessageMarkdown content={message.content} isOwn={isOwn} />
+                : <p className="text-sm break-words whitespace-pre-line">{message.content}</p>
             )}
 
             {message.type === 'image' && message.imageData && (

@@ -1,39 +1,36 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
- * Scheduled daily function: comprueba conversaciones que cumplen los criterios
- * para enviar un review request al cliente.
- * 
- * Criterios:
- * - Al menos 3 mensajes (min 1 de cada lado)
- * - Han pasado ≥ 7 días desde el primer mensaje
- * - No existe Review para esa (client_id, professional_id)
- * - No se envió ya una request (campo review_request_sent en Message con type=review_request)
- * 
- * Envía:
- * - Message desde support_team al cliente
- * - Notification al cliente
- * 
- * Recordatorios: si no se responde, a los 5 días y a los 10 (máx 3 intentos).
+ * CRON: Trigger diario de review requests.
+ *
+ * Reglas de idempotencia:
+ * - Máx 3 envíos por par (client_id, professional_id)
+ * - Envío 1: cumple condiciones base (3+ msgs bidireccionales, 7+ días desde el primero, sin Review)
+ * - Envío 2: solo si han pasado 5+ días desde el envío 1 y sigue sin Review
+ * - Envío 3: solo si han pasado 5+ días desde el envío 2 y sigue sin Review
+ * - Tabla ReviewRequest con índice único (client_id, professional_id) previene duplicados de raíz
+ * - Canales: Message in-app SIEMPRE + Notification SIEMPRE
+ * - Email: solo si han pasado 48h y el cliente no leyó el Message (lo maneja sendReviewReminders)
+ * - El link es /valorar/:professionalId — NO /mi-perfil
  */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Solo ejecución interna (cron) — verificar con token simple
-    const authHeader = req.headers.get('authorization') || '';
-    // Permitir ejecución de la automatización (sin auth token de usuario)
-
     const now = new Date();
-    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
 
-    // Obtener todos los mensajes de hace más de 7 días
-    const oldMessages = await base44.asServiceRole.entities.Message.filter({});
-    
+    console.log('[triggerReviewRequests] Iniciando run:', now.toISOString());
+
+    // Cargar todos los mensajes de usuarios reales (excluye support_team)
+    const allMessages = await base44.asServiceRole.entities.Message.filter({});
+    const userMessages = allMessages.filter(m => m.sender_id && m.sender_id !== 'support_team');
+
     // Agrupar por conversation_id
     const convMap = {};
-    for (const msg of oldMessages) {
-      if (!msg.conversation_id || msg.sender_id === 'support_team') continue;
+    for (const msg of userMessages) {
+      if (!msg.conversation_id) continue;
       if (!convMap[msg.conversation_id]) {
         convMap[msg.conversation_id] = { messages: [], convId: msg.conversation_id };
       }
@@ -42,111 +39,169 @@ Deno.serve(async (req) => {
 
     let processed = 0;
     let sent = 0;
+    let skipped = 0;
 
     for (const conv of Object.values(convMap)) {
       const msgs = conv.messages;
       if (msgs.length < 3) continue;
 
-      // Ordenar por fecha
       msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-      const firstMsg = msgs[0];
-      const firstDate = new Date(firstMsg.created_date);
+      const firstDate = new Date(msgs[0].created_date);
 
-      // Han pasado 7 días desde el primer mensaje?
+      // Condición base: 7+ días desde el primer mensaje
       if (now - firstDate < 7 * 24 * 60 * 60 * 1000) continue;
 
-      // Identificar client_id y professional_id
-      // La conversación es entre dos users — uno de tipo client y uno de tipo professionnel
+      // Identificar participantes
       const senderIds = [...new Set(msgs.map(m => m.sender_id))];
       if (senderIds.length < 2) continue;
 
-      // Necesitamos saber quién es cliente y quién es pro
-      let clientId = null;
+      // Necesitamos saber quién es pro y quién es cliente
       let professionalId = null;
       let businessName = null;
+      let proProfile = null;
 
-      // Usar professional_name y client_name de los mensajes para inferir
-      const msgWithProfName = msgs.find(m => m.professional_name && m.professional_name.trim());
-      const msgWithClientName = msgs.find(m => m.client_name && m.client_name.trim());
-
-      // Buscar perfil profesional entre los senders
       for (const uid of senderIds) {
         const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({ user_id: uid });
         if (profiles[0]) {
           professionalId = uid;
+          proProfile = profiles[0];
           businessName = profiles[0].business_name || 'el profesional';
+          break;
         }
       }
 
-      if (!professionalId) continue;
-      clientId = senderIds.find(id => id !== professionalId);
+      if (!professionalId || !proProfile) continue;
+
+      const clientId = senderIds.find(id => id !== professionalId);
       if (!clientId) continue;
 
-      // Verificar al menos 1 mensaje de cada lado
+      // Verificar mensajes bidireccionales
       const clientMsgs = msgs.filter(m => m.sender_id === clientId);
       const proMsgs = msgs.filter(m => m.sender_id === professionalId);
       if (clientMsgs.length === 0 || proMsgs.length === 0) continue;
 
-      // ¿Ya existe una review?
+      processed++;
+
+      // Verificar si ya existe una review real
       const existingReviews = await base44.asServiceRole.entities.Review.filter({
         professional_id: professionalId,
         client_id: clientId
       });
-      if (existingReviews.length > 0) continue;
-
-      // ¿Ya enviamos review_request? Buscar messages tipo review_request en esta conv
-      const reviewRequests = msgs.filter(m => m.sender_id === 'support_team' && m.content?.includes('review_request_type'));
-      const requestCount = reviewRequests.length;
-
-      if (requestCount >= 3) continue; // máx 3 intentos
-
-      // ¿El último request fue hace menos de 5 días?
-      if (requestCount > 0) {
-        const lastRequest = reviewRequests[reviewRequests.length - 1];
-        const daysSinceLast = (now - new Date(lastRequest.created_date)) / (1000 * 60 * 60 * 24);
-        const minDays = requestCount === 1 ? 5 : 10;
-        if (daysSinceLast < minDays) continue;
+      if (existingReviews.length > 0) {
+        // Marcar como completado si existe registro
+        const existingRR = await base44.asServiceRole.entities.ReviewRequest.filter({
+          client_id: clientId,
+          professional_id: professionalId
+        });
+        if (existingRR[0] && !existingRR[0].completed) {
+          await base44.asServiceRole.entities.ReviewRequest.update(existingRR[0].id, { completed: true });
+        }
+        continue;
       }
 
-      processed++;
+      // Obtener o crear ReviewRequest (índice único previene duplicados)
+      let rr = null;
+      const existingRR = await base44.asServiceRole.entities.ReviewRequest.filter({
+        client_id: clientId,
+        professional_id: professionalId
+      });
+      rr = existingRR[0] || null;
 
-      // Determinar nombre del cliente
-      let clientName = msgWithClientName?.client_name || 'cliente';
+      // Decidir si enviar
+      let shouldSend = false;
 
-      // Generar mensaje de review request
-      const requestNumber = requestCount + 1;
-      const requestMessage = requestNumber === 1
-        ? `Hola! 👋 ¿Qué tal te fue con **${businessName}**?\n\nTu opinión ayuda a otros clientes a elegir bien y ayuda a ${businessName} a seguir creciendo.\n\n¿Tienes 2 minutos para dejar una valoración? 🌟\n\n[Dejar reseña →](/mi-perfil)<!-- review_request_type -->`
-        : `¡Hola de nuevo! Nos gustaría saber cómo fue tu experiencia con **${businessName}**. Solo tarda 1 minuto valorarles. 🙏\n\n[Dejar reseña →](/mi-perfil)<!-- review_request_type -->`;
+      if (!rr) {
+        // Primer envío — no hay registro previo
+        shouldSend = true;
+      } else if (rr.completed) {
+        // Ya completó la review
+        continue;
+      } else if (rr.sent_count >= 3) {
+        // Máximo alcanzado
+        skipped++;
+        continue;
+      } else {
+        // Envíos 2 y 3: comprobar 5 días desde el último
+        const lastSent = new Date(rr.last_sent_at);
+        const daysSinceLast = (now - lastSent) / fiveDaysMs;
+        if (daysSinceLast >= 1) {
+          shouldSend = true;
+        } else {
+          skipped++;
+          continue;
+        }
+      }
 
-      // Enviar Message al cliente
+      if (!shouldSend) continue;
+
+      // Generar token único para el link de review
+      const token = crypto.randomUUID();
+      const tokenExpiresAt = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+      const reviewLink = `https://misautonomos.es/valorar/${professionalId}`;
+      const newSentCount = (rr?.sent_count || 0) + 1;
+
+      // Mensaje limpio — SIN comentarios HTML, SIN markdown, link correcto
+      const messageContent = newSentCount === 1
+        ? `¡Hola! 👋 ¿Qué tal te fue con ${businessName}?\n\nTu opinión ayuda a otros clientes a elegir bien y ayuda a ${businessName} a seguir creciendo.\n\n¿Tienes 2 minutos para dejar una valoración? 🌟\n\nDejar reseña → ${reviewLink}`
+        : `¡Hola de nuevo! Nos gustaría saber cómo fue tu experiencia con ${businessName}. Solo tarda 1 minuto valorarles. 🙏\n\nDejar reseña → ${reviewLink}`;
+
+      const nowIso = now.toISOString();
+
+      // Crear o actualizar ReviewRequest ANTES de enviar (evita duplicados si el proceso falla a mitad)
+      if (!rr) {
+        await base44.asServiceRole.entities.ReviewRequest.create({
+          client_id: clientId,
+          professional_id: professionalId,
+          conversation_id: conv.convId,
+          sent_count: 1,
+          last_sent_at: nowIso,
+          first_sent_at: nowIso,
+          review_token: token,
+          token_expires_at: tokenExpiresAt,
+          completed: false
+        });
+      } else {
+        await base44.asServiceRole.entities.ReviewRequest.update(rr.id, {
+          sent_count: newSentCount,
+          last_sent_at: nowIso,
+          review_token: token,
+          token_expires_at: tokenExpiresAt
+        });
+      }
+
+      // Enviar Message in-app (sin HTML comments, sin markdown)
       await base44.asServiceRole.entities.Message.create({
         conversation_id: conv.convId,
         sender_id: 'support_team',
         recipient_id: clientId,
-        content: requestMessage,
+        content: messageContent,
         professional_name: businessName,
-        client_name: clientName,
         sender_name: 'MisAutónomos',
         is_read: false,
         attachments: [],
-      }).catch(() => {});
+        metadata: { type: 'review_request', professional_id: professionalId, token }
+      }).catch(e => console.warn('[triggerReviewRequests] Error creando Message:', e.message));
 
-      // Enviar Notification al cliente
+      // Enviar Notification in-app
       await base44.asServiceRole.entities.Notification.create({
         user_id: clientId,
         type: 'review_request',
         title: `¿Cómo te fue con ${businessName}?`,
         message: `Tu opinión ayuda a otros clientes. ¿Tienes 2 minutos para valorar a ${businessName}?`,
         is_read: false,
-        action_url: '/mi-perfil',
-      }).catch(() => {});
+        action_url: reviewLink,
+      }).catch(e => console.warn('[triggerReviewRequests] Error creando Notification:', e.message));
 
       sent++;
+      console.log(`[triggerReviewRequests] ✅ Enviado (${newSentCount}/3): client=${clientId}, pro=${professionalId}`);
     }
 
-    return Response.json({ ok: true, processed, sent });
+    console.log(`[triggerReviewRequests] Procesados: ${processed}, enviados: ${sent}, omitidos: ${skipped}`);
+    return Response.json({ ok: true, processed, sent, skipped, timestamp: now.toISOString() });
+
   } catch (error) {
+    console.error('[triggerReviewRequests] Error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

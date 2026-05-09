@@ -17,11 +17,8 @@ Deno.serve(async (req) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Obtener suscripciones en prueba
-    const subscriptions = await base44.asServiceRole.entities.Subscription.list();
-    const trialSubs = subscriptions.filter(sub => 
-      sub.estado === 'en_prueba' || sub.estado === 'trialing' || sub.estado === 'trial_active'
-    );
+    // Obtener suscripciones en prueba (filtrado directo, no cargar todo)
+    const trialSubs = await base44.asServiceRole.entities.Subscription.filter({ estado: 'en_prueba' });
     
     console.log(`📊 Suscripciones en prueba: ${trialSubs.length}`);
     

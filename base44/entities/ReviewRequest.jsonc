@@ -1,0 +1,91 @@
+{
+  "name": "ReviewRequest",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "ID del cliente"
+    },
+    "professional_id": {
+      "type": "string",
+      "description": "ID del profesional"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n de referencia"
+    },
+    "sent_count": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de veces que se ha enviado (m\u00e1x 3)"
+    },
+    "last_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima vez que se envi\u00f3"
+    },
+    "first_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Primera vez que se envi\u00f3"
+    },
+    "review_token": {
+      "type": "string",
+      "description": "Token \u00fanico para acceder al formulario de review (expira 60 d\u00edas)"
+    },
+    "token_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiraci\u00f3n del token"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "El cliente ya dej\u00f3 una review"
+    },
+    "email_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cu\u00e1ndo se envi\u00f3 el email (solo si el in-app no se ley\u00f3 en 48h)"
+    }
+  },
+  "required": [
+    "client_id",
+    "professional_id"
+  ],
+  "security": {
+    "read": {
+      "rule": "resource.client_id == auth.user_id || auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "auth.role == 'admin'"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "client_id",
+        "professional_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "completed",
+        "last_sent_at"
+      ]
+    },
+    {
+      "fields": [
+        "sent_count",
+        "last_sent_at"
+      ]
+    }
+  ]
+}
