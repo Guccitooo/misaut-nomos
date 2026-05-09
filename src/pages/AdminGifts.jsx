@@ -1,127 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Gift, X, RefreshCw, Plus, Search } from 'lucide-react';
+import { Gift, RefreshCw, Search, CheckCircle, AlertCircle, User, Users, UserX, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
-import GiftUpgradeModal from '@/components/admin/GiftUpgradeModal';
+
+const CASE_LABELS = {
+  A: { label: 'No existe', color: 'bg-gray-100 text-gray-700', icon: UserX },
+  B: { label: 'Cliente', color: 'bg-blue-100 text-blue-700', icon: User },
+  C: { label: 'Autónomo sin sub', color: 'bg-amber-100 text-amber-700', icon: Users },
+  D: { label: 'Autónomo activo', color: 'bg-green-100 text-green-700', icon: CheckCircle }
+};
+
+const STATUS_COLORS = {
+  active: 'bg-green-100 text-green-700',
+  redeemed: 'bg-gray-100 text-gray-600',
+  expired: 'bg-red-100 text-red-600'
+};
 
 export default function AdminGiftsPage() {
   const [user, setUser] = useState(null);
-  const [giftModalOpen, setGiftModalOpen] = useState(false);
-  const [selectedSubscriber, setSelectedSubscriber] = useState(null);
-  const [searchEmail, setSearchEmail] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [email, setEmail] = useState('');
+  const [plan, setPlan] = useState('visibilidad');
+  const [preview, setPreview] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [granting, setGranting] = useState(false);
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(u => {
-      if (u?.role !== 'admin') {
-        window.location.href = '/buscar';
-      } else {
-        setUser(u);
-      }
+      if (u?.role !== 'admin') window.location.href = '/buscar';
+      else setUser(u);
     });
   }, []);
 
-  const { data: subscriptions = [], refetch, isLoading } = useQuery({
-    queryKey: ['activeGifts'],
-    queryFn: async () => {
-      const all = await base44.entities.Subscription.filter({
-        gifted_plan_id: { $ne: '' }
-      });
-      
-      // Filtrar solo los activos (gifted_until en futuro)
-      const now = new Date();
-      const active = all.filter(s => s.gifted_until && new Date(s.gifted_until) > now);
-      
-      // Enriquecer con datos de usuario
-      const enriched = await Promise.all(
-        active.map(async (sub) => {
-          try {
-            const user = await base44.entities.User.get(sub.user_id);
-            const admin = sub.gifted_by_admin_id ? await base44.entities.User.get(sub.gifted_by_admin_id) : null;
-            return {
-              ...sub,
-              userName: user?.full_name || user?.email || 'Desconocido',
-              userEmail: user?.email || '',
-              adminName: admin?.full_name || admin?.email || 'Desconocido'
-            };
-          } catch (e) {
-            return { ...sub, userName: 'Desconocido', userEmail: '', adminName: 'Desconocido' };
-          }
-        })
-      );
-      
-      return enriched.sort((a, b) => new Date(b.gifted_until) - new Date(a.gifted_until));
-    },
-    enabled: !!user,
+  const { data: grants = [], refetch, isLoading } = useQuery({
+    queryKey: ['freeMonthGrants'],
+    queryFn: () => base44.entities.FreeMonthGrant.list('-granted_at', 50),
+    enabled: !!user
   });
 
-  const revokeGift = async (subId) => {
-    if (!confirm('¿Revocar el regalo? El usuario perderá el acceso al plan superior.')) return;
-    
-    try {
-      await base44.entities.Subscription.update(subId, {
-        gifted_plan_id: '',
-        gifted_plan_name: '',
-        gifted_until: null
-      });
-      toast.success('Regalo revocado');
-      refetch();
-    } catch (error) {
-      toast.error('Error al revocar: ' + error.message);
-    }
-  };
+  const thisMonthGrants = grants.filter(g => {
+    const d = new Date(g.granted_at);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
 
-  const extendGift = async (subId) => {
+  const handlePreview = async () => {
+    if (!email.trim()) return;
+    setPreviewing(true);
+    setPreview(null);
+    setResult(null);
     try {
-      const sub = subscriptions.find(s => s.id === subId);
-      if (!sub) return;
-      
-      const newUntil = new Date(new Date(sub.gifted_until).getTime() + 30 * 24 * 60 * 60 * 1000);
-      await base44.entities.Subscription.update(subId, { 
-        gifted_until: newUntil.toISOString() 
-      });
-      toast.success('Regalo extendido 30 días');
-      refetch();
-    } catch (error) {
-      toast.error('Error al extender: ' + error.message);
-    }
-  };
-
-  const openGiftModal = (subscriber) => {
-    setSelectedSubscriber(subscriber);
-    setGiftModalOpen(true);
-  };
-
-  const searchAndGift = async () => {
-    if (!searchEmail.trim()) return;
-    setSearching(true);
-    try {
-      const users = await base44.entities.User.filter({ email: searchEmail.trim().toLowerCase() });
-      if (users.length === 0) {
-        toast.error('No se encontró ningún usuario con ese email');
-        setSearching(false);
-        return;
-      }
-      const foundUser = users[0];
-      // Buscar suscripción existente
-      const subs = await base44.entities.Subscription.filter({ user_id: foundUser.id });
-      if (subs.length > 0) {
-        openGiftModal({ ...subs[0], name: foundUser.full_name, email: foundUser.email });
-      } else {
-        // Sin suscripción — pasar userId directamente
-        openGiftModal({ userId: foundUser.id, user_id: foundUser.id, name: foundUser.full_name, email: foundUser.email });
-      }
-      setSearchEmail('');
+      const res = await base44.functions.invoke('previewGrant', { email: email.trim(), plan });
+      setPreview(res.data);
     } catch (err) {
-      toast.error('Error buscando usuario: ' + err.message);
+      toast.error('Error en preview: ' + err.message);
     } finally {
-      setSearching(false);
+      setPreviewing(false);
     }
   };
 
-  if (!user || isLoading) {
+  const handleGrant = async () => {
+    if (!preview) return;
+    setGranting(true);
+    setResult(null);
+    try {
+      const res = await base44.functions.invoke('grantFreeMonth', { email: email.trim(), plan });
+      setResult(res.data);
+      toast.success('¡Mes gratis concedido correctamente!');
+      refetch();
+      setPreview(null);
+      setEmail('');
+    } catch (err) {
+      toast.error('Error: ' + err.message);
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copiado al portapapeles');
+  };
+
+  if (!user) {
     return (
       <AdminLayout activeSection="gifts" onSectionChange={() => {}}>
         <div className="flex items-center justify-center py-24">
@@ -133,144 +96,230 @@ export default function AdminGiftsPage() {
 
   return (
     <AdminLayout activeSection="gifts" onSectionChange={() => {}}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">🎁 Regalos activos</h1>
+            <h1 className="text-2xl font-bold text-gray-900">🎁 Regalar mes gratis</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Usuarios con planes regalados temporalmente
+              Funciona para cualquier usuario — cliente, autónomo o sin cuenta.
+              <span className="ml-2 font-semibold text-amber-600">{thisMonthGrants} regalos este mes</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={refetch}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Actualizar
-            </button>
-          </div>
-        </div>
-
-        {/* Buscar cualquier usuario para regalar */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <Gift className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <input
-            type="email"
-            value={searchEmail}
-            onChange={e => setSearchEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && searchAndGift()}
-            placeholder="Email del usuario a regalar (cliente, profesional o sin cuenta)"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={searchAndGift}
-            disabled={searching || !searchEmail.trim()}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            {searching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Regalar plan
+          <button onClick={refetch} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
           </button>
         </div>
 
-        {subscriptions.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No hay regalos activos</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Los regalos aparecerán aquí cuando un admin los conceda
-            </p>
+        {/* Formulario */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Nuevo regalo</h2>
+
+          <div className="flex gap-3 flex-wrap">
+            <input
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setPreview(null); setResult(null); }}
+              onKeyDown={e => e.key === 'Enter' && handlePreview()}
+              placeholder="Email del destinatario"
+              className="flex-1 min-w-[240px] border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            />
+            <select
+              value={plan}
+              onChange={e => { setPlan(e.target.value); setPreview(null); setResult(null); }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              <option value="visibilidad">Plan Visibilidad (13€/mes)</option>
+              <option value="ads_plus">Plan Ads+ (33€/mes)</option>
+            </select>
+            <button
+              onClick={handlePreview}
+              disabled={previewing || !email.trim()}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              {previewing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Verificar usuario
+            </button>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+
+          {/* Preview card */}
+          {preview && !result && (
+            <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className={`px-2.5 py-1 rounded-full text-xs font-semibold ${CASE_LABELS[preview.case]?.color}`}>
+                  Caso {preview.case} — {CASE_LABELS[preview.case]?.label}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">{preview.label}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{preview.description}</p>
+                </div>
+              </div>
+
+              {preview.user && (
+                <div className="text-xs text-gray-600 bg-white rounded-lg px-3 py-2 border border-gray-100">
+                  <span className="font-medium">{preview.user.full_name || '(sin nombre)'}</span>
+                  <span className="mx-2 text-gray-400">·</span>
+                  <span>{preview.email}</span>
+                  <span className="mx-2 text-gray-400">·</span>
+                  <span className="capitalize">{preview.user.user_type}</span>
+                </div>
+              )}
+
+              {preview.subscription && (
+                <div className="text-xs text-gray-600 bg-white rounded-lg px-3 py-2 border border-gray-100">
+                  <span className="font-medium">Sub activa:</span> {preview.subscription.plan_nombre}
+                  {preview.stripe_preview !== null && (
+                    <span className="ml-2 text-green-700 font-medium">
+                      → Próxima factura con cupón: {(preview.stripe_preview?.amount_due / 100).toFixed(2)}€
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={handleGrant}
+                  disabled={granting}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                >
+                  {granting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                  Confirmar y regalar
+                </button>
+                <button
+                  onClick={() => setPreview(null)}
+                  className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Resultado */}
+          {result && (
+            <div className="border border-green-200 bg-green-50 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                <CheckCircle className="w-5 h-5" />
+                Regalo concedido — Caso {result.case}
+              </div>
+
+              {result.promo_code && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 bg-white border border-green-200 rounded-lg px-3 py-2">
+                    <span className="font-mono font-bold text-green-800 text-base tracking-widest">{result.promo_code}</span>
+                    <button onClick={() => copyToClipboard(result.promo_code)} className="ml-auto text-green-600 hover:text-green-800">
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {result.suggested_message && (
+                    <div className="relative">
+                      <pre className="text-xs text-gray-700 bg-white border border-gray-100 rounded-lg p-3 whitespace-pre-wrap font-sans">
+                        {result.suggested_message}
+                      </pre>
+                      <button
+                        onClick={() => copyToClipboard(result.suggested_message)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
+                        title="Copiar mensaje"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {result.stripe_subscription_id && (
+                <p className="text-xs text-gray-600">
+                  <span className="font-medium">Subscription ID:</span> <code className="bg-white px-1 rounded">{result.stripe_subscription_id}</code>
+                  {result.trial_end && <span className="ml-2">· Trial hasta: {new Date(result.trial_end).toLocaleDateString('es-ES')}</span>}
+                </p>
+              )}
+
+              {result.amount_due_next !== undefined && result.amount_due_next !== null && (
+                <p className="text-xs text-gray-600">
+                  Próxima factura verificada: <span className="font-bold text-green-700">{(result.amount_due_next / 100).toFixed(2)}€</span>
+                </p>
+              )}
+
+              <button onClick={() => setResult(null)} className="text-xs text-gray-500 underline">Hacer otro regalo</button>
+            </div>
+          )}
+        </div>
+
+        {/* Tabla de historial */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-800">Últimos 50 regalos</h2>
+            <span className="text-sm text-gray-500">{grants.length} registros</span>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+          ) : grants.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              <Gift className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Sin regalos todavía</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Usuario</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Plan regalado</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Plan real</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Expira</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Regalado por</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Motivo</th>
-                    <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-3">Acciones</th>
+                    {['Email', 'Tipo', 'Caso', 'Plan', 'Stripe ID', 'Estado', 'Concedido', 'Expira'].map(h => (
+                      <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {subscriptions.map((gift) => (
-                    <tr key={gift.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{gift.userName}</p>
-                          <p className="text-xs text-gray-500">{gift.userEmail}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                          {gift.gifted_plan_name}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-gray-700">{gift.plan_nombre}</p>
-                        <p className="text-xs text-gray-500">{gift.plan_precio}€/mes</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Date(gift.gifted_until).toLocaleDateString('es-ES', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {Math.ceil((new Date(gift.gifted_until) - new Date()) / (1000 * 60 * 60 * 24))} días restantes
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {gift.adminName}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-gray-600 max-w-xs truncate" title={gift.gift_reason}>
-                          {gift.gift_reason || '-'}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => extendGift(gift.id)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            +30 días
-                          </button>
-                          <button 
-                            onClick={() => revokeGift(gift.id)}
-                            className="text-xs text-red-600 hover:text-red-800 font-medium"
-                          >
-                            Revocar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-gray-50">
+                  {grants.map(g => {
+                    const CaseIcon = CASE_LABELS[g.case]?.icon || Gift;
+                    return (
+                      <tr key={g.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-800 font-medium">{g.email}</td>
+                        <td className="px-4 py-3">
+                          <span className="capitalize text-gray-600">{g.user_type?.replace('_', ' ')}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${CASE_LABELS[g.case]?.color}`}>
+                            <CaseIcon className="w-3 h-3" />
+                            {g.case}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-gray-700 capitalize">{g.plan?.replace('_', ' ')}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {g.promo_code ? (
+                            <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">{g.promo_code}</span>
+                          ) : (
+                            <span className="font-mono text-xs text-gray-500 truncate max-w-[120px] block">{g.stripe_object_id || '-'}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[g.status] || 'bg-gray-100 text-gray-600'}`}>
+                            {g.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          {g.granted_at ? new Date(g.granted_at).toLocaleDateString('es-ES') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          {g.expires_at ? new Date(g.expires_at).toLocaleDateString('es-ES') : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {giftModalOpen && selectedSubscriber && (
-        <GiftUpgradeModal
-          subscriber={selectedSubscriber}
-          onClose={() => {
-            setGiftModalOpen(false);
-            setSelectedSubscriber(null);
-          }}
-          onSuccess={() => {
-            refetch();
-          }}
-        />
-      )}
+      </div>
     </AdminLayout>
   );
 }

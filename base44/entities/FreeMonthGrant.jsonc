@@ -1,0 +1,104 @@
+{
+  "name": "FreeMonthGrant",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email del destinatario"
+    },
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "cliente",
+        "autonomo",
+        "no_existe"
+      ],
+      "description": "Tipo de usuario en el momento del regalo"
+    },
+    "case": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "description": "A=no existe, B=cliente, C=autonomo sin sub, D=autonomo con sub activa"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "visibilidad",
+        "ads_plus"
+      ],
+      "default": "visibilidad"
+    },
+    "stripe_object_id": {
+      "type": "string",
+      "description": "PromoCode ID, Subscription ID o Coupon aplicado"
+    },
+    "promo_code": {
+      "type": "string",
+      "description": "C\u00f3digo de promoci\u00f3n (solo Caso A)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "redeemed",
+        "expired"
+      ],
+      "default": "active"
+    },
+    "granted_by": {
+      "type": "string",
+      "description": "Admin que lo concedi\u00f3"
+    },
+    "granted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "email",
+    "user_type",
+    "case",
+    "plan"
+  ],
+  "security": {
+    "read": {
+      "rule": "auth.role == 'admin'"
+    },
+    "create": {
+      "rule": "auth.role == 'admin'"
+    },
+    "update": {
+      "rule": "auth.role == 'admin'"
+    },
+    "delete": {
+      "rule": "auth.role == 'admin'"
+    }
+  },
+  "indexes": [
+    {
+      "fields": [
+        "email",
+        "granted_at"
+      ]
+    },
+    {
+      "fields": [
+        "status",
+        "granted_at"
+      ]
+    }
+  ]
+}
