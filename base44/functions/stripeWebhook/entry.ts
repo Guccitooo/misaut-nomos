@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
             
             // 🔴 Expirado
             return {
-                estado: 'finalizada',
+                estado: 'expirado',
                 visible_en_busqueda: false,
                 estado_perfil: 'inactivo',
                 mensaje: 'Suscripción finalizada'
@@ -337,6 +337,62 @@ Deno.serve(async (req) => {
                 break;
             }
 
+            case 'invoice.payment_succeeded': {
+                console.log('\n💰 ========== PAGO EXITOSO (invoice.payment_succeeded) ==========');
+
+                const invoice = event.data.object;
+                const stripeSubId = invoice.subscription;
+
+                if (!stripeSubId) {
+                    console.log('⚠️ Invoice sin subscription_id (pago único), ignorando');
+                    return Response.json({ received: true });
+                }
+
+                console.log('🔍 Buscando suscripción por stripe_subscription_id:', stripeSubId);
+                const subs = await base44.asServiceRole.entities.Subscription.filter({
+                    stripe_subscription_id: stripeSubId
+                });
+
+                if (subs.length === 0) {
+                    console.log('⚠️ Suscripción no encontrada en BD para invoice, ignorando');
+                    return Response.json({ received: true });
+                }
+
+                const dbSub = subs[0];
+
+                // Obtener datos actualizados de la suscripción en Stripe
+                const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+                const newExpiration = new Date(stripeSub.current_period_end * 1000).toISOString();
+
+                console.log('✅ Actualizando suscripción a activo, nueva expiración:', newExpiration);
+
+                await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
+                    estado: 'activo',
+                    fecha_expiracion: newExpiration,
+                    fecha_ultima_renovacion: new Date(invoice.created * 1000).toISOString(),
+                    renovacion_automatica: stripeSub.cancel_at_period_end === false
+                });
+
+                // Activar perfil
+                const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
+                    user_id: dbSub.user_id
+                });
+
+                if (profiles.length > 0) {
+                    // Determinar is_ads_plus según el plan
+                    const isAdsPlus = dbSub.plan_id === 'plan_adsplus';
+                    await base44.asServiceRole.entities.ProfessionalProfile.update(profiles[0].id, {
+                        visible_en_busqueda: true,
+                        estado_perfil: 'activo',
+                        is_ads_plus: isAdsPlus
+                    });
+                    console.log(`✅ Perfil activado (is_ads_plus: ${isAdsPlus})`);
+                }
+
+                console.log('✅ Pago post-trial procesado correctamente');
+                break;
+            }
+
             case 'customer.subscription.trial_will_end': {
                 console.log('⏰ Trial terminará pronto (3 días antes)');
                 break;
@@ -356,9 +412,9 @@ Deno.serve(async (req) => {
 
                 const dbSub = subs[0];
                 
-                // Marcar como finalizada
+                // Marcar como cancelada/expirada
                 await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                    estado: 'finalizada',
+                    estado: 'cancelado',
                     renovacion_automatica: false
                 });
 
@@ -377,7 +433,7 @@ Deno.serve(async (req) => {
 
                 // Actualizar usuario
                 await base44.asServiceRole.entities.User.update(dbSub.user_id, {
-                    subscription_status: 'finalizada'
+                    subscription_status: 'cancelado'
                 });
 
                 // ✅ Ejecutar limpieza automática
@@ -423,7 +479,7 @@ Deno.serve(async (req) => {
                     // Si ya expiró, ocultar
                     if (!isSubscriptionActive(subscription.status, subscription.current_period_end)) {
                         await base44.asServiceRole.entities.Subscription.update(dbSub.id, {
-                            estado: 'finalizada'
+                            estado: 'expirado'
                         });
 
                         const profiles = await base44.asServiceRole.entities.ProfessionalProfile.filter({
