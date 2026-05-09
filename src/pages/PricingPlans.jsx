@@ -154,12 +154,11 @@ export default function PricingPlansPage() {
       return;
     }
 
-    // CASO 2: logueado como cliente → ir directo al alta de perfil profesional
+    // CASO 2: logueado como cliente → guardar plan pendiente e ir a Stripe primero
     if (user.user_type === 'client') {
       sessionStorage.setItem('pendingPlanId', plan.plan_id);
       sessionStorage.setItem('pendingPlanPrice', String(plan.precio));
-      navigate(createPageUrl('ProfileOnboarding') + '?upgrade=pro&plan=' + encodeURIComponent(plan.plan_id));
-      return;
+      // Igual que profesional sin suscripción: checkout directo
     }
 
     // CASO 3: ya es profesional → checkout directo

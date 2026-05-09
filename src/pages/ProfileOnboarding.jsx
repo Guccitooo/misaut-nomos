@@ -381,25 +381,21 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
-      // ✅ Llamar sincronización con Stripe para garantizar estado correcto
-      try {
-        const syncResult = await base44.functions.invoke('syncStripeSubscription', {});
-        console.log('🔄 Sync resultado:', syncResult.data);
-        
-        // Si hay suscripción activa, el perfil debe ser visible
-        if (syncResult.data?.subscription?.active) {
-          shouldBeVisible = true;
-          
-          // Actualizar perfil a visible
-          if (existingProfile) {
-            await base44.entities.ProfessionalProfile.update(existingProfile.id, {
+      // ✅ Si tiene suscripción activa (pagó antes del onboarding), activar perfil inmediatamente
+      if (hasActiveSubscription) {
+        try {
+          // Obtener el perfil recién creado/actualizado
+          const updatedProfiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
+          if (updatedProfiles.length > 0) {
+            await base44.entities.ProfessionalProfile.update(updatedProfiles[0].id, {
               visible_en_busqueda: true,
-              estado_perfil: 'activo'
+              estado_perfil: 'activo',
+              fecha_publicacion: new Date().toISOString()
             });
           }
+        } catch (activateError) {
+          console.log('⚠️ Error activando perfil:', activateError);
         }
-      } catch (syncError) {
-        console.log('⚠️ Error en sync:', syncError);
       }
 
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
@@ -482,13 +478,12 @@ export default function ProfileOnboardingPage() {
       }).catch(() => {});
 
       if (hasActiveSubscription) {
-        // Caso raro: tenía suscripción activa de antes y ahora completa onboarding tarde
         toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", { duration: 5000 });
         setTimeout(() => {
-          navigate(createPageUrl("Search") + "?onboarding=completed");
+          navigate(createPageUrl("ProfessionalDashboard"));
         }, 2000);
       } else {
-        // Flujo normal: onboarding completado SIN suscripción → ir a precios
+        // Sin suscripción → ir a precios para pagar
         toast.warning("Perfil guardado. Elige un plan para activar tu visibilidad.", { duration: 4000 });
         setTimeout(() => {
           navigate(createPageUrl("PricingPlans") + "?from=onboarding");
