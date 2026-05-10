@@ -38,7 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ReviewSection from "../components/profile/ReviewSection";
 import SEOHead from "../components/seo/SEOHead";
-import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
+import { LocalBusinessSchema, FAQPageSchema, ProfessionalPersonSchema, BreadcrumbSchema, MerchantListingSchema } from "../components/seo/StructuredData";
 import { toast } from "sonner";
 import { useLanguage } from "../components/ui/LanguageSwitcher";
 import { useProfileTranslation } from "../components/profile/useProfileTranslation";
@@ -497,6 +497,11 @@ export default function AutonomoPage() {
 
       
       {/* Schema.org estructurados para SEO */}
+      <MerchantListingSchema
+        profile={profile}
+        reviews={reviews}
+        professionalUser={professionalUser}
+      />
       <LocalBusinessSchema 
         profile={profile}
         reviews={reviews}

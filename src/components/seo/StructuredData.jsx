@@ -151,6 +151,104 @@ export function ProductSchema({ products }) {
   return null;
 }
 
+const FALLBACK_IMAGE = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
+
+/**
+ * MerchantListingSchema — @type Service
+ * Corrige los 3 errores de Google Search Console:
+ *   1. CRÍTICO: campo "image" siempre presente (fallback al logo)
+ *   2. shippingDetails en offers (doesNotShip para servicios presenciales)
+ *   3. hasMerchantReturnPolicy en offers
+ */
+export function MerchantListingSchema({ profile, reviews, professionalUser }) {
+  useEffect(() => {
+    if (!profile) return;
+
+    const slugify = (text) => {
+      if (!text) return '';
+      return text.toString().toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    };
+
+    const profileSlug = profile.slug_publico || slugify(profile.business_name);
+    const profileUrl = `https://misautonomos.es/autonomo/${profileSlug}`;
+
+    // image: NUNCA puede ser null — fallback al logo de MisAutónomos
+    const imageUrl = profile.imagen_principal
+      || profile.photos?.[0]
+      || professionalUser?.profile_picture
+      || FALLBACK_IMAGE;
+
+    const name = profile.business_name || 'Profesional autónomo';
+    const description = profile.descripcion_corta
+      || profile.description
+      || `${name} - Profesional autónomo en ${profile.ciudad || profile.provincia || 'España'}`;
+    const areaServed = profile.ciudad || profile.provincia || 'España';
+    const price = profile.tarifa_base > 0 ? String(profile.tarifa_base) : '0';
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "@id": profileUrl,
+      "name": name,
+      "description": description,
+      "image": imageUrl,
+      "url": profileUrl,
+      "provider": {
+        "@type": "Person",
+        "name": name,
+        "image": imageUrl
+      },
+      "areaServed": areaServed,
+      "offers": {
+        "@type": "Offer",
+        "price": price,
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock",
+        "url": profileUrl,
+        "shippingDetails": {
+          "@type": "OfferShippingDetails",
+          "shippingRate": { "@type": "MonetaryAmount", "value": "0", "currency": "EUR" },
+          "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "ES" },
+          "doesNotShip": true
+        },
+        "hasMerchantReturnPolicy": {
+          "@type": "MerchantReturnPolicy",
+          "applicableCountry": "ES",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted"
+        }
+      },
+      ...(profile.average_rating > 0 && profile.total_reviews > 0 && {
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": Number(profile.average_rating).toFixed(1),
+          "reviewCount": String(profile.total_reviews),
+          "bestRating": "5",
+          "worstRating": "1"
+        }
+      })
+    };
+
+    let script = document.getElementById('structured-data-merchant');
+    if (!script) {
+      script = document.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('id', 'structured-data-merchant');
+      document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(schema);
+
+    return () => {
+      const existing = document.getElementById('structured-data-merchant');
+      if (existing) existing.remove();
+    };
+  }, [profile, reviews, professionalUser]);
+
+  return null;
+}
+
 export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
   useEffect(() => {
     if (!profile) return;

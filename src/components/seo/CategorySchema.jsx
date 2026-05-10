@@ -28,7 +28,7 @@ export default function CategorySchema({ categoryName, professionals, location }
           "position": index + 1,
           "item": {
             "@type": "ProfessionalService",
-            "@id": `https://misautonomos.es/Autonomo?slug=${profileSlug}`,
+            "@id": `https://misautonomos.es/autonomo/${profileSlug}`,
             "name": prof.business_name,
             "description": prof.descripcion_corta || `${categoryName} profesional`,
             "address": {

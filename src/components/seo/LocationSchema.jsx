@@ -31,7 +31,7 @@ export default function LocationSchema({ city, province, professionals, categori
 
         return {
           "@type": "ProfessionalService",
-          "@id": `https://misautonomos.es/Autonomo?slug=${profileSlug}`,
+          "@id": `https://misautonomos.es/autonomo/${profileSlug}`,
           "name": prof.business_name,
           "address": {
             "@type": "PostalAddress",
