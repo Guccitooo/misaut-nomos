@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ResponsiveModal from "@/components/ui/ResponsiveModal";
-import { Plus, Trash2, Loader2, FileText, Send, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Send, AlertTriangle, Download } from "lucide-react";
+import { downloadQuotePDFWithLogo } from "@/services/quotePdfGenerator";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -34,8 +35,10 @@ function calcTotals(items, applyRet, retPct) {
   return { items: newItems, subtotal, totalIva, totalRet, total };
 }
 
+const UNIT_OPTIONS = ['ud', 'h', 'm²', 'm³', 'm', 'kg', 'día', 'semana', 'mes', 'lote'];
+
 function newItem() {
-  return { id: crypto.randomUUID(), concept: "", description: "", quantity: 1, unit_price: 0, discount_percent: 0, iva_percent: 21, subtotal: 0, iva_amount: 0, total: 0 };
+  return { id: crypto.randomUUID(), concept: "", description: "", quantity: 1, unit: "ud", unit_price: 0, discount_percent: 0, iva_percent: 21, subtotal: 0, iva_amount: 0, total: 0 };
 }
 
 export default function QuoteForm({ open, onClose, onSaved, user, initialQuote = null }) {
@@ -275,6 +278,14 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
 
   if (!form) return null;
 
+  const handlePreviewPDF = async () => {
+    if (!form.client_name || !form.title) {
+      toast.error("Completa al menos el cliente y el título para previsualizar");
+      return;
+    }
+    await downloadQuotePDFWithLogo({ ...form, professional_id: user?.id, professional_name: user?.full_name || "" });
+  };
+
   const modalFooter = (
     <>
       <button
@@ -283,6 +294,15 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
         className="flex-1 md:flex-none px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
       >
         Cancelar
+      </button>
+      <button
+        onClick={handlePreviewPDF}
+        disabled={saving}
+        className="hidden md:flex flex-1 md:flex-none px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 items-center justify-center gap-1.5"
+        title="Ver PDF con logo"
+      >
+        <Download className="w-3.5 h-3.5" />
+        Ver PDF
       </button>
       <button
         onClick={() => handleSave(false)}
@@ -397,12 +417,13 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
               <table className="w-full text-sm min-w-[640px]">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 w-[35%]">Concepto</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 w-[30%]">Concepto</th>
                     <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[8%]">Cant.</th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[8%]">Unidad</th>
                     <th className="px-2 py-2 text-right text-xs font-medium text-gray-600 w-[12%]">Precio</th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[8%]">Dto%</th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[10%]">IVA%</th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-600 w-[12%]">Total</th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[7%]">Dto%</th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-600 w-[9%]">IVA%</th>
+                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-600 w-[11%]">Total</th>
                     <th className="w-[5%]"></th>
                   </tr>
                 </thead>
@@ -414,6 +435,16 @@ export default function QuoteForm({ open, onClose, onSaved, user, initialQuote =
                       </td>
                       <td className="px-2 py-1.5">
                         <Input type="number" value={item.quantity} min={0} step="0.01" onChange={e => updateItem(idx, 'quantity', e.target.value)} className="h-8 text-sm text-center border-gray-200" />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Select value={item.unit || 'ud'} onValueChange={v => updateItem(idx, 'unit', v)}>
+                          <SelectTrigger className="h-8 text-xs border-gray-200 px-1.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {UNIT_OPTIONS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-2 py-1.5">
                         <Input type="number" value={item.unit_price} min={0} step="0.01" onChange={e => updateItem(idx, 'unit_price', e.target.value)} className="h-8 text-sm text-right border-gray-200" />

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import SEOHead from "@/components/seo/SEOHead";
 import QuoteForm from "@/components/quotes/QuoteForm";
-import { downloadQuotePDF } from "@/services/quotePdfGenerator";
+import { downloadQuotePDFWithLogo } from "@/services/quotePdfGenerator";
 import { useNavigate } from "react-router-dom";
 
 const STATUS_CONFIG = {
@@ -290,7 +290,7 @@ export default function PresupuestosPage() {
                         <button onClick={() => setViewQuote(q)} title="Ver" className="p-1.5 hover:bg-gray-100 rounded">
                           <Eye className="w-4 h-4 text-gray-500" />
                         </button>
-                        <button onClick={() => downloadQuotePDF(q)} title="Descargar PDF" className="p-1.5 hover:bg-gray-100 rounded">
+                        <button onClick={() => downloadQuotePDFWithLogo(q)} title="Descargar PDF" className="p-1.5 hover:bg-gray-100 rounded">
                           <Download className="w-4 h-4 text-gray-500" />
                         </button>
                           {isProfessional && q.status === 'borrador' && (
@@ -345,7 +345,7 @@ export default function PresupuestosPage() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-gray-900">{parseFloat(q.total || 0).toFixed(2)}€</span>
                     <div className="flex gap-1">
-                      <button onClick={() => downloadQuotePDF(q)} className="p-1.5 hover:bg-gray-100 rounded"><Download className="w-4 h-4 text-gray-500" /></button>
+                      <button onClick={() => downloadQuotePDFWithLogo(q)} className="p-1.5 hover:bg-gray-100 rounded"><Download className="w-4 h-4 text-gray-500" /></button>
                       {isProfessional && q.status === 'borrador' && (
                         <button onClick={() => handleSendNow(q)} disabled={sendingId === q.id} className="p-1.5 hover:bg-blue-50 rounded">
                           {sendingId === q.id ? <Loader2 className="w-4 h-4 text-blue-500 animate-spin" /> : <Send className="w-4 h-4 text-blue-500" />}
@@ -427,7 +427,7 @@ export default function PresupuestosPage() {
             </div>
             <AlertDialogFooter>
               <AlertDialogCancel>Cerrar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => downloadQuotePDF(viewQuote)} className="bg-gray-900 hover:bg-gray-800">
+              <AlertDialogAction onClick={() => downloadQuotePDFWithLogo(viewQuote)} className="bg-gray-900 hover:bg-gray-800">
                 <Download className="w-4 h-4 mr-1" />Descargar PDF
               </AlertDialogAction>
             </AlertDialogFooter>

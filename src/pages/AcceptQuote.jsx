@@ -12,7 +12,7 @@ import { FileText, CheckCircle, XCircle, Download, Eye, Euro, Calendar, User, Ma
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
-import { downloadQuotePDF } from "@/services/quotePdfGenerator";
+import { downloadQuotePDFWithLogo } from "@/services/quotePdfGenerator";
 import SEOHead from "@/components/seo/SEOHead";
 
 const STATUS_CONFIG = {
@@ -87,13 +87,20 @@ export default function AcceptQuotePage() {
         acceptance_ip: await getClientIP()
       });
 
-      // Notificar al profesional
+      // Notificar al profesional (push + in-app)
       try {
         await base44.functions.invoke("sendPushNotification", {
           userIds: [quote.professional_id],
           title: `✅ Presupuesto aceptado`,
           message: `${quote.client_name} ha aceptado el presupuesto: ${quote.title}`,
           url: `https://misautonomos.es/presupuestos`
+        });
+        await base44.entities.Notification.create({
+          user_id: quote.professional_id,
+          type: 'quote_accepted',
+          title: `✅ Presupuesto aceptado`,
+          message: `${quote.client_name} ha aceptado "${quote.title}" — ${parseFloat(quote.total || 0).toFixed(2)}€`,
+          link: '/presupuestos'
         });
       } catch {}
 
@@ -127,13 +134,20 @@ export default function AcceptQuotePage() {
         rejection_date: new Date().toISOString()
       });
 
-      // Notificar al profesional
+      // Notificar al profesional (push + in-app)
       try {
         await base44.functions.invoke("sendPushNotification", {
           userIds: [quote.professional_id],
           title: `❌ Presupuesto rechazado`,
           message: `${quote.client_name} ha rechazado el presupuesto: ${quote.title}`,
           url: `https://misautonomos.es/presupuestos`
+        });
+        await base44.entities.Notification.create({
+          user_id: quote.professional_id,
+          type: 'quote_rejected',
+          title: `❌ Presupuesto rechazado`,
+          message: `${quote.client_name} ha rechazado "${quote.title}". Motivo: ${rejectionReason.trim()}`,
+          link: '/presupuestos'
         });
       } catch {}
 
@@ -478,9 +492,9 @@ export default function AcceptQuotePage() {
             </Card>
           )}
 
-          {/* Botón descargar PDF */}
+          {/* Botón descargar PDF con logo */}
           <Button
-            onClick={() => downloadQuotePDF(quote)}
+            onClick={() => downloadQuotePDFWithLogo(quote)}
             variant="outline"
             className="w-full"
           >
