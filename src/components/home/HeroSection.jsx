@@ -1,9 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Search, Star, Users, MapPin, TrendingUp, Sparkles, Clock } from "lucide-react";
+import { Search, Star, Users, MapPin, TrendingUp, Sparkles } from "lucide-react";
 
 const STATS = [
   { icon: Users, value: "2.400+", label: "Autónomos" },
@@ -28,7 +27,7 @@ export default function HeroSection() {
         boxSizing: "border-box",
       }}
     >
-      {/* Fondo decorativo — estrictamente contenido */}
+      {/* Fondo decorativo */}
       <div
         style={{
           position: "absolute",
@@ -54,22 +53,22 @@ export default function HeroSection() {
         {/* Badge */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
           <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: "999px",
-              padding: "6px 16px",
-              fontSize: "12px",
-              fontWeight: 600,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: "999px",
+            padding: "6px 16px",
+            fontSize: "12px",
+            fontWeight: 600,
             maxWidth: "100%",
             flexWrap: "wrap",
             justifyContent: "center",
             textAlign: "center",
           }}>
             <Sparkles style={{ width: "14px", height: "14px", color: "#fbbf24", flexShrink: 0 }} />
-            <span>7 días gratis · Sin tarjeta · Sin permanencia</span>
+            <span>100% gratuito para autónomos · Sin tarjeta · Sin permanencia</span>
           </div>
         </div>
 
@@ -149,7 +148,7 @@ export default function HeroSection() {
             Buscar profesional
           </button>
           <button
-            onClick={() => navigate(createPageUrl("PricingPlans"))}
+            onClick={() => navigate('/completar-perfil')}
             style={{
               display: "flex",
               alignItems: "center",
@@ -168,7 +167,7 @@ export default function HeroSection() {
             }}
           >
             <Sparkles style={{ width: "18px", height: "18px" }} />
-            Hazte autónomo — 7 días gratis
+            Hazte autónomo — es gratis
           </button>
         </div>
 
@@ -185,8 +184,7 @@ export default function HeroSection() {
             marginBottom: "44px",
           }}
         >
-          <Clock style={{ width: "13px", height: "13px", flexShrink: 0 }} />
-          <span>Registro en menos de 3 min</span>
+          <span>✓ Registro en menos de 3 min</span>
           <span>·</span>
           <span>Verificación manual</span>
           <span>·</span>

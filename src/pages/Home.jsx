@@ -11,6 +11,7 @@ import HeroSection from "../components/home/HeroSection";
 import CategoriesGrid from "../components/home/CategoriesGrid";
 const TestimonialsSection = lazy(() => import("../components/home/TestimonialsSection"));
 const FinalCTASection = lazy(() => import("../components/home/FinalCTASection"));
+const WhyTrustSlider = lazy(() => import("../components/home/WhyTrustSlider"));
 
 const HOW_IT_WORKS = [
   {
@@ -39,7 +40,7 @@ const HOW_IT_WORKS = [
 const FAQS = [
   {
     q: "¿Cuánto cuesta para los autónomos?",
-    a: "Los primeros 60 días son completamente gratis. Después, el plan mensual cuesta 29€/mes. Sin permanencia, cancela cuando quieras.",
+    a: "Nada. MisAutónomos es completamente gratuito para autónomos. Sin tarjeta, sin permanencia, sin sorpresas. Tu perfil estará activo para siempre sin coste.",
   },
   {
     q: "¿Los clientes pagan algo?",
@@ -102,7 +103,7 @@ export default function Home() {
 
           <div className="text-center mt-10">
             <Button
-              onClick={() => navigate(createPageUrl("PricingPlans"))}
+              onClick={() => navigate('/completar-perfil')}
               className="bg-blue-700 hover:bg-blue-600 text-white h-12 px-8 text-base font-semibold rounded-xl transition-all hover:scale-[1.02]"
             >
               Crear mi perfil gratis <ArrowRight className="w-4 h-4 ml-2" />
@@ -112,6 +113,9 @@ export default function Home() {
       </section>
 
       <CategoriesGrid />
+
+      {/* ===== SLIDER ¿POR QUÉ CONFIAR? ===== */}
+      <Suspense fallback={null}><WhyTrustSlider /></Suspense>
 
       {/* ===== POR QUÉ NOSOTROS ===== */}
       <section className="py-16 md:py-20 bg-white">

@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Briefcase, Search, ShieldCheck, Zap, BadgeCheck } from "lucide-react";
 
@@ -34,29 +33,29 @@ export default function FinalCTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <Badge className="mb-6 bg-white/15 text-white border-white/20 text-sm px-4 py-1.5 font-semibold">
-            ⏰ Oferta por tiempo limitado
-          </Badge>
+          <div className="inline-flex items-center gap-2 bg-white/15 text-white border border-white/20 text-sm px-4 py-1.5 rounded-full font-semibold mb-6">
+            🎉 Completamente gratuito
+          </div>
 
           <h2 className="text-4xl md:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
             Únete ahora —
             <br />
             <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-              Los primeros 7 días son gratis
+              Es gratis para siempre
             </span>
           </h2>
 
           <p className="text-white/80 text-xl mb-10 max-w-xl mx-auto leading-relaxed">
-            Sin tarjeta de crédito. Sin permanencia. Cancela cuando quieras.
+            Sin tarjeta de crédito. Sin permanencia. Sin sorpresas. Tu perfil activo en minutos.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
             <Button
-              onClick={() => navigate(createPageUrl("PricingPlans"))}
+              onClick={() => navigate('/completar-perfil')}
               className="group h-14 px-10 text-lg font-bold bg-gradient-to-r from-emerald-400 to-green-400 hover:from-emerald-300 hover:to-green-300 text-gray-900 rounded-2xl shadow-[0_15px_50px_-10px_rgba(52,211,153,0.6)] hover:scale-[1.03] transition-all"
             >
               <Briefcase className="w-5 h-5 mr-2 group-hover:rotate-6 transition-transform" />
-              Empezar 7 días gratis
+              Crear mi perfil gratis
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Search"))}
@@ -78,7 +77,7 @@ export default function FinalCTASection() {
           </div>
 
           <p className="mt-8 text-white/50 text-sm">
-            Los primeros 7 días son totalmente gratis. Sin tarjeta de crédito.
+            Registro totalmente gratuito · Sin tarjeta de crédito · Sin compromisos
           </p>
         </motion.div>
       </div>
