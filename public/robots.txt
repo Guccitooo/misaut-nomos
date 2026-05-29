@@ -1,66 +1,89 @@
 User-agent: *
 
-# ── Panel de administración ────────────────────────────────────
+# Páginas de administración
 Disallow: /admin
 Disallow: /admin/
+Disallow: /Admin
+Disallow: /AdminReferrals
+Disallow: /AdminPayments
+Disallow: /AdminTickets
+Disallow: /AdminFAQ
+Disallow: /AdminDashboard
+Disallow: /AdminBlog
+Disallow: /AdminNewsletter
+Disallow: /AdminEmails
+Disallow: /AdminMessagesStats
+Disallow: /AdminSupport
 
-# ── Áreas privadas de usuario (rutas en español) ───────────────
-Disallow: /favoritos
-Disallow: /notificaciones
-Disallow: /mensajes
-Disallow: /mi-perfil
+# Dashboard privado de autónomos
+Disallow: /dashboard
+Disallow: /dashboard/
+
+# Flujos privados de usuario
+Disallow: /completar-perfil
+Disallow: /bienvenida
+Disallow: /suscripcion
 Disallow: /pago-exitoso
 Disallow: /pago-completado
+Disallow: /pagar
+Disallow: /registro
+Disallow: /registro-cliente
+
+# Páginas de cuenta privadas
+Disallow: /mi-perfil
+Disallow: /notificaciones
+Disallow: /mensajes
+Disallow: /favoritos
 Disallow: /soporte
-Disallow: /soporte/
-Disallow: /facturas
-Disallow: /presupuestos
 Disallow: /solicitudes
 Disallow: /automatizaciones
 Disallow: /mi-campana
 Disallow: /plan-ads
 Disallow: /referidos
+Disallow: /facturas
 Disallow: /proyectos
 Disallow: /calendario
 Disallow: /mis-clientes
 Disallow: /clientes
-Disallow: /pagar
 Disallow: /visibilidad
-Disallow: /dashboard
-Disallow: /completar-perfil
-Disallow: /suscripcion
-Disallow: /bienvenida
-Disallow: /registro
-Disallow: /registro-cliente
-Disallow: /configuracion-cookies
-Disallow: /perfil
+Disallow: /presupuestos
 Disallow: /presupuesto
+Disallow: /perfil
 
-# ── URLs legacy en inglés (redirigen a español, bloquear igualmente) ──
+# Transaccionales / tokens en URL
+Disallow: /valorar
+Disallow: /newsletter/unsubscribe
+Disallow: /NewsletterUnsubscribe
+
+# Preferencias (no indexables)
+Disallow: /configuracion-cookies
+Disallow: /CookiePreferences
+
+# Rutas legado en inglés (no indexables)
+Disallow: /PayInvoice
+Disallow: /BriefingMensual
+Disallow: /PaymentSuccess
+Disallow: /ProfileOnboarding
+Disallow: /UserTypeSelection
+Disallow: /MyProfile
 Disallow: /Tickets
-Disallow: /TicketDetail
 Disallow: /Invoices
 Disallow: /Favorites
 Disallow: /Notifications
 Disallow: /Messages
-Disallow: /MyProfile
-Disallow: /PaymentSuccess
-Disallow: /AdminFAQ
-Disallow: /UserTypeSelection
-Disallow: /ProfileOnboarding
-Disallow: /ClientOnboarding
-Disallow: /HelpCenter
-Disallow: /AdminDashboard
-Disallow: /AdminPayments
-Disallow: /AdminTickets
-Disallow: /AdminMessagesStats
-Disallow: /AdminSupport
-Disallow: /Autonomo
-Disallow: /Search
-Disallow: /PricingPlans
 
-# ── Parámetros de búsqueda/filtros (no canónicos) ─────────────
-Disallow: /buscar?*
-Disallow: /categoria?*
+# Allow público
+Allow: /buscar
+Allow: /autonomo/
+Allow: /categoria/
+Allow: /blog/
+Allow: /precios
+Allow: /preguntas-frecuentes
+Allow: /ayuda
+Allow: /privacidad
+Allow: /terminos
+Allow: /cookies
+Allow: /aviso-legal
+Allow: /
 
 Sitemap: https://misautonomos.es/sitemap.xml

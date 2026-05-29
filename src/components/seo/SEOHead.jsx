@@ -22,16 +22,36 @@ export default function SEOHead({
 
   // Páginas privadas que NO deben indexarse
   const NOINDEX_PATHS = [
-    '/admin', '/dashboard', '/completar-perfil', '/suscripcion', '/pago-exitoso', '/pago-completado',
-    '/bienvenida', '/mi-perfil', '/notificaciones', '/mensajes', '/favoritos',
-    '/soporte', '/solicitudes', '/automatizaciones', '/registro', '/mi-campana',
+    // Admin (todas las subrutas)
+    '/admin',
+    // Dashboard privado de autónomo
+    '/dashboard',
+    // Flujos de registro/onboarding
+    '/completar-perfil', '/registro', '/registro-cliente', '/bienvenida',
+    // Cuenta y suscripción
+    '/suscripcion', '/pago-exitoso', '/pago-completado', '/pagar',
+    // Páginas privadas de usuario
+    '/mi-perfil', '/notificaciones', '/mensajes', '/favoritos',
+    '/soporte', '/solicitudes', '/automatizaciones', '/mi-campana',
     '/plan-ads', '/referidos', '/facturas', '/proyectos', '/calendario',
-    '/mis-clientes', '/clientes', '/pagar', '/visibilidad', '/presupuestos',
-    '/configuracion-cookies', '/registro-cliente', '/perfil',
+    '/mis-clientes', '/clientes', '/visibilidad', '/presupuestos', '/perfil',
+    // Páginas de configuración/preferencias (no indexables)
+    '/configuracion-cookies',
+    // Newsletter / transaccionales
+    '/newsletter',
+    // Briefing mensual (panel privado ads)
+    '/mi-campana/briefing',
+    // Valorar profesional (token en URL)
+    '/valorar',
+    // Presupuesto con ID
+    '/presupuesto',
+    // Pagar factura con ID
+    '/pagar',
     // Rutas privadas adicionales (Search Console legacy en inglés)
     '/Tickets', '/tickets', '/TicketDetail', '/Invoices', '/UserTypeSelection',
-    '/ProfileOnboarding', '/MyProfile', '/presupuesto',
+    '/ProfileOnboarding', '/MyProfile', '/NewsletterUnsubscribe', '/CookiePreferences',
     '/Favorites', '/Notifications', '/Messages', '/PaymentSuccess', '/AdminFAQ',
+    '/AdminReferrals', '/BriefingMensual', '/PayInvoice',
   ];
   const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const shouldNoindex = noindex || isPrivatePage;
