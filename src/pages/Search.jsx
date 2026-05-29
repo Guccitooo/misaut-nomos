@@ -52,6 +52,7 @@ import SavedSearches from "../components/search/SavedSearches";
 const PullToRefresh = lazy(() => import("../components/ui/PullToRefresh"));
 const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
 const MapView = lazy(() => import("../components/search/MapView"));
+const TrustSlider = lazy(() => import("../components/search/TrustSlider"));
 import { generateSlug } from "../utils/slugUtils";
 import { getProfileSeoUrl } from '@/lib/seoUrl';
 import InitialsAvatar from "@/components/ui/InitialsAvatar";
@@ -556,11 +557,11 @@ export default function SearchPage() {
                   🚀 <strong className="text-white">¿Eres autónomo?</strong> Consigue clientes desde hoy
                 </p>
                 <Button
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
+                  onClick={() => navigate('/completar-perfil')}
                   className="bg-green-500 text-white font-bold px-5 h-9 rounded-xl shadow-lg text-sm flex-shrink-0"
                   style={{ touchAction: 'manipulation' }}
                 >
-                  Empezar gratis · 7 días
+                  Registrarme gratis
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
@@ -572,12 +573,19 @@ export default function SearchPage() {
                 className="w-full flex items-center justify-between text-white"
                 style={{ padding: '12px 20px', fontSize: '14px', fontWeight: 600, touchAction: 'manipulation' }}
               >
-                <span>🚀 <strong>¿Eres autónomo?</strong> Empieza gratis · 7 días</span>
+                <span>🚀 <strong>¿Eres autónomo?</strong> Registrarme gratis</span>
                 <ChevronRight className="w-5 h-5 flex-shrink-0" />
               </button>
             </div>
           </div>
         </div>{/* fin hero wrapper */}
+
+        {/* ── TRUST SLIDER — solo para visitantes no logueados ── */}
+        {!loadingUser && !user && (
+          <Suspense fallback={null}>
+            <TrustSlider />
+          </Suspense>
+        )}
 
         {/* ── CONTENIDO PRINCIPAL ── */}
         <div id="results-section">
@@ -798,9 +806,9 @@ export default function SearchPage() {
                     <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-80" />
                     <h3 className="text-xl font-bold mb-2">¿Eres profesional?</h3>
                     <p className="text-blue-100 mb-5 text-sm">Únete gratis y consigue clientes en tu zona</p>
-                    <Button onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    <Button onClick={() => navigate('/completar-perfil')}
                       className="bg-white text-blue-700 hover:bg-blue-50 h-11 px-6 font-bold rounded-xl">
-                      Empezar gratis · 7 días
+                      Registrarme gratis
                     </Button>
                   </div>
                 </Card>
@@ -854,7 +862,7 @@ export default function SearchPage() {
             <div className="mt-14 rounded-3xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}>
               <div className="p-8 md:p-12 text-white text-center">
                 <span className="inline-block bg-green-500 text-white text-xs font-bold px-4 py-1.5 rounded-full mb-5 shadow">
-                  🚀 Plataforma recién lanzada · 7 días gratis
+                  🚀 Plataforma recién lanzada · 100% gratis
                 </span>
                 <h3 className="text-3xl md:text-4xl font-extrabold mb-3">
                   ¿Eres autónomo?<br />
@@ -868,18 +876,18 @@ export default function SearchPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
+                    onClick={() => navigate('/completar-perfil')}
                     className="bg-green-500 hover:bg-green-400 text-white h-13 px-10 text-base font-bold shadow-xl rounded-2xl"
                     style={{ height: '52px' }}
                   >
-                    <Briefcase className="w-5 h-5 mr-2" />Empezar gratis — 7 días
+                    <Briefcase className="w-5 h-5 mr-2" />Registrarme gratis
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("PricingPlans"))}
                     className="bg-white text-blue-900 hover:bg-gray-100 px-8 text-base font-semibold rounded-2xl border-0"
                     style={{ height: '52px' }}
                   >
-                    Saber más
+                    Saber más →
                   </Button>
                 </div>
               </div>

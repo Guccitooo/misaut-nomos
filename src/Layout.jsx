@@ -978,10 +978,10 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
                         </Link>
                       )}
                       {(!user || user.user_type !== 'professionnel') ? (
-                        <Link to={createPageUrl("PricingPlans")}>
+                        <Link to="/completar-perfil">
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
                             <Briefcase className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {t('nav.sign_up_pro')}
+                            Hazte autónomo · Gratis
                           </Button>
                         </Link>
                       ) : null}
