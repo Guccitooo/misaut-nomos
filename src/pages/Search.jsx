@@ -275,12 +275,16 @@ export default function SearchPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [filters, setFilters] = useState({
-    category: "all",
-    provincia: "all",
-    ciudad: "all",
-    minRating: 0,
-    availability: "all"
+  const [filters, setFilters] = useState(() => {
+    // Leer filtros iniciales desde query params (hero → resultados)
+    const params = new URLSearchParams(window.location.search);
+    return {
+      category: params.get("categoria") || "all",
+      provincia: params.get("provincia") || "all",
+      ciudad: params.get("ciudad") || "all",
+      minRating: 0,
+      availability: "all",
+    };
   });
   // En móvil renderamos solo 6 tarjetas iniciales para reducir trabajo del main thread
   const [displayLimit, setDisplayLimit] = useState(() => window.innerWidth < 768 ? 6 : 12);
