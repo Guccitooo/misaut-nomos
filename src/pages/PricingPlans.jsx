@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import {
-  CheckCircle, XCircle, Loader2, Shield, Star, Briefcase,
-  TrendingUp, ChevronDown, ChevronUp, Zap, Rocket, ChevronRight
+  CheckCircle, XCircle, Loader2, Shield, Briefcase,
+  TrendingUp, ChevronDown, ChevronUp, Rocket, ChevronRight, Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import SEOHead from "../components/seo/SEOHead";
-import SubscriptionProductSchema from "../components/seo/SubscriptionProductSchema";
 
-const PLAN_VISIBILITY_INCLUDES = [
+const PLAN_FREE_INCLUDES = [
   "Perfil visible en búsquedas de toda España",
   "Foto, descripción y servicios completos",
   "Contacto directo: WhatsApp, llamada y chat",
@@ -20,16 +18,17 @@ const PLAN_VISIBILITY_INCLUDES = [
   "Estadísticas de visitas a tu perfil",
   "Zona de cobertura geográfica",
   "Valoraciones y reseñas",
+  "Acceso permanente · Sin tarjeta",
 ];
 
-const PLAN_VISIBILITY_EXCLUDES = [
+const PLAN_FREE_EXCLUDES = [
   "Campañas en redes sociales",
   "Posicionamiento destacado",
   "Soporte prioritario",
 ];
 
 const PLAN_ADSPLUS_INCLUDES = [
-  "Todo lo del Plan Visibilidad ✓",
+  "Todo lo del Plan Gratuito ✓",
   "30€/mes de presupuesto publicitario REAL invertido en tu campaña",
   "Briefing mensual guiado (eliges red y objetivo cada mes)",
   "Campaña en Instagram, Facebook, TikTok, LinkedIn o Google",
@@ -37,70 +36,37 @@ const PLAN_ADSPLUS_INCLUDES = [
   "Copy publicitario optimizado",
   "Gestión y optimización activa durante todo el mes",
   "Reporte semanal de resultados con métricas reales",
-  "Deadline flexible para briefing (día 5 de cada mes)",
+  "Soporte prioritario",
 ];
 
 const FAQS = [
   {
-    q: "¿Cuándo se me cobra?",
-    a: "Tras los 7 días gratis se hace el primer cobro. Si cancelas antes, no se cobra nada.",
+    q: "¿El plan gratuito es realmente gratis?",
+    a: "Sí, completamente gratis y sin tarjeta. Tu perfil aparece en búsquedas de forma permanente sin pagar nada.",
   },
   {
-    q: "¿Puedo cancelar cuando quiera?",
-    a: "Sí, sin permanencia. Cancela desde tu panel en un clic.",
+    q: "¿Cuándo se me cobra algo?",
+    a: "Solo si contratas el Plan Ads+. El plan base nunca tiene coste.",
   },
   {
     q: "¿Hay comisiones por cliente conseguido?",
-    a: "No. El precio del plan es lo único que pagas. Lo que ganes con tus clientes es 100% tuyo.",
+    a: "No. Lo que ganes con tus clientes es 100% tuyo.",
   },
   {
-    q: "¿Qué pasa cuando expira mi plan?",
-    a: "Tu perfil deja de aparecer en búsquedas pero tus datos se conservan. Puedes reactivar cuando quieras.",
+    q: "¿Puedo cancelar el Plan Ads+ cuando quiera?",
+    a: "Sí, sin permanencia. Cancela desde tu panel en un clic. Tu perfil gratuito sigue activo.",
   },
 ];
-
-// Detectar si la app corre dentro de un webview nativo de iOS (App Store)
-const isNativeIOSApp = () => {
-  const ua = navigator.userAgent || "";
-  // Base44 wrapper sets a custom UA or the app runs standalone
-  const isStandalone = window.navigator.standalone === true;
-  const isInWebview = /(iPhone|iPad).*AppleWebKit(?!.*Safari)/i.test(ua);
-  return isStandalone || isInWebview;
-};
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isNative = isNativeIOSApp();
   const [user, setUser] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
   const [stickyVisible, setStickyVisible] = useState(false);
-  const [billing, setBilling] = useState("monthly"); // "monthly" | "annual"
 
   const canceled = searchParams.get("canceled");
-
-  const plans = [
-    { plan_id: "plan_visibility", nombre: "Plan Visibilidad", precio: 13, duracion_dias: 30 },
-    { plan_id: "plan_adsplus", nombre: "Plan Ads+", precio: 33, duracion_dias: 30 },
-  ];
-
-  const { data: currentSubscription } = useQuery({
-    queryKey: ["currentSubscription", user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const subs = await base44.entities.Subscription.filter({ user_id: user.id });
-      if (!subs.length) return null;
-      const sub = subs[0];
-      const isActive =
-        (sub.estado === "activo" || sub.estado === "en_prueba") &&
-        new Date(sub.fecha_expiracion) >= new Date();
-      return isActive ? sub : null;
-    },
-    enabled: !!user,
-    staleTime: 1000 * 30,
-  });
 
   useEffect(() => {
     const cached = sessionStorage.getItem("current_user");
@@ -114,23 +80,8 @@ export default function PricingPlansPage() {
   }, []);
 
   useEffect(() => {
-    if (canceled) toast.info("Pago cancelado. Puedes volver a elegir un plan cuando quieras.", { duration: 5000 });
+    if (canceled) toast.info("Pago cancelado. Puedes volver a elegir el Plan Ads+ cuando quieras.", { duration: 5000 });
   }, [canceled]);
-
-  useEffect(() => {
-    if (!user || plans.length === 0) return;
-    const pendingPlan = localStorage.getItem("pending_plan_selection");
-    if (pendingPlan) {
-      try {
-        const planData = JSON.parse(pendingPlan);
-        localStorage.removeItem("pending_plan_selection");
-        const fullPlan = plans.find((p) => p.plan_id === planData.plan_id);
-        if (fullPlan) handleSelectPlan(fullPlan);
-      } catch {
-        localStorage.removeItem("pending_plan_selection");
-      }
-    }
-  }, [user]);
 
   useEffect(() => {
     const onScroll = () => setStickyVisible(window.scrollY > 400);
@@ -138,361 +89,189 @@ export default function PricingPlansPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleSelectPlan = async (plan) => {
-    // En app nativa iOS no se puede usar Stripe — redirigir a web
-    if (isNative) {
-      window.open("https://misautonomos.es/precios", "_blank");
-      return;
-    }
-
-    // CASO 1: sin sesión → guardar intent y llevar al registro de autónomo
+  const handleFreeSignup = () => {
     if (!user) {
-      sessionStorage.setItem('pendingPlanId', plan.plan_id);
-      sessionStorage.setItem('pendingPlanPrice', String(plan.precio));
-      navigate('/precios?login=1&plan=' + encodeURIComponent(plan.plan_id));
-      base44.auth.redirectToLogin('/completar-perfil?plan=' + encodeURIComponent(plan.plan_id));
+      base44.auth.redirectToLogin('/completar-perfil');
+      return;
+    }
+    navigate('/completar-perfil');
+  };
+
+  const handleAdsPlus = async () => {
+    if (!user) {
+      sessionStorage.setItem('pendingPlanId', 'plan_adsplus');
+      base44.auth.redirectToLogin('/precios?plan=plan_adsplus');
       return;
     }
 
-    // CASO 2: logueado como cliente → guardar plan pendiente e ir a Stripe primero
-    if (user.user_type === 'client') {
-      sessionStorage.setItem('pendingPlanId', plan.plan_id);
-      sessionStorage.setItem('pendingPlanPrice', String(plan.precio));
-      // Igual que profesional sin suscripción: checkout directo
-    }
-
-    // CASO 3: ya es profesional → checkout directo
-    if (currentSubscription) {
-      toast.error('Ya tienes una suscripción activa. Ve a "Mi Suscripción" para gestionarla.');
-      navigate(createPageUrl("SubscriptionManagement"));
-      return;
-    }
-
-    setSelectedPlan(plan.plan_id);
     setIsProcessing(true);
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Tiempo de espera agotado. Inténtalo de nuevo.")), 15000)
-      );
       const response = await Promise.race([
         base44.functions.invoke("createCheckoutSession", {
-          planId: plan.plan_id,
-          planPrice: plan.precio,
+          planId: 'plan_adsplus',
+          planPrice: 33,
           isReactivation: false,
         }),
-        timeoutPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tiempo agotado")), 15000)),
       ]);
-      if (response.data?.error) {
-        if (response.data.redirect) { toast.error(response.data.error); navigate(response.data.redirect); return; }
-        throw new Error(response.data.error);
-      }
       if (response.data?.url) {
         window.location.href = response.data.url;
       } else {
-        throw new Error("No se pudo crear la sesión de pago");
+        throw new Error(response.data?.error || "No se pudo crear la sesión de pago");
       }
     } catch (err) {
-      toast.error(err.message || "Error al procesar el pago. Inténtalo de nuevo.");
+      toast.error(err.message || "Error al procesar. Inténtalo de nuevo.");
       setIsProcessing(false);
-      setSelectedPlan(null);
     }
   };
-
-  const getDisplayPrice = (basePrice) => {
-    if (billing === "annual") return (basePrice * 0.8).toFixed(0);
-    return basePrice;
-  };
-
-  const getAnnualSaving = (basePrice) => {
-    return (basePrice * 12 * 0.2).toFixed(2);
-  };
-
-  const adsPlus = plans[1];
 
   return (
     <>
       <SEOHead
-        title="Planes y Precios - MisAutónomos | 7 Días Gratis"
-        description="Elige tu plan: Visibilidad 13€/mes o Ads+ 33€/mes con campañas incluidas. 7 días gratis. Sin permanencia. Sin comisiones."
-        keywords="planes autónomos, precios profesionales, 7 días gratis, publicidad incluida, plan visibilidad"
+        title="Planes y Precios - MisAutónomos | Gratis para autónomos"
+        description="Regístrate gratis y empieza a recibir clientes. Sin tarjeta, sin permanencia. Plan Ads+ a 33€/mes con publicidad gestionada incluida."
+        keywords="registro gratis autónomos, directorio profesionales gratis, Plan Ads+ publicidad autónomos"
       />
-      <SubscriptionProductSchema plans={plans} />
 
       <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
 
-        {/* ── 1. BANNER URGENCIA ── */}
+        {/* BANNER */}
         <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 text-white text-center py-3 px-4">
           <p className="text-sm font-semibold">
-            🚀 Oferta de lanzamiento — <strong>7 días gratis · luego 1€ el primer mes · luego precio normal</strong>
+            🎉 <strong>Acceso gratuito permanente</strong> — Sin tarjeta, sin permanencia, sin sorpresas
           </p>
-          <p className="text-xs text-green-100 mt-0.5">Sin permanencia · Cancela cuando quieras antes del cobro</p>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 py-10">
 
-          {/* ── 2. HERO ── */}
+          {/* HERO */}
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3 leading-tight">
-              Elige tu plan y empieza<br className="hidden md:block" /> a recibir clientes
+              Tu perfil en MisAutónomos<br className="hidden md:block" /> es completamente <span className="text-green-600">gratis</span>
             </h1>
             <p className="text-lg text-gray-500">
-              Pago mensual sin permanencia. Cancela cuando quieras.
+              Regístrate hoy y empieza a recibir clientes. Sin tarjeta, sin límite de tiempo.
             </p>
           </div>
 
-          {/* ── 3. TOGGLE MENSUAL/ANUAL ── */}
-          <div className="flex items-center justify-center gap-4 mb-10">
-            <span className={`text-sm font-semibold ${billing === "monthly" ? "text-gray-900" : "text-gray-400"}`}>
-              Mensual
-            </span>
-            <button
-              onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${billing === "annual" ? "bg-blue-600" : "bg-gray-300"}`}
-              aria-label="Cambiar facturación"
-            >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${billing === "annual" ? "translate-x-6" : "translate-x-0"}`}
-              />
-            </button>
-            <span className={`text-sm font-semibold ${billing === "annual" ? "text-blue-700" : "text-gray-400"}`}>
-              Anual <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full ml-1">-20%</span>
-            </span>
-          </div>
-
-          {/* ── AVISO iOS NATIVO ── */}
-          {isNative && (
-            <div className="max-w-2xl mx-auto mb-8 bg-blue-50 border border-blue-200 rounded-2xl p-5 text-center">
-              <p className="text-sm font-semibold text-blue-900 mb-1">💳 Suscríbete desde la web</p>
-              <p className="text-sm text-blue-700 mb-3">
-                Para completar tu suscripción, visita nuestra web desde un navegador.
-              </p>
-              <a
-                href="https://misautonomos.es/precios"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-xl text-sm"
-              >
-                Ir a misautonomos.es/precios →
-              </a>
-            </div>
-          )}
-
-          {/* ── 3.5 TIMELINE DE PRECIOS ── */}
-          <div className="max-w-3xl mx-auto mb-10 px-4">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <div className="grid grid-cols-3 gap-2 md:gap-4 relative">
-                <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-xl">🎁</span>
-                  </div>
-                  <p className="text-xs md:text-sm font-bold text-gray-900">Días 1–7</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Gratis total</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-xl">⚡</span>
-                  </div>
-                  <p className="text-xs md:text-sm font-bold text-gray-900">Día 7–37</p>
-                  <p className="text-xs text-blue-600 font-semibold mt-0.5">Solo 1€</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-xl">📅</span>
-                  </div>
-                  <p className="text-xs md:text-sm font-bold text-gray-900">Día 38+</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Plan elegido</p>
-                </div>
-                <div className="hidden md:block absolute top-6 left-[16.66%] right-[16.66%] h-0.5 bg-gradient-to-r from-green-200 via-blue-200 to-gray-200 -z-10" />
-              </div>
-              <p className="text-center text-xs text-gray-400 mt-4">Cancela cuando quieras · Sin permanencia · Necesitamos tu tarjeta para activar el trial</p>
-            </div>
-          </div>
-
-          {/* ── 4. TARJETAS ── */}
+          {/* CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto items-start">
 
-            {/* Plan Visibilidad */}
-            {(() => {
-              const plan = plans[0];
-              const isCurrentPlan = currentSubscription?.plan_id === plan.plan_id;
-              const isLoading = isProcessing && selectedPlan === plan.plan_id;
-              const displayPrice = getDisplayPrice(plan.precio);
-
-              return (
-                <div className="relative rounded-2xl bg-white border border-gray-200 shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col overflow-hidden">
-                  {isCurrentPlan && (
-                    <div className="bg-green-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
-                      ✓ Tu plan actual
-                    </div>
-                  )}
-                  <div className="p-7 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Briefcase className="w-5 h-5 text-blue-600" />
-                      <h2 className="text-lg font-bold text-gray-900">{plan.nombre}</h2>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-5">Hazte visible y consigue tus primeros clientes</p>
-
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">🎁 7 días gratis</span>
-                      </div>
-                      <div className="flex items-end gap-1 mt-2">
-                        <span className="text-4xl font-extrabold text-gray-900">1€</span>
-                        <span className="text-gray-500 text-base mb-1.5">el primer mes</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Luego <span className="font-semibold text-gray-700">{plan.precio}€/mes</span>
-                        {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
-                      <p className="text-xs text-blue-600 font-medium mt-1">💳 Tarjeta necesaria para activar el trial</p>
-                    </div>
-
-                    {isCurrentPlan ? (
-                      <Button disabled className="w-full h-12 text-base font-bold bg-green-600 text-white rounded-xl mb-6">
-                        <CheckCircle className="w-5 h-5 mr-2" />Tu plan actual
-                      </Button>
-                    ) : currentSubscription ? (
-                      <Button
-                        className="w-full h-12 text-base font-bold bg-blue-700 hover:bg-blue-600 text-white rounded-xl mb-6"
-                        onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                      >
-                        Gestionar suscripción
-                      </Button>
-                    ) : (
-                      <Button
-                        className="w-full h-12 text-base font-bold rounded-xl mb-6 bg-green-600 hover:bg-green-500 text-white shadow-md"
-                        onClick={() => handleSelectPlan(plan)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</> : "Empezar gratis 7 días →"}
-                      </Button>
-                    )}
-
-                    <ul className="space-y-2.5 mb-5">
-                      {PLAN_VISIBILITY_INCLUDES.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
-                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <ul className="space-y-2">
-                      {PLAN_VISIBILITY_EXCLUDES.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
-                          <XCircle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+            {/* Plan Gratuito */}
+            <div className="relative rounded-2xl bg-white border border-gray-200 shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col overflow-hidden">
+              <div className="bg-green-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
+                ✓ Tu plan por defecto
+              </div>
+              <div className="p-7 flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Briefcase className="w-5 h-5 text-green-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Plan Gratuito</h2>
                 </div>
-              );
-            })()}
+                <p className="text-sm text-gray-500 mb-5">Hazte visible y consigue tus primeros clientes</p>
 
-            {/* Plan Ads+ — DESTACADO */}
-            {(() => {
-              const plan = plans[1];
-              const isCurrentPlan = currentSubscription?.plan_id === plan.plan_id;
-              const isLoading = isProcessing && selectedPlan === plan.plan_id;
-              const displayPrice = getDisplayPrice(plan.precio);
-
-              return (
-                <div className="relative rounded-2xl bg-white border-2 border-blue-600 shadow-2xl ring-4 ring-blue-100 hover:shadow-[0_32px_64px_-16px_rgba(37,99,235,0.25)] transition-all duration-200 hover:-translate-y-1 md:scale-105 flex flex-col overflow-hidden">
-                  {!isCurrentPlan && (
-                    <div className="bg-blue-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
-                      ⭐ Más elegido
-                    </div>
-                  )}
-                  {isCurrentPlan && (
-                    <div className="bg-green-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
-                      ✓ Tu plan actual
-                    </div>
-                  )}
-                  <div className="p-7 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
-                      <h2 className="text-lg font-bold text-gray-900">{plan.nombre}</h2>
-                    </div>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm text-gray-500">Máxima visibilidad con publicidad gestionada</p>
-                      <Link to="/plan-ads" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1">
-                        Saber más <ChevronRight className="w-3 h-3" />
-                      </Link>
-                    </div>
-
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">🎁 7 días gratis</span>
-                      </div>
-                      <div className="flex items-end gap-1 mt-2">
-                        <span className="text-4xl font-extrabold text-gray-900">1€</span>
-                        <span className="text-gray-500 text-base mb-1.5">el primer mes</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Luego <span className="font-semibold text-gray-700">{plan.precio}€/mes</span>
-                        {billing === "annual" && <span className="text-green-600 font-semibold"> ({getDisplayPrice(plan.precio)}€/mes anual)</span>}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
-                      <p className="text-xs text-blue-600 font-medium mt-1">💳 Tarjeta necesaria para activar el trial</p>
-                    </div>
-
-                    {isCurrentPlan ? (
-                      <Button disabled className="w-full h-12 text-base font-bold bg-green-600 text-white rounded-xl mb-6">
-                        <CheckCircle className="w-5 h-5 mr-2" />Tu plan actual
-                      </Button>
-                    ) : currentSubscription ? (
-                      <Button
-                        className="w-full h-12 text-base font-bold bg-blue-700 hover:bg-blue-600 text-white rounded-xl mb-6"
-                        onClick={() => navigate(createPageUrl("SubscriptionManagement"))}
-                      >
-                        Gestionar suscripción
-                      </Button>
-                    ) : (
-                      <Button
-                        id="cta-popular"
-                        className="w-full h-12 text-base font-bold rounded-xl mb-6 bg-green-600 hover:bg-green-500 text-white shadow-lg"
-                        onClick={() => handleSelectPlan(plan)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</> : "Empezar gratis 7 días →"}
-                      </Button>
-                    )}
-
-                    <ul className="space-y-2.5">
-                      {PLAN_ADSPLUS_INCLUDES.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
-                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className={i === 1 ? "font-semibold text-blue-700" : ""}>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <p className="text-sm font-semibold text-blue-700 bg-blue-50 rounded-lg p-3 mt-4">
-                      💡 Visibility te hace aparecer. Ads+ te trae clientes activamente.
-                    </p>
+                <div className="mb-6">
+                  <div className="flex items-end gap-1 mt-2">
+                    <span className="text-4xl font-extrabold text-gray-900">0€</span>
+                    <span className="text-gray-500 text-base mb-1.5">/mes · siempre</span>
                   </div>
+                  <p className="text-xs text-green-700 font-semibold mt-1 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Sin tarjeta · Sin permanencia · Acceso permanente
+                  </p>
                 </div>
-              );
-            })()}
+
+                <Button
+                  className="w-full h-12 text-base font-bold rounded-xl mb-6 bg-green-600 hover:bg-green-500 text-white shadow-md"
+                  onClick={handleFreeSignup}
+                >
+                  Crear mi perfil gratis →
+                </Button>
+
+                <ul className="space-y-2.5 mb-5">
+                  {PLAN_FREE_INCLUDES.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <ul className="space-y-2">
+                  {PLAN_FREE_EXCLUDES.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+                      <XCircle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Plan Ads+ */}
+            <div className="relative rounded-2xl bg-white border-2 border-blue-600 shadow-2xl ring-4 ring-blue-100 hover:shadow-[0_32px_64px_-16px_rgba(37,99,235,0.25)] transition-all duration-200 hover:-translate-y-1 md:scale-105 flex flex-col overflow-hidden">
+              <div className="bg-blue-600 text-white text-xs font-bold text-center py-2 tracking-wide uppercase">
+                ⭐ Publicidad gestionada
+              </div>
+              <div className="p-7 flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Plan Ads+</h2>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-gray-500">Máxima visibilidad con publicidad gestionada</p>
+                  <Link to="/plan-ads" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1">
+                    Saber más <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex items-end gap-1 mt-2">
+                    <span className="text-4xl font-extrabold text-gray-900">33€</span>
+                    <span className="text-gray-500 text-base mb-1.5">/mes</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Sin permanencia · Cancela cuando quieras</p>
+                  <p className="text-xs text-blue-600 font-medium mt-1">💳 Incluye 30€/mes de inversión publicitaria real</p>
+                </div>
+
+                <Button
+                  id="cta-adsplus"
+                  className="w-full h-12 text-base font-bold rounded-xl mb-6 bg-blue-600 hover:bg-blue-500 text-white shadow-lg"
+                  onClick={handleAdsPlus}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</> : "Añadir publicidad →"}
+                </Button>
+
+                <ul className="space-y-2.5">
+                  {PLAN_ADSPLUS_INCLUDES.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className={i === 1 ? "font-semibold text-blue-700" : ""}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="text-sm font-semibold text-blue-700 bg-blue-50 rounded-lg p-3 mt-4">
+                  💡 El plan gratuito te hace aparecer. Ads+ te trae clientes activamente.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* ── 5. GARANTÍA ── */}
+          {/* GARANTÍA */}
           <div className="max-w-3xl mx-auto mb-8 bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
             <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Shield className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">🛡️ Sin permanencia · Cancela cuando quieras</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">🛡️ Acceso gratuito garantizado · Sin letra pequeña</h3>
               <p className="text-gray-600 text-sm">
-                No hay contratos ni letra pequeña. Si no recibes ningún contacto en los primeros 30 días,
-                <strong className="text-green-700"> te devolvemos el dinero</strong>. Sin preguntas.
+                El plan base es gratuito para siempre. Solo pagas si eliges el Plan Ads+ de publicidad gestionada.
+                Sin compromisos, sin sorpresas.
               </p>
             </div>
           </div>
 
-          {/* ── 6. POSICIONAMIENTO HONESTO ── */}
+          {/* POSICIONAMIENTO */}
           <div className="max-w-3xl mx-auto mb-12 bg-blue-50 border border-blue-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
             <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Rocket className="w-7 h-7 text-white" />
@@ -500,14 +279,14 @@ export default function PricingPlansPage() {
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">🚀 Sé de los primeros en unirte</h3>
               <p className="text-gray-600 text-sm">
-                MisAutónomos es una plataforma recién lanzada. Únete ahora y posiciónate antes que la competencia en tu zona.
+                MisAutónomos es una plataforma en crecimiento. Únete ahora gratis y posiciónate antes que la competencia en tu zona.
               </p>
             </div>
           </div>
 
-          {/* ── 7. FAQ ── */}
+          {/* FAQ */}
           <div className="max-w-2xl mx-auto mb-12">
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-6">Preguntas frecuentes sobre el pago</h3>
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-6">Preguntas frecuentes</h3>
             <div className="space-y-3">
               {FAQS.map((faq, i) => (
                 <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -532,30 +311,24 @@ export default function PricingPlansPage() {
 
           {/* Legal */}
           <p className="text-xs text-gray-400 text-center max-w-2xl mx-auto">
-          Los primeros 7 días son gratis. Tras el trial, se cobra 1€ el primer mes (cupón de bienvenida aplicado automáticamente). A partir del segundo mes, el precio normal del plan (13€/mes Visibilidad · 33€/mes Ads+). Si no cancelas antes del final del trial, no se cobra nada hasta el día 7.
-          Plan Ads+: gestión publicitaria incluida en Instagram, Facebook y TikTok. Resultados sujetos a demanda local.
+            El plan base (directorio y perfil) es gratuito e indefinido. El Plan Ads+ (33€/mes) incluye gestión publicitaria en Instagram, Facebook, TikTok, LinkedIn y Google, con 30€/mes de inversión real. Resultados sujetos a demanda local. Sin permanencia, cancela cuando quieras.
           </p>
         </div>
       </div>
 
-      {/* ── 8. STICKY CTA MÓVIL ── */}
-      {stickyVisible && !currentSubscription && (
+      {/* STICKY CTA MÓVIL */}
+      {stickyVisible && (
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 px-4 py-3 shadow-2xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))' }}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-gray-900">Plan Ads+ · 1€ el primer mes</p>
-              <p className="text-xs text-gray-400">7 días gratis · luego 33€/mes</p>
+              <p className="text-xs font-bold text-gray-900">¡Es gratis!</p>
+              <p className="text-xs text-gray-400">Sin tarjeta · Sin permanencia</p>
             </div>
             <Button
               className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 h-11 rounded-xl shadow-lg flex-shrink-0"
-              onClick={() => {
-                const btn = document.getElementById("cta-popular");
-                if (btn) btn.click();
-                else if (adsPlus) handleSelectPlan(adsPlus);
-              }}
-              disabled={isProcessing}
+              onClick={handleFreeSignup}
             >
-              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Empezar gratis →"}
+              Crear perfil gratis →
             </Button>
           </div>
         </div>

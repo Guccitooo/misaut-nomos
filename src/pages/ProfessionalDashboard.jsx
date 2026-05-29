@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import {
   MessageSquare, Users, FileText, Eye, CreditCard,
-  ArrowRight, Plus, CheckCircle2, AlertCircle, Clock,
-  ExternalLink, Sparkles, TrendingUp, Circle, Star, Gift, Megaphone
+  ArrowRight, Plus, Clock,
+  ExternalLink, Sparkles, TrendingUp, Circle, Star, Megaphone
 } from "lucide-react";
 import SEOHead from "../components/seo/SEOHead";
 import ReferralBanner from "../components/referrals/ReferralBanner";
@@ -190,12 +190,14 @@ export default function ProfessionalDashboardPage() {
   const profilePct = computeProfilePct(profile);
   const missingFields = computeMissingFields(profile);
 
-  // Suscripción
-  const hasActiveSub = subscription && (subscription.estado === 'activo' || subscription.estado === 'en_prueba');
+  // Con modelo freemium el perfil siempre está activo (sin suscripción requerida)
+  // Solo Ads+ tiene suscripción de pago
+  const hasAdsPlus = isAdsPlus(effectivePlan);
+  const hasActiveSub = true; // siempre activo en modelo freemium
   const daysLeft = subscription?.fecha_expiracion
     ? Math.ceil((new Date(subscription.fecha_expiracion) - new Date()) / (1000 * 60 * 60 * 24))
     : 0;
-  const subExpiring = hasActiveSub && daysLeft <= 7;
+  const subExpiring = hasAdsPlus && subscription && daysLeft <= 7 && daysLeft > 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 13 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
@@ -259,7 +261,7 @@ export default function ProfessionalDashboardPage() {
           </motion.div>
 
           {/* BANNER VERIFICACIÓN DE IDENTIDAD */}
-          {hasActiveSub && profile && (
+          {profile && (
             <VerificationBanner profile={profile} />
           )}
 
@@ -267,7 +269,7 @@ export default function ProfessionalDashboardPage() {
           {profile && <VerificationPromptModal profile={profile} />}
 
           {/* BANNER FOTO PRINCIPAL FALTANTE */}
-          {hasActiveSub && profile && !profile.imagen_principal && (
+          {profile && !profile.imagen_principal && (
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -290,31 +292,8 @@ export default function ProfessionalDashboardPage() {
             </motion.div>
           )}
 
-          {/* ALERTA SUSCRIPCIÓN */}
-          {!hasActiveSub && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 md:p-5 text-white shadow-md"
-            >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-bold text-base">Tu perfil no es visible</p>
-                  <p className="text-sm text-amber-100 mt-0.5">Activa tu plan para aparecer en búsquedas y recibir clientes.</p>
-                </div>
-                <Button
-                  size="sm"
-                  className="bg-white text-amber-700 hover:bg-amber-50 font-semibold flex-shrink-0"
-                  onClick={() => navigate(createPageUrl("PricingPlans"))}
-                >
-                  Ver planes
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {hasActiveSub && subExpiring && (
+          {/* ALERTA ADS+ EXPIRANDO */}
+          {subExpiring && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -322,8 +301,8 @@ export default function ProfessionalDashboardPage() {
             >
               <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">Tu plan expira en {daysLeft} {daysLeft === 1 ? "día" : "días"}</p>
-                <p className="text-xs text-amber-700">Renueva para no perder visibilidad</p>
+                <p className="text-sm font-semibold text-amber-900">Tu Plan Ads+ expira en {daysLeft} {daysLeft === 1 ? "día" : "días"}</p>
+                <p className="text-xs text-amber-700">Renueva para mantener tu publicidad activa</p>
               </div>
               <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-100"
                 onClick={() => navigate(createPageUrl("SubscriptionManagement"))}>
@@ -543,28 +522,22 @@ export default function ProfessionalDashboardPage() {
           )}
 
           {/* WIDGET REFERIDOS */}
-          {hasActiveSub && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: subscription?.plan_id === 'plan_adsplus' ? 0.42 : 0.38 }}>
-              <ReferralBanner profile={profile} />
-            </motion.div>
-          )}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <ReferralBanner profile={profile} />
+          </motion.div>
 
-          {/* ESTADO SUSCRIPCIÓN */}
-          {hasActiveSub && (
+          {/* ESTADO ADS+ */}
+          {hasAdsPlus && subscription && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
               <Card className="border-0 shadow-sm rounded-2xl bg-white cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate(createPageUrl("SubscriptionManagement"))}>
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${subscription.estado === 'en_prueba' ? 'bg-blue-100' : 'bg-green-100'}`}>
-                    <CreditCard className={`w-5 h-5 ${subscription.estado === 'en_prueba' ? 'text-blue-600' : 'text-green-600'}`} />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-100">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm">{subscription.plan_nombre}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {subscription.estado === 'en_prueba'
-                        ? `Prueba gratuita · ${daysLeft} días restantes`
-                        : `Activo · Renueva en ${daysLeft} días`}
-                    </p>
+                    <p className="font-semibold text-gray-900 text-sm">Plan Ads+</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Activo · Renueva en {daysLeft} días</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 </CardContent>

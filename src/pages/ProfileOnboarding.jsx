@@ -276,50 +276,9 @@ export default function ProfileOnboardingPage() {
 
       const existingProfile = existingProfiles[0];
 
-      // ✅ CRÍTICO: Verificar suscripción activa - El perfil DEBE ser visible si tiene suscripción válida
-      let shouldBeVisible = false;
-      let hasActiveSubscription = false;
-      
-      try {
-        const subs = await base44.entities.Subscription.filter({ user_id: user.id });
-        console.log('🔍 Suscripciones encontradas:', subs.length);
-        
-        if (subs.length > 0) {
-          const sub = subs[0];
-          const estado = sub.estado?.toLowerCase();
-          const fechaExp = new Date(sub.fecha_expiracion);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          fechaExp.setHours(0, 0, 0, 0);
-          
-          console.log('📊 Estado suscripción:', estado, 'Expira:', fechaExp.toISOString());
-          
-          // Suscripción válida = SIEMPRE visible
-          const isActiveSubscription = (
-            estado === 'activo' || 
-            estado === 'active' || 
-            estado === 'en_prueba' || 
-            estado === 'trialing' ||
-            estado === 'trial_active'
-          ) && fechaExp >= today;
-          
-          const isCanceledButValid = (
-            estado === 'cancelado' || 
-            estado === 'canceled'
-          ) && fechaExp >= today;
-          
-          hasActiveSubscription = isActiveSubscription || isCanceledButValid;
-          shouldBeVisible = hasActiveSubscription;
-          console.log('✅ Suscripción verificada:', estado, 'Activa:', hasActiveSubscription, 'Visible:', shouldBeVisible);
-        } else {
-          // Sin suscripción = NO visible pero seguimos guardando el perfil
-          shouldBeVisible = false;
-          console.log('⚠️ Sin suscripción encontrada - Perfil guardado pero NO visible');
-        }
-      } catch (e) {
-        console.log('Error verificando suscripción:', e);
-        shouldBeVisible = false;
-      }
+      // Con el modelo freemium el perfil es visible directamente al completar el onboarding
+      const shouldBeVisible = true;
+      const hasActiveSubscription = true;
 
       const profileData = {
         user_id: user.id,
@@ -351,8 +310,9 @@ export default function ProfileOnboardingPage() {
         price_range: "€€",
         average_rating: 0,
         total_reviews: 0,
-        estado_perfil: "pendiente",
-        visible_en_busqueda: false,
+        estado_perfil: "activo",
+        visible_en_busqueda: true,
+        fecha_publicacion: new Date().toISOString(),
         onboarding_completed: true,
         acepta_terminos: formData.acepta_terminos,
         acepta_politica_privacidad: formData.acepta_politica_privacidad,
@@ -381,48 +341,26 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
-      // ✅ Si tiene suscripción activa (pagó antes del onboarding), activar perfil inmediatamente
-      if (hasActiveSubscription) {
-        try {
-          // Obtener el perfil recién creado/actualizado
-          const updatedProfiles = await base44.entities.ProfessionalProfile.filter({ user_id: user.id });
-          if (updatedProfiles.length > 0) {
-            await base44.entities.ProfessionalProfile.update(updatedProfiles[0].id, {
-              visible_en_busqueda: true,
-              estado_perfil: 'activo',
-              fecha_publicacion: new Date().toISOString()
-            });
-          }
-        } catch (activateError) {
-          console.log('⚠️ Error activando perfil:', activateError);
-        }
-      }
+      // El perfil ya se crea activo y visible directamente (modelo freemium)
 
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
 
-      // ✅ AUTO-RESUME: Si venía de un plan elegido en /precios, retomar el checkout
+      // Si venía de Ads+, retomar checkout
       const pendingPlanId = sessionStorage.getItem('pendingPlanId');
-      if (pendingPlanId) {
+      if (pendingPlanId === 'plan_adsplus') {
         sessionStorage.removeItem('pendingPlanId');
         sessionStorage.removeItem('pendingPlanPrice');
         try {
           const checkoutRes = await base44.functions.invoke('createCheckoutSession', {
-            planId: pendingPlanId,
+            planId: 'plan_adsplus',
           });
           if (checkoutRes.data?.url) {
             window.location.href = checkoutRes.data.url;
             return;
           }
-          throw new Error(checkoutRes.data?.error || 'No se pudo crear la sesión de pago.');
         } catch (checkoutErr) {
           console.error('Auto-resume checkout failed:', checkoutErr);
-          toast.error('No pudimos iniciar el pago. Te llevamos a planes para que completes la suscripción.', { duration: 4000 });
-          sessionStorage.setItem('pendingPlanId', pendingPlanId);
-          setTimeout(() => {
-            navigate(createPageUrl("PricingPlans") + "?retry=" + encodeURIComponent(pendingPlanId));
-          }, 1500);
-          return;
         }
       }
 
@@ -477,18 +415,10 @@ export default function ProfileOnboardingPage() {
         });
       }).catch(() => {});
 
-      if (hasActiveSubscription) {
-        toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", { duration: 5000 });
-        setTimeout(() => {
-          navigate(createPageUrl("ProfessionalDashboard"));
-        }, 2000);
-      } else {
-        // Sin suscripción → ir a precios para pagar
-        toast.warning("Perfil guardado. Elige un plan para activar tu visibilidad.", { duration: 4000 });
-        setTimeout(() => {
-          navigate(createPageUrl("PricingPlans") + "?from=onboarding");
-        }, 1500);
-      }
+      toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", { duration: 5000 });
+      setTimeout(() => {
+        navigate(createPageUrl("ProfessionalDashboard"));
+      }, 2000);
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Error al guardar el perfil: " + error.message);
