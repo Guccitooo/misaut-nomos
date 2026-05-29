@@ -53,7 +53,9 @@ export default function SearchFilters({
         </div>
         {/* Mobile: native <select> — iOS system picker, zero animation */}
         <div className="md:hidden w-full relative">
+          <label htmlFor="select-categoria-mobile" className="sr-only">Categoría</label>
           <select
+            id="select-categoria-mobile"
             value={filters.category}
             onChange={(e) => onFilterChange({ ...filters, category: e.target.value })}
             className="w-full appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-3 pr-10 text-slate-900 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -85,7 +87,9 @@ export default function SearchFilters({
         </div>
         {/* Mobile: native <select> */}
         <div className="md:hidden w-full relative">
+          <label htmlFor="select-provincia-mobile" className="sr-only">Provincia</label>
           <select
+            id="select-provincia-mobile"
             value={filters.provincia}
             onChange={(e) => onFilterChange({ ...filters, provincia: e.target.value, ciudad: "all" })}
             className="w-full appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-3 pr-10 text-slate-900 text-base font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -115,7 +119,9 @@ export default function SearchFilters({
         </div>
         {/* Mobile: native <select> */}
         <div className="md:hidden w-full relative">
+          <label htmlFor="select-ciudad-mobile" className="sr-only">Ciudad</label>
           <select
+            id="select-ciudad-mobile"
             value={filters.ciudad}
             onChange={(e) => onFilterChange({ ...filters, ciudad: e.target.value })}
             disabled={filters.provincia === "all"}
