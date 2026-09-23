@@ -1,0 +1,44 @@
+{
+  "name": "Expirar suscripciones caducadas (Diario)",
+  "description": "Recorre suscripciones en estado 'activo' o 'en_prueba' con fecha_expiracion pasada y las marca como 'expirado'. Detecta y corrige trials an\u00f3malos (>90 d\u00edas). Respeta gifted_until. Intenta sincronizar con Stripe antes de expirar si tiene renovaci\u00f3n autom\u00e1tica.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 2 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "expirar_suscripciones_caducadas_diario",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "expireSubscriptions",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "expireSubscriptions"
+  }
+}

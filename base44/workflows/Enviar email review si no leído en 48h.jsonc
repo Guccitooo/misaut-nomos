@@ -1,0 +1,44 @@
+{
+  "name": "Enviar email review si no le\u00eddo en 48h",
+  "description": "Env\u00eda email de valoraci\u00f3n solo si han pasado 48h y el cliente no ley\u00f3 el mensaje in-app. Tambi\u00e9n env\u00eda mensajes de disculpa a clientes que recibieron spam.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 12 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "enviar_email_review_si_no_le_do_en_48h",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendReviewReminders",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "sendReviewReminders"
+  }
+}
