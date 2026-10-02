@@ -373,7 +373,7 @@ function beatAlpha(t, [a, b]) {
   $('cityStrip').style.fontSize = px(PORT ? 96 : 124);
   $('cityStrip').style.gap = px(28);
   $('cityStrip').style.top = '50%';
-  $('counter').style.fontSize = px(PORT ? 360 : 520);
+  $('counter').style.fontSize = px(PORT ? 230 : 520);
   $('counter').style.top = '50%'; $('counter').style.left = '50%';
   $('counterLabel').style.fontSize = px(44);
   $('counterLabel').style.top = '50%'; $('counterLabel').style.left = '50%';
@@ -414,7 +414,7 @@ function beatAlpha(t, [a, b]) {
   $('badge').style.padding = `${px(20)} ${px(38)}`;
   $('badge').style.fontSize = px(44);
   $('badge').style.top = px(-48); $('badge').style.right = px(56);
-  $('rankTag').style.fontSize = px(150);
+  $('rankTag').style.fontSize = px(PORT ? 104 : 150);
   $('rankTag').style.top = '50%'; $('rankTag').style.left = '50%';
 
   // B6 messages
@@ -423,7 +423,7 @@ function beatAlpha(t, [a, b]) {
   for (const id of ['m1', 'm2', 'm3']) {
     const e = $(id);
     e.style.padding = `${px(32)} ${px(48)}`;
-    e.style.fontSize = px(PORT ? 54 : 66);
+    e.style.fontSize = px(PORT ? 44 : 66);
   }
   $('msgCount').style.width = px(116); $('msgCount').style.height = px(116);
   $('msgCount').style.fontSize = px(60);
@@ -447,11 +447,11 @@ function beatAlpha(t, [a, b]) {
   $('priceFine').style.marginTop = px(34);
   // B9 logo
   $('logoWrap').style.top = '50%'; $('logoWrap').style.left = '50%';
-  $('logo').style.fontSize = px(PORT ? 132 : 172);
+  $('logo').style.fontSize = px(PORT ? 104 : 172);
   $('logo').style.gap = px(26);
-  $('dot').style.width = px(PORT ? 112 : 146);
-  $('dot').style.height = px(PORT ? 112 : 146);
-  $('url').style.fontSize = px(52);
+  $('dot').style.width = px(PORT ? 92 : 146);
+  $('dot').style.height = px(PORT ? 92 : 146);
+  $('url').style.fontSize = px(PORT ? 42 : 52);
   $('url').style.marginTop = px(46);
   // furniture: corner ticks, brand kicker, progress hairline
   const m = PORT ? 54 : 76, tl = 46, tw = 2;
@@ -604,7 +604,7 @@ function setTime(t) {
       // #1 tag
       const rp = pop(t, 7.30, .45);
       T($('rankTag'), {
-        x: PORT ? -380 : -740, y: lerp(-230, -330, grow),
+        x: PORT ? -300 : -740, y: lerp(-230, -330, grow),
         s: cl(rp, 0, 1.1), o: cl(rp * 3) * (1 - pr(t, 9.6, 10.1)) * (1 - grow * .25),
       });
       // detail inside the hero card: rating counts up, whatsapp button pulses
@@ -623,7 +623,7 @@ function setTime(t) {
   {
     const a = beatAlpha(t, B.b6);
     if (a > 0) {
-      T($('msgs'), { x: PORT ? -40 : -120, y: 0 });
+      T($('msgs'), { x: PORT ? 0 : -120, y: 0 });
       const at = [10.45, 11.00, 11.55];
       ['m1', 'm2', 'm3'].forEach((id, i) => {
         const p = pop(t, at[i], .52), e = $(id);
