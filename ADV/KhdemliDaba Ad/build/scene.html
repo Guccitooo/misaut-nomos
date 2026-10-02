@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>KhdemliDaba Ad — Concept A (darija)</title>
+<style>
+  /* Brand fonts, self-hosted locally (same families the product uses). */
+  @font-face { font-family: Tajawal; src: url('fonts/Tajawal-400.ttf'); font-weight: 400; }
+  @font-face { font-family: Tajawal; src: url('fonts/Tajawal-700.ttf'); font-weight: 700; }
+  @font-face { font-family: Tajawal; src: url('fonts/Tajawal-800.ttf'); font-weight: 800; }
+  @font-face { font-family: InterBrand; src: url('fonts/Inter-700.ttf'); font-weight: 700; }
+  @font-face { font-family: InterBrand; src: url('fonts/Inter-800.ttf'); font-weight: 800; }
+
+  :root {
+    --orange: #E8590C;
+    --deep:   #C1410C;
+    --cream:  #FCFAF7;
+    --paper:  #F6F0E6;
+    --ink:    #141210;
+    --dark:   #15110D;
+    --muted:  #A79C8E;
+    --line:   #2A231C;
+    --wa:     #25D366;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #000; overflow: hidden; }
+
+  #stage {
+    position: relative; overflow: hidden;
+    background: var(--dark);
+    font-family: Tajawal, sans-serif;
+    color: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- atmosphere ---------- */
+  #glowA, #glowB {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    will-change: transform, opacity;
+  }
+  #glowA { background: radial-gradient(circle, rgba(232,89,12,.50) 0%, rgba(232,89,12,0) 62%); }
+  #glowB { background: radial-gradient(circle, rgba(193,65,12,.34) 0%, rgba(193,65,12,0) 66%); }
+
+  #vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 46%, rgba(0,0,0,.72) 100%);
+  }
+  #gridlines {
+    position: absolute; inset: -2%; pointer-events: none; opacity: .5;
+  }
+  #furniture { position: absolute; inset: 0; pointer-events: none; }
+  .tick { position: absolute; border-color: rgba(232,89,12,.55); border-style: solid; border-width: 0; }
+  #kicker { position: absolute; font-family: InterBrand, sans-serif; font-weight: 700;
+            color: rgba(167,156,142,.55); direction: ltr; letter-spacing: .02em; }
+  #progTrack { position: absolute; background: rgba(42,35,28,.9); overflow: hidden; }
+  #progFill { height: 100%; width: 100%; background: var(--orange); transform-origin: left center; }
+  #scan {
+    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  }
+  #grain {
+    position: absolute; inset: 0; pointer-events: none; opacity: .055;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .beat { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .col  { display: flex; flex-direction: column; align-items: center; }
+
+  /* ---------- B1 / B2 search ---------- */
+  #searchWrap { position: relative; display: flex; align-items: center; gap: .6em; }
+  #field {
+    display: flex; align-items: center; gap: .55em;
+    border: 1px solid var(--line); background: rgba(255,255,255,.028);
+    border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 0 0 0 rgba(232,89,12,0);
+  }
+  #ghost { color: #6E6458; }
+  #typed { color: var(--paper); font-weight: 700; }
+  #caret { background: var(--orange); border-radius: 2px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: .4em;
+    border: 1px solid var(--deep); color: var(--paper); font-weight: 700;
+    background: rgba(232,89,12,.14); border-radius: 999px; white-space: nowrap;
+  }
+  .pill i { display: block; border-radius: 50%; background: var(--orange); }
+  #pills { position: absolute; display: flex; gap: .5em; justify-content: center; }
+
+  /* ---------- B3 city rush ---------- */
+  #cityStrip { position: absolute; display: flex; align-items: center; white-space: nowrap; }
+  .city { font-weight: 800; color: var(--paper); opacity: .92; }
+  .citySep { color: var(--orange); }
+  #counter {
+    position: absolute; font-family: InterBrand, sans-serif; font-weight: 800;
+    color: rgba(246,240,230,.1); letter-spacing: -.03em; direction: ltr; white-space: nowrap;
+  }
+  #counterLabel { position: absolute; color: var(--muted); font-weight: 700; }
+
+  /* ---------- B4 / B5 cards ---------- */
+  #grid { position: absolute; display: grid; }
+  .ghostCard {
+    border: 1px solid var(--line); background: rgba(255,255,255,.022);
+    border-radius: 18px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .ghostCard .l1, .ghostCard .l2, .ghostCard .l3 { background: rgba(246,240,230,.1); border-radius: 99px; }
+  .ghostCard .av { background: rgba(246,240,230,.07); border-radius: 50%; }
+
+  #card {
+    position: absolute; border-radius: 22px; background: #1D1811;
+    border: 1px solid var(--line); overflow: visible;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  #cardGlow { position: absolute; inset: 0; border-radius: 22px; pointer-events: none; }
+  #cardRow { display: flex; align-items: center; }
+  #mono {
+    border-radius: 50%; background: var(--orange); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800;
+    flex: 0 0 auto;
+  }
+  #cardText { display: flex; flex-direction: column; }
+  #cardName { font-weight: 800; color: var(--paper); white-space: nowrap; }
+  #cardMeta { font-weight: 700; color: var(--muted); white-space: nowrap; }
+  #stars { display: flex; align-items: center; gap: .35em; color: var(--orange); font-weight: 800; direction: ltr; }
+  #badge {
+    position: absolute; background: var(--orange); color: #fff; font-weight: 800;
+    border-radius: 999px; white-space: nowrap; box-shadow: 0 10px 40px rgba(232,89,12,.45);
+  }
+  #waBtn {
+    display: flex; align-items: center; justify-content: center; gap: .45em;
+    background: var(--wa); color: #06281A; font-weight: 800; border-radius: 999px; white-space: nowrap;
+  }
+  #rankTag {
+    position: absolute; font-family: InterBrand, sans-serif; font-weight: 800;
+    color: var(--orange); direction: ltr;
+  }
+
+  /* ---------- B6 whatsapp ---------- */
+  #msgs { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
+  .msg {
+    background: #1F1A13; border: 1px solid var(--line); border-radius: 18px 18px 18px 6px;
+    color: var(--paper); font-weight: 700; white-space: nowrap; position: relative;
+  }
+  .msg b { color: var(--wa); font-weight: 800; }
+  #msgCount {
+    position: absolute; background: var(--wa); color: #06281A; font-weight: 800;
+    border-radius: 999px; display: flex; align-items: center; justify-content: center; direction: ltr;
+  }
+
+  /* ---------- B7 slots ---------- */
+  #slots { position: absolute; display: flex; gap: 1em; }
+  .slot {
+    border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.022);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; position: relative;
+  }
+  .slot.live { border-color: var(--orange); background: rgba(232,89,12,.16); color: var(--paper); }
+  .slot.dead { color: #5C5247; }
+  .slot .strike { position: absolute; height: 2px; background: #5C5247; width: 68%; }
+  #slotTitle { position: absolute; font-weight: 800; text-align: center; line-height: 1.12; }
+
+  /* ---------- B8 price ---------- */
+  #priceWrap { position: absolute; display: flex; flex-direction: column; align-items: center; }
+  #price { display: flex; align-items: baseline; gap: .18em; font-weight: 800; line-height: 1; }
+  #priceNum { font-family: InterBrand, sans-serif; letter-spacing: -.04em; color: var(--paper); }
+  #priceCur { color: var(--orange); }
+  #priceSub { font-weight: 700; color: var(--paper); opacity: .92; }
+  #priceFine { font-weight: 400; color: var(--muted); }
+
+  /* ---------- B9 logo ---------- */
+  #logoWrap { position: absolute; display: flex; flex-direction: column; align-items: center; }
+  #logo { display: flex; align-items: center; direction: ltr; font-family: InterBrand, sans-serif; font-weight: 800; letter-spacing: -.02em; }
+  #dot { border-radius: 50%; background: var(--orange); flex: 0 0 auto; }
+  #w1 { color: var(--paper); }
+  #w2 { color: var(--orange); }
+  #url { font-family: InterBrand, sans-serif; font-weight: 700; color: var(--muted); direction: ltr; }
+
+  /* ---------- B10 end card ---------- */
+  #end { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; }
+  #endIn { display: flex; flex-direction: column; align-items: center; direction: ltr; font-family: InterBrand, sans-serif; }
+  #endTop { color: #8A8A8A; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; }
+  #endName { color: #fff; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+  #endRule { height: 2px; background: var(--orange); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="bx1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="bx1b" stdDeviation="0 0"/></filter>
+  <filter id="bx2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="bx2b" stdDeviation="0 0"/></filter>
+  <filter id="bx3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="bx3b" stdDeviation="0 0"/></filter>
+  <filter id="bx4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur id="bx4b" stdDeviation="0 0"/></filter>
+</svg>
+
+<div id="stage">
+  <div id="glowA"></div>
+  <div id="glowB"></div>
+  <div id="gridlines"></div>
+
+  <!-- B1 + B2 : the search -->
+  <div class="beat" id="b12">
+    <div id="searchWrap">
+      <div id="field">
+        <span id="caret"></span>
+        <span id="ghost">قلّب على محترف…</span>
+        <span id="typed"></span>
+      </div>
+      <div id="pills">
+        <span class="pill" id="pill1"><i></i><span>كهربائي</span></span>
+        <span class="pill" id="pill2"><i></i><span>الدار البيضاء</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- B3 : the whole country searching -->
+  <div class="beat" id="b3">
+    <div id="counter">1 345</div>
+    <div id="counterLabel">اتصال واصل لمحترفين</div>
+    <div id="cityStrip">
+      <span class="city">الدار البيضاء</span><span class="citySep">·</span><span class="city">مراكش</span><span class="citySep">·</span><span class="city">الناظور</span><span class="citySep">·</span><span class="city">الرباط</span><span class="citySep">·</span><span class="city">أكادير</span><span class="citySep">·</span><span class="city">طنجة</span><span class="citySep">·</span><span class="city">مكناس</span><span class="citySep">·</span><span class="city">فاس</span><span class="citySep">·</span><span class="city">وجدة</span><span class="citySep">·</span><span class="city">تطوان</span>
+    </div>
+  </div>
+
+  <!-- B4 + B5 : the rank and the card -->
+  <div class="beat" id="b45">
+    <div id="grid">
+      <div class="ghostCard"><div class="av"></div><div class="l1"></div><div class="l2"></div></div>
+      <div class="ghostCard"><div class="av"></div><div class="l1"></div><div class="l2"></div></div>
+      <div class="ghostCard"><div class="av"></div><div class="l1"></div><div class="l2"></div></div>
+      <div class="ghostCard"><div class="av"></div><div class="l1"></div><div class="l2"></div></div>
+      <div class="ghostCard"><div class="av"></div><div class="l1"></div><div class="l2"></div></div>
+    </div>
+    <div id="rankTag">#1</div>
+    <div id="card">
+      <div id="cardGlow"></div>
+      <div id="cardRow">
+        <div id="mono">ك</div>
+        <div id="cardText">
+          <div id="cardName">الملف ديالك</div>
+          <div id="cardMeta">كهربائي · الدار البيضاء</div>
+          <div id="stars"><span>★★★★★</span><span id="rating">4,8</span></div>
+        </div>
+      </div>
+      <div id="waBtn"><span>واتساب</span></div>
+      <div id="badge">في الواجهة</div>
+    </div>
+  </div>
+
+  <!-- B6 : the phone starts ringing -->
+  <div class="beat" id="b6">
+    <div id="msgs">
+      <div class="msg" id="m1">السلام، واش كاين شي حد <b>دابا</b>؟</div>
+      <div class="msg" id="m2">بشحال الخدمة؟</div>
+      <div class="msg" id="m3">عطيني العنوان، جاي دابا</div>
+    </div>
+    <div id="msgCount">3</div>
+  </div>
+
+  <!-- B7 : scarcity -->
+  <div class="beat" id="b7">
+    <div id="slotTitle">غير <span style="color:var(--orange)">3 بلايص</span><br>ف كل مدينة</div>
+    <div id="slots">
+      <div class="slot dead" id="s1"><span>—</span><span class="strike"></span></div>
+      <div class="slot live" id="s2">ديالك</div>
+      <div class="slot dead" id="s3"><span>—</span><span class="strike"></span></div>
+    </div>
+  </div>
+
+  <!-- B8 : the price -->
+  <div class="beat" id="b8">
+    <div id="priceWrap">
+      <div id="price"><span id="priceNum">50</span><span id="priceCur">درهم</span></div>
+      <div id="priceSub">فالشهر</div>
+      <div id="priceFine">بلا أي التزام · تقدر توقف فأي وقت</div>
+    </div>
+  </div>
+
+  <!-- B9 : the brand -->
+  <div class="beat" id="b9">
+    <div id="logoWrap">
+      <div id="logo"><span id="dot"></span><span id="w1">khdemli</span><span id="w2">daba</span></div>
+      <div id="url">khdemlidaba.ma</div>
+    </div>
+  </div>
+
+  <div id="furniture">
+    <div class="tick" id="tk1"></div><div class="tick" id="tk2"></div>
+    <div class="tick" id="tk3"></div><div class="tick" id="tk4"></div>
+    <div id="kicker">khdemlidaba.ma</div>
+    <div id="progTrack"><div id="progFill"></div></div>
+  </div>
+  <div id="scan"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+
+  <!-- B10 : end card -->
+  <div id="end">
+    <div id="endIn">
+      <div id="endTop">made by</div>
+      <div id="endRule"></div>
+      <div id="endName">riccardo bosso</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// KhdemliDaba — Concept A "Daba", darija cut.
+// Deterministic timeline: setTime(seconds) paints one exact frame, so the
+// renderer can step frame by frame and the result is identical every run.
+// ---------------------------------------------------------------------------
+const DUR = 20.0;                 // 18.0 s ad + 2.0 s end card
+const P = new URLSearchParams(location.search);
+const W = +(P.get('w') || 1920), H = +(P.get('h') || 1080);
+const PORT = H > W;
+const u = PORT ? W / 1080 * 1.08 : H / 1080;   // one design unit (px)
+
+const S = document.getElementById('stage');
+S.style.width = W + 'px'; S.style.height = H + 'px';
+
+const $ = id => document.getElementById(id);
+const px = v => (v * u) + 'px';
+
+// ---- easing -------------------------------------------------------------
+const cl   = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const pr   = (t, a, b) => cl((t - a) / (b - a));           // 0..1 progress
+const oExpo = p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p);
+const oCube = p => 1 - Math.pow(1 - p, 3);
+const oQuint= p => 1 - Math.pow(1 - p, 5);
+const ioCube= p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const oBack = p => { const c = 1.9; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const lerp  = (a, b, p) => a + (b - a) * p;
+// pop(t,at,len): a quick overshoot settle used on every landing
+const pop   = (t, at, len = .5) => oBack(pr(t, at, at + len));
+
+// ---- beats --------------------------------------------------------------
+const B = {
+  b12: [0.00,  3.60],
+  b3:  [3.60,  5.40],
+  b45: [5.40, 10.20],
+  b6:  [10.20, 12.40],
+  b7:  [12.40, 14.60],
+  b8:  [14.60, 16.60],
+  b9:  [16.60, 18.00],
+};
+const XF = 0.18;   // cross-fade on both sides of a beat
+
+function beatAlpha(t, [a, b]) {
+  if (t < a - XF || t > b + XF) return 0;
+  return Math.min(pr(t, a - XF, a + XF * .4), 1 - pr(t, b - XF * .4, b + XF));
+}
+
+// ---- static sizing (done once; nothing here depends on time) ------------
+(function layout() {
+  $('glowA').style.width = px(1500); $('glowA').style.height = px(1500);
+  $('glowB').style.width = px(1150); $('glowB').style.height = px(1150);
+
+  $('gridlines').style.background =
+    `repeating-linear-gradient(0deg, rgba(42,35,28,.55) 0 1px, transparent 1px ${px(86)}),
+     repeating-linear-gradient(90deg, rgba(42,35,28,.55) 0 1px, transparent 1px ${px(86)})`;
+  $('scan').style.background =
+    `repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px ${px(3)})`;
+
+  // B1/B2
+  $('field').style.padding = `${px(34)} ${px(56)}`;
+  $('field').style.fontSize = px(64);
+  $('caret').style.width = px(5); $('caret').style.height = px(72);
+  $('pills').style.fontSize = px(64);
+  $('pills').style.top = px(-6); $('pills').style.left = '50%';
+  for (const id of ['pill1', 'pill2']) {
+    const e = $(id);
+    e.style.padding = `${px(26)} ${px(48)}`;
+    e.querySelector('i').style.width = px(20);
+    e.querySelector('i').style.height = px(20);
+  }
+  // B3
+  $('cityStrip').style.fontSize = px(PORT ? 96 : 124);
+  $('cityStrip').style.gap = px(28);
+  $('cityStrip').style.top = '50%';
+  $('counter').style.fontSize = px(PORT ? 360 : 520);
+  $('counter').style.top = '50%'; $('counter').style.left = '50%';
+  $('counterLabel').style.fontSize = px(44);
+  $('counterLabel').style.top = '50%'; $('counterLabel').style.left = '50%';
+
+  // B4 grid of other profiles
+  const gw = PORT ? 1000 : 1680, gh = 680;
+  const g = $('grid');
+  g.style.width = px(gw); g.style.height = px(gh);
+  g.style.gridTemplateColumns = PORT ? '1fr 1fr' : '1fr 1fr 1fr';
+  g.style.gap = px(34);
+  g.style.top = '50%'; g.style.left = '50%';
+  for (const c of document.querySelectorAll('.ghostCard')) {
+    c.style.padding = px(28);
+    c.querySelector('.av').style.width = px(88);
+    c.querySelector('.av').style.height = px(88);
+    c.querySelector('.l1').style.height = px(16);
+    c.querySelector('.l1').style.width = '72%';
+    c.querySelector('.l2').style.height = px(12);
+    c.querySelector('.l2').style.width = '46%';
+  }
+  // B5 the card
+  const c = $('card');
+  c.style.width = px(PORT ? 960 : 1300);
+  c.style.height = px(PORT ? 500 : 470);
+  c.style.padding = px(60);
+  c.style.gap = px(44);
+  c.style.top = '50%'; c.style.left = '50%';
+  $('cardRow').style.gap = px(34);
+  $('mono').style.width = px(164); $('mono').style.height = px(164);
+  $('mono').style.fontSize = px(80);
+  $('cardName').style.fontSize = px(86);
+  $('cardMeta').style.fontSize = px(52);
+  $('cardMeta').style.marginTop = px(8);
+  $('stars').style.fontSize = px(48);
+  $('stars').style.marginTop = px(16);
+  $('waBtn').style.padding = `${px(30)} ${px(48)}`;
+  $('waBtn').style.fontSize = px(50);
+  $('badge').style.padding = `${px(20)} ${px(38)}`;
+  $('badge').style.fontSize = px(44);
+  $('badge').style.top = px(-48); $('badge').style.right = px(56);
+  $('rankTag').style.fontSize = px(150);
+  $('rankTag').style.top = '50%'; $('rankTag').style.left = '50%';
+
+  // B6 messages
+  $('msgs').style.gap = px(26);
+  $('msgs').style.top = '50%'; $('msgs').style.left = '50%';
+  for (const id of ['m1', 'm2', 'm3']) {
+    const e = $(id);
+    e.style.padding = `${px(32)} ${px(48)}`;
+    e.style.fontSize = px(PORT ? 54 : 66);
+  }
+  $('msgCount').style.width = px(116); $('msgCount').style.height = px(116);
+  $('msgCount').style.fontSize = px(60);
+  $('msgCount').style.top = '50%'; $('msgCount').style.left = '50%';
+
+  // B7 slots
+  $('slotTitle').style.fontSize = px(PORT ? 112 : 140);
+  $('slotTitle').style.top = '50%'; $('slotTitle').style.left = '50%';
+  $('slots').style.top = '50%'; $('slots').style.left = '50%';
+  for (const id of ['s1', 's2', 's3']) {
+    const e = $(id);
+    e.style.width = px(290); e.style.height = px(196); e.style.fontSize = px(56);
+  }
+  // B8 price
+  $('priceWrap').style.top = '50%'; $('priceWrap').style.left = '50%';
+  $('priceNum').style.fontSize = px(PORT ? 380 : 520);
+  $('priceCur').style.fontSize = px(PORT ? 130 : 170);
+  $('priceSub').style.fontSize = px(88);
+  $('priceSub').style.marginTop = px(8);
+  $('priceFine').style.fontSize = px(42);
+  $('priceFine').style.marginTop = px(34);
+  // B9 logo
+  $('logoWrap').style.top = '50%'; $('logoWrap').style.left = '50%';
+  $('logo').style.fontSize = px(PORT ? 132 : 172);
+  $('logo').style.gap = px(26);
+  $('dot').style.width = px(PORT ? 112 : 146);
+  $('dot').style.height = px(PORT ? 112 : 146);
+  $('url').style.fontSize = px(52);
+  $('url').style.marginTop = px(46);
+  // furniture: corner ticks, brand kicker, progress hairline
+  const m = PORT ? 54 : 76, tl = 46, tw = 2;
+  const ticks = [['tk1', 'top left', 'top left'], ['tk2', 'top right', 'top right'],
+                 ['tk3', 'bottom left', 'bottom left'], ['tk4', 'bottom right', 'bottom right']];
+  for (const [id, pos] of ticks) {
+    const e = $(id), [v, h] = pos.split(' ');
+    e.style.width = px(tl); e.style.height = px(tl);
+    e.style[v] = px(m); e.style[h] = px(m);
+    e.style[`border${v[0].toUpperCase() + v.slice(1)}Width`] = px(tw);
+    e.style[`border${h[0].toUpperCase() + h.slice(1)}Width`] = px(tw);
+  }
+  $('kicker').style.fontSize = px(30);
+  $('kicker').style.left = px(m + 70); $('kicker').style.top = px(m + 6);
+  $('progTrack').style.height = px(3);
+  $('progTrack').style.left = px(m); $('progTrack').style.right = px(m);
+  $('progTrack').style.bottom = px(m - 16);
+
+  // B10 end card
+  $('endTop').style.fontSize = px(38);
+  $('endName').style.fontSize = px(PORT ? 110 : 132);
+  $('endRule').style.width = px(140);
+  $('endRule').style.margin = `${px(30)} 0 ${px(26)}`;
+})();
+
+// ---- helpers ------------------------------------------------------------
+function T(el, { x = 0, y = 0, s = 1, r = 0, o = 1, b = 0, f = null, origin = null }) {
+  el.style.opacity = o;
+  el.style.transform =
+    `translate(-50%,-50%) translate(${x * u}px,${y * u}px) scale(${s}) rotate(${r}deg)`;
+  el.style.filter = f ? `url(#${f})` : (b ? `blur(${b * u}px)` : 'none');
+  if (origin) el.style.transformOrigin = origin;
+}
+function dirBlur(id, amount, vertical = false) {
+  const v = Math.max(0, amount) * u;
+  $(id).setAttribute('stdDeviation', vertical ? `0 ${v}` : `${v} 0`);
+}
+const nf = new Intl.NumberFormat('fr-FR');
+
+// ---- the frame ----------------------------------------------------------
+function setTime(t) {
+  t = cl(t, 0, DUR);
+
+  // ===== atmosphere: a slow orange drift, never still =====
+  const drift = t / DUR;
+  $('glowA').style.left = (50 + Math.sin(t * .42) * 14) + '%';
+  $('glowA').style.top  = (46 + Math.cos(t * .33) * 12) + '%';
+  $('glowA').style.transform = 'translate(-50%,-50%)';
+  $('glowA').style.opacity = 0.30 + 0.16 * Math.sin(t * .8);
+  $('glowB').style.left = (38 - Math.cos(t * .29) * 18) + '%';
+  $('glowB').style.top  = (58 + Math.sin(t * .37) * 16) + '%';
+  $('glowB').style.transform = 'translate(-50%,-50%)';
+  $('glowB').style.opacity = 0.22 + 0.12 * Math.cos(t * .62);
+  // the grid breathes and pushes left: the stage is moving even in silence
+  $('gridlines').style.opacity = (t > 18 ? 0 : 0.24 + 0.1 * Math.sin(t * 1.1));
+  $('gridlines').style.transform = `translate(${-(drift * 60) * u}px, ${-(drift * 26) * u}px)`;
+  $('grain').style.transform = `translate(${(t * 37) % 11}px, ${(t * 53) % 13}px)`;
+  $('scan').style.opacity = t > 18 ? 0 : .5;
+
+  // furniture appears once the ad has "booted" and leaves before the end card
+  {
+    const fo = cl(pr(t, 1.6, 2.4)) * (1 - pr(t, 17.5, 17.95));
+    $('furniture').style.opacity = fo;
+    for (const id of ['tk1', 'tk2', 'tk3', 'tk4']) {
+      $(id).style.opacity = .5 + .35 * Math.sin(t * 1.6 + id.charCodeAt(2));
+    }
+    $('progFill').style.transform = `scaleX(${cl(t / 18)})`;
+    $('kicker').style.opacity = cl(pr(t, 3.4, 4.0)) * (1 - pr(t, 16.5, 16.9));
+  }
+
+  for (const k in B) $(k).style.opacity = beatAlpha(t, B[k]);
+
+  // ===== B1 + B2 : somebody is searching =====
+  {
+    const a = beatAlpha(t, B.b12);
+    if (a > 0) {
+      // the field itself: rises in, then hands over to the pills
+      const inP = oExpo(pr(t, 0.10, 1.05));
+      const out = pr(t, 2.10, 2.55);
+      const f = $('field');
+      f.style.transform = `translateY(${lerp(34, 0, inP) * u}px) scale(${lerp(.965, 1, inP)})`;
+      f.style.opacity = inP * (1 - out);
+      f.style.boxShadow = `0 ${px(30)} ${px(90)} rgba(232,89,12,${.10 + .14 * Math.sin(t * 2.4) ** 2})`;
+      f.style.borderColor = t > 1.35 ? 'rgba(232,89,12,.55)' : 'var(--line)';
+
+      // typing, letter by letter, in darija
+      const word = 'كهربائي';
+      const n = Math.floor(cl(pr(t, 1.30, 2.05)) * word.length);
+      $('typed').textContent = word.slice(0, n);
+      $('ghost').style.opacity = t < 1.22 ? (1 - pr(t, 1.00, 1.22)) : 0;
+      $('caret').style.opacity = (t < 2.05 && (t * 2.6 % 1) < .55) ? 1 : 0;
+
+      // the two pills land, each with its own overshoot
+      const p1 = pop(t, 2.18, .46), p2 = pop(t, 2.62, .46);
+      const slide = oQuint(pr(t, 2.95, 3.58));         // both drift left, blurred, into B3
+      $('pills').style.opacity = cl(pr(t, 2.18, 2.34));
+      $('pills').style.transform =
+        `translate(-50%,-50%) translate(${-slide * 420 * u}px,0)`;
+      dirBlur('bx1b', slide * 26);
+      $('pills').style.filter = slide > .01 ? 'url(#bx1)' : 'none';
+      $('pill1').style.transform = `scale(${cl(p1, 0, 1.08)})`;
+      $('pill1').style.opacity = cl(p1 * 3);
+      $('pill2').style.transform = `scale(${cl(p2, 0, 1.08)})`;
+      $('pill2').style.opacity = cl(p2 * 3);
+    }
+  }
+
+  // ===== B3 : the whole country is searching =====
+  {
+    const a = beatAlpha(t, B.b3);
+    if (a > 0) {
+      const p = pr(t, 3.50, 5.45);
+      // the city strip flies right-to-left at speed, with real directional blur
+      const speed = 1 - Math.pow(p, 2) * .35;
+      const x = lerp(900, -2600, ioCube(p));
+      T($('cityStrip'), { x, y: 0, f: 'bx2' });
+      $('cityStrip').style.left = '50%';
+      dirBlur('bx2b', 10 + 30 * speed * (1 - Math.abs(p - .5) * .8));
+      // the ghost counter behind it, counting up to the real figure
+      const cp = oExpo(pr(t, 3.70, 5.10));
+      $('counter').textContent = nf.format(Math.round(cp * 1345)).replace(/ |,/g, ' ');
+      T($('counter'), { s: lerp(.92, 1, cp), o: .9 * a });
+      T($('counterLabel'), { y: 230, o: cl(pr(t, 4.15, 4.70)) * (1 - pr(t, 5.15, 5.42)) });
+    }
+  }
+
+  // ===== B4 + B5 : one profile goes to the top =====
+  {
+    const a = beatAlpha(t, B.b45);
+    if (a > 0) {
+      // the field of other profiles: dim, soft, out of focus
+      const gIn = oCube(pr(t, 5.40, 6.20)), gOut = pr(t, 7.70, 8.45);
+      const g = $('grid');
+      T(g, { y: lerp(40, 0, gIn), s: lerp(1.04, 1, gIn), o: (1 - gOut) * .85, b: lerp(5, 2.4, gIn) + gOut * 8 });
+      // the chosen card: rises out of the grid, grows, settles at #1, then fills the frame
+      const rise = oQuint(pr(t, 6.35, 7.35));          // climbs to the top slot
+      const grow = oExpo(pr(t, 7.85, 8.80));           // becomes the hero card
+      const cardY = lerp(PORT ? 180 : 150, PORT ? -300 : -230, rise) * (1 - grow);
+      const sc = lerp(lerp(.52, .78, rise), 1, grow);
+      const c = $('card');
+      T(c, { y: cardY, s: sc, o: cl(pr(t, 6.20, 6.60)) });
+      $('cardGlow').style.boxShadow =
+        `inset 0 0 0 ${px(2)} rgba(232,89,12,${lerp(0, .9, rise)}),
+         0 ${px(40)} ${px(140)} rgba(232,89,12,${lerp(0, .42, rise) * (1 + grow * .4)})`;
+      // badge "في الواجهة" snaps on at the top of the climb
+      const bp = pop(t, 7.05, .5), bOut = pr(t, 9.85, 10.25);
+      const bg = $('badge');
+      bg.style.opacity = cl(bp * 3) * (1 - bOut);
+      bg.style.transform = `scale(${cl(bp, 0, 1.1)})`;
+      // #1 tag
+      const rp = pop(t, 7.30, .45);
+      T($('rankTag'), {
+        x: PORT ? -380 : -740, y: lerp(-230, -330, grow),
+        s: cl(rp, 0, 1.1), o: cl(rp * 3) * (1 - pr(t, 9.6, 10.1)) * (1 - grow * .25),
+      });
+      // detail inside the hero card: rating counts up, whatsapp button pulses
+      const rv = oCube(pr(t, 8.75, 9.60));
+      $('rating').textContent = (4.8 * rv).toFixed(1).replace('.', ',');
+      $('stars').style.opacity = cl(pr(t, 8.60, 8.95));
+      const wap = pr(t, 9.15, 9.45);
+      $('waBtn').style.opacity = wap;
+      $('waBtn').style.transform = `scale(${lerp(.9, 1, oBack(wap)) * (1 + .035 * Math.sin((t - 9.4) * 9))})`;
+      $('waBtn').style.boxShadow = `0 ${px(16)} ${px(60)} rgba(37,211,102,${.18 + .16 * Math.sin((t - 9.4) * 9) ** 2})`;
+      $('cardRow').style.opacity = cl(pr(t, 6.45, 6.9));
+    }
+  }
+
+  // ===== B6 : the phone starts ringing =====
+  {
+    const a = beatAlpha(t, B.b6);
+    if (a > 0) {
+      T($('msgs'), { x: PORT ? -40 : -120, y: 0 });
+      const at = [10.45, 11.00, 11.55];
+      ['m1', 'm2', 'm3'].forEach((id, i) => {
+        const p = pop(t, at[i], .52), e = $(id);
+        e.style.opacity = cl(p * 3);
+        e.style.transform =
+          `translate(${lerp(-70, 0, cl(p)) * u}px, ${lerp(26, 0, cl(p)) * u}px) scale(${cl(p, 0, 1.06)})`;
+        e.style.boxShadow = `0 ${px(18)} ${px(70)} rgba(0,0,0,.5)`;
+      });
+      const cp = pop(t, 11.75, .45);
+      T($('msgCount'), { x: PORT ? 330 : 520, y: -210, s: cl(cp, 0, 1.12), o: cl(cp * 3) });
+      $('msgCount').textContent = String(Math.min(3, 1 + Math.floor(pr(t, 10.45, 11.6) * 3)));
+    }
+  }
+
+  // ===== B7 : only three slots per city =====
+  {
+    const a = beatAlpha(t, B.b7);
+    if (a > 0) {
+      const tp = oExpo(pr(t, 12.45, 13.15));
+      T($('slotTitle'), { y: PORT ? -300 : -230, s: lerp(1.06, 1, tp), o: tp, f: null });
+      T($('slots'), { y: PORT ? 130 : 110, o: cl(pr(t, 13.05, 13.35)) });
+      const at = [13.25, 13.52, 13.79];
+      ['s1', 's2', 's3'].forEach((id, i) => {
+        const p = pop(t, at[i], .4), e = $(id);
+        e.style.opacity = cl(p * 3);
+        e.style.transform = `scale(${cl(p, 0, 1.08)})`;
+        const str = e.querySelector('.strike');
+        if (str) {
+          const sp = oExpo(pr(t, 14.00 + i * .07, 14.35 + i * .07));
+          str.style.transform = `scaleX(${sp}) rotate(-14deg)`;
+          str.style.opacity = sp;
+        }
+      });
+      // the live slot keeps breathing so the eye lands on it
+      $('s2').style.boxShadow = `0 ${px(20)} ${px(80)} rgba(232,89,12,${.22 + .2 * Math.sin(t * 5) ** 2})`;
+    }
+  }
+
+  // ===== B8 : the price =====
+  {
+    const a = beatAlpha(t, B.b8);
+    if (a > 0) {
+      const p = oExpo(pr(t, 14.62, 15.35));
+      T($('priceWrap'), { y: lerp(60, 0, p), s: lerp(1.14, 1, p), o: p, f: 'bx3' });
+      dirBlur('bx3b', (1 - p) * 30, true);
+      $('priceNum').textContent = String(Math.round(lerp(0, 50, oExpo(pr(t, 14.68, 15.45)))));
+      $('priceSub').style.opacity = cl(pr(t, 15.35, 15.65));
+      $('priceFine').style.opacity = cl(pr(t, 15.75, 16.10)) * .95;
+      $('priceNum').style.textShadow = `0 ${px(24)} ${px(90)} rgba(232,89,12,${.22 + .14 * Math.sin(t * 3) ** 2})`;
+    }
+  }
+
+  // ===== B9 : the mark =====
+  {
+    const a = beatAlpha(t, B.b9);
+    if (a > 0) {
+      const p = oExpo(pr(t, 16.62, 17.35));
+      T($('logoWrap'), { y: 0, s: lerp(.94, 1, p), o: p });
+      // the two halves of the wordmark fly in and meet
+      $('w1').style.transform = `translateX(${lerp(-150, 0, oQuint(pr(t, 16.66, 17.30))) * u}px)`;
+      $('w2').style.transform = `translateX(${lerp(150, 0, oQuint(pr(t, 16.72, 17.36))) * u}px)`;
+      $('w1').style.opacity = cl(pr(t, 16.66, 16.95));
+      $('w2').style.opacity = cl(pr(t, 16.72, 17.00));
+      const dp = pop(t, 17.20, .45);
+      $('dot').style.transform = `scale(${cl(dp, 0, 1.15)})`;
+      $('dot').style.opacity = cl(dp * 3);
+      $('dot').style.boxShadow = `0 0 ${px(80)} rgba(232,89,12,${.5 * cl(dp)})`;
+      $('url').style.opacity = cl(pr(t, 17.45, 17.75));
+    }
+  }
+
+  // ===== B10 : end card =====
+  {
+    const e = $('end');
+    const inP = pr(t, 17.95, 18.12);
+    e.style.opacity = inP;
+    const p = oExpo(pr(t, 18.10, 18.80));
+    $('endIn').style.transform = `scale(${lerp(.96, 1, p)})`;
+    $('endTop').style.opacity = cl(pr(t, 18.12, 18.45));
+    $('endTop').style.letterSpacing = px(lerp(26, 13, oCube(pr(t, 18.12, 18.90))));
+    $('endRule').style.transform = `scaleX(${oExpo(pr(t, 18.35, 18.85))})`;
+    $('endName').style.opacity = cl(pr(t, 18.52, 18.90));
+    $('endName').style.transform = `translateY(${lerp(16, 0, oExpo(pr(t, 18.52, 19.10))) * u}px)`;
+    // let it breathe out at the very end
+    e.style.filter = `blur(${pr(t, 19.80, 20.0) * 6 * u}px)`;
+  }
+}
+
+window.setTime = setTime;
+window.DUR = DUR;
+setTime(0);
+// live preview when opened by hand (the renderer never hits this path)
+if (P.get('play')) {
+  const t0 = performance.now();
+  (function loop() {
+    setTime(((performance.now() - t0) / 1000) % DUR);
+    requestAnimationFrame(loop);
+  })();
+}
+</script>
+</body>
+</html>

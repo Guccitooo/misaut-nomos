@@ -1,0 +1,6 @@
+# intermediate render output (rebuildable with build/render.mjs + encode.sh)
+out/frames_16x9/
+out/frames_9x16/
+out/stills/
+out/mix_raw.wav
+out/contact_test.jpg
