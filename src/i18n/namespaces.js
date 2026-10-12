@@ -90,6 +90,7 @@ export const PUBLIC_NAMESPACES = [
   'reviews',
   'search',
   'supportChat',
+  'tuWeb',
   'verification',
 ];
 

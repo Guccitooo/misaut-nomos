@@ -182,6 +182,7 @@ export default function Footer() {
     { label: t('footer.links.searchPros'), to: "/buscar" },
     { label: t('footer.links.becomePro'), to: "/registro?tipo=autonomo" },
     { label: t('footer.links.pricing'), to: "/precios" },
+    { label: t('tuWeb.nav'), to: "/tu-web?origen=footer" },
   ];
 
   const COLUMN_EMPRESA = [

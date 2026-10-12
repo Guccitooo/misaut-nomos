@@ -146,6 +146,7 @@ const LeaveReview = lazyWithRetry(() => import('./pages/LeaveReview'));
 const MisValoraciones = lazyWithRetry(() => import('./pages/MisValoraciones'));
 const Login = lazyWithRetry(() => import('./pages/Login'));
 const ParaAutonomos = lazyWithRetry(() => import('./pages/ParaAutonomos'));
+const TuWeb = lazyWithRetry(() => import('./pages/TuWeb'));
 const Landing = lazyWithRetry(() => import('./pages/Landing'));
 const Contacto = lazyWithRetry(() => import('./pages/Contacto'));
 
@@ -301,6 +302,7 @@ const AuthenticatedApp = () => {
               Sabadell» lo busca alguien con una fuga en casa). */}
           <Route path="/categoria/:cat/:ciudad" element={<Pages.Categoria />} />
           <Route path="/para-autonomos" element={<ParaAutonomos />} />
+          <Route path="/tu-web" element={<TuWeb />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/preguntas-frecuentes" element={<Pages.FAQ />} />
           <Route path="/ayuda" element={<Pages.HelpCenter />} />

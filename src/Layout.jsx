@@ -15,6 +15,7 @@ import {
   IconBook,
   IconMail,
   IconStarOutline,
+  IconGlobe,
 } from "@/components/Icons";
 
 // Lazy load componentes no críticos
@@ -393,6 +394,7 @@ const LayoutContent = React.memo(function LayoutContent({ children, currentPageN
       return [
         { title: t('nav.home'), url: createPageUrl("ProfessionalDashboard"), icon: IconHome },
         { title: t('nav.myProfile'), url: createPageUrl("MyProfile"), icon: IconUser },
+        { title: t('tuWeb.nav'), url: '/tu-web?origen=nav', icon: IconGlobe },
         { title: t('nav.reviews'), url: '/mis-valoraciones', icon: IconStarOutline, prefetch: () => import('./pages/MisValoraciones') },
         { title: t('nav.support'), url: "/soporte", icon: IconHeadphones, prefetch: () => import('./pages/Soporte') },
       ];

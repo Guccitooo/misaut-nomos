@@ -11,6 +11,8 @@ import { supabase } from '@/api/supabaseClient';
 import SEOHead from '@/components/seo/SEOHead';
 import PullToRefresh from '@/components/PullToRefresh';
 import { ErrorState, SkeletonLine, SkeletonBlock } from '@/components/ListStates';
+import BayenDabaOffer from '@/components/BayenDabaOffer';
+import { useAppData } from '@/lib/AppContext';
 
 const NAVY = '#00255C';
 const GOLD = '#F5C13D';
@@ -30,6 +32,7 @@ function fmt(n) {
 
 export default function ProfessionalDashboardPage() {
   const { t } = useTranslation();
+  const { profile, isLoading: profileLoading, error: profileError } = useAppData();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -308,6 +311,10 @@ export default function ProfessionalDashboardPage() {
             isVerified={!!data?.is_verified}
             percent={completenessPct}
           />
+
+          {!profileLoading && !profileError && profile && !String(profile.website || '').trim() ? (
+            <BayenDabaOffer source="dashboard" />
+          ) : null}
 
           {/* ACCESOS RÁPIDOS */}
           <QuickActions

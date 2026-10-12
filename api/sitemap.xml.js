@@ -27,6 +27,7 @@ const STATIC_PATHS = [
   { path: '/cookies', priority: 0.3, changefreq: 'yearly' },
   { path: '/aviso-legal', priority: 0.3, changefreq: 'yearly' },
   { path: '/para-autonomos', priority: 0.9, changefreq: 'monthly' },
+  { path: '/tu-web', priority: 0.7, changefreq: 'monthly' },
 ];
 
 function xmlEscape(s) {

@@ -1958,5 +1958,171 @@
     "status": {
       "rejected": "Verificación rechazada"
     }
+  },
+  "tuWeb": {
+    "nav": "Tu web",
+    "seo": {
+      "title": "Tu web desde 200 € con BayenDaba | MisAutónomos",
+      "description": "Una página web para tu negocio desde 200 €. Descubre qué incluye, los ejemplos de diseño y el mantenimiento opcional de BayenDaba. Solicita un presupuesto sin compromiso."
+    },
+    "card": {
+      "label": "Servicio opcional de BayenDaba",
+      "eyebrow": "Para tu negocio · BayenDaba",
+      "title": "Tu propia página web desde 200 €",
+      "body": "Muestra tus trabajos, explica tus servicios y facilita que te contacten por WhatsApp.",
+      "note": "Servicio opcional. Impuestos y costes de publicación según presupuesto. Tu ficha sigue siendo gratis.",
+      "cta": "Ver qué incluye"
+    },
+    "hero": {
+      "eyebrow": "BayenDaba para profesionales de MisAutónomos",
+      "title": "Tu oficio. Tu nombre.",
+      "highlight": "Tu propia web.",
+      "body": "Una dirección que puedes compartir con orgullo. Tus servicios, tus trabajos y una forma sencilla de contactar contigo, también desde el móvil.",
+      "from": "Desde",
+      "once": "pago único",
+      "priceNote": "Precio de creación. Impuestos aplicables, dominio y alojamiento aparte; se detallan en el presupuesto antes de contratar.",
+      "cta": "Ver planes y qué incluyen",
+      "contact": "Hablar de mi proyecto",
+      "provider": "Diseño y desarrollo por"
+    },
+    "examples": {
+      "label": "Ejemplos de estilos de web",
+      "caption": "Ejemplos orientativos de diseño. Son demostraciones, no webs de clientes ni trabajos incluidos en el precio.",
+      "contact": "Hablemos",
+      "work": "Trabajos",
+      "about": "Sobre nosotros",
+      "services": {
+        "tab": "Servicios",
+        "name": "TU NEGOCIO",
+        "tag": "Electricidad · Reparaciones",
+        "title": "Soluciones que dan tranquilidad.",
+        "body": "Un profesional cercano para los pequeños y grandes proyectos de tu hogar."
+      },
+      "craft": {
+        "tab": "Reformas",
+        "name": "TU TALLER",
+        "tag": "Carpintería · Hecho a medida",
+        "title": "Espacios que hablan de ti.",
+        "body": "Materiales cuidados y atención al detalle. Cuéntanos qué tienes en mente."
+      },
+      "studio": {
+        "tab": "Estudio",
+        "name": "TU ESTUDIO",
+        "tag": "Diseño · Creatividad",
+        "title": "Buenas ideas, bien contadas.",
+        "body": "Damos forma a tu próximo proyecto con una mirada personal y cercana."
+      }
+    },
+    "trust": {
+      "mobile": "Adaptada al móvil",
+      "ownership": "Dominio a tu nombre",
+      "direct": "Contacto directo con BayenDaba"
+    },
+    "plans": {
+      "eyebrow": "Elige el punto de partida",
+      "title": "Una web a la medida de tu negocio.",
+      "body": "Dos alcances claros. Confirmamos por escrito lo que necesitas y el precio total antes de empezar.",
+      "essential": {
+        "label": "Para empezar",
+        "title": "Web esencial",
+        "body": "Toda la información importante en una página fácil de compartir.",
+        "features": [
+          "Una página con hasta 5 secciones",
+          "Diseño adaptable a móvil y ordenador",
+          "Servicios, galería y enlaces de contacto",
+          "Botón de WhatsApp y enlace de correo",
+          "Un idioma y una ronda de revisión",
+          "Título y descripción básicos para buscadores"
+        ],
+        "cta": "Me interesa la esencial"
+      },
+      "complete": {
+        "label": "Para contar más",
+        "title": "Web completa",
+        "body": "Más espacio para explicar tus servicios y presentar tus trabajos.",
+        "features": [
+          "Hasta 5 páginas para tu negocio",
+          "Todo lo incluido en la web esencial",
+          "Páginas separadas para tus servicios",
+          "Galería y organización de tus contenidos",
+          "Un idioma y dos rondas de revisión",
+          "Títulos y descripciones por página"
+        ],
+        "cta": "Me interesa la completa"
+      }
+    },
+    "maintenance": {
+      "eyebrow": "Opcional · Sin obligación de contratarlo",
+      "title": "Una mano cuando tu web necesite cambios.",
+      "body": "Alojamiento básico, seguimiento técnico y hasta 20 minutos de cambios de contenido al mes. El dominio no está incluido. Las condiciones de renovación y baja se concretan en el presupuesto.",
+      "month": "/mes"
+    },
+    "conditions": {
+      "title": "Para que tengas el precio completo desde el principio",
+      "items": [
+        "Los 200 € y 450 € corresponden a la creación de la web; los 29 €/mes, al mantenimiento opcional. Los impuestos que procedan se desglosan en el presupuesto.",
+        "El dominio y sus renovaciones se presupuestan aparte y se registran a tu nombre. El alojamiento se contrata por separado o se incluye en el mantenimiento opcional.",
+        "Partimos de tus textos, logotipo y fotos. Podemos reutilizar el material de tu ficha solo si nos lo confirmas. La redacción desde cero y las imágenes de pago se valoran aparte.",
+        "Tienda online, cobros, reservas avanzadas, idiomas adicionales y funciones a medida no están incluidos en estos planes. Si los necesitas, recibirás otra propuesta."
+      ]
+    },
+    "process": {
+      "eyebrow": "Del primer mensaje a tu propia dirección",
+      "title": "Lo hablamos. Lo diseñamos. Lo publicamos.",
+      "brief": {
+        "title": "Nos cuentas tu negocio",
+        "body": "Confirmamos alcance, coste total y fecha de entrega en un presupuesto escrito. Tú decides si seguimos."
+      },
+      "design": {
+        "title": "Ves tu web antes de publicarla",
+        "body": "Trabajamos con el material acordado. Revisas el diseño y solicitamos tu visto bueno antes de publicarlo."
+      },
+      "publish": {
+        "title": "La web queda en tus manos",
+        "body": "Conectamos tu dominio y te entregamos los accesos acordados. El mantenimiento es una opción, no un requisito."
+      }
+    },
+    "form": {
+      "eyebrow": "Cuéntanos qué tienes en mente",
+      "title": "Tu próximo paso empieza con una conversación.",
+      "body": "Prepara una consulta para BayenDaba. Podrás leerla y elegir si quieres enviarla por WhatsApp o correo.",
+      "noCommitment": "Sin pago ni contratación en esta página. El presupuesto final debe aceptarse antes de empezar cualquier trabajo.",
+      "freeDirectory": "¿Solo quieres tu ficha gratuita?",
+      "business": "Nombre de tu negocio",
+      "businessPlaceholder": "Ej. Instalaciones García",
+      "useProfile": "Usar el nombre de mi ficha",
+      "activity": "¿A qué te dedicas?",
+      "activityPlaceholder": "Ej. Electricista en Valencia",
+      "plan": "Qué web te interesa",
+      "details": "¿Qué te gustaría mostrar? (opcional)",
+      "detailsPlaceholder": "Tus servicios, fotos de trabajos, una web que te guste…",
+      "maintenance": "También me interesa el mantenimiento opcional de {{price}}/mes.",
+      "privacy": "Lo que escribas se queda en esta página hasta que abras WhatsApp o tu correo. Se incluirá en un borrador dirigido a BayenDaba; tú decides si lo envías. No te damos de alta en ninguna lista.",
+      "prepare": "Preparar mi consulta",
+      "ready": "Tu consulta está preparada",
+      "review": "Aún no se ha enviado. Abre el canal que prefieras y revisa el mensaje antes de enviarlo.",
+      "preview": "Leer el mensaje preparado",
+      "whatsapp": "Abrir WhatsApp",
+      "email": "Prefiero enviarlo por correo"
+    },
+    "faq": {
+      "title": "Antes de decidirte",
+      "free": {
+        "q": "¿Mi ficha de MisAutónomos seguirá siendo gratis?",
+        "a": "Sí. La web es un servicio opcional e independiente de BayenDaba. Contratarlo no modifica tu posición en el buscador ni te da ventajas en las valoraciones del directorio."
+      },
+      "domain": {
+        "q": "¿El dominio y la web serán míos?",
+        "a": "El dominio se registra a tu nombre. El presupuesto concreta la entrega de la web y sus accesos, el alojamiento y las renovaciones. Puedes contratar tu propio alojamiento o solicitar el mantenimiento opcional."
+      },
+      "material": {
+        "q": "¿Qué necesito para empezar?",
+        "a": "Los servicios que ofreces, tus datos de contacto y los textos, fotos y logotipo que quieras utilizar. Si ya tienes una ficha, BayenDaba puede partir de ese material con tu confirmación. El plazo se acuerda cuando estén definidos el alcance y el material."
+      },
+      "results": {
+        "q": "¿Incluye publicidad o garantiza clientes?",
+        "a": "No. Incluye la creación de tu web y sus ajustes básicos de presentación en buscadores. La publicidad, la gestión de campañas y el posicionamiento continuo son servicios distintos. No se garantiza una posición en Google ni un número de clientes."
+      }
+    }
   }
 }

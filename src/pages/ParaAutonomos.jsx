@@ -13,6 +13,7 @@ import {
   IconCheck,
 } from '@/components/Icons';
 import SEOHead from '@/components/seo/SEOHead';
+import BayenDabaOffer from '@/components/BayenDabaOffer';
 
 const NAVY = '#00255C';
 const GOLD = '#F5C13D';
@@ -154,6 +155,10 @@ export default function ParaAutonomos() {
               ))}
             </ol>
           </div>
+        </section>
+
+        <section className="container-page pb-16 md:pb-20">
+          <BayenDabaOffer source="para-autonomos" />
         </section>
 
         {/* COMPARATIVA HONESTA — banda gris muy suave */}
