@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation, Trans } from "react-i18next";
+import i18n from '@/i18n';
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Loader2, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Instagram, Facebook, Globe, Music, Check, Lightbulb } from "lucide-react";
+import { SkeletonBlock, SkeletonList } from "@/components/ListStates";
+import { toast } from "@/lib/toast";
+import {
+  IconSpinner,
+  IconChevronRight,
+  IconChevronLeft,
+  IconCheckCircle,
+  IconUpload,
+  IconClose,
+  IconInstagram,
+  IconFacebook,
+  IconGlobe,
+  IconMusic,
+  IconCheck,
+  IconLightbulb,
+} from "@/components/Icons";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
 import OnboardingTooltip from "../components/onboarding/OnboardingTooltip";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
 import OnboardingTutorial from "../components/onboarding/OnboardingTutorial";
 import ProfilePreview from "../components/onboarding/ProfilePreview";
+import { pickPhoto, isNative, hapticSuccess, haptic, kv } from "@/lib/native";
 
 // Categorías se cargan dinámicamente desde BD
 
 export default function ProfileOnboardingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,17 +92,53 @@ export default function ProfileOnboardingPage() {
     loadUser();
   }, []);
 
+  // Autosave del formulario con debounce de 800 ms.
+  // Web: localStorage. iOS/Android: @capacitor/preferences (persiste en el
+  // contenedor de la app, no lo purga WKWebView).
+  useEffect(() => {
+    if (loading || !user?.id) return;
+    const key = `mn:profile-onboarding:v1:${user.id}`;
+    const timer = setTimeout(() => {
+      const snapshot = { formData, currentStep, savedAt: Date.now() };
+      kv.set(key, JSON.stringify(snapshot));
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [formData, currentStep, loading, user?.id]);
+
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+
+      // Admin: nunca debe quedarse atrapado en el alta de profesional.
+      if (currentUser?.role === 'admin') {
+        navigate('/admin', { replace: true });
+        return;
+      }
+      // Modelo freemium: cualquier usuario logueado (incluido un cliente que
+      // pulsa "Hazte autónomo / plan 0€") puede iniciar el alta de profesional.
+      // Convertimos el user_type a 'professionnel' al entrar para que el resto
+      // de la app (Layout, guards, caché) lo trate como pro sin redirecciones
+      // raras al cuestionario.
+      const userType = currentUser?.user_type;
+      const isPro = userType === 'professionnel' || userType === 'profesional' || userType === 'professional';
+      if (!isPro && currentUser) {
+        try {
+          await base44.auth.updateMe({ user_type: 'professionnel' });
+          currentUser.user_type = 'professionnel';
+          sessionStorage.removeItem('current_user');
+          setUser(currentUser);
+        } catch (e) {
+          console.warn('No se pudo marcar user_type=professionnel al entrar al onboarding:', e);
+        }
+      }
 
       const profiles = await base44.entities.ProfessionalProfile.filter({
         user_id: currentUser.id
       });
 
       if (profiles.length > 0 && profiles[0].onboarding_completed) {
-        navigate(createPageUrl("MyProfile"));
+        navigate(createPageUrl("MyProfile"), { replace: true });
         return;
       }
 
@@ -124,11 +171,32 @@ export default function ProfileOnboardingPage() {
           consiente_contacto_clientes: profiles[0].consiente_contacto_clientes || false
         });
       } else {
-        setFormData(prev => ({
-          ...prev,
-          email_contacto: currentUser.email,
-          telefono_contacto: currentUser.phone || ""
-        }));
+        // No hay perfil en BD todavía. Si hay borrador guardado (web: localStorage,
+        // nativo: @capacitor/preferences) lo restauramos para que un usuario que se
+        // fue a WhatsApp o cerró la app recupere lo escrito.
+        let restored = null;
+        try {
+          const key = `mn:profile-onboarding:v1:${currentUser.id}`;
+          const raw = await kv.get(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.formData) restored = parsed;
+          }
+        } catch (_e) { /* modo privado / cuota llena */ }
+
+        if (restored) {
+          setFormData(prev => ({ ...prev, ...restored.formData }));
+          if (Number.isFinite(restored.currentStep) && restored.currentStep >= 1 && restored.currentStep <= 3) {
+            setCurrentStep(restored.currentStep);
+          }
+          toast.success(t('onboarding.toasts.draftRestored'), { duration: 3500 });
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            email_contacto: currentUser.email,
+            telefono_contacto: currentUser.phone || ""
+          }));
+        }
       }
 
       setLoading(false);
@@ -142,23 +210,23 @@ export default function ProfileOnboardingPage() {
     const errors = {};
     
     if (!formData.business_name || formData.business_name.trim().length < 2) {
-      errors.business_name = "El nombre profesional debe tener al menos 2 caracteres";
+      errors.business_name = t('onboarding.validation.nameMinLength');
     }
 
-    if (!formData.cif_nif || formData.cif_nif.length !== 9) {
-      errors.cif_nif = "El NIF/CIF debe tener exactamente 9 caracteres";
-    }
+    // NIF/CIF ya no se pide en el onboarding: se pide en /mi-perfil
+    // (sección Facturación) o antes de emitir la primera factura.
+    // Si el usuario ya lo tenía guardado se conserva; si no, se omite.
 
     if (!formData.email_contacto || !formData.email_contacto.includes("@")) {
-      errors.email_contacto = "El email no es válido";
+      errors.email_contacto = t('onboarding.validation.emailInvalid');
     }
 
     if (!formData.telefono_contacto || formData.telefono_contacto.replace(/\D/g, '').length < 9) {
-      errors.telefono_contacto = "El teléfono debe tener al menos 9 dígitos";
+      errors.telefono_contacto = t('onboarding.validation.phoneMinDigits');
     }
 
     if (formData.metodos_contacto.length === 0) {
-      errors.metodos_contacto = "Selecciona al menos un método de contacto";
+      errors.metodos_contacto = t('onboarding.validation.contactMethodRequired');
     }
 
     setFieldErrors(errors);
@@ -177,19 +245,19 @@ export default function ProfileOnboardingPage() {
     const errors = {};
     
     if (formData.categories.length === 0) {
-      errors.categories = "Selecciona una categoría de servicio";
+      errors.categories = t('onboarding.validation.categoryRequired');
     }
 
     if (formData.categories.includes("Otro tipo de servicio profesional") && !formData.activity_other) {
-      errors.activity_other = "Especifica tu servicio cuando seleccionas 'Otro tipo de servicio'";
+      errors.activity_other = t('onboarding.validation.otherServiceRequired');
     }
 
     if (!formData.descripcion_corta || formData.descripcion_corta.trim().length < 20) {
-      errors.descripcion_corta = "La descripción debe tener al menos 20 caracteres";
+      errors.descripcion_corta = t('onboarding.validation.descriptionMinLength');
     }
 
     if (!formData.years_experience || formData.years_experience === "" || parseInt(formData.years_experience) < 0) {
-      errors.years_experience = "Indica tus años de experiencia (mínimo 0)";
+      errors.years_experience = t('onboarding.validation.yearsRequired');
     }
 
     setFieldErrors(errors);
@@ -208,31 +276,31 @@ export default function ProfileOnboardingPage() {
     const errors = {};
     
     if (!formData.provincia) {
-      errors.provincia = "Selecciona una provincia";
+      errors.provincia = t('onboarding.validation.provinceRequired');
     }
 
     if (!formData.ciudad) {
-      errors.ciudad = "Selecciona una ciudad";
+      errors.ciudad = t('onboarding.validation.cityRequired');
     }
 
     if (formData.formas_pago.length === 0) {
-      errors.formas_pago = "Selecciona al menos una forma de pago";
+      errors.formas_pago = t('onboarding.validation.paymentRequired');
     }
 
-    if (formData.photos.length === 0) {
-      errors.photos = "Sube al menos 1 foto de tus trabajos — los perfiles con foto reciben 3× más contactos";
-    }
+    // Las fotos ya no bloquean la publicación: se mantiene el CTA para subirlas
+    // como recomendación en el paso 3, y en el perfil publicado se muestra un
+    // banner "Añade una foto y multiplica x3 tus contactos".
 
     if (!formData.acepta_terminos) {
-      errors.acepta_terminos = "Debes aceptar los Términos y Condiciones";
+      errors.acepta_terminos = t('onboarding.validation.termsRequired');
     }
 
     if (!formData.acepta_politica_privacidad) {
-      errors.acepta_politica_privacidad = "Debes aceptar la Política de Privacidad";
+      errors.acepta_politica_privacidad = t('onboarding.validation.privacyRequired');
     }
 
     if (!formData.consiente_contacto_clientes) {
-      errors.consiente_contacto_clientes = "Debes consentir ser contactado por clientes";
+      errors.consiente_contacto_clientes = t('onboarding.validation.contactConsentRequired');
     }
 
     setFieldErrors(errors);
@@ -250,12 +318,14 @@ export default function ProfileOnboardingPage() {
   const handleNext = () => {
     if (currentStep === 1 && !validateStep1()) return;
     if (currentStep === 2 && !validateStep2()) return;
-    
+
+    haptic('light');
     setCurrentStep(currentStep + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
+    haptic('light');
     setCurrentStep(currentStep - 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -329,10 +399,11 @@ export default function ProfileOnboardingPage() {
         })(),
       };
 
+      let savedProfile;
       if (existingProfile) {
-        await base44.entities.ProfessionalProfile.update(existingProfile.id, profileData);
+        savedProfile = await base44.entities.ProfessionalProfile.update(existingProfile.id, profileData);
       } else {
-        await base44.entities.ProfessionalProfile.create(profileData);
+        savedProfile = await base44.entities.ProfessionalProfile.create(profileData);
       }
 
       // ✅ SIEMPRE actualizar user_type a professionnel al completar onboarding
@@ -341,28 +412,30 @@ export default function ProfileOnboardingPage() {
         full_name: formData.business_name
       });
 
+      // ✅ Si el alta proviene de un outreach (URL ?ref=outreach&lead=...),
+      // marcamos el lead como convertido para atribución del motor de oferta.
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadId = urlParams.get('lead');
+        const ref = urlParams.get('ref');
+        if (leadId && (ref === 'outreach' || ref === 'email' || ref === 'whatsapp')) {
+          fetch('/api/lead-convert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lead_id: leadId,
+              user_id: user.id,
+              profile_id: savedProfile?.id,
+            }),
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch (_e) { /* noop */ }
+
       // El perfil ya se crea activo y visible directamente (modelo freemium)
 
       // ✅ Limpiar cache para que el Layout detecte los cambios inmediatamente
       sessionStorage.removeItem('current_user');
-
-      // Si venía de Ads+, retomar checkout
-      const pendingPlanId = sessionStorage.getItem('pendingPlanId');
-      if (pendingPlanId === 'plan_adsplus') {
-        sessionStorage.removeItem('pendingPlanId');
-        sessionStorage.removeItem('pendingPlanPrice');
-        try {
-          const checkoutRes = await base44.functions.invoke('createCheckoutSession', {
-            planId: 'plan_adsplus',
-          });
-          if (checkoutRes.data?.url) {
-            window.location.href = checkoutRes.data.url;
-            return;
-          }
-        } catch (checkoutErr) {
-          console.error('Auto-resume checkout failed:', checkoutErr);
-        }
-      }
 
       // ✅ Procesar código de referido si existe en localStorage
       try {
@@ -374,7 +447,7 @@ export default function ProfileOnboardingPage() {
             localStorage.removeItem('referral_code');
             localStorage.removeItem('referral_referrer_name');
             localStorage.removeItem('referral_expires');
-            toast.success('🎁 30 días extra de prueba añadidos gracias a tu código de referido');
+            toast.success(t('onboarding.toasts.referralBonus'));
           }
         }
       } catch (refErr) {
@@ -415,13 +488,21 @@ export default function ProfileOnboardingPage() {
         });
       }).catch(() => {});
 
-      toast.success("¡Perfil publicado! Ya apareces en búsquedas 🎉", { duration: 5000 });
+      toast.success(t('onboarding.toasts.published'), { duration: 5000 });
+      hapticSuccess();
+      // Autosave: limpiar el borrador porque ya está publicado en BD.
+      kv.remove(`mn:profile-onboarding:v1:${user.id}`);
       setTimeout(() => {
+        // Flujo: /registro → /completar-perfil → /dashboard.
+        // Antes acababa en /precios: el perfil se publicaba y acto seguido se
+        // le enseñaba una tabla de planes. Ya no hay planes — el perfil es
+        // gratis y visible desde el primer minuto, como en khdemlidaba — así
+        // que el sitio natural al terminar es su propio panel.
         navigate(createPageUrl("ProfessionalDashboard"));
-      }, 2000);
+      }, 1500);
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("Error al guardar el perfil: " + error.message);
+      toast.error(t('onboarding.toasts.saveError', { message: error.message }));
       setSaving(false);
     }
   };
@@ -455,7 +536,7 @@ export default function ProfileOnboardingPage() {
         email: email,
         name: userData.name || '',
         status: 'confirmed',
-        language: localStorage.getItem('language') || 'es',
+        language: i18n.language?.split('-')[0] || 'es',
         source: 'auto_signup',
         user_type_interest: userData.user_type === 'professionnel' ? 'autonomo' : userData.user_type === 'client' ? 'cliente' : 'ambos',
         confirmation_token: Math.random().toString(36).substring(2),
@@ -468,26 +549,58 @@ export default function ProfileOnboardingPage() {
     }
   };
 
+  // Convierte un dataURL (base64) a File para reaprovechar UploadFile.
+  const dataUrlToFile = (dataUrl, format = 'image/jpeg', name = 'foto.jpg') => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || format;
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8 = new Uint8Array(n);
+    while (n--) u8[n] = bstr.charCodeAt(n);
+    return new File([u8], name, { type: mime });
+  };
+
+  const uploadFileToBackend = async (file) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('proProfile.picture.tooLarge'));
+      return null;
+    }
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    return file_url;
+  };
+
+  // Web: callback del <input type="file">.
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no puede superar los 5MB");
-      return;
-    }
-
     setUploadingPhoto(true);
-
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData({
-        ...formData,
-        photos: [...formData.photos, file_url]
-      });
-      toast.success("✅ Foto añadida");
+      const url = await uploadFileToBackend(file);
+      if (!url) return;
+      setFormData({ ...formData, photos: [...formData.photos, url] });
+      toast.success(t('onboarding.toasts.photoAdded'));
+      hapticSuccess();
     } catch (error) {
-      toast.error("Error al subir la foto");
+      toast.error(t('onboarding.toasts.photoUploadError'));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Nativo: abre la action sheet "Cámara / Galería / Cancelar" de iOS.
+  const handlePhotoUploadNative = async () => {
+    const result = await pickPhoto({ source: 'prompt' });
+    if (!result?.dataUrl) return;
+    setUploadingPhoto(true);
+    try {
+      const file = dataUrlToFile(result.dataUrl, result.format || 'image/jpeg', `foto-${Date.now()}.${(result.format || 'jpeg').replace('image/', '')}`);
+      const url = await uploadFileToBackend(file);
+      if (!url) return;
+      setFormData({ ...formData, photos: [...formData.photos, url] });
+      toast.success(t('onboarding.toasts.photoAdded'));
+      hapticSuccess();
+    } catch (error) {
+      toast.error(t('onboarding.toasts.photoUploadError'));
     } finally {
       setUploadingPhoto(false);
     }
@@ -537,13 +650,24 @@ export default function ProfileOnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 py-8 px-4">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <SkeletonBlock lines={2} />
+          <SkeletonList count={3} avatar={false} />
+        </div>
       </div>
     );
   }
 
   const progress = (currentStep / 3) * 100;
+
+  // Mapa explícito valor BD → etiqueta traducida (el valor guardado no cambia).
+  const paymentLabels = {
+    Tarjeta: t('card'),
+    Transferencia: t('bankTransfer'),
+    Efectivo: t('cash'),
+    Bizum: t('onboarding.location.bizum'),
+  };
 
   return (
     <>
@@ -554,14 +678,14 @@ export default function ProfileOnboardingPage() {
           
           {/* Tutorial Button */}
           <div className="flex justify-center">
-            <Button
+            <button
+              type="button"
               onClick={() => setShowTutorial(true)}
-              variant="outline"
-              className="bg-white border-2 border-blue-200 hover:bg-blue-50 gap-2"
+              className="btn-secondary border-2 border-blue-200 hover:bg-blue-50 gap-2"
             >
-              <Lightbulb className="w-4 h-4 text-amber-500" />
-              ¿Cómo funciona el sistema?
-            </Button>
+              <IconLightbulb className="w-4 h-4 text-star" />
+              {t('onboarding.header.howItWorks')}
+            </button>
           </div>
 
           {/* Checklist del paso actual */}
@@ -570,11 +694,11 @@ export default function ProfileOnboardingPage() {
           {/* Preview del perfil en vivo */}
           {currentStep >= 2 && <ProfilePreview formData={formData} currentUser={user} />}
 
-          <Card className="shadow-xl border-0 bg-white rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white pb-8">
+          <div className="card shadow-xl border-0 rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 pb-8">
             <div className="text-center mb-4">
-              <h1 className="text-3xl font-bold mb-2">Completa tu perfil profesional</h1>
-              <p className="text-blue-100">Paso {currentStep} de 3</p>
+              <h1 className="text-3xl font-bold mb-2">{t('onboarding.success.stepCompleteProfile')}</h1>
+              <p className="text-blue-100">{t('onboarding.progress.step', { current: currentStep, total: 3 })}</p>
             </div>
             <div className="w-full bg-blue-400/30 rounded-full h-2">
               <div 
@@ -582,134 +706,121 @@ export default function ProfileOnboardingPage() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="p-6 md:p-8">
+          <div className="p-6 md:p-8">
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Identidad profesional</h2>
-                  <p className="text-sm text-gray-600">Información básica de tu negocio</p>
+                  <h2 className="text-2xl font-bold text-ink mb-2">{t('professionalIdentity')}</h2>
+                  <p className="text-sm text-c-muted">{t('onboarding.identity.subtitle')}</p>
                 </div>
 
                 <div id="business_name">
-                  <OnboardingTooltip content="Tu nombre profesional es lo primero que ven los clientes. Usa tu nombre real o el de tu negocio. Ejemplos: 'Juan Pérez - Fontanero', 'Electricidad Rodríguez', etc.">
-                    <Label>Nombre profesional *</Label>
+                  <OnboardingTooltip content={t('onboarding.identity.nameTooltip')}>
+                    <label className="label" htmlFor="po-business-name">{t('professionalNameRequired')}</label>
                   </OnboardingTooltip>
-                  <p className="text-xs text-gray-500 mb-2">Se mostrará así a los clientes</p>
-                  <Input
+                  <p className="text-xs text-c-muted mb-2">{t('onboarding.identity.nameHint')}</p>
+                  <input
+                    id="po-business-name"
                     value={formData.business_name}
                     onChange={(e) => {
                       setFormData({ ...formData, business_name: e.target.value });
                       setFieldErrors({ ...fieldErrors, business_name: null });
                     }}
-                    placeholder="Ej: Juan Pérez - Electricista"
-                    className={`h-12 ${fieldErrors.business_name ? 'border-red-500' : formData.business_name.length >= 2 ? 'border-green-500' : ''}`}
+                    placeholder={t('onboarding.identity.namePlaceholder')}
+                    autoCapitalize="words"
+                    autoComplete="organization"
+                    enterKeyHint="next"
+                    className={`input ${fieldErrors.business_name ? 'input-error' : formData.business_name.length >= 2 ? 'border-success' : ''}`}
                   />
                   {fieldErrors.business_name && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.business_name}</p>
+                    <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.business_name}</p>
                   )}
                   {!fieldErrors.business_name && formData.business_name.length > 0 && formData.business_name.length < 2 && (
-                    <p className="text-xs text-red-500 mt-1">Mínimo 2 caracteres</p>
+                    <p className="text-xs text-error mt-1">{t('onboarding.validation.minTwoChars')}</p>
                   )}
                   {formData.business_name.length >= 2 && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correcto
-                    </p>
-                  )}
-                </div>
-
-                <div id="cif_nif">
-                  <OnboardingTooltip content="Tu NIF/CIF es privado y solo se usa para verificación interna. NUNCA será visible para los clientes en tu perfil público.">
-                    <Label>NIF/CIF *</Label>
-                  </OnboardingTooltip>
-                  <p className="text-xs text-gray-500 mb-2">(Este dato NO se mostrará públicamente)</p>
-                  <Input
-                    value={formData.cif_nif}
-                    onChange={(e) => {
-                      setFormData({ ...formData, cif_nif: e.target.value.toUpperCase() });
-                      setFieldErrors({ ...fieldErrors, cif_nif: null });
-                    }}
-                    placeholder="12345678A"
-                    maxLength={9}
-                    className={`h-12 ${fieldErrors.cif_nif ? 'border-red-500' : formData.cif_nif.length === 9 ? 'border-green-500' : ''}`}
-                  />
-                  {fieldErrors.cif_nif && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.cif_nif}</p>
-                  )}
-                  {!fieldErrors.cif_nif && formData.cif_nif.length > 0 && formData.cif_nif.length !== 9 && (
-                    <p className="text-xs text-red-500 mt-1">Debe tener exactamente 9 caracteres</p>
-                  )}
-                  {formData.cif_nif.length === 9 && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correcto
+                    <p className="text-xs text-success mt-1 flex items-center gap-1">
+                      <IconCheck className="w-3 h-3" /> {t('onboarding.validation.correct')}
                     </p>
                   )}
                 </div>
 
                 <div id="email_contacto">
-                  <Label>Email profesional *</Label>
-                  <Input
+                  <label className="label" htmlFor="po-email-contacto">{t('onboarding.identity.emailLabel')}</label>
+                  <input
+                    id="po-email-contacto"
                     type="email"
                     value={formData.email_contacto}
                     onChange={(e) => {
                       setFormData({ ...formData, email_contacto: e.target.value });
                       setFieldErrors({ ...fieldErrors, email_contacto: null });
                     }}
-                    placeholder="tu@email.com"
-                    className={`h-12 ${fieldErrors.email_contacto ? 'border-red-500' : formData.email_contacto.includes('@') && formData.email_contacto.includes('.') ? 'border-green-500' : ''}`}
+                    placeholder={t('auth.email_placeholder')}
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    enterKeyHint="next"
+                    className={`input ${fieldErrors.email_contacto ? 'input-error' : formData.email_contacto.includes('@') && formData.email_contacto.includes('.') ? 'border-success' : ''}`}
                   />
                   {fieldErrors.email_contacto && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.email_contacto}</p>
+                    <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.email_contacto}</p>
                   )}
                   {!fieldErrors.email_contacto && formData.email_contacto.length > 0 && !formData.email_contacto.includes('@') && (
-                    <p className="text-xs text-red-500 mt-1">Email no válido</p>
+                    <p className="text-xs text-error mt-1">{t('onboarding.validation.invalidEmail')}</p>
                   )}
                   {formData.email_contacto.includes('@') && formData.email_contacto.includes('.') && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correcto
+                    <p className="text-xs text-success mt-1 flex items-center gap-1">
+                      <IconCheck className="w-3 h-3" /> {t('onboarding.validation.correct')}
                     </p>
                   )}
                 </div>
 
                 <div id="telefono_contacto">
-                  <Label>Teléfono *</Label>
-                  <Input
+                  <label className="label" htmlFor="po-telefono-contacto">{t('onboarding.identity.phoneLabel')}</label>
+                  <input
+                    id="po-telefono-contacto"
+                    type="tel"
                     value={formData.telefono_contacto}
                     onChange={(e) => {
                       setFormData({ ...formData, telefono_contacto: e.target.value });
                       setFieldErrors({ ...fieldErrors, telefono_contacto: null });
                     }}
                     placeholder="+34 612 345 678"
-                    className={`h-12 ${fieldErrors.telefono_contacto ? 'border-red-500' : formData.telefono_contacto.replace(/\D/g, '').length >= 9 ? 'border-green-500' : ''}`}
+                    inputMode="tel"
+                    autoComplete="tel"
+                    enterKeyHint="next"
+                    className={`input ${fieldErrors.telefono_contacto ? 'input-error' : formData.telefono_contacto.replace(/\D/g, '').length >= 9 ? 'border-success' : ''}`}
                   />
                   {fieldErrors.telefono_contacto && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.telefono_contacto}</p>
+                    <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.telefono_contacto}</p>
                   )}
                   {!fieldErrors.telefono_contacto && formData.telefono_contacto.length > 0 && formData.telefono_contacto.replace(/\D/g, '').length < 9 && (
-                    <p className="text-xs text-red-500 mt-1">Mínimo 9 dígitos</p>
+                    <p className="text-xs text-error mt-1">{t('onboarding.validation.minNineDigits')}</p>
                   )}
                   {formData.telefono_contacto.replace(/\D/g, '').length >= 9 && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correcto
+                    <p className="text-xs text-success mt-1 flex items-center gap-1">
+                      <IconCheck className="w-3 h-3" /> {t('onboarding.validation.correct')}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <OnboardingTooltip content="Elige cómo quieres que los clientes te contacten. El chat interno es obligatorio y seguro. WhatsApp y teléfono son opcionales pero aumentan tus contactos.">
-                    <Label className="mb-3 block">Métodos de contacto visibles</Label>
+                  <OnboardingTooltip content={t('onboarding.identity.contactTooltip')}>
+                    <label className="label mb-3 block">{t('visibleContactMethods')}</label>
                   </OnboardingTooltip>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3 p-3 bg-soft rounded-lg border border-c-border">
                       <input
                         type="checkbox"
                         checked={true}
                         disabled
-                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                        className="checkbox pointer-events-none"
                         onChange={() => {}}
                       />
-                      <span className="text-sm font-medium text-gray-700">Chat directo (siempre activo)</span>
+                      <span className="text-sm font-medium text-ink">{t('onboarding.identity.directChatAlwaysOn')}</span>
                     </div>
 
                     <div 
@@ -724,9 +835,9 @@ export default function ProfileOnboardingPage() {
                         type="checkbox"
                         checked={formData.metodos_contacto.includes('telefono')}
                         onChange={() => {}}
-                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                        className="checkbox pointer-events-none"
                       />
-                      <span className="text-sm font-medium text-gray-700">Teléfono</span>
+                      <span className="text-sm font-medium text-ink">{t('phoneLabel')}</span>
                     </div>
 
                     <div 
@@ -741,9 +852,9 @@ export default function ProfileOnboardingPage() {
                         type="checkbox"
                         checked={formData.metodos_contacto.includes('whatsapp')}
                         onChange={() => {}}
-                        className="w-5 h-5 text-blue-600 rounded border-gray-300 pointer-events-none"
+                        className="checkbox pointer-events-none"
                       />
-                      <span className="text-sm font-medium text-gray-700">WhatsApp</span>
+                      <span className="text-sm font-medium text-ink">{t('profile_page.whatsapp')}</span>
                     </div>
                   </div>
                 </div>
@@ -753,20 +864,20 @@ export default function ProfileOnboardingPage() {
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Actividad y servicios</h2>
-                  <p className="text-sm text-gray-600">¿Qué servicios ofreces?</p>
+                  <h2 className="text-2xl font-bold text-ink mb-2">{t('onboarding.activity.title')}</h2>
+                  <p className="text-sm text-c-muted">{t('onboarding.activity.subtitle')}</p>
                 </div>
 
                 <div id="categories">
-                  <OnboardingTooltip content="Elige la categoría que mejor describa tu actividad principal. Los clientes buscan por categorías, así que elige la más relevante para aparecer en búsquedas correctas.">
-                    <Label className="mb-3 block">Categoría de servicio * (elige solo una)</Label>
+                  <OnboardingTooltip content={t('onboarding.activity.categoryTooltip')}>
+                    <label className="label mb-3 block">{t('onboarding.activity.categoryLabel')}</label>
                   </OnboardingTooltip>
                   {fieldErrors.categories && (
-                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.categories}</p>
+                    <p className="text-sm text-error mb-2 font-semibold">{fieldErrors.categories}</p>
                   )}
                   {categories.length === 0 ? (
                     <div className="text-center py-4">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                      <IconSpinner className="w-6 h-6 animate-spin mx-auto text-c-accent" />
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
@@ -784,9 +895,9 @@ export default function ProfileOnboardingPage() {
                             type="checkbox"
                             checked={formData.categories.includes(cat.name)}
                             onChange={() => {}}
-                            className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 pointer-events-none flex-shrink-0"
+                            className="checkbox pointer-events-none flex-shrink-0"
                           />
-                          <span className="text-sm font-medium text-gray-700 flex-1">{cat.name}</span>
+                          <span className="text-sm font-medium text-ink flex-1">{cat.name}</span>
                         </div>
                       ))}
                     </div>
@@ -795,25 +906,29 @@ export default function ProfileOnboardingPage() {
 
                 {formData.categories.includes("Otro tipo de servicio profesional") && (
                   <div id="activity_other">
-                    <Label>Especifica tu servicio *</Label>
-                    <Input
+                    <label className="label" htmlFor="po-activity-other">{t('onboarding.activity.otherServiceLabel')}</label>
+                    <input
+                      id="po-activity-other"
                       value={formData.activity_other}
                       onChange={(e) => {
                         setFormData({ ...formData, activity_other: e.target.value });
                         setFieldErrors({ ...fieldErrors, activity_other: null });
                       }}
-                      placeholder="Ej: Instalador de paneles solares..."
-                      className={`h-12 ${fieldErrors.activity_other ? 'border-red-500' : ''}`}
+                      placeholder={t('onboarding.activity.otherServicePlaceholder')}
+                      autoCapitalize="sentences"
+                      enterKeyHint="next"
+                      className={`input ${fieldErrors.activity_other ? 'input-error' : ''}`}
                     />
                     {fieldErrors.activity_other && (
-                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.activity_other}</p>
+                      <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.activity_other}</p>
                     )}
                   </div>
                 )}
 
                 <div id="years_experience">
-                  <Label>Años de experiencia *</Label>
-                  <Input
+                  <label className="label" htmlFor="po-years-experience">{t('onboarding.activity.yearsLabel')}</label>
+                  <input
+                    id="po-years-experience"
                     type="number"
                     value={formData.years_experience}
                     onChange={(e) => {
@@ -823,44 +938,50 @@ export default function ProfileOnboardingPage() {
                     placeholder="5"
                     min="0"
                     max="50"
-                    className={`h-12 ${fieldErrors.years_experience ? 'border-red-500' : formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 ? 'border-green-500' : ''}`}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    enterKeyHint="next"
+                    className={`input ${fieldErrors.years_experience ? 'input-error' : formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 ? 'border-success' : ''}`}
                   />
                   {fieldErrors.years_experience && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.years_experience}</p>
+                    <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.years_experience}</p>
                   )}
                   {!fieldErrors.years_experience && formData.years_experience === '' && (
-                    <p className="text-xs text-red-500 mt-1">Campo obligatorio</p>
+                    <p className="text-xs text-error mt-1">{t('onboarding.validation.required')}</p>
                   )}
                   {formData.years_experience !== '' && parseInt(formData.years_experience) >= 0 && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correcto
+                    <p className="text-xs text-success mt-1 flex items-center gap-1">
+                      <IconCheck className="w-3 h-3" /> {t('onboarding.validation.correct')}
                     </p>
                   )}
                 </div>
 
                 <div id="descripcion_corta">
-                  <OnboardingTooltip content="Esta descripción aparecerá en las búsquedas. Sé claro, profesional y menciona tus servicios clave. Buenos ejemplos: 'Electricista con 15 años de experiencia en instalaciones residenciales y comerciales' o 'Fontanero especializado en reparaciones urgentes 24/7'.">
-                    <Label>Descripción corta *</Label>
+                  <OnboardingTooltip content={t('onboarding.activity.descriptionTooltip')}>
+                    <label className="label" htmlFor="po-descripcion-corta">{t('onboarding.activity.descriptionLabel')}</label>
                   </OnboardingTooltip>
-                  <p className="text-xs text-gray-500 mb-2">Describe brevemente tus servicios (mínimo 20 caracteres)</p>
-                  <Textarea
+                  <p className="text-xs text-c-muted mb-2">{t('onboarding.activity.descriptionHint')}</p>
+                  <textarea
+                    id="po-descripcion-corta"
                     value={formData.descripcion_corta}
                     onChange={(e) => {
                       setFormData({ ...formData, descripcion_corta: e.target.value });
                       setFieldErrors({ ...fieldErrors, descripcion_corta: null });
                     }}
-                    placeholder="Describe brevemente tus servicios..."
-                    className={`h-32 resize-none ${fieldErrors.descripcion_corta ? 'border-red-500' : ''}`}
+                    placeholder={t('onboarding.activity.descriptionPlaceholder')}
+                    autoCapitalize="sentences"
+                    enterKeyHint="enter"
+                    className={`textarea h-32 resize-none ${fieldErrors.descripcion_corta ? 'input-error' : ''}`}
                   />
                   {fieldErrors.descripcion_corta && (
-                    <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.descripcion_corta}</p>
+                    <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.descripcion_corta}</p>
                   )}
                   <div className="flex justify-between items-center mt-1">
-                    <p className={`text-xs ${formData.descripcion_corta.length < 20 ? 'text-red-500' : 'text-green-600'}`}>
-                      {formData.descripcion_corta.length}/20 caracteres mínimos
+                    <p className={`text-xs ${formData.descripcion_corta.length < 20 ? 'text-error' : 'text-success'}`}>
+                      {t('onboarding.activity.minCharsCounter', { current: formData.descripcion_corta.length, min: 20 })}
                     </p>
                     {formData.descripcion_corta.length >= 20 && (
-                      <Check className="w-4 h-4 text-green-600" />
+                      <IconCheck className="w-4 h-4 text-success" />
                     )}
                   </div>
                 </div>
@@ -870,82 +991,83 @@ export default function ProfileOnboardingPage() {
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Ubicación y portfolio</h2>
-                  <p className="text-sm text-gray-600">Completa tu ubicación y añade fotos de tus trabajos</p>
+                  <h2 className="text-2xl font-bold text-ink mb-2">{t('onboarding.location.title')}</h2>
+                  <p className="text-sm text-c-muted">{t('onboarding.location.subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div id="provincia">
-                    <Label>Provincia *</Label>
-                    <Select
+                    <label className="label" htmlFor="po-provincia">{t('onboarding.location.provinceLabel')}</label>
+                    <select
+                      id="po-provincia"
+                      className={`select ${fieldErrors.provincia ? 'input-error' : ''}`}
                       value={formData.provincia}
-                      onValueChange={(value) => {
-                        setFormData({ ...formData, provincia: value, ciudad: "" });
+                      onChange={(e) => {
+                        setFormData({ ...formData, provincia: e.target.value, ciudad: "" });
                         setFieldErrors({ ...fieldErrors, provincia: null });
                       }}
+                      aria-label={t('onboarding.location.provinceLabel')}
                     >
-                      <SelectTrigger className={`h-12 ${fieldErrors.provincia ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Selecciona provincia" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {PROVINCIAS.map((prov) => (
-                          <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <option value="">{t('onboarding.location.selectProvince')}</option>
+                      {PROVINCIAS.map((prov) => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
                     {fieldErrors.provincia && (
-                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.provincia}</p>
+                      <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.provincia}</p>
                     )}
                   </div>
 
                   <div id="ciudad">
-                    <Label>Ciudad *</Label>
-                    <Select
+                    <label className="label" htmlFor="po-ciudad">{t('onboarding.location.cityLabel')}</label>
+                    <select
+                      id="po-ciudad"
+                      className={`select ${fieldErrors.ciudad ? 'input-error' : formData.ciudad ? 'border-success' : ''}`}
                       value={formData.ciudad}
-                      onValueChange={(value) => {
-                        setFormData({ ...formData, ciudad: value });
+                      onChange={(e) => {
+                        setFormData({ ...formData, ciudad: e.target.value });
                         setFieldErrors({ ...fieldErrors, ciudad: null });
                       }}
                       disabled={!formData.provincia}
+                      aria-label={t('onboarding.location.cityLabel')}
                     >
-                      <SelectTrigger className={`h-12 ${fieldErrors.ciudad ? 'border-red-500' : formData.ciudad ? 'border-green-500' : ''}`}>
-                        <SelectValue placeholder={formData.provincia ? "Selecciona ciudad" : "Primero selecciona provincia"} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {formData.provincia && CIUDADES_POR_PROVINCIA[formData.provincia]?.map((ciudad) => (
-                          <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <option value="">{formData.provincia ? t('onboarding.location.selectCity') : t('onboarding.location.selectProvinceFirst')}</option>
+                      {formData.provincia && CIUDADES_POR_PROVINCIA[formData.provincia]?.map((ciudad) => (
+                        <option key={ciudad} value={ciudad}>{ciudad}</option>
+                      ))}
+                    </select>
                     {fieldErrors.ciudad && (
-                      <p className="text-xs text-red-500 mt-1 font-semibold">{fieldErrors.ciudad}</p>
+                      <p className="text-xs text-error mt-1 font-semibold">{fieldErrors.ciudad}</p>
                     )}
                     {!fieldErrors.ciudad && formData.ciudad && (
-                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Correcto
+                      <p className="text-xs text-success mt-1 flex items-center gap-1">
+                        <IconCheck className="w-3 h-3" /> {t('onboarding.validation.correct')}
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <Label>Tarifa base €/hora (opcional)</Label>
-                  <Input
+                  <label className="label" htmlFor="po-tarifa-base">{t('onboarding.location.baseRateLabel')}</label>
+                  <input
+                    id="po-tarifa-base"
                     type="number"
                     value={formData.tarifa_base}
                     onChange={(e) => setFormData({ ...formData, tarifa_base: e.target.value })}
                     placeholder="35"
                     min="0"
-                    className="h-12"
+                    inputMode="decimal"
+                    enterKeyHint="next"
+                    className="input"
                   />
                 </div>
 
                 <div id="formas_pago">
-                  <OnboardingTooltip content="Indica qué formas de pago aceptas. Cuantas más opciones ofrezcas, más fácil será para los clientes contratarte. Bizum y transferencia son las más populares en España.">
-                    <Label className="mb-3 block">Formas de pago aceptadas * (mínimo una)</Label>
+                  <OnboardingTooltip content={t('onboarding.location.paymentTooltip')}>
+                    <label className="label mb-3 block">{t('onboarding.location.paymentMethodsLabel')}</label>
                   </OnboardingTooltip>
                   {fieldErrors.formas_pago && (
-                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.formas_pago}</p>
+                    <p className="text-sm text-error mb-2 font-semibold">{fieldErrors.formas_pago}</p>
                   )}
                   <div className="grid grid-cols-2 gap-3">
                     {["Tarjeta", "Transferencia", "Efectivo", "Bizum"].map((forma) => (
@@ -962,41 +1084,61 @@ export default function ProfileOnboardingPage() {
                           type="checkbox"
                           checked={formData.formas_pago.includes(forma)}
                           onChange={() => {}}
-                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-2 focus:ring-purple-500 pointer-events-none"
+                          className="checkbox w-4 h-4 pointer-events-none"
                         />
-                        <span className="text-sm font-medium text-gray-700">{forma}</span>
+                        <span className="text-sm font-medium text-ink">{paymentLabels[forma] || forma}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div id="photos">
-                  <OnboardingTooltip content="Las fotos de tus trabajos son CLAVE. Los perfiles con más fotos reciben 3x más contactos. Sube fotos nítidas de trabajos reales que hayas completado. No uses imágenes de internet.">
-                    <Label className="mb-3 block">Portfolio de trabajos * (mínimo 1 foto)</Label>
+                  <OnboardingTooltip content={t('onboarding.portfolio.tooltip')}>
+                    <label className="label mb-3 block">{t('onboarding.portfolio.title')} <span className="text-c-muted font-normal">{t('onboarding.portfolio.recommended')}</span></label>
                   </OnboardingTooltip>
                   {fieldErrors.photos && (
-                    <p className="text-sm text-red-500 mb-2 font-semibold">{fieldErrors.photos}</p>
+                    <p className="text-sm text-error mb-2 font-semibold">{fieldErrors.photos}</p>
                   )}
                   {formData.photos.length < 10 && (
-                    <label className="cursor-pointer block">
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePhotoUpload}
-                          disabled={uploadingPhoto}
-                        />
+                    isNative() ? (
+                      // Nativo: botón que abre la action sheet de iOS / Android (Cámara / Galería).
+                      <button
+                        type="button"
+                        onClick={handlePhotoUploadNative}
+                        disabled={uploadingPhoto}
+                        className="w-full border-2 border-dashed border-c-border rounded-xl p-6 text-center hover:border-blue-500 transition-colors bg-transparent"
+                      >
                         {uploadingPhoto ? (
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+                          <IconSpinner className="w-8 h-8 animate-spin mx-auto text-c-accent" />
                         ) : (
                           <>
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600">Haz clic para añadir foto ({formData.photos.length}/10)</p>
+                            <IconUpload className="w-8 h-8 mx-auto mb-2 text-c-muted" />
+                            <p className="text-sm text-c-muted">{t('onboarding.portfolio.addPhoto', { current: formData.photos.length, max: 10 })}</p>
                           </>
                         )}
-                      </div>
-                    </label>
+                      </button>
+                    ) : (
+                      // Web: input file clásico.
+                      <label className="cursor-pointer block">
+                        <div className="border-2 border-dashed border-c-border rounded-xl p-6 text-center hover:border-blue-500 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePhotoUpload}
+                            disabled={uploadingPhoto}
+                          />
+                          {uploadingPhoto ? (
+                            <IconSpinner className="w-8 h-8 animate-spin mx-auto text-c-accent" />
+                          ) : (
+                            <>
+                              <IconUpload className="w-8 h-8 mx-auto mb-2 text-c-muted" />
+                              <p className="text-sm text-c-muted">{t('onboarding.portfolio.clickToAddPhoto', { current: formData.photos.length, max: 10 })}</p>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    )
                   )}
 
                   {formData.photos.length > 0 && (
@@ -1005,108 +1147,137 @@ export default function ProfileOnboardingPage() {
                         <div key={idx} className="relative group">
                           <img
                             src={photo}
-                            alt={`Foto ${idx + 1}`}
+                            alt={t('proProfile.portfolio.photoAlt', { number: idx + 1 })}
                             className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
                           />
                           <button
+                            type="button"
+                            aria-label={t('proProfile.picture.removeAria')}
                             onClick={() => {
                               removePhoto(idx);
                               setFieldErrors({ ...fieldErrors, photos: null });
                             }}
-                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 bg-error text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <X className="w-4 h-4" />
+                            <IconClose className="w-4 h-4" />
                           </button>
                           {idx === 0 && (
-                            <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold">
-                              Principal
+                            <div className="absolute bottom-1 left-1 bg-c-accent text-white text-xs px-2 py-1 rounded font-semibold">
+                              {t('proProfile.gallery.mainPhoto')}
                             </div>
                           )}
-                          <div className="absolute top-1 left-1 bg-green-500 text-white p-1 rounded-full">
-                            <Check className="w-3 h-3" />
+                          <div className="absolute top-1 left-1 bg-success text-white p-1 rounded-full">
+                            <IconCheck className="w-3 h-3" />
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                   {formData.photos.length > 0 && (
-                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> {formData.photos.length} foto(s) añadida(s)
+                    <p className="text-xs text-success mt-2 flex items-center gap-1">
+                      <IconCheck className="w-3 h-3" /> {t('onboarding.portfolio.photosAdded', { number: formData.photos.length })}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label className="mb-3 block">Redes sociales (opcional)</Label>
+                  <label className="label mb-3 block">{t('onboarding.social.title')}</label>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Instagram className="w-5 h-5 text-pink-600" />
-                      <Input
+                      <IconInstagram className="w-5 h-5 text-pink-600" />
+                      <input
+                        type="url"
+                        aria-label={t('proProfile.social.instagram')}
                         value={formData.social_links.instagram}
                         onChange={(e) => setFormData({
                           ...formData,
                           social_links: { ...formData.social_links, instagram: e.target.value }
                         })}
-                        placeholder="https://instagram.com/tuperfil"
-                        className="h-11"
+                        placeholder={t('onboarding.social.instagramPlaceholder')}
+                        inputMode="url"
+                        autoComplete="url"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        enterKeyHint="next"
+                        className="input"
                       />
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Facebook className="w-5 h-5 text-blue-600" />
-                      <Input
+                      <IconFacebook className="w-5 h-5 text-c-accent" />
+                      <input
+                        type="url"
+                        aria-label={t('proProfile.social.facebook')}
                         value={formData.social_links.facebook}
                         onChange={(e) => setFormData({
                           ...formData,
                           social_links: { ...formData.social_links, facebook: e.target.value }
                         })}
-                        placeholder="https://facebook.com/tupagina"
-                        className="h-11"
+                        placeholder={t('onboarding.social.facebookPlaceholder')}
+                        inputMode="url"
+                        autoComplete="url"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        enterKeyHint="next"
+                        className="input"
                       />
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-gray-600" />
-                      <Input
+                      <IconGlobe className="w-5 h-5 text-c-muted" />
+                      <input
+                        type="url"
+                        aria-label={t('sitioWeb')}
                         value={formData.website}
                         onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        placeholder="https://tuweb.com"
-                        className="h-11"
+                        placeholder={t('onboarding.social.websitePlaceholder')}
+                        inputMode="url"
+                        autoComplete="url"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        enterKeyHint="next"
+                        className="input"
                       />
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Music className="w-5 h-5 text-gray-900" />
-                      <Input
+                      <IconMusic className="w-5 h-5 text-ink" />
+                      <input
+                        type="url"
+                        aria-label={t('proProfile.social.tiktok')}
                         value={formData.social_links.tiktok}
                         onChange={(e) => setFormData({
                           ...formData,
                           social_links: { ...formData.social_links, tiktok: e.target.value }
                         })}
-                        placeholder="https://tiktok.com/@tuperfil"
-                        className="h-11"
+                        placeholder={t('onboarding.social.tiktokPlaceholder')}
+                        inputMode="url"
+                        autoComplete="url"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        enterKeyHint="done"
+                        className="input"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3" id="acepta_terminos">
+                <div className="bg-soft border border-c-border rounded-xl p-5 space-y-3" id="acepta_terminos">
                   <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-semibold text-gray-900">Consentimientos legales</h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <h3 className="font-semibold text-ink">{t('onboarding.consents.title')}</h3>
+                    <button
+                      type="button"
                       onClick={() => setFormData({
                         ...formData,
                         acepta_terminos: true,
                         acepta_politica_privacidad: true,
                         consiente_contacto_clientes: true
                       })}
-                      className="h-8 text-xs"
+                      className="btn-secondary btn-sm text-xs"
                     >
-                      <Check className="w-3 h-3 mr-1" />
-                      Aceptar todo
-                    </Button>
+                      <IconCheck className="w-3 h-3 mr-1" />
+                      {t('onboarding.consents.acceptAll')}
+                    </button>
                   </div>
                   
                   <div 
@@ -1124,12 +1295,15 @@ export default function ProfileOnboardingPage() {
                       type="checkbox"
                       checked={formData.acepta_terminos}
                       onChange={() => {}}
-                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                      className="checkbox mt-0.5 pointer-events-none"
                     />
-                    <span className="text-sm text-gray-700 flex-1">
-                      Acepto los <a href="/terminos" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> de uso de la plataforma
+                    <span className="text-sm text-ink flex-1">
+                      <Trans
+                        i18nKey="onboarding.consents.acceptTerms"
+                        components={{ terms: <a href="/terminos" target="_blank" className="text-c-accent underline font-medium" onClick={(e) => e.stopPropagation()} /> }}
+                      />
                       {fieldErrors.acepta_terminos && (
-                        <span className="block text-red-500 font-semibold mt-1">{fieldErrors.acepta_terminos}</span>
+                        <span className="block text-error font-semibold mt-1">{fieldErrors.acepta_terminos}</span>
                       )}
                     </span>
                   </div>
@@ -1146,10 +1320,13 @@ export default function ProfileOnboardingPage() {
                       type="checkbox"
                       checked={formData.acepta_politica_privacidad}
                       onChange={() => {}}
-                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                      className="checkbox mt-0.5 pointer-events-none"
                     />
-                    <span className="text-sm text-gray-700 flex-1">
-                      Acepto la <a href="/privacidad" target="_blank" className="text-blue-600 underline font-medium" onClick={(e) => e.stopPropagation()}>Política de Privacidad</a> y tratamiento de datos
+                    <span className="text-sm text-ink flex-1">
+                      <Trans
+                        i18nKey="onboarding.consents.acceptPrivacy"
+                        components={{ privacy: <a href="/privacidad" target="_blank" className="text-c-accent underline font-medium" onClick={(e) => e.stopPropagation()} /> }}
+                      />
                     </span>
                   </div>
 
@@ -1165,10 +1342,10 @@ export default function ProfileOnboardingPage() {
                       type="checkbox"
                       checked={formData.consiente_contacto_clientes}
                       onChange={() => {}}
-                      className="w-5 h-5 mt-0.5 text-green-600 rounded border-gray-300 focus:ring-2 focus:ring-green-500 pointer-events-none"
+                      className="checkbox mt-0.5 pointer-events-none"
                     />
-                    <span className="text-sm text-gray-700 flex-1">
-                      Consiento en que los clientes puedan contactarme a través de la plataforma
+                    <span className="text-sm text-ink flex-1">
+                      {t('onboarding.consents.allowContact')}
                     </span>
                   </div>
                 </div>
@@ -1177,47 +1354,49 @@ export default function ProfileOnboardingPage() {
 
             <div className="flex gap-3 mt-8">
               {currentStep > 1 && (
-                <Button
+                <button
+                  type="button"
                   onClick={handleBack}
-                  variant="outline"
-                  className="flex-1 h-14 font-bold text-base border-2"
+                  className="btn-secondary btn-lg flex-1 font-bold border-2"
                   disabled={saving}
                 >
-                  <ChevronLeft className="w-5 h-5 mr-2" />
-                  Anterior
-                </Button>
+                  <IconChevronLeft className="w-5 h-5 mr-2" />
+                  {t('home.whyTrust.previous')}
+                </button>
               )}
 
               {currentStep < 3 ? (
-                <Button
+                <button
+                  type="button"
                   onClick={handleNext}
-                  className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 font-bold text-base shadow-lg"
+                  className="btn-primary btn-lg flex-1 font-bold shadow-lg"
                 >
-                  Siguiente
-                  <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
+                  {t('common.next')}
+                  <IconChevronRight className="w-5 h-5 ml-2" />
+                </button>
               ) : (
-                <Button
+                <button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="flex-1 h-14 bg-green-600 hover:bg-green-700 font-bold text-base shadow-lg"
+                  className="btn btn-lg flex-1 text-white bg-success hover:opacity-90 font-bold shadow-lg"
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Publicando...
+                      <IconSpinner className="w-5 h-5 mr-2 animate-spin" />
+                      {t('onboarding.nav.publishing')}
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Publicar perfil
+                      <IconCheckCircle className="w-5 h-5 mr-2" />
+                      {t('onboarding.nav.publish')}
                     </>
                   )}
-                </Button>
+                </button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
     </>

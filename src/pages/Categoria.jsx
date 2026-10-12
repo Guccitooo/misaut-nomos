@@ -1,27 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import {
-  Search as SearchIcon,
-  MapPin,
-  Star,
-  Heart,
-  Briefcase,
-  ArrowLeft
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import ProfessionalCard from "@/components/ProfessionalCard";
+import { toast } from "@/lib/toast";
 import SEOHead from "../components/seo/SEOHead";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import { slugify } from "@/lib/seoUrl";
+import { useTranslation } from "react-i18next";
+import { slugify, getProfileSeoUrl } from "@/lib/seoUrl";
+import { ordenarFichas } from "@/lib/ordenFichas";
 
 const CIUDADES_PRINCIPALES = [
   "Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Zaragoza", "Bilbao",
@@ -57,22 +43,38 @@ function resolveCategoryBySlug(categories, slug) {
 export default function CategoriaPage() {
   const navigate = useNavigate();
   const params = useParams();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
 
   const urlParams = new URLSearchParams(window.location.search);
 
-  // Detectar si el segmento dinámico es "categoria-en-ciudad" o solo "categoria"
+  // TRES FORMAS DE URL LLEGAN AQUÍ, y hasta hoy sólo se entendían dos:
+  //
+  //   /categoria/fontanero                  → sólo oficio
+  //   /categoria/fontanero/sabadell         → oficio + ciudad  ← LA CANÓNICA
+  //   /categoria/fontanero-en-sabadell      → la forma vieja, de una pieza
+  //
+  // La de dos segmentos es la que emiten el sitemap, el prerenderizador y las
+  // 301 de `vercel.json`, y era la única que esta página NO sabía leer. Ni
+  // falta le hacía saberlo, porque tampoco había ruta para ella: todas esas
+  // URLs acababan en el 404 del router.
   const cityCategorySlug = params.slug || params.cityCategory;
 
   let categorySlug = null;
   let ciudadSlug = null;
   let legacyRedirectPath = null;
 
-  if (cityCategorySlug && cityCategorySlug.includes('-en-')) {
+  if (params.cat && params.ciudad) {
+    // La canónica. Dos segmentos, cada uno ya limpio.
+    categorySlug = params.cat;
+    ciudadSlug = params.ciudad;
+  } else if (cityCategorySlug && cityCategorySlug.includes('-en-')) {
+    // La vieja. Se entiende y se manda a la canónica con un replace, para que
+    // no queden dos direcciones vivas para la misma página.
     const enIdx = cityCategorySlug.indexOf('-en-');
     categorySlug = cityCategorySlug.slice(0, enIdx);
     ciudadSlug = cityCategorySlug.slice(enIdx + 4);
+    legacyRedirectPath = `/categoria/${categorySlug}/${ciudadSlug}`;
   } else if (cityCategorySlug) {
     categorySlug = cityCategorySlug;
   } else {
@@ -83,7 +85,7 @@ export default function CategoriaPage() {
       categorySlug = slugify(legacyName);
       ciudadSlug = legacyCiudad ? slugify(legacyCiudad) : null;
       legacyRedirectPath = ciudadSlug
-        ? `/categoria/${categorySlug}-en-${ciudadSlug}`
+        ? `/categoria/${categorySlug}/${ciudadSlug}`
         : `/categoria/${categorySlug}`;
     }
   }
@@ -91,7 +93,7 @@ export default function CategoriaPage() {
   // Redirect legacy ?name=X&ciudad=Y — siempre al nivel superior (no condicional)
   useEffect(() => {
     if (legacyRedirectPath) navigate(legacyRedirectPath, { replace: true });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Ciudad legible: capitalizar cada palabra del slug
   const ciudadName = ciudadSlug
@@ -124,14 +126,14 @@ export default function CategoriaPage() {
       const correctSlug = resolvedCategory.slug || slugify(resolvedCategory.name);
       if (correctSlug && correctSlug !== categorySlug) {
         const canonical = ciudadSlug
-          ? `/categoria/${correctSlug}-en-${ciudadSlug}`
+          ? `/categoria/${correctSlug}/${ciudadSlug}`
           : `/categoria/${correctSlug}`;
         // Log fire-and-forget
         base44.functions.invoke('resolveLegacySlug', { path: window.location.pathname }).catch(() => {});
         navigate(canonical, { replace: true });
       }
     }
-  }, [serviceCategories, categorySlug, resolvedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [serviceCategories, categorySlug, resolvedCategory]);
 
   // Cargar perfiles solo cuando tenemos el nombre de categoría
   const { data: profiles = [], isLoading } = useQuery({
@@ -139,7 +141,7 @@ export default function CategoriaPage() {
     queryFn: async () => {
       const allProfiles = await base44.entities.ProfessionalProfile.list();
 
-      return allProfiles.filter(p => {
+      const lista = allProfiles.filter(p => {
         // Solo perfiles activos y visibles
         if (!p.visible_en_busqueda || !p.onboarding_completed) return false;
         if (p.estado_perfil && p.estado_perfil !== 'activo') return false;
@@ -167,12 +169,11 @@ export default function CategoriaPage() {
         }
 
         return true;
-      }).sort((a, b) => {
-        // Ads+ primero, luego por rating
-        if (a.is_ads_plus && !b.is_ads_plus) return -1;
-        if (!a.is_ads_plus && b.is_ads_plus) return 1;
-        return (b.average_rating || 0) - (a.average_rating || 0);
       });
+      // Mismo orden que el buscador: aleatorio para todas. Esta página ponía
+      // delante a las destacadas y después ordenaba por nota, así que el mismo
+      // autónomo salía en un sitio distinto según por dónde se llegara.
+      return ordenarFichas(lista);
     },
     // Ejecutar siempre que tengamos categorySlug, incluso antes de resolver categoryName
     // (la query se refinará cuando categoryName esté disponible por el re-render)
@@ -190,14 +191,13 @@ export default function CategoriaPage() {
     if (ciudad === "all") {
       navigate(`/categoria/${categorySlug}`);
     } else {
-      navigate(`/categoria/${categorySlug}-en-${slugify(ciudad)}`);
+      // Dos segmentos: es la forma que el sitemap publica y la que el
+      // prerenderizador tiene escrita en disco. Navegar a la vieja desde aquí
+      // llevaba a una URL que el servidor responde con un 404 de verdad.
+      navigate(`/categoria/${categorySlug}/${slugify(ciudad)}`);
     }
   };
 
-  const handleViewProfile = (profile) => {
-    const slug = profile.slug_publico || slugify(profile.business_name);
-    navigate(`${createPageUrl("Autonomo")}/${slug}`);
-  };
 
   const handleToggleFavorite = async (profile) => {
     if (!user) { base44.auth.redirectToLogin(); return; }
@@ -205,35 +205,57 @@ export default function CategoriaPage() {
       const existing = favorites.filter(f => f.professional_id === profile.user_id);
       if (existing.length > 0) {
         await base44.entities.Favorite.delete(existing[0].id);
-        toast.success("Eliminado de favoritos");
+        toast.success(t('favorites.toast.removed'));
       } else {
         await base44.entities.Favorite.create({
           client_id: user.id,
           professional_id: profile.user_id,
           business_name: profile.business_name
         });
-        toast.success("Añadido a favoritos");
+        toast.success(t('favorites.toast.added'));
       }
     } catch {
-      toast.error("Error al gestionar favoritos");
+      toast.error(t('search.favoritesError'));
     }
   };
 
   // Nombre visible: categoryName resuelto o placeholder mientras carga
+  // ── LA GUÍA LOCAL ──────────────────────────────────────────────────────
+  // Ocho combinaciones del Vallès tienen una guía escrita a mano (precios de
+  // 2026, qué preguntar, FAQ). El prerenderizador ya la escribía en el HTML
+  // que ve Google; React la borraba al hidratar y dejaba a la persona con
+  // «0 profesionales disponibles» y nada más.
+  //
+  // Se carga con `import()` dinámico y no con un import normal: son 24 kB de
+  // texto que sólo necesitan 8 páginas de las 25 de categoría. Vite lo saca a
+  // su propio trozo y el resto de categorías no lo descarga nunca.
+  const [guia, setGuia] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    if (!categorySlug || !ciudadSlug) { setGuia(null); return; }
+    import('@/lib/guiasLocales')
+      .then((m) => { if (vivo) setGuia(m.guiaLocal(categorySlug, ciudadSlug)); })
+      .catch(() => { if (vivo) setGuia(null); });
+    return () => { vivo = false; };
+  }, [categorySlug, ciudadSlug]);
+
   const displayName = categoryName || (serviceCategories.length === 0 ? '…' : categorySlug);
 
   // SEO
+  // El canonical TIENE que ser el que está en el sitemap. Antes apuntaba a la
+  // forma de una pieza, que devuelve 404: una canónica que no existe le dice a
+  // Google que la página buena no es ésta y que la buena no está.
   const canonicalUrl = ciudadSlug
-    ? `https://misautonomos.es/categoria/${categorySlug}-en-${ciudadSlug}`
+    ? `https://misautonomos.es/categoria/${categorySlug}/${ciudadSlug}`
     : `https://misautonomos.es/categoria/${categorySlug}`;
 
   const seoTitle = ciudadName
-    ? `${displayName} en ${ciudadName} - MisAutónomos`
-    : `${displayName} - Encuentra autónomos verificados | MisAutónomos`;
+    ? t('category.seo.titleCity', { category: displayName, city: ciudadName })
+    : t('category.seo.title', { category: displayName });
 
   const seoDescription = ciudadName
-    ? `Encuentra ${displayName?.toLowerCase()} verificados en ${ciudadName}. Contacta directamente, pide presupuesto gratis.`
-    : `Directorio de ${displayName?.toLowerCase()} autónomos en España. Compara precios, lee opiniones y contacta gratis.`;
+    ? t('category.seo.descriptionCity', { category: displayName?.toLowerCase(), city: ciudadName })
+    : t('category.seo.description', { category: displayName?.toLowerCase() });
 
   return (
     <>
@@ -257,7 +279,11 @@ export default function CategoriaPage() {
               "item": {
                 "@type": "LocalBusiness",
                 "name": profile.business_name,
-                "url": `https://misautonomos.es/autonomo/${profile.slug_publico || slugify(profile.business_name)}`,
+                // El `ItemList` de esta página listaba a cada autónomo con una
+                // URL de un segmento, que responde 404. El enlace que pinta la
+                // tarjeta justo debajo (`getProfileSeoUrl`) sí era el bueno:
+                // los datos estructurados y los enlaces decían cosas distintas.
+                "url": `https://misautonomos.es${getProfileSeoUrl(profile)}`,
                 "address": {
                   "@type": "PostalAddress",
                   "addressLocality": profile.ciudad,
@@ -277,201 +303,158 @@ export default function CategoriaPage() {
         }} />
       )}
 
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 md:py-12">
-          <div className="max-w-6xl mx-auto px-4">
-            <Button
-              onClick={() => navigate(createPageUrl("Search"))}
-              variant="ghost"
-              className="text-white hover:bg-white/10 mb-4 font-medium"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('backToSearch') || 'Volver a búsqueda'}
-            </Button>
+      {/* Página de categoría con la maqueta de khdemlidaba/metier: rótulo,
+          titular grande, recuento, y la lista con la MISMA tarjeta que el
+          buscador. Antes abría con una banda azul en degradado —un azul que
+          no es el de la marca— y las tarjetas eran otras, con un botón «Ver
+          perfil» que hacía lo mismo que pulsar la tarjeta. */}
+      <section className="section-tight">
+        <div className="container-page">
+          <p className="text-sm text-c-muted mb-2">{displayName}</p>
+          <h1>
+            {ciudadName
+              ? t('category.heading.inCity', { category: displayName, city: ciudadName })
+              : t('category.heading.inSpain', { category: displayName })}
+          </h1>
+          <p className="mt-3 text-lg text-c-muted max-w-2xl">
+            {isLoading ? t('category.loading') : t('category.available', { count: profiles.length })}
+          </p>
+          <p className="mt-2 text-lg text-c-muted max-w-2xl">{seoDescription}</p>
 
-            <h1 className="text-2xl md:text-4xl font-bold mb-2">
-              {displayName} {ciudadName ? `en ${ciudadName}` : 'en España'}
-            </h1>
-            <p className="text-blue-100 text-lg">
-              {isLoading ? 'Buscando profesionales…' : `${profiles.length} profesional${profiles.length !== 1 ? 'es' : ''} disponible${profiles.length !== 1 ? 's' : ''}`}
-            </p>
+          {/* LA GUÍA LOCAL, arriba y antes del listado — el mismo orden en que
+              la escribe el prerenderizador, para que la persona y Google vean
+              la misma página. En las ciudades donde todavía no hay ningún
+              autónomo de este oficio (hoy, todas: ninguna combinación llega a
+              tres), esta guía es LO ÚNICO que la página tiene que ofrecer, y
+              es bastante: precios reales, qué preguntar y en qué fijarse.
+              `dangerouslySetInnerHTML` sobre texto escrito en el repositorio,
+              no sobre nada que venga de fuera. */}
+          {guia && (
+            <div
+              className="guia-local mt-8 max-w-3xl text-ink leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: guia.intro }}
+            />
+          )}
+
+          {/* Filtro de ciudad — cambia la URL, que es la que manda: cada
+              ciudad tiene su propia página indexable. */}
+          <div className="mt-8 max-w-sm">
+            <label htmlFor="categoria-ciudad" className="sr-only">{t('category.filter.selectCity')}</label>
+            <select
+              id="categoria-ciudad"
+              className="select"
+              value={ciudadName || "all"}
+              onChange={(e) => handleCiudadChange(e.target.value)}
+            >
+              <option value="all">{t('category.filter.allSpain')}</option>
+              {CIUDADES_PRINCIPALES.map((ciudad) => (
+                <option key={ciudad} value={ciudad}>{ciudad}</option>
+              ))}
+            </select>
           </div>
         </div>
+      </section>
 
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          {/* Filtro de ciudad */}
-          <Card className="mb-6 shadow-sm border-0 rounded-xl">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-3 items-center">
-                <MapPin className="w-5 h-5 text-gray-500" />
-                <Select value={ciudadName || "all"} onValueChange={handleCiudadChange}>
-                  <SelectTrigger className="w-48 h-10 rounded-lg">
-                    <SelectValue placeholder="Seleccionar ciudad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toda España</SelectItem>
-                    {CIUDADES_PRINCIPALES.map(ciudad => (
-                      <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Loading */}
-          {isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <section className="pb-16 sm:pb-24">
+        <div className="container-page">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {[...Array(6)].map((_, i) => (
-                <Card key={i} className="rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex gap-3 mb-3">
-                      <Skeleton className="w-12 h-12 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-16 w-full mb-3" />
-                    <Skeleton className="h-9 w-full" />
-                  </CardContent>
-                </Card>
+                <div key={i} className="card p-4 flex items-center gap-3" style={{ minHeight: 128 }} aria-hidden="true">
+                  <div className="rounded-xl bg-soft" style={{ width: 56, height: 56 }} />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/5 rounded bg-soft" />
+                    <div className="h-3 w-2/5 rounded bg-soft" />
+                    <div className="h-3 w-1/2 rounded bg-soft" />
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-
-          {/* Sin resultados */}
-          {!isLoading && profiles.length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
-                <Briefcase className="w-8 h-8 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Aún no hay profesionales de {displayName}{ciudadName ? ` en ${ciudadName}` : ''}
+          ) : profiles.length === 0 && !guia ? (
+            <div className="rounded-xl bg-brand-navy text-white p-8 sm:p-10 text-center">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {ciudadName
+                  ? t('category.empty.titleCity', { category: displayName, city: ciudadName })
+                  : t('category.empty.title', { category: displayName })}
               </h2>
-              <p className="text-gray-600 max-w-md mx-auto mb-6">
-                Estamos creciendo cada día. Si eres {displayName}{ciudadName ? ` en ${ciudadName}` : ''},
-                registra tu perfil gratis y empieza a recibir clientes.
+              <p className="text-white/80 mt-3 mb-6 max-w-lg mx-auto leading-relaxed">
+                {t('category.empty.body')}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button onClick={() => navigate(createPageUrl("PricingPlans"))} className="bg-blue-600 hover:bg-blue-700">
-                  Soy {displayName}, quiero registrarme
-                </Button>
-                <Button variant="outline" onClick={() => navigate(createPageUrl("Search"))}>
-                  Ver todos los profesionales
-                </Button>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Link to="/registro?tipo=autonomo" className="btn bg-brand-gold text-brand-navy font-semibold hover:bg-brand-gold-deep">
+                  {t('nav.becomeProFree')}
+                </Link>
+                <Link to="/buscar" className="btn bg-white/10 text-white hover:bg-white/20">
+                  {t('category.empty.allTrades')}
+                </Link>
               </div>
-              {ciudadName && (
-                <p className="text-sm text-gray-600 mt-6">
-                  💡 También puedes ver{' '}
-                  <button onClick={() => navigate(`/categoria/${categorySlug}`)} className="text-blue-600 underline font-medium">
-                    {displayName} en otras ciudades
-                  </button>
-                </p>
-              )}
             </div>
-          )}
-
-          {/* Resultados */}
-          {!isLoading && profiles.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AnimatePresence>
-                {profiles.map(profile => (
-                  <motion.div
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {profiles.map((profile, idx) => (
+                  <ProfessionalCard
                     key={profile.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <Card className={`bg-white hover:shadow-lg transition-all rounded-xl h-full ${profile.is_ads_plus ? 'ring-1 ring-amber-300' : ''}`}>
-                      <CardContent className="p-4 flex flex-col h-full">
-                        <div className="flex items-start gap-3 mb-3">
-                          <Avatar
-                            className="w-12 h-12 cursor-pointer"
-                            onClick={() => handleViewProfile(profile)}
-                          >
-                            {profile.imagen_principal ? (
-                              <AvatarImage src={profile.imagen_principal} alt={profile.business_name} />
-                            ) : (
-                              <AvatarFallback className="bg-blue-600 text-white">
-                                {profile.business_name?.charAt(0)}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <h3
-                                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 truncate"
-                                onClick={() => handleViewProfile(profile)}
-                              >
-                                {profile.business_name}
-                              </h3>
-                              {profile.is_ads_plus && (
-                                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">⭐ Destacado</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-gray-500">
-                              <MapPin className="w-3 h-3" />
-                              <span className="truncate">{profile.ciudad || profile.provincia}</span>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleToggleFavorite(profile)}
-                            className={favorites.some(f => f.professional_id === profile.user_id)
-                              ? 'text-red-500' : 'text-gray-300'}
-                          >
-                            <Heart className={`w-4 h-4 ${favorites.some(f => f.professional_id === profile.user_id) ? 'fill-current' : ''}`} />
-                          </Button>
-                        </div>
-
-                        {profile.descripcion_corta && (
-                          <p className="text-sm text-gray-600 line-clamp-2 mb-3 flex-1">
-                            {profile.descripcion_corta}
-                          </p>
-                        )}
-
-                        {profile.average_rating > 0 && (
-                          <div className="flex items-center gap-1 mb-3">
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                            <span className="font-semibold">{profile.average_rating.toFixed(1)}</span>
-                            <span className="text-gray-500 text-sm">({profile.total_reviews})</span>
-                          </div>
-                        )}
-
-                        <Button
-                          onClick={() => handleViewProfile(profile)}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
-                        >
-                          Ver perfil
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
+                    profile={profile}
+                    href={getProfileSeoUrl(profile)}
+                    onToggleFavorite={user ? () => handleToggleFavorite(profile) : undefined}
+                    isFavorite={favorites.some((f) => f.professional_id === profile.user_id)}
+                    priority={idx < 4}
+                  />
                 ))}
-              </AnimatePresence>
-            </div>
+              </div>
+
+              {/* Cierre: la invitación a darse de alta EN ESTA categoría.
+                  Llevaba a `PricingPlans`, una página que dejó de existir al
+                  retirar las suscripciones: el botón acababa en el 404. */}
+              <div className="mt-12 rounded-xl bg-brand-navy text-white p-8 sm:p-10 text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  {t('category.cta.title', { category: displayName })}
+                </h2>
+                <p className="text-white/80 mt-3 mb-6 max-w-lg mx-auto leading-relaxed">
+                  {t('category.cta.body')}
+                </p>
+                <Link to="/registro?tipo=autonomo" className="btn bg-brand-gold text-brand-navy font-semibold hover:bg-brand-gold-deep">
+                  {t('nav.becomeProFree')}
+                </Link>
+              </div>
+            </>
           )}
 
-          {/* CTA */}
-          {!isLoading && profiles.length > 0 && (
-            <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-center text-white">
-              <h3 className="text-2xl font-bold mb-2">¿Eres {displayName}?</h3>
-              <p className="text-blue-100 mb-5">Regístrate y consigue más clientes</p>
-              <Button
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-                className="bg-white hover:bg-gray-50 text-blue-700 h-12 px-8 font-semibold"
-              >
-                <Briefcase className="w-5 h-5 mr-2" />
-                Registrarme como profesional
-              </Button>
-            </div>
+          {/* LAS PREGUNTAS FRECUENTES de la guía, al final y con su JSON-LD.
+              Van después del listado porque quien ya ha visto a los autónomos
+              es quien tiene las dudas de «¿cuánto debería costarme esto?».
+              El `FAQPage` es lo que puede sacar el desplegable de respuestas
+              en los resultados de Google, que ocupa el triple de alto que un
+              resultado normal. */}
+          {guia?.faqs?.length > 0 && (
+            <section className="mt-12 max-w-3xl">
+              <h2 className="text-2xl font-bold tracking-tight">
+                {t('category.faq.title')}
+              </h2>
+              <div className="mt-5 space-y-4">
+                {guia.faqs.map((f, i) => (
+                  <details key={i} className="rounded-xl border border-c-border bg-surface p-4">
+                    <summary className="font-semibold text-ink cursor-pointer">{f.q}</summary>
+                    <p className="mt-2 text-c-muted leading-relaxed">{f.a}</p>
+                  </details>
+                ))}
+              </div>
+              <script type="application/ld+json" dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'FAQPage',
+                  mainEntity: guia.faqs.map((f) => ({
+                    '@type': 'Question',
+                    name: f.q,
+                    acceptedAnswer: { '@type': 'Answer', text: f.a },
+                  })),
+                }),
+              }} />
+            </section>
           )}
         </div>
-      </div>
+      </section>
     </>
   );
 }

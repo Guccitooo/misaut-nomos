@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { slugify } from '@/lib/slugify';
+import { getProfileSeoUrl } from '@/lib/seoUrl';
 
 export function OrganizationSchema() {
   useEffect(() => {
@@ -16,7 +18,7 @@ export function OrganizationSchema() {
       "name": "MisAutónomos",
       "alternateName": "Mis Autónomos",
       "url": "https://misautonomos.es",
-      "logo": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png",
+      "logo": "https://misautonomos.es/logo-512.png",
       "description": "Plataforma líder en España para conectar clientes con profesionales autónomos verificados. Electricistas, fontaneros, carpinteros y más.",
       "foundingDate": "2024",
       "contactPoint": {
@@ -118,62 +120,22 @@ export function FAQPageSchema({ faqs }) {
   return null;
 }
 
-export function ProductSchema({ products }) {
-  useEffect(() => {
-    if (!products || products.length === 0) return;
-    
-    let script = document.getElementById('structured-data-product');
-    if (!script) {
-      script = document.createElement('script');
-      script.setAttribute('type', 'application/ld+json');
-      script.setAttribute('id', 'structured-data-product');
-      document.head.appendChild(script);
-    }
-    
-    script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": products.map(product => ({
-        "@type": "Product",
-        "name": product.name,
-        "description": product.description,
-        "offers": {
-          "@type": "Offer",
-          "price": product.price,
-          "priceCurrency": "EUR",
-          "availability": "https://schema.org/InStock",
-          "url": `https://misautonomos.es/PricingPlans`,
-          "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        }
-      }))
-    });
-  }, [products]);
+const FALLBACK_IMAGE = 'https://misautonomos.es/og-image.png';
 
-  return null;
-}
-
-const FALLBACK_IMAGE = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png';
-
-/**
- * MerchantListingSchema — @type Service
- * Corrige los 3 errores de Google Search Console:
- *   1. CRÍTICO: campo "image" siempre presente (fallback al logo)
- *   2. shippingDetails en offers (doesNotShip para servicios presenciales)
- *   3. hasMerchantReturnPolicy en offers
- */
 export function MerchantListingSchema({ profile, reviews, professionalUser }) {
   useEffect(() => {
     if (!profile) return;
 
-    const slugify = (text) => {
-      if (!text) return '';
-      return text.toString().toLowerCase().trim()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    };
 
     const profileSlug = profile.slug_publico || slugify(profile.business_name);
-    const profileUrl = `https://misautonomos.es/autonomo/${profileSlug}`;
+    // `/autonomo/{oficio}-en-{ciudad}/{nombre}` — la forma de un solo segmento
+    // que había aquí devuelve **404** en 53 de las 55 fichas: no está
+    // prerenderizada y no la cubre ninguna regla. Es decir, los datos
+    // estructurados de cada ficha le decían a Google que la página de ese
+    // negocio está en una dirección que no existe. `getProfileSeoUrl` es el
+    // mismo constructor que usan el sitemap y los enlaces del buscador, y cae
+    // solo a la forma corta cuando la ficha no tiene ciudad (hoy, dos).
+    const profileUrl = `https://misautonomos.es${getProfileSeoUrl(profile)}`;
 
     // image: NUNCA puede ser null — fallback al logo de MisAutónomos
     const imageUrl = profile.imagen_principal
@@ -261,16 +223,10 @@ export function LocalBusinessSchema({ profile, reviews, professionalUser }) {
       document.head.appendChild(script);
     }
 
-    const slugify = (text) => {
-      if (!text) return '';
-      return text.toString().toLowerCase().trim()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    };
     const profileSlug = profile.slug_publico || slugify(profile.business_name);
-    // ✅ URL canónica con formato correcto /autonomo/:slug
-    const profileUrl = `https://misautonomos.es/autonomo/${profileSlug}`;
+    // La canónica de verdad: la misma que publica el sitemap. El comentario que
+    // había aquí decía «formato correcto» de una URL que responde 404.
+    const profileUrl = `https://misautonomos.es${getProfileSeoUrl(profile)}`;
 
     // ✅ Imagen: preferir la más específica del negocio
     const imageUrl = profile.imagen_principal || profile.photos?.[0] || professionalUser?.profile_picture;
@@ -444,13 +400,6 @@ export function ProfessionalPersonSchema({ profile, professionalUser }) {
       document.head.appendChild(script);
     }
 
-    const slugify = (text) => {
-      if (!text) return '';
-      return text.toString().toLowerCase().trim()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/ñ/g, 'n').replace(/ç/g, 'c')
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    };
     const profileSlug = profile.slug_publico || slugify(profile.business_name);
     
     const schema = {
@@ -460,7 +409,7 @@ export function ProfessionalPersonSchema({ profile, professionalUser }) {
       "jobTitle": profile.categories?.[0] || "Profesional autónomo",
       "description": profile.descripcion_corta,
       "image": professionalUser?.profile_picture || profile.imagen_principal,
-      "url": `https://misautonomos.es/autonomo/${profileSlug}`,
+      "url": `https://misautonomos.es${getProfileSeoUrl(profile)}`,
       "address": {
         "@type": "PostalAddress",
         "addressLocality": profile.ciudad,

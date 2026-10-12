@@ -11,11 +11,8 @@ const PAGE_ROUTES: Record<string, string> = {
     Search: "/buscar",
     Autonomo: "/autonomo",
     Categoria: "/categoria",
-    PricingPlans: "/precios",
     FAQ: "/preguntas-frecuentes",
-    FAQDetail: "/preguntas-frecuentes",
     HelpCenter: "/ayuda",
-    Home: "/inicio",
     ClientOnboarding: "/registro-cliente",
     UserTypeSelection: "/registro",
     PrivacyPolicy: "/privacidad",
@@ -27,8 +24,6 @@ const PAGE_ROUTES: Record<string, string> = {
     Messages: "/mensajes",
     Favorites: "/favoritos",
     MyProfile: "/mi-perfil",
-    Tickets: "/soporte",
-    TicketDetail: "/soporte",
     Presupuestos: "/presupuestos",
     RequestQuote: "/pedir-presupuesto",
     QuoteRequests: "/solicitudes",
@@ -47,16 +42,11 @@ const PAGE_ROUTES: Record<string, string> = {
     CRMAutomations: "/automatizaciones",
     ClientDetail: "/clientes",
     Jobs: "/trabajos",
-    SubscriptionManagement: "/suscripcion",
-    PaymentSuccess: "/pago-exitoso",
-    DashboardProInfo: "/dashboard/info",
-    Onboarding: "/bienvenida",
 
     // Admin
     AdminDashboard: "/admin",
     AdminPayments: "/admin/pagos",
     AdminTickets: "/admin/soporte",
-    AdminFAQ: "/admin/faq",
     AdminMessagesStats: "/admin/mensajes",
 };
 

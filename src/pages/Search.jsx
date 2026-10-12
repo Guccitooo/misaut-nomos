@@ -1,340 +1,106 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+// /buscar — la página de resultados, con la maqueta de khdemlidaba.
+//
+// Qué cambia respecto a la versión de Base44
+// ──────────────────────────────────────────
+// Antes: una franja de título pequeño, debajo una caja blanca con cuatro
+// desplegables en fila (y un botón «Filtros avanzados» que abría otro panel
+// encima), y los resultados en una rejilla de hasta cuatro columnas de
+// tarjetas altas de 288 px con tres botones cada una. A 1.280 px los nombres
+// se cortaban en «Rub…», «Guc…», «Zaid…»: la primera cosa que alguien mira de
+// una ficha era justo la que no cabía.
+//
+// Ahora, como en khdemlidaba/recherche:
+//   - h1 grande, y debajo la MISMA barra de búsqueda de la portada
+//     (HeroSearch con `onAutoSearch`), así que la lista se refresca al elegir.
+//   - columna de filtros a la izquierda en escritorio (260 px, pegajosa) y
+//     hoja inferior en móvil detrás del botón «Filtros».
+//   - resultados en dos columnas de tarjetas compactas: avatar, nombre,
+//     oficio, ciudad·nota, y dos botones redondos de contacto a la derecha.
+//
+// Se retiran el mapa, las búsquedas guardadas y el autocompletar: ninguno
+// existe en khdemlidaba y los tres vivían sólo aquí.
+
+import React, { useState, useEffect, useMemo } from "react";
+import { ordenarFichas } from '@/lib/ordenFichas';
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useSearchParams, Link } from "react-router-dom";
 import {
-  Search as SearchIcon,
-  MapPin,
-  Heart,
-  MessageCircle,
-  Phone,
-  Star,
-  Zap,
-  Droplets,
-  Hammer,
-  HardHat,
-  Paintbrush,
-  Trees,
-  Truck,
-  Sparkles,
-  Key,
-  Wind,
-  Wrench,
-  MoreHorizontal,
-  Waves,
-  Copy,
-  Check,
-  Briefcase,
-  MessageSquare,
-  Users,
-  Shield,
-  ChevronRight,
-  SlidersHorizontal,
-  X,
-  Palette,
-  Sprout,
-  Lightbulb
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { toast } from "sonner";
+  IconSearch,
+  IconClose,
+} from "@/components/Icons";
+import { toast } from "@/lib/toast";
+import { EmptyState } from "@/components/ListStates";
 import SEOHead from "../components/seo/SEOHead";
 import { ServiceSchema, BreadcrumbSchema } from "../components/seo/StructuredData";
-import { useLanguage } from "../components/ui/LanguageSwitcher";
-import { useProfileTranslation } from "../components/profile/useProfileTranslation";
+import { useTranslation } from "react-i18next";
 import { PROVINCIAS, CIUDADES_POR_PROVINCIA } from "../components/utils/locationsData";
-import SearchAutocomplete from "../components/search/SearchAutocomplete";
-import SavedSearches from "../components/search/SavedSearches";
-const PullToRefresh = lazy(() => import("../components/ui/PullToRefresh"));
-const SearchFilters = lazy(() => import("../components/search/SearchFilters"));
-const MapView = lazy(() => import("../components/search/MapView"));
-const TrustSlider = lazy(() => import("../components/search/TrustSlider"));
-import { generateSlug } from "../utils/slugUtils";
 import { getProfileSeoUrl } from '@/lib/seoUrl';
-import InitialsAvatar from "@/components/ui/InitialsAvatar";
+import { trackSearchAppearance } from '@/lib/trackMetric';
+import ProfessionalCard from "@/components/ProfessionalCard";
+import HeroSearch, { useServiceCategories } from "@/components/home/HeroSearch";
+import useBodyScrollLock from "@/hooks/useBodyScrollLock";
 
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-};
-
-const QUICK_CATEGORIES = [
-  { name: "Electricista", icon: Zap, color: "from-yellow-400 to-orange-400" },
-  { name: "Fontanero", icon: Droplets, color: "from-blue-400 to-cyan-400" },
-  { name: "Pintor", icon: Paintbrush, color: "from-pink-400 to-rose-400" },
-  { name: "Albañil / Reformas", icon: HardHat, color: "from-orange-400 to-amber-400" },
-  { name: "Jardinero", icon: Trees, color: "from-green-400 to-emerald-400" },
-  { name: "Autónomo de limpieza", icon: Sparkles, color: "from-purple-400 to-violet-400" },
-  { name: "Cerrajero", icon: Key, color: "from-slate-400 to-gray-500" },
-  { name: "Carpintero", icon: Hammer, color: "from-amber-500 to-yellow-500" },
-];
-
-const ProfileCard = React.memo(({ profile, onClick, onToggleFavorite, isFavorite, professionalUser, currentUserId, currentUser, priority }) => {
-  const navigate = useNavigate();
-
-  const handleContactDirect = async (e) => {
-    e.stopPropagation();
-    if (!currentUserId) {
-      sessionStorage.setItem('pending_chat_action', JSON.stringify({ action: 'open_chat', professionalId: profile.user_id }));
-      base44.auth.redirectToLogin('/messages');
-      return;
-    }
-    const conversationId = [currentUserId, profile.user_id].sort().join('_');
-    try {
-      const existing = await base44.entities.Message.filter({ conversation_id: conversationId }, '-created_date', 1);
-      if (!existing || existing.length === 0) {
-        const { createMessage } = await import('@/lib/createMessage');
-        await createMessage({
-          conversation_id: conversationId,
-          sender_id: currentUserId,
-          recipient_id: profile.user_id,
-          content: "Hola, me interesa tu servicio. ¿Podemos hablar?",
-          professional_name: profile.business_name || "Profesional",
-          client_name: currentUser?.full_name || currentUser?.email || "",
-          is_read: false,
-          attachments: [],
-        });
-      }
-    } catch {}
-    navigate(`/messages?conv=${conversationId}`);
-  };
-
-  const formatPhoneForWhatsApp = (phone) => {
-    if (!phone) return null;
-    let cleaned = phone.replace(/\D/g, '');
-    if (!cleaned.startsWith('34') && cleaned.length === 9) cleaned = '34' + cleaned;
-    return cleaned;
-  };
-
-  const photoUrl = profile.imagen_principal || professionalUser?.profile_picture;
-  const isVerified = profile.identity_verified === true;
-  // Limitar URL de imagen a máx 200px para reducir peso (si es URL de Supabase)
-  const optimizedPhotoUrl = photoUrl && photoUrl.includes('supabase.co')
-    ? photoUrl + (photoUrl.includes('?') ? '&' : '?') + 'width=96&quality=70'
-    : photoUrl;
-
-  return (
-    <div 
-      onClick={onClick}
-      className="cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col overflow-hidden"
-      style={{ minHeight: '200px', contain: 'layout style' }}
-    >
-      {/* Header — azul normal, dorado para Ads+ */}
-      <div className={`hidden md:block rounded-t-xl relative flex-shrink-0 ${profile.is_ads_plus ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-blue-600 to-blue-500'}`} style={{ height: '48px', minHeight: '48px' }}>
-        {profile.is_ads_plus && (
-          <div className="absolute top-2 left-2 bg-white/25 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            ⭐ Destacado
-          </div>
-        )}
-        {profile.tarifa_base > 0 && (
-          <div className="absolute top-2 right-2 bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-            {profile.tarifa_base}€/h
-          </div>
-        )}
-      </div>
-
-      {/* Zona con avatar posicionado negativamente desde aquí */}
-      <div className="relative px-3 flex flex-col flex-1">
-        {/* Avatar: solo desktop, a caballo entre header y contenido */}
-        <div className="hidden md:block absolute -top-6 left-3" style={{ width: '48px', height: '48px' }}>
-          {optimizedPhotoUrl ? (
-            <img
-              src={optimizedPhotoUrl}
-              alt={profile.business_name}
-              width="48"
-              height="48"
-              loading={priority ? "eager" : "lazy"}
-              fetchPriority={priority ? "high" : "low"}
-              decoding={priority ? "sync" : "async"}
-              className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm"
-              style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px' }}
-            />
-          ) : (
-            <InitialsAvatar name={profile.business_name || ""} size={48} className="border-2 border-white shadow-sm" />
-          )}
-        </div>
-
-        {/* Fila avatar+nombre — solo móvil */}
-        <div className="md:hidden flex items-center gap-3 pt-3 pb-1">
-          <div className="flex-shrink-0" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
-            {optimizedPhotoUrl ? (
-              <img
-                src={optimizedPhotoUrl}
-                alt={profile.business_name}
-                width="48"
-                height="48"
-                loading={priority ? "eager" : "lazy"}
-                fetchPriority={priority ? "high" : "low"}
-                decoding={priority ? "sync" : "async"}
-                className="w-12 h-12 rounded-full object-cover"
-                style={{ width: '48px', height: '48px' }}
-              />
-            ) : (
-              <InitialsAvatar name={profile.business_name || ""} size={48} />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 flex-wrap">
-              <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
-              {profile.is_ads_plus && (
-                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">⭐ Destacado</span>
-              )}
-              {isVerified && (
-                <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Identidad verificada">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
-              )}
-            </div>
-            <p className="text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
-          </div>
-          {profile.tarifa_base > 0 && (
-            <span className="text-sm font-semibold text-gray-700 flex-shrink-0">{profile.tarifa_base}€/h</span>
-          )}
-        </div>
-
-      {/* Contenido — padding-top para no tapar el avatar (desktop) */}
-      <div className="md:pt-8 pt-1 pb-3 flex flex-col flex-1">
-        <div className="hidden md:block flex items-center gap-1">
-          <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.business_name}</h3>
-          {isVerified && (
-            <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Identidad verificada">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-            </svg>
-          )}
-        </div>
-        <p className="hidden md:block text-blue-600 text-xs truncate">{profile.categories?.[0]}</p>
-        <p className="text-gray-400 text-xs mt-0.5 truncate">📍 {profile.ciudad}, {profile.provincia}</p>
-        <p className="text-gray-600 text-xs mt-1.5 line-clamp-2 min-h-[2.5rem] leading-relaxed">{profile.descripcion_corta}</p>
-        
-        {/* Estrellas */}
-        {profile.average_rating > 0 && (
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-yellow-400 text-xs">★</span>
-            <span className="text-xs text-gray-600">{profile.average_rating.toFixed(1)} ({profile.total_reviews})</span>
-          </div>
-        )}
-
-        {/* Botones compactos — siempre al fondo */}
-        <div className="flex gap-1.5 mt-auto pt-2 w-full min-w-0" onClick={e => e.stopPropagation()}>
-          <button
-            onClick={handleContactDirect}
-            className="flex-1 min-w-0 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 text-xs font-medium flex items-center justify-center gap-1 transition-colors overflow-hidden"
-            aria-label={`Contactar con ${profile.business_name}`}
-          >
-            <MessageSquare className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">Contactar</span>
-          </button>
-          
-          {profile.metodos_contacto?.includes('whatsapp') && profile.telefono_contacto && (
-            <a
-              href={`https://wa.me/${formatPhoneForWhatsApp(profile.telefono_contacto)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="w-8 h-8 min-w-[2rem] bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
-              aria-label={`Contactar a ${profile.business_name} por WhatsApp`}
-            >
-              <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-            </a>
-          )}
-
-          {profile.metodos_contacto?.includes('telefono') && profile.telefono_contacto && (
-            <div className="relative group flex-shrink-0" onClick={e => e.stopPropagation()}>
-              <a href={`tel:${profile.telefono_contacto}`} className="w-8 h-8 min-w-[2rem] bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors md:hidden" aria-label={`Llamar a ${profile.business_name} al ${profile.telefono_contacto}`}>
-                <Phone className="w-3.5 h-3.5 text-gray-600" />
-              </a>
-              <button className="w-8 h-8 min-w-[2rem] bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors hidden md:flex" aria-label={`Teléfono: ${profile.telefono_contacto}`}>
-                <Phone className="w-3.5 h-3.5 text-gray-600" />
-              </button>
-              <div className="absolute bottom-10 right-0 bg-gray-900 text-white text-xs rounded-lg px-2 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-                {profile.telefono_contacto}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      </div>
-    </div>
-  );
-});
+const EMPTY_FILTERS = { category: "all", provincia: "all", ciudad: "all", minRating: 0, availability: "all" };
 
 export default function SearchPage() {
-  const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [filters, setFilters] = useState(() => {
-    // Leer filtros iniciales desde query params (hero → resultados)
-    const params = new URLSearchParams(window.location.search);
-    return {
-      category: params.get("categoria") || "all",
-      provincia: params.get("provincia") || "all",
-      ciudad: params.get("ciudad") || "all",
-      minRating: 0,
-      availability: "all",
-    };
-  });
-  // En móvil renderamos solo 6 tarjetas iniciales para reducir trabajo del main thread
-  const [displayLimit, setDisplayLimit] = useState(() => window.innerWidth < 768 ? 6 : 12);
-  const [viewMode, setViewMode] = useState("grid");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(12);
 
-  useEffect(() => {
-    loadUser();
-  }, []);
+  // Los filtros VIVEN en la URL, como en khdemlidaba: una búsqueda se puede
+  // compartir, y el botón «atrás» deshace el último filtro en vez de sacarte
+  // de la página.
+  const filters = useMemo(() => ({
+    category: params.get('categoria') || 'all',
+    provincia: params.get('provincia') || 'all',
+    ciudad: params.get('ciudad') || 'all',
+    minRating: Number(params.get('nota')) || 0,
+    availability: params.get('disponibilidad') || 'all',
+  }), [params]);
 
-  const loadUser = async () => {
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      if (!isAuth) {
-        setUser(null);
-        setLoadingUser(false);
-        return;
-      }
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoadingUser(false);
-    }
+  const setFilters = (next) => {
+    const value = typeof next === 'function' ? next(filters) : next;
+    const qs = new URLSearchParams();
+    if (value.category && value.category !== 'all') qs.set('categoria', value.category);
+    if (value.provincia && value.provincia !== 'all') qs.set('provincia', value.provincia);
+    if (value.ciudad && value.ciudad !== 'all') qs.set('ciudad', value.ciudad);
+    if (value.minRating) qs.set('nota', String(value.minRating));
+    if (value.availability && value.availability !== 'all') qs.set('disponibilidad', value.availability);
+    setParams(qs, { replace: true });
   };
 
-  // CATEGORÍAS HARDCODEADAS — sin fetch, renderan inmediatamente para LCP
-  const QUICK_CATEGORIES_HARDCODED = [
-    { name: 'Electricista', icon: Zap },
-    { name: 'Fontanero', icon: Wrench },
-    { name: 'Pintor', icon: Palette },
-    { name: 'Albañil / Reformas', icon: Hammer },
-    { name: 'Jardinero', icon: Sprout },
-    { name: 'Autónomo de limpieza', icon: Sparkles },
-    { name: 'Cerrajero', icon: Key },
-    { name: 'Carpintero', icon: Lightbulb },
-  ];
+  useBodyScrollLock(filtersOpen);
 
-  const FALLBACK_CATEGORIES = [
-    "Abogado", "Albañil / Reformas", "Asesoría o gestoría", "Autónomo de limpieza",
-    "Carpintero", "Cerrajero", "Climatización / Calefacción", "Electricista",
-    "Empresa multiservicios", "Fontanero", "Informático a domicilio / soporte IT",
-    "Jardinero", "Marketing digital / diseño web", "Peluquería y estética a domicilio",
-    "Persianas y toldos", "Pintor", "Transportista"
-  ].map((name, idx) => ({ id: `fallback_${idx}`, name }));
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isAuth) { if (alive) setUser(null); return; }
+        const currentUser = await base44.auth.me();
+        if (alive) setUser(currentUser);
+      } catch {
+        if (alive) setUser(null);
+      } finally {
+        if (alive) setLoadingUser(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  // NO hacer fetch de categorías — usar FALLBACK_CATEGORIES directamente
-  const categories = FALLBACK_CATEGORIES;
-  const loadingCategories = false;
+  // La barra de arriba habla en slugs (es lo que viaja en las URL SEO de
+  // /categoria); los filtros de la lista, en nombres (es lo que guarda
+  // `professional_profiles.categories`). La traducción entre los dos vive
+  // aquí, en un sitio, y no repartida por cada handler.
+  const { categories: dbCategories } = useServiceCategories();
+  const slugOfCategory = useMemo(() => {
+    if (filters.category === 'all') return '';
+    return dbCategories.find((c) => c.name === filters.category)?.slug || '';
+  }, [dbCategories, filters.category]);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['professionalProfiles'],
@@ -349,10 +115,8 @@ export default function SearchPage() {
     queryKey: ['professionalUsers', profiles.map(p => p.user_id).join(',')],
     queryFn: async () => {
       if (profiles.length === 0) return [];
-      // Solo traer los usuarios necesarios con filter en lugar de list() completo
       const userIds = profiles.map(p => p.user_id);
-      const allUsers = await base44.entities.User.filter({ id: { $in: userIds } });
-      return allUsers;
+      return await base44.entities.User.filter({ id: { $in: userIds } });
     },
     enabled: profiles.length > 0,
     staleTime: 1000 * 60 * 10, gcTime: 1000 * 60 * 30, refetchOnWindowFocus: false,
@@ -368,44 +132,35 @@ export default function SearchPage() {
     staleTime: 1000 * 60 * 10, gcTime: 1000 * 60 * 30, refetchOnWindowFocus: false,
   });
 
-  // Orden: Ads+ primero (por rating), luego resto en orden aleatorio estable
-  const shuffledProfiles = useMemo(() => {
-    if (!profiles.length) return profiles;
-    const ads = profiles.filter(p => p.is_ads_plus);
-    const rest = profiles.filter(p => !p.is_ads_plus);
-    // Ads+: ordenar por rating desc, luego fecha desc
-    ads.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0) || new Date(b.created_date) - new Date(a.created_date));
-    // Resto: orden aleatorio estable
-    for (let i = rest.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [rest[i], rest[j]] = [rest[j], rest[i]];
-    }
-    return [...ads, ...rest];
-  }, [profiles]);
+  // Orden aleatorio para TODAS: ni destacados delante, ni prioridad por nota.
+  // La lógica está en `@/lib/ordenFichas` porque `Categoria.jsx` enseña el
+  // mismo catálogo y tenía otro orden distinto; con una pieza compartida no
+  // pueden volver a separarse.
+  const shuffledProfiles = useMemo(() => ordenarFichas(profiles), [profiles]);
 
-  const filteredProfiles = useMemo(() => {
-    return shuffledProfiles.filter(profile => {
-      const matchesSearch = !debouncedSearchTerm ||
-        profile.business_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.descripcion_corta?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        profile.categories?.some(cat => cat.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-      const matchesCategory = filters.category === "all" || profile.categories?.includes(filters.category);
-      const matchesProvincia = filters.provincia === "all" || profile.provincia === filters.provincia;
-      const matchesCiudad = filters.ciudad === "all" || profile.ciudad === filters.ciudad;
-      const matchesRating = !filters.minRating || profile.average_rating >= filters.minRating;
-      const matchesAvailability = filters.availability === "all" || profile.disponibilidad_tipo === filters.availability;
-      return matchesSearch && matchesCategory && matchesProvincia && matchesCiudad && matchesRating && matchesAvailability;
-    });
-  }, [shuffledProfiles, debouncedSearchTerm, filters]);
+  const filteredProfiles = useMemo(() => shuffledProfiles.filter((profile) => {
+    const matchesCategory = filters.category === "all" || profile.categories?.includes(filters.category);
+    const matchesProvincia = filters.provincia === "all" || profile.provincia === filters.provincia;
+    const matchesCiudad = filters.ciudad === "all" || profile.ciudad === filters.ciudad;
+    const matchesRating = !filters.minRating || profile.average_rating >= filters.minRating;
+    const matchesAvailability = filters.availability === "all" || profile.disponibilidad_tipo === filters.availability;
+    return matchesCategory && matchesProvincia && matchesCiudad && matchesRating && matchesAvailability;
+  }), [shuffledProfiles, filters]);
+
+  // `search_appearance` cuando la lista visible se asienta. El dedupe interno
+  // de trackMetric evita inflar contadores.
+  useEffect(() => {
+    if (!filteredProfiles.length) return undefined;
+    const id = setTimeout(() => {
+      trackSearchAppearance(filteredProfiles.slice(0, displayLimit).map((p) => p.id).filter(Boolean));
+    }, 600);
+    return () => clearTimeout(id);
+  }, [filteredProfiles, displayLimit]);
 
   const availableCities = useMemo(() => {
     if (filters.provincia === "all") return [];
     return CIUDADES_POR_PROVINCIA[filters.provincia] || [];
   }, [filters.provincia]);
-
-  const handleViewProfile = (profile) => {
-    navigate(getProfileSeoUrl(profile));
-  };
 
   const handleToggleFavorite = async (profile) => {
     if (!user) { base44.auth.redirectToLogin(); return; }
@@ -413,493 +168,291 @@ export default function SearchPage() {
       const existing = favorites.filter(fav => fav.professional_id === profile.user_id);
       if (existing.length > 0) {
         await base44.entities.Favorite.delete(existing[0].id);
-        toast.success("Eliminado de favoritos");
+        toast.success(t('favorites.toast.removed'));
       } else {
         await base44.entities.Favorite.create({ client_id: user.id, professional_id: profile.user_id, business_name: profile.business_name });
-        toast.success("Añadido a favoritos");
+        toast.success(t('favorites.toast.added'));
       }
-    } catch { toast.error("Error al gestionar favoritos"); }
+    } catch { toast.error(t('search.favoritesError')); }
   };
 
-  const isInitialLoading = loadingProfiles || loadingCategories;
-  const hasActiveFilters = filters.category !== "all" || filters.provincia !== "all" || filters.minRating > 0;
+  const hasActiveFilters = filters.category !== "all" || filters.provincia !== "all"
+    || filters.ciudad !== "all" || filters.minRating > 0 || filters.availability !== "all";
+  const activeCount = [
+    filters.category !== "all", filters.provincia !== "all", filters.ciudad !== "all",
+    filters.minRating > 0, filters.availability !== "all",
+  ].filter(Boolean).length;
 
-  // Diferir la hidratación de filtros móvil hasta después del primer paint
-  const [filtersReady, setFiltersReady] = useState(false);
-  useEffect(() => {
-    const id = requestIdleCallback
-      ? requestIdleCallback(() => setFiltersReady(true), { timeout: 1500 })
-      : setTimeout(() => setFiltersReady(true), 300);
-    return () => {
-      if (requestIdleCallback) cancelIdleCallback(id);
-      else clearTimeout(id);
-    };
-  }, []);
+  const heading = filters.category !== "all" && filters.provincia !== "all"
+    ? t('search.heading.categoryProvince', { category: filters.category, province: filters.provincia })
+    : filters.category !== "all"
+      ? filters.category
+      : filters.provincia !== "all"
+        ? t('search.heading.province', { province: filters.provincia })
+        : t('search.title');
+
+  const filtersPanel = (
+    <>
+      <div>
+        <label htmlFor="flt-ciudad" className="text-sm font-semibold text-ink block mb-2">{t('cityField')}</label>
+        <select
+          id="flt-ciudad"
+          className="select"
+          value={filters.ciudad}
+          onChange={(e) => setFilters({ ...filters, ciudad: e.target.value })}
+          disabled={filters.provincia === 'all'}
+        >
+          <option value="all">
+            {filters.provincia === 'all' ? t('search.filterPanel.selectProvinceFirst') : t('allCities')}
+          </option>
+          {availableCities.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="flt-nota" className="text-sm font-semibold text-ink block mb-2">{t('search.filterPanel.minRating')}</label>
+        <select
+          id="flt-nota"
+          className="select"
+          value={filters.minRating || ''}
+          onChange={(e) => setFilters({ ...filters, minRating: Number(e.target.value) || 0 })}
+        >
+          <option value="">{t('search.filterPanel.anyRating')}</option>
+          <option value="3">{t('search.filterPanel.ratingPlus', { rating: 3 })}</option>
+          <option value="4">{t('search.filterPanel.ratingPlus', { rating: 4 })}</option>
+          <option value="4.5">{t('search.filterPanel.ratingPlus', { rating: 4.5 })}</option>
+        </select>
+      </div>
+
+      <div>
+        <span className="text-sm font-semibold text-ink block mb-2">{t('availability')}</span>
+        <div className="flex flex-wrap gap-2">
+          {[
+            ['all', t('search.filterPanel.anyAvailability')],
+            ['laborables', t('search.filterPanel.weekdaysOnly')],
+            ['completa', t('search.filterPanel.allWeek')],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFilters({ ...filters, availability: value })}
+              className={filters.availability === value ? 'chip-active' : 'chip'}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button type="button" className="btn-secondary w-full" onClick={() => setFilters(EMPTY_FILTERS)}>
+        {t('search.resetFilters')}
+      </button>
+    </>
+  );
+
+  const resultsLine = loadingProfiles
+    ? t('search.results.loading')
+    : t('search.heading.resultsCount', { count: filteredProfiles.length });
 
   return (
     <>
       <SEOHead
         title={
           filters.category !== "all" && filters.provincia !== "all"
-            ? `${filters.category} en ${filters.provincia} - MisAutónomos`
+            ? t('search.seo.titleCategoryProvince', { category: filters.category, province: filters.provincia })
             : filters.category !== "all"
-            ? `${filters.category} en España - MisAutónomos`
-            : filters.provincia !== "all"
-            ? `Autónomos en ${filters.provincia} - MisAutónomos`
-            : "Buscar Autónomos Profesionales - MisAutónomos"
+              ? t('search.seo.titleCategory', { category: filters.category })
+              : filters.provincia !== "all"
+                ? t('search.seo.titleProvince', { province: filters.provincia })
+                : t('search.seo.titleDefault')
         }
-        description={`Encuentra y contacta con profesionales autónomos verificados en España. ${filteredProfiles.length}+ profesionales disponibles.`}
+        description={t('search.seo.description', { count: filteredProfiles.length })}
         keywords="autónomos, profesionales verificados, servicios a domicilio, contactar gratis"
       />
-      <ServiceSchema categories={categories.map(c => c.name)} location={filters.provincia !== "all" ? filters.provincia : "España"} />
+      <ServiceSchema
+        categories={dbCategories.map((c) => c.name)}
+        location={filters.provincia !== "all" ? filters.provincia : "España"}
+      />
       <BreadcrumbSchema items={[
         { name: "Inicio", url: "https://misautonomos.es" },
-        { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" }
+        { name: "Buscar Profesionales", url: "https://misautonomos.es/buscar" },
       ]} />
 
-      <div className="min-h-screen" style={{ background: '#f8fafc', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <section className="section-tight">
+        <div className="container-page">
+          <h1>{heading}</h1>
 
-        {/* ── HERO ── 
-            SIEMPRE se renderiza para reservar espacio y evitar CLS.
-            Cuando hay usuario se colapsa a height:0 sin layout shift. */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)',
-            overflow: 'hidden',
-            // Cuando hay usuario confirmado: colapsar sin mover el contenido de abajo
-            height: (!loadingUser && user) ? 0 : undefined,
-          }}
-          aria-hidden={(!loadingUser && user) ? true : undefined}
-        >
-          {/* Contenido real del hero — solo visible para visitantes */}
-          <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)' }} className="relative overflow-hidden">
-            {/* Decoración de fondo — sin filter:blur para reducir TBT */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-              <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full" />
-              <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-white/5 rounded-full" />
-            </div>
+          <div className="mt-8">
+            <HeroSearch
+              initialCategory={slugOfCategory}
+              initialProvincia={filters.provincia === 'all' ? '' : filters.provincia}
+              initialCiudad={filters.ciudad === 'all' ? '' : filters.ciudad}
+              hideSubmitButton
+              categoryPlaceholder={t('allCategories')}
+              provincePlaceholder={t('allProvinces')}
+              onAutoSearch={({ category, provincia, ciudad }) => setFilters({
+                ...filters,
+                category: category ? (dbCategories.find((c) => c.slug === category)?.name || 'all') : 'all',
+                provincia: provincia || 'all',
+                ciudad: ciudad || 'all',
+              })}
+            />
+          </div>
 
-            <div className="relative max-w-5xl mx-auto px-4 py-10 md:py-20">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-white/10 text-white text-xs px-3 py-1.5 rounded-full mb-4 border border-white/20">
-                  <Shield className="w-3.5 h-3.5 text-green-300" />
-                  <span>Profesionales verificados · 100% gratis</span>
-                </div>
-                <h1 className="font-extrabold text-white leading-tight mb-3" style={{ fontSize: 'clamp(1.75rem, 6vw, 3.5rem)' }}>
-                  Encuentra el autónomo<br />
-                  <span style={{ color: '#fbbf24' }}>que necesitas</span>
-                </h1>
-                <p className="text-blue-200 mb-6 max-w-xl mx-auto" style={{ fontSize: 'clamp(0.95rem, 3vw, 1.125rem)' }}>
-                  Contacta gratis con profesionales en España.
-                </p>
+          {/* Móvil: el recuento a la izquierda, la puerta a los filtros a la
+              derecha. En escritorio el recuento vive sobre la lista y los
+              filtros están siempre a la vista. */}
+          <div className="mt-8 lg:hidden flex items-center justify-between gap-3">
+            <p className="text-sm text-c-muted min-w-0 truncate">{resultsLine}</p>
+            <button type="button" className="btn-secondary btn-sm flex-shrink-0" onClick={() => setFiltersOpen(true)}>
+              {t('search.filters')}{activeCount > 0 && ` · ${activeCount}`}
+            </button>
+          </div>
 
-                {/* Barra de búsqueda hero — apilada en móvil */}
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2">
-                    <div className="flex-1">
-                      <SearchAutocomplete
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        onSelect={handleViewProfile}
-                        placeholder="¿Qué profesional buscas?"
-                      />
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 lg:gap-10">
+            <aside className="hidden lg:block sticky top-24 h-fit">
+              <h2 className="text-lg font-semibold text-ink mb-5">{t('search.filters')}</h2>
+              <div className="space-y-6">{filtersPanel}</div>
+            </aside>
+
+            <div>
+              <p className="hidden lg:block text-sm text-c-muted mb-6">{resultsLine}</p>
+
+              {loadingProfiles ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  {[...Array(6)].map((_, idx) => (
+                    <div key={idx} className="card p-4 flex items-center gap-3" style={{ minHeight: 128 }}>
+                      <div className="rounded-xl bg-soft" style={{ width: 56, height: 56 }} />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/5 rounded bg-soft" />
+                        <div className="h-3 w-2/5 rounded bg-soft" />
+                        <div className="h-3 w-1/2 rounded bg-soft" />
+                      </div>
                     </div>
-                    <Button
-                      onClick={() => document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="bg-blue-600 text-white rounded-xl font-semibold w-full md:w-auto md:px-6"
-                      style={{ height: '48px', fontSize: '16px', touchAction: 'manipulation' }}
-                    >
-                      <SearchIcon className="w-4 h-4 mr-2" />
-                      Buscar
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Props de valor — ocultos en móvil para simplificar */}
-                <div className="hidden md:flex items-center justify-center gap-6 mt-6 text-sm flex-wrap">
-                  <div className="flex items-center gap-2 text-white/80">
-                    <MessageSquare className="w-4 h-4 text-green-300" />
-                    <span><strong className="text-white">Contacto directo</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <Shield className="w-4 h-4 text-blue-300" />
-                    <span><strong className="text-white">Sin comisiones</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <Users className="w-4 h-4 text-yellow-300" />
-                    <span><strong className="text-white">Verificados</strong></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Categorías rápidas — chips scroll horizontal en móvil */}
-              <div>
-                <p className="text-white/60 text-sm text-center mb-3">Explorar por categoría</p>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', flexWrap: 'nowrap' }}>
-                  {QUICK_CATEGORIES_HARDCODED.map(({ name, icon: Icon }) => (
-                    <button
-                      key={name}
-                      onClick={() => {
-                        setFilters(f => ({ ...f, category: name }));
-                        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="flex items-center gap-2 text-white border border-white/20 flex-shrink-0 md:hover:bg-white/20 md:active:bg-white/20"
-                      style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 16px', fontSize: '14px', fontWeight: 500, minHeight: '44px', touchAction: 'manipulation', whiteSpace: 'nowrap', WebkitTapHighlightColor: 'transparent', transition: 'none' }}
-                    >
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      {name}
-                    </button>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* CTA autónomo — barra fija en móvil, inline en desktop */}
-            <div className="border-t border-white/10 bg-white/5 py-3 px-4 hidden md:block">
-              <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-                <p className="text-white/80 text-sm">
-                  🚀 <strong className="text-white">¿Eres autónomo?</strong> Consigue clientes desde hoy
-                </p>
-                <Button
-                  onClick={() => navigate('/completar-perfil')}
-                  className="bg-green-500 text-white font-bold px-5 h-9 rounded-xl shadow-lg text-sm flex-shrink-0"
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  Registrarme gratis
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-            {/* Barra fija autónomo — solo móvil */}
-            <div className="md:hidden" style={{ position: 'fixed', bottom: '64px', left: 0, right: 0, zIndex: 20, background: 'linear-gradient(90deg, #15803d, #16a34a)', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-              <button
-                onClick={() => navigate(createPageUrl("PricingPlans"))}
-                className="w-full flex items-center justify-between text-white"
-                style={{ padding: '12px 20px', fontSize: '14px', fontWeight: 600, touchAction: 'manipulation' }}
-              >
-                <span>🚀 <strong>¿Eres autónomo?</strong> Registrarme gratis</span>
-                <ChevronRight className="w-5 h-5 flex-shrink-0" />
-              </button>
-            </div>
-          </div>
-        </div>{/* fin hero wrapper */}
-
-        {/* ── TRUST SLIDER — solo para visitantes no logueados ── */}
-        {!loadingUser && !user && (
-          <Suspense fallback={null}>
-            <TrustSlider />
-          </Suspense>
-        )}
-
-        {/* ── CONTENIDO PRINCIPAL ── */}
-        <div id="results-section">
-        <div className="max-w-7xl mx-auto px-4 py-5 overflow-visible">
-
-          {/* Barra de búsqueda (para usuarios logueados) */}
-          {user && (
-            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100" style={{ position: 'relative', zIndex: 10 }}>
-              <div className="flex gap-2 mb-3">
-                <div className="flex-1">
-                  <SearchAutocomplete
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    onSelect={handleViewProfile}
+              ) : filteredProfiles.length === 0 ? (
+                <div className="space-y-6">
+                  <EmptyState
+                    icon={<IconSearch size={28} />}
+                    title={t('search.empty.title')}
+                    body={t('search.empty.hint')}
+                    ctaLabel={hasActiveFilters ? t('search.resetFilters') : undefined}
+                    onCta={() => setFilters(EMPTY_FILTERS)}
                   />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 h-10 px-3 rounded-xl font-medium border-gray-200 ${showFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="hidden md:inline">Filtros</span>
-                  {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full" />}
-                </Button>
-              </div>
-              <div className={`${showFilters ? 'block' : 'hidden'}`}>
-                <Suspense fallback={null}>
-                  <SearchFilters
-                    filters={filters}
-                    onFilterChange={setFilters}
-                    availableCities={availableCities}
-                    categories={categories}
-                    provinces={PROVINCIAS}
-                  />
-                </Suspense>
-              </div>
-            </div>
-          )}
-
-          {/* Filtros visita sin login */}
-          {!user && (
-            <div className="mb-5 bg-white rounded-2xl p-4 shadow-sm border border-gray-100" style={{ position: 'relative', zIndex: 10 }}>
-              {/* Toggle button — desktop only */}
-              <div className="hidden md:flex gap-2 items-center flex-wrap mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 h-9 px-3 rounded-xl font-medium border-gray-200 ${showFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Filtros avanzados
-                  {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full" />}
-                </Button>
-                {filters.category !== "all" && (
-                  <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">
-                    {filters.category}
-                    <button onClick={() => setFilters(f => ({...f, category: "all"}))}><X className="w-3 h-3" /></button>
-                  </span>
-                )}
-                {filters.provincia !== "all" && (
-                  <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-medium">
-                    {filters.provincia}
-                    <button onClick={() => setFilters(f => ({...f, provincia: "all", ciudad: "all"}))}><X className="w-3 h-3" /></button>
-                  </span>
-                )}
-              </div>
-
-              {/* Desktop: toggled by button above */}
-              {showFilters && (
-                <div className="hidden md:block">
-                  <Suspense fallback={null}>
-                    <SearchFilters
-                      filters={filters}
-                      onFilterChange={setFilters}
-                      availableCities={availableCities}
-                      categories={categories}
-                      provinces={PROVINCIAS}
-                    />
-                  </Suspense>
-                </div>
-              )}
-
-              {/* Mobile: deferred render until after first paint */}
-              <div className="md:hidden">
-                {filtersReady && (
-                  <Suspense fallback={null}>
-                    <SearchFilters
-                      filters={filters}
-                      onFilterChange={setFilters}
-                      availableCities={availableCities}
-                      categories={categories}
-                      provinces={PROVINCIAS}
-                      isMobile={true}
-                    />
-                  </Suspense>
-                )}
-              </div>
-            </div>
-          )}
-
-          <SavedSearches
-            user={user}
-            currentFilters={filters}
-            resultsCount={filteredProfiles.length}
-            onLoadSearch={(savedFilters) => setFilters(savedFilters)}
-          />
-
-          {/* Header resultados */}
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                {isInitialLoading ? (
-                  <span className="text-gray-400">Buscando profesionales...</span>
-                ) : (
-                  <><span className="text-blue-600">{filteredProfiles.length}</span> profesionales</>
-                )}
-              </h2>
-              <p className="text-xs text-gray-600">Verificados · Contacto directo · Sin comisiones</p>
-            </div>
-            {!isInitialLoading && filteredProfiles.length > 0 && (
-              <div className="flex gap-1.5">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  aria-label="Vista en cuadrícula"
-                  className={`h-8 w-8 p-0 ${viewMode === "grid" ? "bg-blue-600 border-blue-600" : "border-gray-200"}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                </Button>
-                <Button
-                  variant={viewMode === "map" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("map")}
-                  aria-label="Vista en mapa"
-                  className={`h-8 w-8 p-0 ${viewMode === "map" ? "bg-blue-600 border-blue-600" : "border-gray-200"}`}
-                >
-                  <MapPin className="w-4 h-4" aria-hidden="true" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Skeleton loading — matches EXACT card shape for mobile (avatar+name row) and desktop (blue header) */}
-          {isInitialLoading && (
-            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
-              {[...Array(8)].map((_, idx) => (
-                <div key={idx} className="bg-white rounded-xl overflow-hidden border border-gray-100" style={{ minHeight: '200px', contain: 'layout style paint' }}>
-                  {/* Desktop: blue header bar */}
-                  <div className="hidden md:block" style={{ height: '48px', background: '#e5e7eb' }} />
-                  {/* Mobile: avatar + name row (matches real card mobile layout) */}
-                  <div className="md:hidden flex items-center gap-3 px-3 pt-3 pb-1">
-                    <div style={{ width: '48px', height: '48px', minWidth: '48px', borderRadius: '9999px', background: '#e5e7eb' }} />
-                    <div className="flex-1 space-y-2">
-                      <div style={{ height: '14px', width: '60%', borderRadius: '4px', background: '#e5e7eb' }} />
-                      <div style={{ height: '11px', width: '40%', borderRadius: '4px', background: '#f3f4f6' }} />
+                  {profiles.length > 0 && (
+                    <div>
+                      <p className="text-sm text-c-muted mb-3 font-medium">{t('search.empty.suggestions')}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        {profiles.slice(0, 4).map((profile) => (
+                          <ProfessionalCard
+                            key={profile.id}
+                            profile={profile}
+                            href={getProfileSeoUrl(profile)}
+                            onToggleFavorite={user ? () => handleToggleFavorite(profile) : undefined}
+                            isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
+                            professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  {/* Shared content area */}
-                  <div className="px-3 pb-3 md:pt-8 pt-2 space-y-2">
-                    <div className="hidden md:block h-4 w-3/4 rounded" style={{ background: '#e5e7eb' }} />
-                    <div className="hidden md:block h-3 w-1/2 rounded" style={{ background: '#f3f4f6' }} />
-                    <div style={{ height: '11px', width: '55%', borderRadius: '4px', background: '#f3f4f6' }} />
-                    <div style={{ height: '32px', width: '100%', borderRadius: '6px', background: '#f3f4f6', marginTop: '8px' }} />
-                    <div style={{ height: '32px', width: '100%', borderRadius: '8px', background: '#e5e7eb', marginTop: '8px' }} />
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Sin resultados */}
-          {!isInitialLoading && filteredProfiles.length === 0 && (
-            <div className="space-y-4">
-              <Card className="p-8 text-center border-0 shadow-sm rounded-2xl bg-white">
-                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <SearchIcon className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Sin resultados exactos</h3>
-                <p className="text-sm text-gray-500 mb-4">No encontramos profesionales con esos filtros exactos</p>
-                {hasActiveFilters && (
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => setFilters({ category: "all", provincia: "all", ciudad: "all", minRating: 0, availability: "all" })}
-                  >
-                    Ver todos los profesionales
-                  </Button>
-                )}
-              </Card>
-              {/* Fix #11: Show related suggestions when no results */}
-              {profiles.length > 0 && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-3 font-medium">Quizás te interesen estos profesionales:</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                    {profiles.slice(0, 4).map((profile) => (
-                      <ProfileCard
-                        key={profile.id}
-                        profile={profile}
-                        onClick={() => handleViewProfile(profile)}
-                        onToggleFavorite={() => handleToggleFavorite(profile)}
-                        isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
-                        professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                        currentUserId={user?.id}
-                        currentUser={user}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(!user || user.user_type === "client") && (
-                <Card className="p-8 text-center border-0 shadow-xl rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
-                  <div className="text-white">
-                    <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-80" />
-                    <h3 className="text-xl font-bold mb-2">¿Eres profesional?</h3>
-                    <p className="text-blue-100 mb-5 text-sm">Únete gratis y consigue clientes en tu zona</p>
-                    <Button onClick={() => navigate('/completar-perfil')}
-                      className="bg-white text-blue-700 hover:bg-blue-50 h-11 px-6 font-bold rounded-xl">
-                      Registrarme gratis
-                    </Button>
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* Grid de resultados */}
-          {!isInitialLoading && filteredProfiles.length > 0 && (
-            <>
-              {viewMode === "grid" ? (
+              ) : (
                 <>
-                  <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {filteredProfiles.slice(0, displayLimit).map((profile, idx) => (
-                      <ProfileCard
+                      <ProfessionalCard
                         key={profile.id}
                         profile={profile}
-                        onClick={() => handleViewProfile(profile)}
-                        onToggleFavorite={() => handleToggleFavorite(profile)}
+                        href={getProfileSeoUrl(profile)}
+                        onToggleFavorite={user ? () => handleToggleFavorite(profile) : undefined}
                         isFavorite={favorites.some(fav => fav.professional_id === profile.user_id)}
                         professionalUser={professionalUsers.find(u => u.id === profile.user_id)}
-                        currentUserId={user?.id}
-                        currentUser={user}
                         priority={idx < 4}
                       />
                     ))}
                   </div>
+
                   {filteredProfiles.length > displayLimit && (
-                    <div className="text-center mt-10">
-                      <Button
+                    <div className="text-center mt-8">
+                      <button
+                        type="button"
                         onClick={() => setDisplayLimit(prev => prev + 12)}
-                        variant="outline"
-                        size="lg"
-                        className="px-10 rounded-2xl border-gray-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 font-semibold"
+                        className="btn-secondary"
                       >
-                        Cargar más profesionales ({filteredProfiles.length - displayLimit} restantes)
-                      </Button>
+                        {t('search.load_more', { count: filteredProfiles.length - displayLimit })}
+                      </button>
                     </div>
                   )}
                 </>
-              ) : (
-                <Suspense fallback={<div className="h-96 bg-gray-100 rounded-xl animate-pulse" />}>
-                  <MapView profiles={filteredProfiles} onProfileClick={handleViewProfile} />
-                </Suspense>
               )}
-            </>
-          )}
 
-          {/* CTA final para registrarse como autónomo */}
-          {!isInitialLoading && !loadingUser && (!user || user.user_type === "client") && (
-            <div className="mt-14 rounded-3xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' }}>
-              <div className="p-8 md:p-12 text-white text-center">
-                <span className="inline-block bg-green-500 text-white text-xs font-bold px-4 py-1.5 rounded-full mb-5 shadow">
-                  🚀 Plataforma recién lanzada · 100% gratis
-                </span>
-                <h3 className="text-3xl md:text-4xl font-extrabold mb-3">
-                  ¿Eres autónomo?<br />
-                  <span style={{ color: '#fbbf24' }}>Aparece aquí hoy</span>
-                </h3>
-                <p className="text-blue-200 mb-3 text-base max-w-lg mx-auto">
-                  El nuevo directorio de autónomos de España — sin intermediarios, sin comisiones.
-                </p>
-                <p className="text-blue-300 mb-8 text-sm max-w-md mx-auto">
-                  Sé de los primeros en unirte y posiciónate antes que tu competencia.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={() => navigate('/completar-perfil')}
-                    className="bg-green-500 hover:bg-green-400 text-white h-13 px-10 text-base font-bold shadow-xl rounded-2xl"
-                    style={{ height: '52px' }}
-                  >
-                    <Briefcase className="w-5 h-5 mr-2" />Registrarme gratis
-                  </Button>
-                  <Button
-                    onClick={() => navigate(createPageUrl("PricingPlans"))}
-                    className="bg-white text-blue-900 hover:bg-gray-100 px-8 text-base font-semibold rounded-2xl border-0"
-                    style={{ height: '52px' }}
-                  >
-                    Saber más →
-                  </Button>
+              {/* Cierre de página: la invitación a darse de alta. Sólo para
+                  quien no es ya profesional. */}
+              {!loadingUser && (!user || user.user_type === "client") && (
+                <div className="mt-10 rounded-xl bg-brand-navy text-white p-8 sm:p-10 text-center">
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    {t('landing.cta_pro_title')}{' '}
+                    <span className="text-brand-gold">{t('search.finalCta.titleHighlight')}</span>
+                  </h2>
+                  <p className="text-white/80 mt-3 mb-6 max-w-lg mx-auto leading-relaxed">
+                    {t('search.finalCta.body')}
+                  </p>
+                  <Link to="/registro?tipo=autonomo" className="btn bg-brand-gold text-brand-navy font-semibold hover:bg-brand-gold-deep">
+                    {t('nav.becomeProFree')}
+                  </Link>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+      </section>
+
+      {/* Hoja de filtros en móvil. El botón de cerrar va PEGADO ABAJO: en una
+          lista larga se iba bajo la línea de flotación y había que desplazarse
+          para encontrarlo. */}
+      {filtersOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('search.filters')}
+          className="lg:hidden fixed inset-0 z-50 bg-ink/40"
+          onClick={() => setFiltersOpen(false)}
+        >
+          <div
+            className="absolute inset-x-0 bottom-0 bg-surface rounded-t-xl p-6 max-h-[85vh] overflow-y-auto"
+            style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 rounded-full bg-c-border mx-auto mb-6" />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">{t('search.filters')}</h2>
+              <button
+                type="button"
+                aria-label={t('common.close')}
+                className="w-11 h-11 rounded-lg flex items-center justify-center hover:bg-soft"
+                onClick={() => setFiltersOpen(false)}
+              >
+                <IconClose />
+              </button>
+            </div>
+            <div className="space-y-6">{filtersPanel}</div>
+            <div
+              className="sticky bottom-0 pt-4 -mx-6 px-6 pb-1"
+              style={{ background: 'linear-gradient(to bottom, rgb(var(--c-surface) / 0) 0%, rgb(var(--c-surface)) 28%)' }}
+            >
+              <button
+                type="button"
+                className="btn w-full bg-brand-navy text-white hover:bg-brand-navy-deep"
+                onClick={() => setFiltersOpen(false)}
+              >
+                {t('search.showResults', { count: filteredProfiles.length })}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

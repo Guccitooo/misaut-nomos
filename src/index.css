@@ -2,176 +2,469 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-} */
-
-
+/* ─────────────────────────────────────────────────────────────────────────
+   Tokens de marca MisAutónomos
+   - Navy primario:  #00255C  → HSL 216 100% 18%
+   - Gold de acento: #F5C13D  → HSL  43  90% 60%
+   - Neutros slate (Tailwind).
+   Las HSL se exponen como componentes (h s% l%) para que Tailwind las consuma
+   vía `hsl(var(--...) / <alpha-value>)`.
+   ───────────────────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222 47% 11%;            /* slate-900 */
+
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primario = navy de marca */
+    --primary: 216 100% 18%;              /* #00255C */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secundario = neutro suave */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Acento = dorado de marca */
+    --accent: 43 90% 60%;                 /* #F5C13D */
+    --accent-foreground: 216 100% 18%;    /* texto navy sobre dorado */
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;      /* slate-500 */
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;                /* slate-200 */
+    --input: 214 32% 91%;
+    --ring: 216 100% 18%;                 /* foco navy */
+
+    --radius: 0.75rem;                    /* 12px base */
+
+    /* Tokens propios de marca (para uso directo) */
+    --brand-navy: 216 100% 18%;
+    --brand-navy-deep: 216 100% 12%;
+    --brand-gold: 43 90% 60%;
+    --brand-gold-deep: 38 80% 50%;
+    --brand-cream: 44 50% 96%;
+    --brand-ink: 222 47% 11%;
+    --brand-surface: 220 20% 98%;         /* gris muy suave para bandas */
+
+    /* Sidebar reusa los mismos tokens */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 47.4% 11.2%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 216 100% 18%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 216 100% 18%;
   }
-  
-  /* Force light theme always — override .dark class if it exists */
+
+  /* Forzar light theme siempre. */
   .dark {
     --background: 0 0% 100% !important;
-    --foreground: 222.2 84% 4.9% !important;
+    --foreground: 222 47% 11% !important;
     --card: 0 0% 100% !important;
-    --card-foreground: 222.2 84% 4.9% !important;
+    --card-foreground: 222 47% 11% !important;
     --popover: 0 0% 100% !important;
-    --popover-foreground: 222.2 84% 4.9% !important;
-    --primary: 221.2 83.2% 53.3% !important;
-    --primary-foreground: 210 40% 98% !important;
-    --secondary: 210 40% 96.1% !important;
-    --secondary-foreground: 222.2 47.4% 11.2% !important;
-    --muted: 210 40% 96.1% !important;
-    --muted-foreground: 215.4 16.3% 46.9% !important;
-    --accent: 210 40% 96.1% !important;
-    --accent-foreground: 222.2 47.4% 11.2% !important;
-    --destructive: 0 84.2% 60.2% !important;
-    --destructive-foreground: 210 40% 98% !important;
-    --border: 214.3 31.8% 91.4% !important;
-    --input: 214.3 31.8% 91.4% !important;
-    --ring: 221.2 83.2% 53.3% !important;
-    --sidebar-background: 0 0% 100% !important;
-    --sidebar-foreground: 222.2 47.4% 11.2% !important;
-    --sidebar-primary: 221.2 83.2% 53.3% !important;
-    --sidebar-primary-foreground: 210 40% 98% !important;
-    --sidebar-accent: 210 40% 96.1% !important;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2% !important;
-    --sidebar-border: 214.3 31.8% 91.4% !important;
-    --sidebar-ring: 221.2 83.2% 53.3% !important;
+    --popover-foreground: 222 47% 11% !important;
+    --primary: 216 100% 18% !important;
+    --primary-foreground: 0 0% 100% !important;
+    --secondary: 210 40% 96% !important;
+    --secondary-foreground: 222 47% 11% !important;
+    --muted: 210 40% 96% !important;
+    --muted-foreground: 215 16% 47% !important;
+    --accent: 43 90% 60% !important;
+    --accent-foreground: 216 100% 18% !important;
+    --destructive: 0 84% 60% !important;
+    --destructive-foreground: 0 0% 100% !important;
+    --border: 214 32% 91% !important;
+    --input: 214 32% 91% !important;
+    --ring: 216 100% 18% !important;
   }
 }
 
-
-
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-c-border outline-ring/50;
+  }
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
     @apply bg-background text-foreground;
   }
+  /* Titulares con la escala del modelo. Sólo alcanza a los que NO llevan
+     clase de tamaño propia: las utilidades de Tailwind se emiten después de
+     esta capa y ganan siempre. */
+  h1 { @apply text-h1; }
+  h2 { @apply text-h2; }
+  h3 { @apply text-h3; }
+  /* Cinturón anti-CLS: cualquier <img> sin altura explícita conserva su ratio
+     real en cuanto se conoce el natural-size, y no salta. Los <img> con
+     width/height/aspect-ratio explícitos no se ven afectados. */
+  img:not([width]):not([height]) {
+    height: auto;
+    max-width: 100%;
+    aspect-ratio: attr(width number, auto);
+  }
 }
 
-/* =============================================
-   MICRO-INTERACCIONES GLOBALES
-   ============================================= */
-
-/* Cards con hover suave (complementa globals.css) */
+/* ─────────────────────────────────────────────────────────────────────────
+   Microinteracciones globales
+   ───────────────────────────────────────────────────────────────────────── */
 .profile-card {
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .profile-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 50px -16px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -16px hsl(var(--brand-navy) / 0.18);
 }
 @media (max-width: 768px) {
-  .profile-card:hover {
-    transform: none;
-    box-shadow: none;
+  .profile-card:hover { transform: none; box-shadow: none; }
+  .profile-card:active { transform: scale(0.99); }
+}
+
+/* Focus visible accesible por defecto (negociado con tokens) */
+:focus-visible {
+  outline: 2px solid hsl(var(--brand-navy));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REFONTE — sistema de diseño portado de khdemlidaba
+   ═══════════════════════════════════════════════════════════════════════
+   Tokens en canales RGB sueltos para que Tailwind pueda aplicarles
+   opacidad (`bg-c-accent/10` compila a `rgb(var(--c-accent) / 0.1)`).
+
+   Los valores son la paleta REAL de misautonomos — la que se ve —, no los
+   `--brand-navy/gold/cream` de arriba, que no usa ningún fichero. Lo que
+   la web pinta hoy es blue-600 de primario, gray/slate de neutros y
+   green-600 de éxito; eso es lo que hay que conservar. Los `--brand-*`
+   se quedan definidos por si algún día se usan, pero no gobiernan nada.
+
+   Esta capa es ADITIVA mientras dura la migración: `bg-c-accent` empieza a
+   funcionar sin que `bg-blue-600` deje de hacerlo. Cuando el último
+   consumidor de shadcn esté migrado, tailwind.config.js resetea la
+   paleta y sólo quedan estos tokens (como en khdemlidaba). */
+:root {
+  --c-canvas:         255 255 255;   /* fondo de página */
+  --c-surface:        255 255 255;   /* cartas, inputs, modales */
+  --c-ink:             17  24  39;   /* gray-900 — texto principal */
+  --c-contrast:        17  24  39;   /* inverso del canvas (botón oscuro) */
+  --c-muted:          107 114 128;   /* gray-500 — texto secundario */
+  --c-border:         229 231 235;   /* gray-200 — filetes */
+  --c-soft:           243 244 246;   /* gray-100 — fondos suaves, chips */
+  /* Primario = el AZUL MARINO DE LA MARCA, no el blue-600 de Base44.
+     El token nació copiando el azul que traía la plantilla, y por eso el
+     sitio tenía dos azules: el marino del logo y de la portada (#00255C) y
+     un blue-600 que salía en los chips activos, en los enlaces y en 124
+     `text-c-accent` repartidos por la web. Ninguno de los dos era un error
+     de código —los dos compilaban— y justo por eso nadie lo veía: son dos
+     azules, y hay que ponerlos uno al lado del otro para notarlo.
+     Con el token en marino, esos 124 sitios pasan al color de la marca de
+     una vez, sin tocar un solo fichero. */
+  --c-accent:           0  37  92;   /* #00255C — azul marino de marca */
+  --c-accent-hover:     0  26  69;   /* #001A45 */
+  /* Acento SECUNDARIO. No es decoración suelta: la web lo venía usando de
+     forma consistente en morado para lo que no es la acción principal —
+     búsquedas guardadas, especialidades, la vista previa del perfil y las
+     métricas de campaña. Tenía nombre en ningún sitio y aparecía como
+     purple-600, purple-100, purple-50… en 60 lugares. Ahora es un token, y
+     los tintes salen de él con opacidad (bg-secondary/10). */
+  --c-secondary:      147  51 234;   /* purple-600, el que ya se usaba */
+  --c-secondary-hover:126  34 206;   /* purple-700 */
+  --c-success:         22 163  74;   /* green-600 */
+  --c-error:          220  38  38;   /* red-600 */
+  --c-warning:        217 119   6;   /* amber-600 */
+  --c-star:           251 191  36;   /* amber-400 — valoraciones */
+  --c-whatsapp:        37 211 102;
+  --c-whatsapp-hover:  30 190  93;
+
+  --r-md: 0.5rem;
+  --r-lg: 0.75rem;
+  --r-xl: 1rem;
+  --sh-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
+
+@layer components {
+  /* Layout */
+  .container-page {
+    @apply mx-auto w-full max-w-page px-5 sm:px-8;
   }
-  .profile-card:active {
-    transform: scale(0.98);
+  /* Ritmo de sección — 48px móvil (compacto), 96px+ escritorio */
+  .section       { @apply py-12 sm:py-24; }
+  .section-tight { @apply py-8 sm:py-16; }
+
+  /* ---- Botones — 48px mínimo en móvil (regla dura), 56 en lg ----------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-medium leading-none
+           transition-colors select-none
+           disabled:opacity-50 disabled:pointer-events-none;
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary   { @apply btn bg-c-accent text-white hover:bg-accent-hover; }
+  .btn-secondary { @apply btn bg-surface text-ink border border-c-border hover:border-ink; }
+  /* Terciario: sin fondo ni borde, subrayado al pasar. Para acciones que
+     abren un detalle en vez de decidir — el peso visual queda para las
+     dos opciones reales. */
+  .btn-ghost     { @apply btn bg-transparent text-ink underline underline-offset-2 hover:opacity-80; }
+  .btn-dark      { @apply btn bg-contrast text-canvas hover:opacity-90; }
+  .btn-whatsapp  { @apply btn bg-whatsapp text-white hover:bg-whatsapp-hover; }
+  .btn-danger-outline {
+    @apply btn bg-surface border;
+    color: rgb(var(--c-error));
+    border-color: rgb(var(--c-error) / 0.45);
+    border-width: 1.5px;
+  }
+  .btn-danger-outline:hover { background: rgb(var(--c-error) / 0.08); border-color: rgb(var(--c-error)); }
+  .btn-danger-solid { @apply btn text-white; background: rgb(var(--c-error)); }
+  .btn-danger-solid:hover { background: #B91C1C; }
+  .btn-lg { @apply px-6 py-4 text-base; min-height: 56px; }
+  .btn-sm { @apply px-4 py-2 text-sm;  min-height: 44px; }
+  /* Botón sólo-icono cuadrado, 44px táctil. */
+  .btn-icon { @apply btn p-0 w-11 h-11; min-height: 44px; }
+
+  /* ---- Campos — 48px, texto 16px (nunca menos: iOS hace zoom por debajo) */
+  .input {
+    @apply block w-full rounded-lg bg-surface px-4 py-3 text-base text-ink
+           placeholder:text-c-muted
+           border border-c-border
+           focus:border-ink focus:outline-none
+           transition-colors
+           disabled:bg-soft disabled:text-c-muted disabled:cursor-not-allowed;
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .textarea { @apply input resize-y; min-height: 120px; line-height: 1.5; }
+  /* Error: borde rojo suave. NUNCA fondo rojo — el usuario sigue
+     escribiendo tranquilo. El mensaje va debajo con .field-error. */
+  .input-error { border-color: rgb(var(--c-error)); }
+  .input-error:focus {
+    border-color: rgb(var(--c-error));
+    box-shadow: 0 0 0 3px rgb(var(--c-error) / 0.15);
+  }
+  .label       { @apply block text-sm font-medium text-ink mb-1.5; }
+  .field-hint  { @apply mt-2 text-xs text-c-muted leading-snug; }
+  .field-error { @apply mt-2 text-xs text-error leading-snug; }
+  .field-ok    { @apply mt-2 text-xs text-success leading-snug; }
+  .select {
+    /* `pe-10` y no `pr-10`, flecha por `background-position` que se
+       voltea en RTL: en árabe el texto de la opción va a la derecha y
+       pasaría por debajo de la flecha. */
+    @apply input pe-10 appearance-none bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23111827'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-position: right 0.9rem center;
+    background-size: 1.1rem;
+    font-size: 16px;
+  }
+  [dir="rtl"] .select { background-position: left 0.9rem center; }
+  /* Checkbox / radio nativos con el acento de marca. Sin Radix: el
+     control del navegador, coloreado, 20px táctil. */
+  .checkbox, .radio {
+    @apply w-5 h-5 shrink-0 border border-c-border rounded bg-surface cursor-pointer
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-c-accent/40;
+    accent-color: rgb(var(--c-accent));
+  }
+  .radio { @apply rounded-full; }
+
+  /* ---- Switch (interruptor) — CSS puro sobre un <input type=checkbox> -- */
+  .switch {
+    @apply relative inline-block w-11 h-6 shrink-0 rounded-full bg-c-border cursor-pointer
+           transition-colors appearance-none
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-c-accent/40;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .switch::after {
+    content: '';
+    @apply absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform;
+  }
+  .switch:checked { @apply bg-c-accent; }
+  .switch:checked::after { transform: translateX(20px); }
+  .switch:disabled { @apply opacity-50 cursor-not-allowed; }
+  [dir="rtl"] .switch::after { left: auto; right: 0.125rem; }
+  [dir="rtl"] .switch:checked::after { transform: translateX(-20px); }
+
+  /* ---- Carta ------------------------------------------------------------- */
+  .card { @apply bg-surface border border-c-border rounded-xl shadow-card overflow-hidden; }
+
+  /* ---- Chips — 48px táctil (regla dura) --------------------------------- */
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
+           bg-surface border border-c-border text-ink
+           hover:border-ink
+           transition-colors whitespace-nowrap;
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Seleccionado: el mismo azul que el botón primario, misma selección. */
+  .chip-active {
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
+           bg-c-accent border border-c-accent text-white
+           transition-colors whitespace-nowrap;
+    min-height: 48px;
+  }
+  /* Chip compacto informativo — no clicable, 24px alto */
+  .chip-info {
+    @apply inline-flex items-center gap-1 rounded-full text-xs font-medium
+           bg-soft text-ink border border-c-border whitespace-nowrap;
+    padding: 3px 10px;
+  }
+
+  /* ---- Badges — sustituyen a las variantes de shadcn ---------------------
+     default → .badge-accent · secondary → .badge-muted · destructive →
+     .badge-error · outline → .badge-outline · y .badge-success que faltaba. */
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap; }
+  .badge-accent  { @apply badge bg-c-accent text-white; }
+  .badge-muted   { @apply badge bg-soft text-c-muted; }
+  .badge-success { @apply badge; background: rgb(var(--c-success) / 0.12); color: rgb(var(--c-success)); }
+  .badge-error   { @apply badge; background: rgb(var(--c-error) / 0.12);   color: rgb(var(--c-error)); }
+  .badge-warning { @apply badge; background: rgb(var(--c-warning) / 0.12); color: rgb(var(--c-warning)); }
+  .badge-outline { @apply badge bg-transparent text-ink border border-c-border; }
+  .badge-verified {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold;
+    color: rgb(var(--c-success));
+  }
+
+  /* ---- Separador ----------------------------------------------------------- */
+  .separator { @apply block w-full h-px bg-c-border; }
+
+  /* ---- Esqueleto ---------------------------------------------------------
+     OJO: globals.css (Base44) define OTRO .skeleton sin @layer, que gana
+     por cascada. Se elimina en el swap de la capa UI; hasta entonces este
+     sólo se ve en componentes nuevos que no carguen aquél. */
+  .skeleton { @apply bg-soft rounded-lg relative overflow-hidden; }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    background-size: 800px 100%;
+    animation: ma-shimmer 1.5s linear infinite;
+  }
+  @keyframes ma-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+  }
+
+  /* ---- Carril horizontal de chips ---------------------------------------- */
+  .scroll-x {
+    @apply flex gap-2 overflow-x-auto snap-x snap-mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .scroll-x::-webkit-scrollbar { display: none; }
+  .scroll-x > * { scroll-snap-align: start; flex-shrink: 0; }
+
+  /* ---- Entrada y flotación del hero de la portada -----------------------
+     Portadas de khdemlidaba junto con la maqueta del hero: los bloques
+     entran de abajo arriba, escalonados, y las dos piezas que rodean el
+     móvil flotan despacio. Nada de esto mueve la maqueta (sólo opacidad y
+     translate), así que no hay CLS. Con `prefers-reduced-motion` todo
+     aparece ya colocado y quieto. */
+  .hero-enter {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: heroRise 500ms ease-out forwards;
+  }
+  .hero-enter-delay-1 { animation-delay: 120ms; }
+  .hero-enter-delay-2 { animation-delay: 240ms; }
+  .hero-enter-delay-3 { animation-delay: 360ms; }
+  @keyframes heroRise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-float      { animation: heroFloat 4s ease-in-out infinite; animation-delay: 900ms; }
+  .hero-float-slow { animation: heroFloat 5s ease-in-out infinite; animation-delay: 1200ms; }
+  @keyframes heroFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-enter { opacity: 1; transform: none; animation: none; }
+    .hero-float, .hero-float-slow { animation: none; }
+  }
+
+  /* ---- Toast — imperativo, ver src/lib/toast.js -------------------------
+     Arriba, bajo la barra de estado: donde aparecen las notificaciones del
+     sistema, y fuera del camino de la tab bar nativa. */
+  .ma-toast {
+    position: fixed;
+    left: 50%;
+    top: calc(env(safe-area-inset-top) + 12px);
+    transform: translate(-50%, -20px);
+    background: rgb(var(--c-ink));
+    color: rgb(var(--c-surface));
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    max-width: min(400px, calc(100vw - 32px));
+    box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    transition: opacity 220ms ease-out, transform 220ms ease-out;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .ma-toast-show    { opacity: 1; transform: translate(-50%, 0); }
+  .ma-toast-success { background: rgb(var(--c-success)); color: #fff; }
+  .ma-toast-error   { background: rgb(var(--c-error));   color: #fff; }
+  .ma-toast-info    { background: rgb(var(--c-accent));  color: #fff; }
+
+  /* ---- Modal genérico — ver src/components/Modal.jsx --------------------
+     Móvil: hoja pegada abajo. Escritorio: centrado. */
+  .ma-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgb(var(--c-ink) / 0.5);
+    z-index: 90;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    animation: ma-modal-overlay-in 200ms ease-out;
+  }
+  .ma-modal-card {
+    background: rgb(var(--c-surface));
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    box-shadow: 0 -12px 40px -8px rgba(0, 0, 0, 0.25);
+    animation: ma-modal-card-in 220ms ease-out;
+  }
+  .ma-modal-card-lg { max-width: 720px; }
+  .ma-modal-card-xl { max-width: 960px; }
+  @media (min-width: 640px) {
+    .ma-modal-overlay { align-items: center; padding: 24px; }
+    .ma-modal-card {
+      border-radius: 16px;
+      padding: 28px;
+      max-height: calc(100dvh - 48px);
+      box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.35);
+    }
+  }
+  @keyframes ma-modal-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ma-modal-card-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ma-modal-overlay, .ma-modal-card, .ma-toast { animation: none; transition: none; }
   }
 }

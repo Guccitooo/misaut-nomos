@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useLanguage } from '../ui/LanguageSwitcher';
+import { useLanguage } from '@/components/LanguageSwitcher';
 
 export default function SEOHead({ 
   title = "MisAutónomos - Tu autónomo de confianza en España",
   description = "Encuentra y contacta con los mejores profesionales autónomos verificados cerca de ti. Electricistas, fontaneros, carpinteros y más. 100% gratis para clientes.",
-  image = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/f1c507180_123.png",
+  image = "https://misautonomos.es/og-image.png",
   type = "website",
   keywords = "autónomos, profesionales, servicios, España, electricista, fontanero, carpintero, reformas",
   author = "MisAutónomos",
@@ -29,7 +29,6 @@ export default function SEOHead({
     // Flujos de registro/onboarding
     '/completar-perfil', '/registro', '/registro-cliente', '/bienvenida',
     // Cuenta y suscripción
-    '/suscripcion', '/pago-exitoso', '/pago-completado', '/pagar',
     // Páginas privadas de usuario
     '/mi-perfil', '/notificaciones', '/mensajes', '/favoritos',
     '/soporte', '/solicitudes', '/automatizaciones', '/mi-campana',
@@ -50,7 +49,7 @@ export default function SEOHead({
     // Rutas privadas adicionales (Search Console legacy en inglés)
     '/Tickets', '/tickets', '/TicketDetail', '/Invoices', '/UserTypeSelection',
     '/ProfileOnboarding', '/MyProfile', '/NewsletterUnsubscribe', '/CookiePreferences',
-    '/Favorites', '/Notifications', '/Messages', '/PaymentSuccess', '/AdminFAQ',
+    '/Favorites', '/Notifications',
     '/AdminReferrals', '/BriefingMensual', '/PayInvoice',
   ];
   const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
@@ -170,7 +169,7 @@ export default function SEOHead({
 
     // DNS prefetch solo para recursos críticos (sin Google Fonts)
     const dnsPrefetchUrls = [
-      'https://qtrypzzcjebvfcihiynt.supabase.co',
+      'https://dquxsethatxtptfviiwd.supabase.co',
       'https://www.googletagmanager.com'
     ];
 
@@ -200,7 +199,7 @@ export default function SEOHead({
       "url": "https://misautonomos.es",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690076ad86e673c796768de5/47f6f564f_ChatGPTImage13nov202511_25_45.png",
+        "url": "https://misautonomos.es/logo-512.png",
         "width": 512,
         "height": 512
       },

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation, Trans } from "react-i18next";
+import i18n from '@/i18n';
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, Eye, EyeOff, UserPlus } from "lucide-react";
-import { toast } from "sonner";
+import { IconSpinner, IconEye, IconEyeOff } from "@/components/Icons";
+import { toast } from "@/lib/toast";
 import { Link } from "react-router-dom";
 import SEOHead from "../components/seo/SEOHead";
 
 export default function ClientOnboardingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -66,8 +67,8 @@ export default function ClientOnboardingPage() {
       // Email de bienvenida (no bloqueante)
       base44.integrations.Core.SendEmail({
         to: data.email,
-        subject: "¡Bienvenido a MisAutónomos!",
-        body: `<p>Hola ${data.nombre}, tu cuenta ha sido creada. ¡Ya puedes buscar profesionales!</p>`,
+        subject: t('onboarding.client.welcomeEmailSubject'),
+        body: `<p>${t('onboarding.client.welcomeEmailBody', { name: data.nombre })}</p>`,
         from_name: "MisAutónomos"
       }).catch(() => {});
 
@@ -77,11 +78,11 @@ export default function ClientOnboardingPage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("¡Bienvenido! Ya puedes contactar autónomos 🎉");
+      toast.success(t('auth.welcome_toast'));
       navigate(createPageUrl("Search"));
     },
     onError: (error) => {
-      setFieldErrors({ general: "Error al crear la cuenta: " + error.message });
+      setFieldErrors({ general: t('onboarding.client.errors.createFailed', { message: error.message }) });
     }
   });
 
@@ -114,7 +115,7 @@ export default function ClientOnboardingPage() {
         email: email,
         name: userData.name || '',
         status: 'confirmed',
-        language: localStorage.getItem('language') || 'es',
+        language: i18n.language?.split('-')[0] || 'es',
         source: 'auto_signup',
         user_type_interest: userData.user_type === 'professionnel' ? 'autonomo' : userData.user_type === 'client' ? 'cliente' : 'ambos',
         confirmation_token: Math.random().toString(36).substring(2),
@@ -130,16 +131,16 @@ export default function ClientOnboardingPage() {
   const validate = () => {
     const errors = {};
     if (!formData.nombre.trim() || formData.nombre.trim().length < 2) {
-      errors.nombre = "Introduce tu nombre";
+      errors.nombre = t('onboarding.client.validation.nameRequired');
     }
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Email no válido";
+      errors.email = t('onboarding.validation.invalidEmail');
     }
     if (!user && formData.password.length < 6) {
-      errors.password = "La contraseña debe tener al menos 6 caracteres";
+      errors.password = t('onboarding.client.validation.passwordMinLength');
     }
     if (!formData.acepta_terminos) {
-      errors.terminos = "Debes aceptar los términos";
+      errors.terminos = t('onboarding.client.validation.termsRequired');
     }
     return errors;
   };
@@ -166,8 +167,8 @@ export default function ClientOnboardingPage() {
 
   if (isLoadingUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center min-h-screen bg-canvas">
+        <IconSpinner className="w-8 h-8 animate-spin text-c-accent" />
       </div>
     );
   }
@@ -175,35 +176,25 @@ export default function ClientOnboardingPage() {
   return (
     <>
       <SEOHead
-        title="Crea tu cuenta gratis - MisAutónomos"
-        description="Encuentra y contacta autónomos en segundos. Registro gratuito."
+        title={t('onboarding.client.seoTitle')}
+        description={t('onboarding.client.seoDescription')}
         keywords="crear cuenta cliente, buscar autónomos, servicios profesionales España"
         noindex={true}
       />
 
-      {/* Fondo */}
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
-        {/* Card / Sheet */}
-        <div
-          style={{
-            background: '#FFFFFF',
-            borderRadius: '16px',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.10)',
-            width: '100%',
-            maxWidth: '420px',
-            padding: '36px 32px',
-          }}
-        >
-          {/* Header */}
+      {/* Fondo minimalista: blanco, sin sombras dobles, sin gradient. */}
+      <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[400px]">
+          {/* Header sin iconos decorativos */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
-              <UserPlus className="w-6 h-6 text-white" />
-            </div>
-            <h1 style={{ color: '#111827', fontSize: '22px', fontWeight: 700, margin: '0 0 6px' }}>
-              Crea tu cuenta gratis
+            <h1
+              className="font-semibold tracking-tight"
+              style={{ color: '#00255C', fontSize: '24px', letterSpacing: '-0.02em', margin: 0 }}
+            >
+              {t('onboarding.client.title')}
             </h1>
-            <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>
-              Encuentra y contacta autónomos en segundos
+            <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '6px' }}>
+              {t('onboarding.client.subtitle')}
             </p>
           </div>
 
@@ -218,17 +209,20 @@ export default function ClientOnboardingPage() {
             {/* Nombre */}
             <div>
               <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
-                Nombre
+                {t('auth.name')}
               </label>
-              <Input
+              <input
                 type="text"
-                placeholder="Tu nombre"
+                className="input"
+                placeholder={t('auth.name_placeholder')}
                 value={formData.nombre}
                 onChange={(e) => {
                   setFormData({ ...formData, nombre: e.target.value });
                   if (fieldErrors.nombre) setFieldErrors(prev => ({ ...prev, nombre: null }));
                 }}
                 autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
                 style={{
                   background: '#FFFFFF',
                   border: fieldErrors.nombre ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
@@ -249,17 +243,22 @@ export default function ClientOnboardingPage() {
             {/* Email */}
             <div>
               <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
-                Email
+                {t('auth.email')}
               </label>
-              <Input
+              <input
                 type="email"
-                placeholder="tu@email.com"
+                className="input"
+                placeholder={t('auth.email_placeholder')}
                 value={formData.email}
                 onChange={(e) => {
                   setFormData({ ...formData, email: e.target.value });
                   if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: null }));
                 }}
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 disabled={!!user}
                 style={{
                   background: user ? '#F9FAFB' : '#FFFFFF',
@@ -282,18 +281,20 @@ export default function ClientOnboardingPage() {
             {!user && (
               <div>
                 <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '14px', marginBottom: '6px' }}>
-                  Contraseña
+                  {t('auth.password')}
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Input
+                  <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
+                    className="input"
+                    placeholder={t('onboarding.client.passwordPlaceholder')}
                     value={formData.password}
                     onChange={(e) => {
                       setFormData({ ...formData, password: e.target.value });
                       if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: null }));
                     }}
                     autoComplete="new-password"
+                    enterKeyHint="go"
                     style={{
                       background: '#FFFFFF',
                       border: fieldErrors.password ? '1.5px solid #EF4444' : '1.5px solid #E5E7EB',
@@ -314,9 +315,9 @@ export default function ClientOnboardingPage() {
                       background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px',
                     }}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={showPassword ? t('onboarding.client.hidePassword') : t('onboarding.client.showPassword')}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <IconEyeOff className="w-5 h-5" /> : <IconEye className="w-5 h-5" />}
                   </button>
                 </div>
                 {fieldErrors.password && (
@@ -329,6 +330,7 @@ export default function ClientOnboardingPage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
               <input
                 type="checkbox"
+                className="checkbox"
                 id="acepta_terminos_client"
                 checked={formData.acepta_terminos}
                 onChange={(e) => {
@@ -338,10 +340,13 @@ export default function ClientOnboardingPage() {
                 style={{ width: '16px', height: '16px', marginTop: '2px', flexShrink: 0, accentColor: '#2563EB' }}
               />
               <label htmlFor="acepta_terminos_client" style={{ fontSize: '13px', color: '#6B7280', lineHeight: '1.5', cursor: 'pointer' }}>
-                Acepto los{' '}
-                <Link to="/terminos" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>Términos</Link>
-                {' '}y la{' '}
-                <Link to="/privacidad" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }}>Política de Privacidad</Link>
+                <Trans
+                  i18nKey="onboarding.client.acceptTerms"
+                  components={{
+                    terms: <Link to="/terminos" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }} />,
+                    privacy: <Link to="/privacidad" target="_blank" style={{ color: '#2563EB', textDecoration: 'underline' }} />,
+                  }}
+                />
               </label>
             </div>
             {fieldErrors.terminos && (
@@ -350,44 +355,48 @@ export default function ClientOnboardingPage() {
             
             {/* Microcopy newsletter */}
             <p style={{ fontSize: '10px', color: '#9CA3AF', textAlign: 'center', marginTop: '12px', lineHeight: '1.4' }}>
-              Al crear tu cuenta aceptarás recibir nuestra newsletter (1-2 emails al mes). 
-              Puedes darte de baja en cualquier momento.
+              {t('onboarding.client.newsletterNotice')}
             </p>
 
             {/* Botón principal */}
-            <Button
+            <button
               type="submit"
               disabled={completeOnboardingMutation.isPending}
+              className="inline-flex items-center justify-center"
               style={{
                 width: '100%',
-                height: '52px',
-                background: '#2563EB',
+                height: '48px',
+                background: '#00255C',
                 color: '#FFFFFF',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: 700,
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
                 marginTop: '8px',
               }}
             >
               {completeOnboardingMutation.isPending ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creando cuenta...</>
+                <><IconSpinner className="w-5 h-5 mr-2 animate-spin" /> {t('onboarding.client.creating')}</>
               ) : (
-                'Crear cuenta gratis'
+                t('onboarding.client.createAccount')
               )}
-            </Button>
+            </button>
           </form>
 
           {/* Link a login */}
           <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6B7280' }}>
-            ¿Ya tienes cuenta?{' '}
-            <button
-              onClick={() => base44.auth.redirectToLogin(createPageUrl("Search"))}
-              style={{ color: '#2563EB', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px', padding: 0 }}
-            >
-              Inicia sesión
-            </button>
+            <Trans
+              i18nKey="onboarding.client.alreadyHaveAccount"
+              components={{
+                login: (
+                  <button
+                    onClick={() => base44.auth.redirectToLogin(createPageUrl("Search"))}
+                    style={{ color: '#00255C', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', padding: 0 }}
+                  />
+                ),
+              }}
+            />
           </p>
         </div>
       </div>
