@@ -4,7 +4,7 @@ import { buildWebRequest, offerPath, offerSource } from '../src/lib/bayendaba.js
 const request = buildWebRequest({ business: 'García & Hijos', activity: 'Electricidad', details: 'Reformas + iluminación #hogar', plan: 'complete', maintenance: true, source: 'dashboard' });
 const url = new URL(request.whatsapp);
 assert.equal(url.origin, 'https://wa.me');
-assert.equal(url.pathname, '/212766144545');
+assert.equal(url.pathname, '/34644853733');
 assert.equal(url.searchParams.size, 1);
 assert.equal(url.searchParams.get('text'), request.text);
 assert.match(request.text, /García & Hijos/);

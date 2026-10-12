@@ -1,4 +1,4 @@
-export const BAYENDABA_WHATSAPP = '212766144545';
+export const BAYENDABA_WHATSAPP = '34644853733';
 export const BAYENDABA_EMAIL = 'contact@bayendaba.com';
 export const WEB_PLANS = Object.freeze({ essential: 200, complete: 450 });
 export const MAINTENANCE_PRICE = 29;
