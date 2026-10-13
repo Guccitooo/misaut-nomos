@@ -273,10 +273,10 @@ function setTime(t) {
       const ys = PORT ? [-150, 110, 370] : [-120, 80, 280], rs = [-4, 2, -2];
       ['f1', 'f2', 'f3'].forEach((id, i) => {
         const p = oExpo(pr(t, t0 + .75 + i * .28, t0 + 1.35 + i * .28));
-        T($(id), { x: lerp((i % 2 ? -1 : 1) * 1600, 0, p), y: ys[i], r: lerp(rs[i] * 4, rs[i], p), s: lerp(.9, 1, p), o: cl(p * 2) });
+        T($(id), { x: lerp((i % 2 ? -1 : 1) * 1600, PORT ? 0 : 240, p), y: ys[i], r: lerp(rs[i] * 4, rs[i], p), s: lerp(.9, 1, p), o: cl(p * 2) });
       });
       const sp = pr(t, t0 + 2.10, t0 + 2.40);
-      T($('stamp4'), { x: PORT ? 0 : 0, y: (PORT ? 640 : 440) + shake(t, t0 + 2.35, 10), s: lerp(2.4, 1, oExpo(sp)), r: lerp(8, -4, oExpo(sp)), o: cl(sp * 4) });
+      T($('stamp4'), { x: PORT ? 0 : -600, y: (PORT ? 640 : 100) + shake(t, t0 + 2.35, 10), s: lerp(2.4, 1, oExpo(sp)), r: lerp(8, -4, oExpo(sp)), o: cl(sp * 4) });
     } }
 
   // ===== B5 : the numbers (odometer) =====
