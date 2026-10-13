@@ -1,0 +1,6 @@
+out/frames_16x9/
+out/frames_9x16/
+out/stills/
+out/mix_raw.wav
+out/*.log
+build/node_modules
