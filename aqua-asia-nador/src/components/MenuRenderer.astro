@@ -1,0 +1,322 @@
+---
+/**
+ * Rendu de la carte à partir de src/content/menu.ts (aucun contenu codé en dur).
+ * Catégories en pastilles collantes, plats avec points de conduite et prix isolé LTR,
+ * pictogrammes diététiques TOUJOURS accompagnés d'un libellé, allergènes en note.
+ */
+import { menu, type DietaryTag } from '../content/menu';
+import { formatAmount, localized, resolvePhoto } from '../lib/data';
+import { isRtl, useT, type Lang } from '../i18n';
+import Photo from './Photo.astro';
+import DietIcon from './DietIcon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+/** Texte + attributs de langue quand le texte est un repli français (lang="fr" dir="ltr" sur une page arabe). */
+const loc = (v?: Parameters<typeof localized>[0]) => {
+  const r = localized(v, lang);
+  if (!r) return { text: undefined, attrs: {} };
+  return {
+    text: r.text,
+    attrs: r.lang === lang ? {} : { lang: r.lang, dir: isRtl(r.lang) ? 'rtl' : 'ltr' },
+  };
+};
+const categories = menu.categories.filter((c) => c.items.length > 0);
+const usedTags = [...new Set(categories.flatMap((c) => c.items.flatMap((i) => i.tags ?? [])))] as DietaryTag[];
+const hasAllergens = categories.some((c) => c.items.some((i) => i.allergens?.length));
+---
+
+<div class="menu-r">
+  <nav class="menu-r__nav" aria-label={t('a11y.menuCategories')} data-menu-nav>
+    <ul role="list">
+      {
+        categories.map((c) => (
+          <li>
+            <a href={`#cat-${c.id}`} data-menu-chip>
+              <span {...loc(c.name).attrs}>{loc(c.name).text}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="menu-r__body container">
+    {
+      categories.map((c) => (
+        <section id={`cat-${c.id}`} class="menu-r__cat" aria-labelledby={`cat-${c.id}-title`} data-menu-section>
+          <header class="menu-r__cat-head" data-reveal>
+            <h2 id={`cat-${c.id}-title`} class="h2 menu-r__cat-title" {...loc(c.name).attrs}>
+              {loc(c.name).text}
+            </h2>
+            {c.note && (
+              <p class="muted" {...loc(c.note).attrs}>
+                {loc(c.note).text}
+              </p>
+            )}
+          </header>
+          <ul class="menu-r__items" role="list">
+            {c.items.map((it) => {
+              const photo = resolvePhoto(it.photo ?? null);
+              const unavailable = it.available === false;
+              return (
+                <li class:list={['dish', { 'dish--off': unavailable, 'dish--photo': photo }]} data-reveal>
+                  {photo && (
+                    <div class="dish__photo">
+                      <Photo image={photo} alt={loc(it.name).text ?? ''} sizes="5rem" widths={[160, 320]} />
+                    </div>
+                  )}
+                  <div class="dish__main">
+                    <div class="dish__head">
+                      <h3 class="dish__name" {...loc(it.name).attrs}>
+                        {loc(it.name).text}
+                      </h3>
+                      <span class="dish__leader" aria-hidden="true" />
+                      {typeof it.price === 'number' && (
+                        <p class="dish__price" set:html={t.html('menu.price', { amount: formatAmount(it.price, lang) })} />
+                      )}
+                    </div>
+                    {it.description && (
+                      <p class="dish__desc" {...loc(it.description).attrs}>
+                        {loc(it.description).text}
+                      </p>
+                    )}
+                    {(it.tags?.length || unavailable) && (
+                      <ul class="dish__tags" role="list">
+                        {unavailable && <li class="dish__tag dish__tag--off">{t('menu.unavailable')}</li>}
+                        {it.tags?.map((tag) => (
+                          <li class={`dish__tag dish__tag--${tag}`}>
+                            <DietIcon tag={tag} />
+                            {t(`menu.tags.${tag}`)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {it.allergens?.length ? (
+                      <p class="dish__allergens">
+                        {t('menu.allergensLabel')} {it.allergens.map((a) => t(`menu.allergens.${a}`)).join(t('list.separator'))}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+
+    <footer class="menu-r__foot">
+      {
+        usedTags.length > 0 && (
+          <div class="menu-r__legend">
+            <p class="eyebrow">{t('menu.legend')}</p>
+            <ul role="list">
+              {usedTags.map((tag) => (
+                <li class={`dish__tag dish__tag--${tag}`}>
+                  <DietIcon tag={tag} />
+                  {t(`menu.tags.${tag}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+      {hasAllergens && <p class="muted menu-r__note">{t('menu.allergenNote')}</p>}
+    </footer>
+  </div>
+</div>
+
+<style>
+  .menu-r__nav {
+    position: sticky;
+    inset-block-start: var(--header-h-scrolled);
+    z-index: 20;
+    background: rgb(17 13 11 / 0.92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-block: 1px solid var(--line-gold-soft);
+  }
+
+  .menu-r__nav ul {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 auto;
+    padding: 0.75rem var(--gutter);
+    max-inline-size: calc(var(--container) + 2 * var(--gutter));
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .menu-r__nav ul::-webkit-scrollbar {
+    display: none;
+  }
+
+  .menu-r__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: 1.1rem;
+    border: 1px solid var(--line-ivory);
+    border-radius: var(--radius-pill);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--sand-300);
+    white-space: nowrap;
+    scroll-snap-align: start;
+    transition:
+      color var(--dur-1),
+      border-color var(--dur-1),
+      background-color var(--dur-1);
+  }
+
+  .menu-r__nav a:hover,
+  .menu-r__nav a[aria-current='true'] {
+    color: var(--on-amber);
+    background: var(--amber-500);
+    border-color: var(--amber-500);
+  }
+
+  .menu-r__body {
+    padding-block: clamp(3rem, 7vw, 6rem) var(--section-y);
+    display: grid;
+    gap: clamp(4rem, 8vw, 7rem);
+  }
+
+  .menu-r__cat {
+    scroll-margin-top: calc(var(--header-h-scrolled) + 5rem);
+  }
+
+  .menu-r__cat-head {
+    display: grid;
+    gap: 0.75rem;
+    padding-block-end: 1.5rem;
+    margin-block-end: 1rem;
+    border-block-end: 1px solid var(--line-gold);
+  }
+
+  .menu-r__cat-title {
+    font-size: clamp(1.9rem, 1.4rem + 2vw, 3rem);
+  }
+
+  .menu-r__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: 0 clamp(2rem, 5vw, 5rem);
+    margin: 0;
+    padding: 0;
+  }
+
+  .dish {
+    display: flex;
+    gap: 1rem;
+    padding-block: 1.4rem;
+    border-block-end: 1px solid var(--line-ivory);
+  }
+
+  .dish--off {
+    opacity: 0.6;
+  }
+
+  .dish__photo {
+    flex: none;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .dish__photo :global(img) {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .dish__main {
+    flex: 1;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .dish__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .dish__name {
+    font-family: var(--font-heading);
+    font-size: 1.1875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--ivory-50);
+  }
+
+  .dish__leader {
+    flex: 1;
+    min-inline-size: 1.5rem;
+    border-block-end: 1px dotted rgb(201 176 149 / 0.45);
+    transform: translateY(-0.3em);
+  }
+
+  .dish__price {
+    flex: none;
+    font-weight: 600;
+    color: var(--gold-300);
+    white-space: nowrap;
+  }
+
+  .dish__desc {
+    color: var(--sand-400);
+    font-size: 0.9875rem;
+    line-height: 1.6;
+  }
+
+  .dish__tags,
+  .menu-r__legend ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin: 0.2rem 0 0;
+    padding: 0;
+  }
+
+  .dish__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    color: var(--sand-300);
+  }
+
+  .dish__tag--off {
+    color: var(--amber-400);
+  }
+
+  .dish__tag--spicy1 :global(.diet),
+  .dish__tag--spicy2 :global(.diet),
+  .dish__tag--spicy3 :global(.diet) {
+    color: var(--amber-400);
+  }
+
+  .dish__allergens {
+    font-size: 0.8125rem;
+    color: var(--sand-400);
+  }
+
+  .menu-r__foot {
+    display: grid;
+    gap: 1.25rem;
+    padding-block-start: 2rem;
+    border-block-start: 1px solid var(--line-gold-soft);
+  }
+
+  .menu-r__legend {
+    display: grid;
+    gap: 0.75rem;
+  }
+</style>

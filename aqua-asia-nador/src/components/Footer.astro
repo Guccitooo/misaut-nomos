@@ -1,0 +1,259 @@
+---
+/**
+ * Pied de page. Le crédit BayenDaba est le DERNIER élément de chaque page (aucun script ni élément
+ * après lui) ; lien si `site.credit.url`, sinon texte. Nom isolé en LTR.
+ */
+import { site } from '../config/site';
+import { visible } from '../lib/data';
+import { pathFor, useT, type Lang, type PageKey } from '../i18n';
+import Emblem from './Emblem.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import VisitDetails from './VisitDetails.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | 'notFound';
+}
+const { lang, page } = Astro.props;
+const t = useT(lang);
+const year = new Date().getFullYear();
+const [w1, ...rest] = site.name.value.toUpperCase().split(' ');
+const pages: Array<{ key: PageKey; label: string }> = [
+  { key: 'home', label: t('nav.home') },
+  { key: 'menu', label: t('nav.menu') },
+  { key: 'gallery', label: t('nav.gallery') },
+  { key: 'contact', label: t('nav.contact') },
+];
+const agency = site.credit.url
+  ? `<a href="${site.credit.url}" target="_blank" rel="noopener">${site.credit.name}</a>`
+  : site.credit.name;
+const creditHtml = t
+  .html('footer.credit', { agency: '%%AGENCY%%' }, { isolate: true })
+  .replace('%%AGENCY%%', agency);
+---
+
+<footer class="site-footer">
+  <div class="site-footer__top container">
+    <div class="site-footer__brand">
+      <a href={pathFor('home', lang)} class="site-footer__mark" aria-label={t('a11y.logoHome')}>
+        {/* espaces entre les mots : le texte (masqué) se lit « AQUA ASIA », contenu dans le nom accessible */}
+        <span dir="ltr" aria-hidden="true">
+          <span>{w1}</span>{' '}
+          <Emblem class="site-footer__emblem" stroke={5} simple />{' '}
+          <span>{rest.join(' ')}</span>
+        </span>
+      </a>
+      <p class="site-footer__tagline">{t('footer.tagline')}</p>
+    </div>
+
+    <nav class="site-footer__col" aria-label={t('a11y.footerNav')}>
+      <h2 class="site-footer__title">{t('footer.explore')}</h2>
+      <ul role="list">
+        {
+          pages.map((p) => (
+            <li>
+              <a href={pathFor(p.key, lang)} aria-current={page === p.key ? 'page' : undefined}>
+                {p.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {
+      (visible.address || visible.hours || visible.phone) && (
+        <div class="site-footer__col">
+          <h2 class="site-footer__title">{t('footer.find')}</h2>
+          <VisitDetails lang={lang} compact show={['address', 'hours', 'phone']} />
+        </div>
+      )
+    }
+
+    <div class="site-footer__col">
+      <h2 class="site-footer__title">{t('footer.follow')}</h2>
+      <ul role="list">
+        <li>
+          <a href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+            <bdi dir="ltr">@{visible.instagram.handle}</bdi>
+            <span class="sr-only">{t('a11y.newTab')}</span>
+          </a>
+        </li>
+      </ul>
+      <h2 class="site-footer__title site-footer__title--spaced">{t('footer.languages')}</h2>
+      <LangSwitcher lang={lang} page={page === 'notFound' ? 'home' : page} variant="list" class="site-footer__langs" />
+    </div>
+  </div>
+
+  <div class="site-footer__bottom container">
+    <p class="site-footer__copy" set:html={t.html('footer.copyright', { year, name: site.name.value })} />
+    <p class="site-footer__credit" set:html={creditHtml} />
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    background: var(--ink-950);
+    color: var(--sand-300);
+    border-block-start: 1px solid var(--line-gold-soft);
+    padding-block-start: clamp(4rem, 8vw, 6.5rem);
+  }
+
+  .site-footer__top {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+    gap: 3rem clamp(2rem, 4vw, 4rem);
+    padding-block-end: clamp(3rem, 6vw, 5rem);
+  }
+
+  .site-footer__brand {
+    display: grid;
+    align-content: start;
+    gap: 1.25rem;
+  }
+
+  .site-footer__mark {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    justify-self: start;
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--white);
+  }
+
+  .site-footer__mark > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.12em;
+  }
+
+  .site-footer__mark :global(.site-footer__emblem) {
+    inline-size: 0.8em;
+    block-size: 0.8em;
+    color: var(--gold-500);
+  }
+
+  .site-footer__tagline {
+    max-inline-size: 18rem;
+    color: var(--sand-400);
+  }
+
+  .site-footer__col {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+  }
+
+  .site-footer__title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: var(--track-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-500);
+  }
+
+  :lang(ar) .site-footer__title {
+    font-size: 0.875rem;
+  }
+
+  .site-footer__title--spaced {
+    margin-block-start: 1.25rem;
+  }
+
+  .site-footer__col ul {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Même corps (15 px) que les valeurs « Nous trouver » voisines : une seule rythmique de colonnes.
+     Cibles de 44 px conservées. */
+  .site-footer__col a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    font-size: 0.9375rem;
+    color: var(--sand-300);
+    transition: color var(--dur-1);
+  }
+
+  .site-footer__col a:hover,
+  .site-footer__col a[aria-current='page'] {
+    color: var(--gold-300);
+  }
+
+  .site-footer :global(.site-footer__langs) {
+    display: grid;
+    gap: 0;
+  }
+
+  .site-footer :global(.site-footer__langs a) {
+    font-size: 0.9375rem;
+    justify-content: flex-start;
+  }
+
+  .site-footer__col ul,
+  .site-footer :global(.site-footer__langs) {
+    line-height: 1.5;
+  }
+
+  .site-footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding-block: 1.5rem 2rem;
+    border-block-start: 1px solid var(--line-ivory);
+    font-size: 0.8125rem;
+    color: var(--sand-400);
+  }
+
+  .site-footer__credit :global(a) {
+    color: var(--sand-300);
+    text-decoration: underline;
+    text-decoration-color: var(--line-gold);
+    text-underline-offset: 0.3em;
+  }
+
+  .site-footer__credit :global(a:hover) {
+    color: var(--gold-300);
+  }
+
+  @media (max-width: 63.99rem) {
+    .site-footer__top {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .site-footer__brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .site-footer {
+      /* réserve la hauteur de la barre d'actions : le crédit n'est jamais couvert */
+      padding-block-end: calc(var(--actionbar-h) + env(safe-area-inset-bottom));
+    }
+
+    .site-footer__top {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .site-footer__bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 22.49rem) {
+    .site-footer__top {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

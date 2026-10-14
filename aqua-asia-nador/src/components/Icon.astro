@@ -1,0 +1,82 @@
+---
+/** Icônes au trait (décoratives : aria-hidden). Les directionnelles se retournent en RTL. */
+interface Props {
+  name:
+    | 'home'
+    | 'phone'
+    | 'pin'
+    | 'instagram'
+    | 'arrow'
+    | 'chevron'
+    | 'close'
+    | 'message'
+    | 'clock'
+    | 'globe'
+    | 'route';
+  class?: string;
+  size?: number;
+}
+const { name, class: cls = '', size = 24 } = Astro.props;
+const flip = name === 'arrow';
+---
+
+<svg
+  class:list={['icon', `icon--${name}`, { 'icon--flip': flip }, cls]}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  {name === 'home' && (
+    <>
+      <path d="M3.5 10.6 12 3.75l8.5 6.85" />
+      <path d="M5.75 9v10.75h4.5v-5.5h3.5v5.5h4.5V9" />
+      <path d="M16.5 4.75h1.75v2.6" />
+    </>
+  )}
+  {name === 'phone' && (
+    <path d="M6.6 3.75h2.6l1.4 4.1-1.9 1.25a12.4 12.4 0 0 0 6.2 6.2l1.25-1.9 4.1 1.4v2.6a1.9 1.9 0 0 1-2.05 1.9A16.5 16.5 0 0 1 4.7 5.8a1.9 1.9 0 0 1 1.9-2.05Z" />
+  )}
+  {name === 'pin' && (
+    <>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </>
+  )}
+  {name === 'route' && (
+    <>
+      <path d="m3.75 11.25 16.5-7.5-7.5 16.5-1.9-7.1-7.1-1.9Z" />
+    </>
+  )}
+  {name === 'instagram' && (
+    <>
+      <rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4.75" />
+      <circle cx="12" cy="12" r="3.9" />
+      <circle cx="17.1" cy="6.9" r="0.6" fill="currentColor" stroke="none" />
+    </>
+  )}
+  {name === 'arrow' && <path d="M4.5 12h15m-5.5-5.5L19.5 12 14 17.5" />}
+  {name === 'chevron' && <path d="m7 9.75 5 5 5-5" />}
+  {name === 'close' && <path d="M6 6l12 12M18 6 6 18" />}
+  {name === 'message' && (
+    <path d="M4.25 18.75 5.5 15A7.75 7.75 0 1 1 9 18.5l-4.75.25Z" />
+  )}
+  {name === 'clock' && (
+    <>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  )}
+  {name === 'globe' && (
+    <>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M3.75 12h16.5M12 3.75c2.3 2.3 3.4 5 3.4 8.25S14.3 17.95 12 20.25C9.7 17.95 8.6 15.25 8.6 12S9.7 6.05 12 3.75Z" />
+    </>
+  )}
+</svg>

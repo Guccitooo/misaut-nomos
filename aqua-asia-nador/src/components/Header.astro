@@ -1,0 +1,284 @@
+---
+/**
+ * En-tête : transparent sur le hero (comme la référence), puis plein et plus bas au défilement.
+ * Desktop : logo · maison · Carte · Galerie · Contact · langue · pilule « Réserver ».
+ * Mobile : logo · bouton menu (menu plein écran : MobileMenu).
+ */
+import { pathFor, useT, type Lang, type PageKey } from '../i18n';
+import { reserveTarget } from '../lib/links';
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | 'notFound';
+}
+const { lang, page } = Astro.props;
+const t = useT(lang);
+const reserve = reserveTarget();
+const switchPage: PageKey = page === 'notFound' ? 'home' : page;
+const links: Array<{ key: PageKey; label: string }> = [
+  { key: 'menu', label: t('nav.menu') },
+  { key: 'gallery', label: t('nav.gallery') },
+  { key: 'contact', label: t('nav.contact') },
+];
+---
+
+<header class="site-header" data-header>
+  <div class="site-header__bar container">
+    <a class="site-header__brand" href={pathFor('home', lang)} aria-label={t('a11y.logoHome')}>
+      <Logo />
+    </a>
+
+    <nav class="site-nav" aria-label={t('a11y.mainNav')}>
+      <ul role="list">
+        <li>
+          <a
+            class="site-nav__link site-nav__link--icon"
+            href={pathFor('home', lang)}
+            aria-current={page === 'home' ? 'page' : undefined}
+          >
+            <Icon name="home" size={22} />
+            <span class="sr-only">{t('nav.home')}</span>
+          </a>
+        </li>
+        {
+          links.map((l) => (
+            <li>
+              <a
+                class="site-nav__link"
+                href={pathFor(l.key, lang)}
+                aria-current={page === l.key ? 'page' : undefined}
+              >
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__tools">
+      <LangSwitcher lang={lang} page={switchPage} variant="menu" class="site-header__lang" id="lang-desktop" />
+      {
+        reserve && (
+          <a class="btn btn--amber site-header__cta" href={reserve.href}>
+            {t('nav.reserve')}
+            <PhoneSr phone={reserve.phone} />
+          </a>
+        )
+      }
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        data-menu-open
+      >
+        <span class="sr-only">{t('a11y.openMenu')}</span>
+        <span class="menu-toggle__lines" aria-hidden="true"><span></span><span></span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 50;
+    color: var(--white);
+    transition:
+      background-color var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out),
+      -webkit-backdrop-filter var(--dur-2);
+  }
+
+  .site-header::before {
+    /* voile très léger en haut pour la lisibilité sur photo claire */
+    content: '';
+    position: absolute;
+    inset: 0 0 -2.5rem;
+    background: linear-gradient(180deg, rgb(10 7 5 / 0.45), transparent);
+    pointer-events: none;
+    transition: opacity var(--dur-2);
+  }
+
+  .site-header[data-scrolled='true'] {
+    background: rgb(17 13 11 / 0.92);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 1px 0 var(--line-gold-soft);
+  }
+
+  .site-header[data-scrolled='true']::before {
+    opacity: 0;
+  }
+
+  .site-header__bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    block-size: var(--header-h);
+    transition: block-size var(--dur-2) var(--ease-emph);
+  }
+
+  .site-header[data-scrolled='true'] .site-header__bar {
+    block-size: var(--header-h-scrolled);
+  }
+
+  .site-header__brand {
+    display: inline-flex;
+    flex: none;
+    border-radius: 0.5rem;
+    transform-origin: left center;
+    transition: transform var(--dur-2) var(--ease-emph);
+  }
+
+  /* :global() obligatoire : le dir="rtl" est sur <html>, hors de la portée du composant */
+  :global([dir='rtl']) .site-header__brand {
+    transform-origin: right center;
+  }
+
+  .site-header[data-scrolled='true'] .site-header__brand {
+    transform: scale(0.62);
+  }
+
+  /* ---- Navigation desktop ---- */
+  .site-nav {
+    margin-inline-start: auto;
+  }
+
+  .site-nav ul {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.25rem, 2.4vw, 2.25rem);
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-nav__link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--tap);
+    min-inline-size: var(--tap);
+    font-size: 0.9875rem;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    color: var(--white);
+    transition: color var(--dur-1);
+  }
+
+  .site-nav__link::after {
+    /* filet ambre : 20 px sous l'élément actif, se déploie au survol */
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0.15rem;
+    margin-inline: auto;
+    inline-size: var(--u, 0px);
+    block-size: 2px;
+    border-radius: 2px;
+    background: var(--amber-500);
+    transition: inline-size var(--dur-2) var(--ease-emph);
+  }
+
+  .site-nav__link[aria-current='page'] {
+    --u: 1.25rem;
+  }
+
+  .site-nav__link:hover {
+    --u: 100%;
+  }
+
+  .site-nav__link--icon {
+    justify-content: center;
+    min-inline-size: var(--tap);
+    margin-inline: -0.6875rem;
+  }
+
+  .site-nav__link--icon:hover {
+    --u: 1.25rem;
+    color: var(--gold-300);
+  }
+
+  .site-header__tools {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .site-header__cta {
+    --btn-h: 2.75rem;
+    padding-inline: 1.75rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  /* ---- Bouton menu (mobile/tablette) ---- */
+  .menu-toggle {
+    display: none;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgb(246 240 231 / 0.32);
+    margin-inline-end: -0.25rem;
+  }
+
+  .menu-toggle__lines {
+    display: grid;
+    gap: 6px;
+    inline-size: 18px;
+  }
+
+  .menu-toggle__lines span {
+    display: block;
+    block-size: 1.5px;
+    background: currentColor;
+    border-radius: 2px;
+  }
+
+  .menu-toggle__lines span:last-child {
+    inline-size: 12px;
+    margin-inline-start: auto;
+  }
+
+  @media (max-width: 63.99rem) {
+    .site-nav,
+    .site-header :global(.site-header__lang) {
+      display: none;
+    }
+
+    .site-header__tools {
+      margin-inline-start: auto;
+      gap: 0.75rem;
+    }
+
+    .menu-toggle {
+      display: inline-flex;
+    }
+
+    .site-header[data-scrolled='true'] .site-header__brand {
+      transform: scale(0.78);
+    }
+  }
+
+  @media (max-width: 35.99rem) {
+    .site-header__cta {
+      display: none;
+    }
+  }
+
+  /* Sans JS : le menu plein écran est inaccessible, on garde les liens du pied de page. */
+  :global(html:not(.js)) .menu-toggle {
+    display: none;
+  }
+</style>

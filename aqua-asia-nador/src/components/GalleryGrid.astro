@@ -1,0 +1,334 @@
+---
+/**
+ * Grille de la galerie, pilotée par src/config/images.ts.
+ * - Aucune vraie photo → tuiles d'attente dessinées (décoratives, sans légende).
+ * - Vraies photos → seules les photos réelles s'affichent ; sur la page Galerie, elles s'ouvrent
+ *   dans une visionneuse (le script n'est inclus que dans ce cas).
+ */
+import { getImage } from 'astro:assets';
+import { images } from '../config/images';
+import { galleryPhotos, hasGalleryPhotos } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import ArtPlaceholder from './ArtPlaceholder.astro';
+import Photo from './Photo.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+  /** Nombre maximum de tuiles (aperçu de l'accueil : 6). */
+  limit?: number;
+  lightbox?: boolean;
+}
+const { lang, limit, lightbox = false } = Astro.props;
+const t = useT(lang);
+
+const motifs = ['arcs', 'sun', 'seigaiha', 'waves', 'circle', 'arcs', 'seigaiha', 'sun'] as const;
+const tones = ['espresso', 'brown', 'warm', 'ink', 'brown', 'espresso', 'ink', 'warm'] as const;
+
+const slots = images.gallery.slice(0, limit ?? images.gallery.length);
+const photos = galleryPhotos.slice(0, limit ?? galleryPhotos.length);
+const withFull = lightbox
+  ? await Promise.all(
+      photos.map(async (p) => ({
+        ...p,
+        full: (await getImage({ src: p.image!, width: Math.min(2000, p.image!.width), format: 'webp' })).src,
+        alt: t(p.slot.altKey),
+      })),
+    )
+  : photos.map((p) => ({ ...p, full: '', alt: t(p.slot.altKey) }));
+---
+
+{
+  hasGalleryPhotos ? (
+    <ul class="gallery gallery--photos" role="list" data-gallery={lightbox ? '' : undefined}>
+      {withFull.map((p, i) => (
+        <li class="gallery__item" data-reveal style={`--reveal-delay:${(i % 4) * 0.06}s`}>
+          {lightbox ? (
+            <button
+              type="button"
+              class="gallery__btn"
+              data-full={p.full}
+              data-alt={p.alt}
+              aria-label={t('a11y.openPhoto', { alt: p.alt })}
+            >
+              <Photo image={p.image!} alt={p.alt} sizes="(min-width: 64rem) 25vw, (min-width: 40rem) 50vw, 100vw" focal={p.slot.focal} />
+            </button>
+          ) : (
+            <Photo image={p.image!} alt={p.alt} sizes="(min-width: 64rem) 25vw, (min-width: 40rem) 50vw, 100vw" focal={p.slot.focal} />
+          )}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <div class="gallery gallery--art" aria-hidden="true">
+      {slots.map((_, i) => (
+        <div class="gallery__item" data-reveal style={`--reveal-delay:${(i % 4) * 0.07}s`}>
+          <ArtPlaceholder variant="tile" motif={motifs[i % motifs.length]} tone={tones[i % tones.length]} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+{
+  hasGalleryPhotos && lightbox && (
+    <dialog class="lightbox" aria-label={t('a11y.lightbox')} data-lightbox>
+      <figure class="lightbox__figure">
+        {/* src posé par le script à l'ouverture (un src vide est invalide en HTML) */}
+        <img class="lightbox__img" alt="" data-lightbox-img />
+        <figcaption class="lightbox__count" data-lightbox-count data-template={t('a11y.lightboxCounter')} />
+      </figure>
+      <button type="button" class="lightbox__btn lightbox__btn--close" data-lightbox-close>
+        <Icon name="close" />
+        <span class="sr-only">{t('a11y.lightboxClose')}</span>
+      </button>
+      <button type="button" class="lightbox__btn lightbox__btn--prev" data-lightbox-prev>
+        <Icon name="arrow" class="lightbox__prev-icon" />
+        <span class="sr-only">{t('a11y.lightboxPrev')}</span>
+      </button>
+      <button type="button" class="lightbox__btn lightbox__btn--next" data-lightbox-next>
+        <Icon name="arrow" />
+        <span class="sr-only">{t('a11y.lightboxNext')}</span>
+      </button>
+    </dialog>
+  )
+}
+
+{
+  hasGalleryPhotos && lightbox && (
+    <script>
+      const grid = document.querySelector<HTMLElement>('[data-gallery]');
+      const dlg = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+      if (grid && dlg) {
+        const btns = [...grid.querySelectorAll<HTMLButtonElement>('[data-full]')];
+        const img = dlg.querySelector<HTMLImageElement>('[data-lightbox-img]')!;
+        const count = dlg.querySelector<HTMLElement>('[data-lightbox-count]')!;
+        let idx = 0;
+        let opener: HTMLElement | null = null;
+        const show = (i: number) => {
+          idx = (i + btns.length) % btns.length;
+          img.src = btns[idx].dataset.full!;
+          img.alt = btns[idx].dataset.alt!;
+          count.textContent = (count.dataset.template || '')
+            .replace('{current}', String(idx + 1))
+            .replace('{total}', String(btns.length));
+        };
+        const rtl = document.documentElement.dir === 'rtl';
+        btns.forEach((b, i) =>
+          b.addEventListener('click', () => {
+            opener = b;
+            show(i);
+            dlg.showModal();
+            document.documentElement.classList.add('is-locked');
+          }),
+        );
+        dlg.querySelector('[data-lightbox-close]')!.addEventListener('click', () => dlg.close());
+        dlg.querySelector('[data-lightbox-prev]')!.addEventListener('click', () => show(idx - 1));
+        dlg.querySelector('[data-lightbox-next]')!.addEventListener('click', () => show(idx + 1));
+        dlg.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight') show(idx + (rtl ? -1 : 1));
+          if (e.key === 'ArrowLeft') show(idx + (rtl ? 1 : -1));
+        });
+        dlg.addEventListener('click', (e) => {
+          if (e.target === dlg) dlg.close();
+        });
+        dlg.addEventListener('close', () => {
+          document.documentElement.classList.remove('is-locked');
+          opener?.focus();
+        });
+      }
+    </script>
+  )
+}
+
+<style>
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: clamp(9rem, 15vw, 15.5rem);
+    grid-auto-flow: dense;
+    gap: clamp(0.5rem, 1vw, 0.9rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery__item {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--espresso-800);
+  }
+
+  /* Rythme de mosaïque : grand carré, verticale, panoramiques */
+  .gallery__item:nth-child(8n + 1) {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .gallery__item:nth-child(8n + 3) {
+    grid-row: span 2;
+  }
+
+  .gallery__item:nth-child(8n + 5),
+  .gallery__item:nth-child(8n + 6) {
+    grid-column: span 2;
+  }
+
+  .gallery__item:nth-child(8n + 7),
+  .gallery__item:nth-child(8n + 8) {
+    grid-column: span 2;
+  }
+
+  .gallery__btn {
+    position: absolute;
+    inset: 0;
+    display: block;
+    inline-size: 100%;
+    cursor: zoom-in;
+  }
+
+  .gallery__item :global(img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--ease-emph);
+  }
+
+  .gallery__item:hover :global(img) {
+    transform: scale(1.05);
+  }
+
+  /* cadre or intérieur : des cadres qui attendent leurs photos */
+  .gallery--art .gallery__item::after {
+    content: '';
+    position: absolute;
+    inset: 0.6rem;
+    border: 1px solid rgb(201 162 74 / 0.16);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: inset var(--dur-2) var(--ease-emph), border-color var(--dur-2);
+  }
+
+  .gallery--art .gallery__item:hover::after {
+    inset: 0.9rem;
+    border-color: rgb(201 162 74 / 0.3);
+  }
+
+  /* le dessin suit le cadre (0.9rem ÷ l'agrandissement 1.04 de la tuile) */
+  .gallery--art .gallery__item:hover {
+    --art-clip: 0.87rem;
+  }
+
+  .gallery--art .gallery__item :global(.art) {
+    transition: transform 1.2s var(--ease-emph);
+  }
+
+  .gallery--art .gallery__item:hover :global(.art) {
+    transform: scale(1.04);
+  }
+
+  @media (max-width: 47.99rem) {
+    .gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: clamp(8rem, 38vw, 13rem);
+    }
+
+    /* mobile : une pleine largeur toutes les 3 tuiles, jamais de trou en fin de grille */
+    .gallery__item:nth-child(n) {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+
+    .gallery__item:nth-child(3n + 1),
+    .gallery__item:last-child:nth-child(3n + 2) {
+      grid-column: span 2;
+    }
+
+    .gallery__item:nth-child(6n + 1) {
+      grid-row: span 2;
+    }
+  }
+
+  /* Visionneuse */
+  .lightbox {
+    inline-size: 100vw;
+    block-size: 100vh;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(10 7 5 / 0.96);
+    color: var(--ivory-50);
+  }
+
+  .lightbox::backdrop {
+    background: rgb(10 7 5 / 0.8);
+  }
+
+  .lightbox__figure {
+    display: grid;
+    place-items: center;
+    gap: 1rem;
+    block-size: 100%;
+    padding: 4.5rem 1rem 2rem;
+  }
+
+  .lightbox__img {
+    max-inline-size: min(100%, 90rem);
+    max-block-size: calc(100vh - 9rem);
+    object-fit: contain;
+  }
+
+  .lightbox__count {
+    font-size: 0.8125rem;
+    letter-spacing: 0.14em;
+    color: var(--sand-400);
+  }
+
+  .lightbox__btn {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgb(246 240 231 / 0.3);
+    background: rgb(17 13 11 / 0.6);
+  }
+
+  .lightbox__btn:hover {
+    border-color: var(--gold-400);
+  }
+
+  .lightbox__btn--close {
+    inset-block-start: 1rem;
+    inset-inline-end: 1rem;
+  }
+
+  .lightbox__btn--prev,
+  .lightbox__btn--next {
+    inset-block-start: 50%;
+    translate: 0 -50%;
+  }
+
+  .lightbox__btn--prev {
+    inset-inline-start: 1rem;
+  }
+
+  .lightbox__btn--next {
+    inset-inline-end: 1rem;
+  }
+
+  .lightbox__btn--prev :global(.icon) {
+    transform: scaleX(-1);
+  }
+
+  /* :global() obligatoire : le dir="rtl" est sur <html>, hors de la portée du composant */
+  :global([dir='rtl']) .lightbox__btn--prev :global(.icon) {
+    transform: none;
+  }
+</style>

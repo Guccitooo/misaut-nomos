@@ -1,0 +1,169 @@
+---
+/**
+ * Nous rendre visite (accueil #visit, et page Carte) : infos pratiques + actions.
+ * Rendu UNIQUEMENT s'il y a une information pratique affichable (adresse, horaires ou téléphone) :
+ * en mode launch sans données confirmées, la section disparaît (le bandeau Instagram juste après
+ * porte déjà les liens Instagram). Pas de carte intégrée sans map.embedUrl.
+ * Le panneau décoratif montre seulement la ville : le quartier (Instagram) n'est jamais accolé à
+ * l'adresse (Google), leur correspondance n'étant pas vérifiée.
+ */
+import { visible, telHref } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import VisitDetails from './VisitDetails.astro';
+import ArtPlaceholder from './ArtPlaceholder.astro';
+import Icon from './Icon.astro';
+import Services from './Services.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+const hasVisitInfo = !!(visible.address || visible.hours || visible.phone);
+---
+
+{
+  hasVisitInfo && (
+    <section id="visit" class="visit section" aria-labelledby="visit-title">
+      <div class="visit__grid container">
+        <div class="visit__text">
+          <p class="eyebrow" data-reveal>
+            {t('visit.eyebrow')}
+          </p>
+          <h2 id="visit-title" class="h2" data-reveal set:html={t.html('visit.title', { name: visible.name })} />
+          <p class="lead" data-reveal>
+            {t('visit.lead')}
+          </p>
+          <div data-reveal>
+            <VisitDetails lang={lang} />
+          </div>
+          <Services lang={lang} />
+          <div class="visit__actions" data-reveal>
+            {visible.directionsUrl && (
+              <a class="btn btn--amber" href={visible.directionsUrl} target="_blank" rel="noopener noreferrer">
+                <Icon name="route" size={18} />
+                {t('visit.directions')}
+                <span class="sr-only">{t('a11y.newTab')}</span>
+              </a>
+            )}
+            {visible.phone && (
+              <a class="btn btn--line" href={telHref(visible.phone)}>
+                <Icon name="phone" size={18} />
+                {t('visit.call')}
+                <PhoneSr phone={visible.phone.display} />
+              </a>
+            )}
+            <a class="btn btn--line" href={visible.instagram.dmUrl} target="_blank" rel="noopener noreferrer">
+              <Icon name="message" size={18} />
+              {t('visit.writeInstagram')}
+              <span class="sr-only">{t('a11y.newTab')}</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="visit__panel" data-reveal aria-hidden="true">
+          <ArtPlaceholder variant="panel" motif="arcs" tone="ink" />
+          <div class="visit__place">
+            <span class="visit__city">{t('visit.city')}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .visit {
+    background: var(--espresso-900);
+    border-block-start: 1px solid var(--line-gold-soft);
+  }
+
+  .visit__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: stretch;
+    gap: clamp(3rem, 7vw, 7rem);
+  }
+
+  .visit__text {
+    display: grid;
+    align-content: start;
+    gap: 1.6rem;
+  }
+
+  .visit__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 0.5rem;
+  }
+
+  .visit__panel {
+    position: relative;
+    min-block-size: 30rem;
+    border-radius: 999px 999px var(--radius-sm) var(--radius-sm);
+    overflow: hidden;
+    display: grid;
+    place-items: end center;
+  }
+
+  .visit__panel::after {
+    content: '';
+    position: absolute;
+    inset: 0.75rem;
+    border: 1px solid var(--line-gold-soft);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .visit__place {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    padding-block-end: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .visit__city {
+    text-transform: uppercase;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 1.5rem + 3.5vw, 4.75rem);
+    line-height: 1;
+    letter-spacing: 0.08em;
+    margin-inline-end: -0.08em;
+    color: var(--ivory-50);
+  }
+
+  /* Arabe : police arabe du site, aucun interlettrage (il casserait les liaisons). */
+  :lang(ar) .visit__city {
+    font-family: var(--font-heading);
+    letter-spacing: 0;
+    margin-inline-end: 0;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 63.99rem) {
+    .visit__grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* Infos pratiques d'abord (comme l'intro : le texte avant l'image), le panneau ensuite,
+       aligné sur la colonne de texte. */
+    .visit__panel {
+      min-block-size: 20rem;
+      inline-size: min(100%, 26rem);
+    }
+  }
+
+  @media (max-width: 29.99rem) {
+    .visit__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .visit__panel {
+      min-block-size: 14rem;
+    }
+  }
+</style>

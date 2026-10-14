@@ -1,0 +1,290 @@
+---
+/**
+ * Menu plein écran (mobile/tablette) : mêmes entrées que l'en-tête, langues et « Réserver ».
+ * Dialogue modal : piège du focus, Échap, verrouillage du défilement (src/scripts/main.ts).
+ */
+import { pathFor, useT, type Lang, type PageKey } from '../i18n';
+import { reserveTarget } from '../lib/links';
+import { visible, telHref } from '../lib/data';
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | 'notFound';
+}
+const { lang, page } = Astro.props;
+const t = useT(lang);
+const reserve = reserveTarget();
+const switchPage: PageKey = page === 'notFound' ? 'home' : page;
+const items: Array<{ key: PageKey; label: string }> = [
+  { key: 'home', label: t('nav.home') },
+  { key: 'menu', label: t('nav.menu') },
+  { key: 'gallery', label: t('nav.gallery') },
+  { key: 'contact', label: t('nav.contact') },
+];
+---
+
+<div
+  id="mobile-menu"
+  class="mmenu"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t('a11y.menuDialog')}
+  hidden
+  data-mmenu
+>
+  <div class="mmenu__art" aria-hidden="true"></div>
+  <div class="mmenu__top container">
+    <a class="mmenu__brand" href={pathFor('home', lang)} aria-label={t('a11y.logoHome')}>
+      <Logo />
+    </a>
+    <button class="mmenu__close" type="button" data-menu-close>
+      <span class="sr-only">{t('a11y.closeMenu')}</span>
+      <Icon name="close" size={22} />
+    </button>
+  </div>
+
+  <div class="mmenu__body container">
+    <nav aria-label={t('a11y.mainNav')}>
+      <ol class="mmenu__nav" role="list">
+        {
+          items.map((it, i) => (
+            <li style={`--i:${i}`}>
+              <a href={pathFor(it.key, lang)} aria-current={page === it.key ? 'page' : undefined}>
+                <span class="mmenu__num" aria-hidden="true" dir="ltr">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span class="mmenu__label">{it.label}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <div class="mmenu__foot">
+      <div class="mmenu__actions">
+        {
+          reserve && (
+            <a class="btn btn--amber" href={reserve.href}>
+              <Icon name="phone" size={18} />
+              {t('nav.reserve')}
+              <PhoneSr phone={reserve.phone} />
+            </a>
+          )
+        }
+        <a class="btn btn--line" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+          <Icon name="instagram" size={18} />
+          <span dir="ltr">@{visible.instagram.handle}</span>
+          <span class="sr-only">{t('a11y.newTab')}</span>
+        </a>
+      </div>
+      {
+        visible.phone && (
+          <a class="mmenu__phone" href={telHref(visible.phone)}>
+            <bdi dir="ltr">{visible.phone.display}</bdi>
+          </a>
+        )
+      }
+      <div class="mmenu__langs">
+        <p class="eyebrow">{t('a11y.languages')}</p>
+        <LangSwitcher lang={lang} page={switchPage} variant="list" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .mmenu {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    background: var(--ink-950);
+    color: var(--ivory-50);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block-end: env(safe-area-inset-bottom);
+  }
+
+  .mmenu[hidden] {
+    display: none;
+  }
+
+  .mmenu.is-open {
+    animation: mmenu-in 0.5s var(--ease-emph) both;
+  }
+
+  .mmenu.is-closing {
+    animation: mmenu-out 0.28s var(--ease-out) both;
+  }
+
+  @keyframes mmenu-in {
+    from {
+      opacity: 0;
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes mmenu-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .mmenu__art {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 45% at 85% 100%, rgb(228 161 84 / 0.16), transparent 70%),
+      radial-gradient(50% 35% at 0% 0%, rgb(74 47 40 / 0.65), transparent 70%);
+  }
+
+  .mmenu__art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--pattern-seigaiha);
+    background-size: 56px 28px;
+    opacity: 0.06;
+    -webkit-mask-image: linear-gradient(0deg, #000 0%, transparent 55%);
+    mask-image: linear-gradient(0deg, #000 0%, transparent 55%);
+  }
+
+  .mmenu__top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-block-size: var(--header-h);
+  }
+
+  .mmenu__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: 50%;
+    border: 1px solid rgb(246 240 231 / 0.32);
+    margin-inline-end: -0.25rem;
+    transition:
+      border-color var(--dur-1),
+      transform var(--dur-2) var(--ease-emph);
+  }
+
+  .mmenu__close:hover {
+    border-color: var(--gold-400);
+    transform: rotate(90deg);
+  }
+
+  .mmenu__body {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2.5rem;
+    padding-block: clamp(1rem, 4vh, 3rem) clamp(1.25rem, 3vh, 2rem);
+  }
+
+  .mmenu__nav {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--line-ivory);
+  }
+
+  .mmenu__nav li {
+    border-block-end: 1px solid var(--line-ivory);
+  }
+
+  .mmenu.is-open .mmenu__nav li {
+    animation: mmenu-item 0.7s var(--ease-emph) both;
+    animation-delay: calc(0.12s + var(--i) * 0.06s);
+  }
+
+  @keyframes mmenu-item {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
+
+  .mmenu__nav a {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    /* 2vh : à 360×780 tout le menu tient sans défilement */
+    padding-block: clamp(0.7rem, 2vh, 1.35rem);
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 9vw, 3.25rem);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--ivory-50);
+    transition: color var(--dur-1);
+  }
+
+  .mmenu__nav a:hover,
+  .mmenu__nav a[aria-current='page'] {
+    color: var(--gold-300);
+  }
+
+  .mmenu__num {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--gold-500);
+    min-inline-size: 1.75rem;
+  }
+
+  .mmenu__foot {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  /* Pilules de même largeur ; empilées, elles occupent toute la ligne (jamais deux largeurs inégales). */
+  .mmenu__actions {
+    display: grid;
+    /* 13.5rem ≈ largeur naturelle de la pilule « @aqua.asia.nador » : en dessous, les deux s'empilent */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .mmenu__actions .btn {
+    inline-size: 100%;
+  }
+
+  .mmenu__phone {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    font-size: 1.125rem;
+    letter-spacing: 0.04em;
+    color: var(--sand-300);
+    justify-self: start;
+  }
+
+  .mmenu__langs {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  /* 5 langues en grille régulière 3 + 2 (au lieu d'un retour à la ligne laissant « العربية » seule) */
+  .mmenu__langs :global(.lang-list) {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 0 1.5rem;
+  }
+</style>

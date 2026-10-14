@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "lang": "de",
+    "nativeName": "Deutsch",
+    "ogLocale": "de_DE"
+  },
+  "seo": {
+    "home": {
+      "title": "Aqua Asia – Asiatische Fusionsküche in Nador",
+      "description": "Aqua Asia, Restaurant für asiatische Fusionsküche in Nador, Marokko. Asiatische Küche im Geist der Fusion."
+    },
+    "menu": {
+      "title": "Speisekarte – Aqua Asia, Nador",
+      "description": "Die Speisekarte des Aqua Asia, Restaurant für asiatische Fusionsküche in Nador."
+    },
+    "gallery": {
+      "title": "Galerie – Aqua Asia, Nador",
+      "description": "Das Ambiente im Aqua Asia, Restaurant für asiatische Fusionsküche in Nador."
+    },
+    "contact": {
+      "title": "Kontakt und Reservierung – Aqua Asia, Nador",
+      "description": "Reservieren Sie einen Tisch und finden Sie den Weg zum Aqua Asia, Restaurant für asiatische Fusionsküche in Nador."
+    },
+    "contactNoPhone": {
+      "title": "Kontakt – Aqua Asia, Nador",
+      "description": "Kontakt zum Aqua Asia, Restaurant für asiatische Fusionsküche in Nador."
+    },
+    "notFound": {
+      "title": "Seite nicht gefunden – Aqua Asia",
+      "description": "Diese Seite existiert nicht oder wurde verschoben."
+    }
+  },
+  "a11y": {
+    "skip": "Zum Inhalt springen",
+    "mainNav": "Hauptnavigation",
+    "logoHome": "Aqua Asia, zurück zur Startseite",
+    "openMenu": "Navigationsmenü öffnen",
+    "closeMenu": "Navigationsmenü schließen",
+    "menuDialog": "Navigationsmenü",
+    "changeLanguage": "Sprache ändern, aktuelle Sprache: {language}",
+    "languages": "Sprachen",
+    "actionBar": "Schnellzugriff",
+    "footerNav": "Seitenübersicht",
+    "newTab": "(öffnet in neuem Tab)",
+    "scrollCue": "Weiter nach unten scrollen",
+    "menuCategories": "Kategorien der Speisekarte",
+    "mapTitle": "Anfahrtskarte zum Aqua Asia",
+    "lightbox": "Fotoansicht",
+    "lightboxClose": "Fotoansicht schließen",
+    "lightboxPrev": "Vorheriges Foto",
+    "lightboxNext": "Nächstes Foto",
+    "lightboxCounter": "Foto {current} von {total}",
+    "openPhoto": "Foto vergrößern: {alt}"
+  },
+  "nav": {
+    "home": "Startseite",
+    "menu": "Speisekarte",
+    "gallery": "Galerie",
+    "contact": "Kontakt",
+    "reserve": "Reservieren"
+  },
+  "hero": {
+    "heading": "Aqua Asia, asiatische Fusionsküche in Nador",
+    "tagline": "Asiatische Fusionsküche",
+    "promise": "Die Aromen Asiens, neu\u00a0interpretiert in Nador.",
+    "ctaReserve": "Tisch reservieren",
+    "ctaMenu": "Speisekarte entdecken"
+  },
+  "intro": {
+    "eyebrow": "Das Erlebnis",
+    "title": "Asiatische Küche im Geist der Fusion.",
+    "body": "{name} empfängt Sie in Nador mit asiatischer Fusionsküche. Ein Ort, um zusammenzukommen, sich Zeit zu nehmen und gemeinsame Momente am Tisch zu genießen.",
+    "cta": "Zur Speisekarte"
+  },
+  "menuTeaser": {
+    "eyebrow": "Die Speisekarte",
+    "title": "Ein Vorgeschmack auf die Karte",
+    "cta": "Ganze Speisekarte ansehen"
+  },
+  "menu": {
+    "title": "Die Speisekarte",
+    "lead": "Entdecken Sie asiatische Fusionsküche in Nador.",
+    "pending": {
+      "eyebrow": "Die Speisekarte",
+      "title": "Unsere Speisekarte ist bald online",
+      "body": "Wir bereiten sie gerade für diese Website vor. Bis dahin finden Sie unsere Gerichte auf Instagram – oder rufen Sie uns einfach an.",
+      "bodyNoPhone": "Wir bereiten sie gerade für diese Website vor. Bis dahin finden Sie unsere Gerichte auf Instagram.",
+      "ctaInstagram": "Auf Instagram ansehen",
+      "ctaCall": "Restaurant anrufen"
+    },
+    "price": "{amount} MAD",
+    "unavailable": "Derzeit nicht verfügbar",
+    "allergensLabel": "Allergene:",
+    "allergenNote": "Allergien oder besondere Ernährungswünsche? Bitte sagen Sie uns bei der Bestellung Bescheid.",
+    "legend": "Legende",
+    "tags": {
+      "vegetarian": "Vegetarisch",
+      "vegan": "Vegan",
+      "spicy1": "Leicht scharf",
+      "spicy2": "Scharf",
+      "spicy3": "Sehr scharf",
+      "containsNuts": "Enthält Nüsse",
+      "glutenFree": "Glutenfrei"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "crustaceans": "Krebstiere",
+      "eggs": "Eier",
+      "fish": "Fisch",
+      "peanuts": "Erdnüsse",
+      "soy": "Soja",
+      "milk": "Milch",
+      "nuts": "Schalenfrüchte",
+      "celery": "Sellerie",
+      "mustard": "Senf",
+      "sesame": "Sesam",
+      "sulphites": "Sulfite",
+      "lupin": "Lupinen",
+      "molluscs": "Weichtiere"
+    }
+  },
+  "gallery": {
+    "eyebrow": "Galerie",
+    "title": "Das Ambiente im Aqua Asia",
+    "lead": "Der Gastraum, das Licht und die Gerichte des Hauses.",
+    "pendingTitle": "Fotos folgen in Kürze",
+    "pendingBody": "Bis dahin finden Sie Eindrücke vom Gastraum und von unseren Gerichten auf Instagram.",
+    "cta": "Zur Galerie",
+    "ctaInstagram": "Zu Instagram"
+  },
+  "visit": {
+    "eyebrow": "Besuchen Sie uns",
+    "title": "Zu Gast im {name}",
+    "lead": "Alle Informationen für Ihren Besuch.",
+    "address": "Adresse",
+    "hours": "Öffnungszeiten",
+    "phone": "Telefon",
+    "instagram": "Instagram",
+    "directions": "Route planen",
+    "call": "Anrufen",
+    "writeInstagram": "Auf Instagram schreiben",
+    "country": "Marokko",
+    "postalLine": "{postalCode} {city}",
+    "city": "Nador"
+  },
+  "hours": {
+    "range": "{opens} – {closes} Uhr",
+    "days": {
+      "daily": "Täglich",
+      "mon": "Montag",
+      "tue": "Dienstag",
+      "wed": "Mittwoch",
+      "thu": "Donnerstag",
+      "fri": "Freitag",
+      "sat": "Samstag",
+      "sun": "Sonntag"
+    }
+  },
+  "list": {
+    "separator": ", "
+  },
+  "contact": {
+    "title": "Kontakt\u00a0& Reser\u00advierung",
+    "titleNoPhone": "Kontakt",
+    "lead": "Ob Tischreservierung oder Frage – wir sind gern für Sie da.",
+    "leadNoPhone": "Sie haben eine Frage? Schreiben Sie uns auf Instagram.",
+    "reserveTitle": "Tisch reservieren",
+    "reserveBody": "Rufen Sie uns an, um Ihren Tisch zu reservieren.",
+    "reserveCta": "Telefonisch reservieren",
+    "messageTitle": "Haben Sie eine Frage?",
+    "messageBody": "Schreiben Sie uns eine Direktnachricht auf Instagram.",
+    "messageCta": "Auf Instagram schreiben",
+    "findTitle": "So finden Sie uns",
+    "hoursTitle": "Öffnungszeiten",
+    "followTitle": "{name} folgen",
+    "followCta": "Zum Instagram-Profil"
+  },
+  "instagram": {
+    "eyebrow": "Instagram",
+    "title": "Folgen Sie uns",
+    "body": "Neuigkeiten, Gerichte und das Ambiente des Hauses – Beitrag für Beitrag.",
+    "follow": "Auf Instagram folgen",
+    "message": "Nachricht senden"
+  },
+  "services": {
+    "title": "Angebot",
+    "privateDining": "Privater Gastraum",
+    "veganDishes": "Vegane Gerichte"
+  },
+  "actionBar": {
+    "call": "Anrufen",
+    "directions": "Route",
+    "instagram": "Instagram",
+    "contact": "Kontakt"
+  },
+  "footer": {
+    "tagline": "Asiatische Fusionsküche in Nador.",
+    "explore": "Entdecken",
+    "find": "Ihr Besuch",
+    "follow": "Folgen",
+    "languages": "Sprachen",
+    "copyright": "© {year} {name}",
+    "credit": "Erstellt von {agency}"
+  },
+  "notFound": {
+    "eyebrow": "Fehler 404",
+    "title": "Seite nicht gefunden",
+    "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "home": "Zurück zur Startseite",
+    "otherLanguages": "Andere Sprachen"
+  },
+  "images": {
+    "hero": "Aqua Asia, Restaurant für asiatische Fusionsküche in Nador",
+    "intro": "Aqua Asia in Nador",
+    "og": "Aqua Asia, asiatische Fusionsküche in Nador",
+    "gallery": {
+      "g01": "Aqua Asia, Foto 1",
+      "g02": "Aqua Asia, Foto 2",
+      "g03": "Aqua Asia, Foto 3",
+      "g04": "Aqua Asia, Foto 4",
+      "g05": "Aqua Asia, Foto 5",
+      "g06": "Aqua Asia, Foto 6",
+      "g07": "Aqua Asia, Foto 7",
+      "g08": "Aqua Asia, Foto 8"
+    }
+  }
+}

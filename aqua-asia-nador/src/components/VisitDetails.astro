@@ -1,0 +1,217 @@
+---
+/**
+ * Adresse · horaires · téléphone · Instagram — uniquement ce qui est affichable dans le mode courant
+ * (src/lib/data.ts). Numéros et heures isolés en LTR.
+ */
+import { visible, hoursLines, telHref } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+  compact?: boolean;
+  show?: Array<'address' | 'hours' | 'phone' | 'instagram'>;
+}
+const { lang, compact = false, show = ['address', 'hours', 'phone', 'instagram'] } = Astro.props;
+const t = useT(lang);
+const hours = visible.hours ? hoursLines(visible.hours, t) : null;
+const a = visible.address;
+---
+
+<dl class:list={['vd', { 'vd--compact': compact }]}>
+  {
+    show.includes('address') && a && (
+      <div class="vd__row">
+        <dt>
+          <Icon name="pin" size={18} />
+          {t('visit.address')}
+        </dt>
+        <dd>
+          {/* Lignes séparées, sans ponctuation codée en dur. Le quartier (Instagram) n'est volontairement
+              PAS accolé à la rue (Google) : leur correspondance n'est pas vérifiée. */}
+          <address>
+            <span dir="ltr" class="ltr">{a.street}</span>
+            <br />
+            <span set:html={t.html('visit.postalLine', { postalCode: a.postalCode, city: t('visit.city') })} />
+            <br />
+            {t('visit.country')}
+          </address>
+        </dd>
+      </div>
+    )
+  }
+  {
+    show.includes('hours') && hours && (
+      <div class="vd__row">
+        <dt>
+          <Icon name="clock" size={18} />
+          {t('visit.hours')}
+        </dt>
+        <dd>
+          {hours.map((h) => (
+            <p class="vd__hours">
+              <span>{h.days}</span>
+              <span set:html={t.html('hours.range', { opens: h.opens, closes: h.closes })} />
+            </p>
+          ))}
+        </dd>
+      </div>
+    )
+  }
+  {
+    show.includes('phone') && visible.phone && (
+      <div class="vd__row">
+        <dt>
+          <Icon name="phone" size={18} />
+          {t('visit.phone')}
+        </dt>
+        <dd>
+          <a class="vd__link" href={telHref(visible.phone)}>
+            <bdi dir="ltr">{visible.phone.display}</bdi>
+          </a>
+        </dd>
+      </div>
+    )
+  }
+  {
+    show.includes('instagram') && (
+      <div class="vd__row">
+        <dt>
+          <Icon name="instagram" size={18} />
+          {t('visit.instagram')}
+        </dt>
+        <dd>
+          <a class="vd__link" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+            <bdi dir="ltr">@{visible.instagram.handle}</bdi>
+            <span class="sr-only">{t('a11y.newTab')}</span>
+          </a>
+        </dd>
+      </div>
+    )
+  }
+</dl>
+
+<style>
+  /* Colonne des libellés dimensionnée par le plus long d'entre eux (« ÖFFNUNGSZEITEN »,
+     « OPENINGSTIJDEN »…) et partagée par toutes les lignes (subgrid) : jamais de chevauchement,
+     valeurs toujours alignées. */
+  .vd {
+    display: grid;
+    grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+    column-gap: 1.5rem;
+    margin: 0;
+    border-block-start: 1px solid var(--line-gold-soft);
+  }
+
+  .vd__row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    gap: 0.5rem 1.5rem;
+    padding-block: 1.25rem;
+    border-block-end: 1px solid var(--line-gold-soft);
+  }
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    align-self: start;
+    padding-block-start: 0.2rem;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: var(--track-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-500);
+  }
+
+  :lang(ar) dt {
+    font-size: 0.9375rem;
+  }
+
+  dt :global(.icon) {
+    flex: none;
+    color: var(--gold-400);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ivory-50);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  address {
+    font-style: normal;
+  }
+
+  .vd__hours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+
+  .vd__hours span:first-child {
+    color: var(--sand-300);
+  }
+
+  .vd__link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    margin-block: calc((var(--tap) - 1.6em) / -2);
+    color: var(--ivory-50);
+    text-decoration: underline;
+    text-decoration-color: var(--line-gold);
+    text-underline-offset: 0.35em;
+    transition: text-decoration-color var(--dur-1), color var(--dur-1);
+  }
+
+  .vd__link:hover {
+    color: var(--gold-300);
+    text-decoration-color: var(--gold-400);
+  }
+
+  .vd--compact {
+    grid-template-columns: minmax(0, 1fr);
+    border: 0;
+  }
+
+  .vd--compact .vd__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+    padding-block: 0 1.1rem;
+    border: 0;
+  }
+
+  .vd--compact dt {
+    font-size: 0.6875rem;
+    color: var(--sand-400);
+    letter-spacing: var(--track-caps);
+  }
+
+  /* Arabe (pied de page) : 13 px, lisible, toujours sous les titres de colonne (14 px). */
+  :lang(ar) .vd--compact dt {
+    font-size: 0.8125rem;
+  }
+
+  .vd--compact dt :global(.icon) {
+    display: none;
+  }
+
+  .vd--compact dd {
+    font-size: 0.9375rem;
+    color: var(--sand-300);
+  }
+
+  .vd--compact .vd__link {
+    color: var(--sand-300);
+  }
+
+  @media (max-width: 29.99rem) {
+    .vd,
+    .vd__row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

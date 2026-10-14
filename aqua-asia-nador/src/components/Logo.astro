@@ -1,0 +1,75 @@
+---
+/**
+ * Logo de l'en-tête.
+ * `site.brand.logoSrc` défini → logo officiel. Sinon : ornement provisoire + « AQUA ASIA » en
+ * capitales or espacées (composition empilée comme sur la référence : emblème au-dessus du nom).
+ */
+import { site } from '../config/site';
+import Emblem from './Emblem.astro';
+
+interface Props {
+  class?: string;
+}
+const { class: cls = '' } = Astro.props;
+const name = site.name.value.toUpperCase();
+---
+
+{
+  site.brand.logoSrc ? (
+    <img class:list={['logo logo--file', cls]} src={site.brand.logoSrc} alt="" />
+  ) : (
+    <span class:list={['logo', cls]} dir="ltr">
+      <Emblem class="logo__emblem" stroke={3} />
+      <span class="logo__name">{name}</span>
+    </span>
+  )
+}
+
+<style>
+  .logo {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gold-500);
+  }
+
+  .logo :global(.logo__emblem) {
+    inline-size: 3.75rem;
+    block-size: 3.75rem;
+  }
+
+  .logo__name {
+    font-family: var(--font-ui);
+    font-size: 1.1875rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    margin-inline-end: -0.14em;
+    white-space: nowrap;
+  }
+
+  .logo--file {
+    block-size: 5.25rem;
+    inline-size: auto;
+  }
+
+  @media (max-width: 47.99rem) {
+    .logo {
+      gap: 0.35rem;
+    }
+
+    .logo :global(.logo__emblem) {
+      inline-size: 2.25rem;
+      block-size: 2.25rem;
+    }
+
+    .logo__name {
+      font-size: 0.8125rem;
+    }
+
+    .logo--file {
+      block-size: 3.5rem;
+    }
+  }
+</style>

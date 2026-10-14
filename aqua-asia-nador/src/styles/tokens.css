@@ -1,0 +1,111 @@
+/*
+ * Design tokens — Aqua Asia Nador.
+ * Langage visuel du hero de référence (photo sombre, or, ambre, grotesque blanche géante)
+ * marié aux couleurs Nador (expresso, sable) pour toutes les surfaces sombres.
+ */
+:root {
+  /* Surfaces (sombres, chaudes — jamais de noir pur) */
+  --ink-950: #110d0b;
+  --espresso-900: #1e1714;
+  --espresso-850: #241b17;
+  --espresso-800: #2a201b;
+  --espresso-700: #35281f;
+  --brown-800: #3e2a24;
+  --brown-700: #4a2f28; /* brun du disque du logo Nador */
+
+  /* Textes */
+  --white: #ffffff;
+  --ivory-50: #f6f0e7;
+  --sand-300: #dccbb5;
+  --sand-400: #c9b095; /* trait du logo Nador ; texte secondaire (AA sur toutes les surfaces sombres) */
+
+  /* Accents (référence) */
+  --gold-300: #e3c983;
+  --gold-400: #d6b45e;
+  --gold-500: #c9a24a;
+  --gold-600: #a9873a;
+  /*
+   * CTA ambre : #E4A154 est la couleur exacte du bouton de la référence.
+   * Blanc sur #E4A154 = 2,2:1 (échec AA). On garde la couleur et on passe le texte en expresso
+   * (#1A120E sur #E4A154 ≈ 8,4:1, AA/AAA) : c'est l'option la plus proche visuellement.
+   */
+  --amber-400: #ecb36f;
+  --amber-500: #e4a154;
+  --on-amber: #1a120e;
+
+  /* Filets */
+  --line-gold: rgb(201 162 74 / 0.34);
+  --line-gold-soft: rgb(201 162 74 / 0.18);
+  --line-ivory: rgb(246 240 231 / 0.14);
+
+  /* Typographie */
+  --font-ui: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Arimo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-ui);
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1.0625rem;
+  --fs-md: 1.1875rem;
+  --fs-lead: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+  --fs-h3: clamp(1.375rem, 1.15rem + 0.8vw, 1.75rem);
+  --fs-h2: clamp(2.15rem, 1.35rem + 3vw, 4rem);
+  --fs-page-title: clamp(2.75rem, 1.2rem + 6.4vw, 7.25rem);
+  /* Mot-symbole du hero : ≈ 64 % de la largeur (référence : 61,6 %, capitales ≈ 7,5vw), plus grand sur mobile. */
+  --fs-wordmark: clamp(3.25rem, 10.2vw, 15rem);
+  --fs-tagline: clamp(0.8125rem, 0.4rem + 1.5vw, 2rem);
+
+  --track-eyebrow: 0.32em;
+  --track-tagline: 0.26em;
+  --track-caps: 0.18em;
+
+  /* Mise en page */
+  --gutter: clamp(1.25rem, 4.2vw, 3.5rem);
+  /* ≈ largeur de l'en-tête de la référence (≈ 73 % de la fenêtre) : 1056 px à 1440, 1408 px à 1920.
+     Le mot-symbole du hero (≈ 64 %) reste ainsi toujours à l'intérieur de l'en-tête. */
+  --container: clamp(66rem, 73.34vw, 100rem);
+  --container-wide: clamp(84rem, 80vw, 112rem); /* toujours plus large que --container */
+  --section-y: clamp(4.5rem, 2.5rem + 7vw, 9rem);
+  --header-h: 7.5rem;
+  --header-h-scrolled: 4.5rem;
+  --actionbar-h: 4rem;
+  --radius-pill: 999px;
+  --radius-sm: 0.25rem;
+  --tap: 2.75rem; /* 44 px */
+
+  /* Mouvement */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-emph: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 0.2s;
+  --dur-2: 0.45s;
+  --dur-3: 0.9s;
+
+  /* Motifs (SVG en ligne, aucune image externe) */
+  --pattern-seigaiha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cpath d='M-17.41 -9.85A20 20 0 0 1 17.41 -9.85M-12.36 -8.5A15 15 0 0 1 12.36 -8.5M-7.99 -6.02A10 10 0 0 1 7.99 -6.02M-4.35 -2.46A5 5 0 0 1 4.35 -2.46M22.59 -9.85A20 20 0 0 1 57.41 -9.85M27.64 -8.5A15 15 0 0 1 52.36 -8.5M32.01 -6.02A10 10 0 0 1 47.99 -6.02M35.65 -2.46A5 5 0 0 1 44.35 -2.46M-37.41 0.15A20 20 0 0 1 -2.59 0.15M-32.36 1.5A15 15 0 0 1 -7.64 1.5M-27.99 3.98A10 10 0 0 1 -12.01 3.98M-24.35 7.54A5 5 0 0 1 -15.65 7.54M2.59 0.15A20 20 0 0 1 37.41 0.15M7.64 1.5A15 15 0 0 1 32.36 1.5M12.01 3.98A10 10 0 0 1 27.99 3.98M15.65 7.54A5 5 0 0 1 24.35 7.54M42.59 0.15A20 20 0 0 1 77.41 0.15M47.64 1.5A15 15 0 0 1 72.36 1.5M52.01 3.98A10 10 0 0 1 67.99 3.98M55.65 7.54A5 5 0 0 1 64.35 7.54M-17.41 10.15A20 20 0 0 1 17.41 10.15M-12.36 11.5A15 15 0 0 1 12.36 11.5M-7.99 13.98A10 10 0 0 1 7.99 13.98M-4.35 17.54A5 5 0 0 1 4.35 17.54M22.59 10.15A20 20 0 0 1 57.41 10.15M27.64 11.5A15 15 0 0 1 52.36 11.5M32.01 13.98A10 10 0 0 1 47.99 13.98M35.65 17.54A5 5 0 0 1 44.35 17.54M-37.41 20.15A20 20 0 0 1 -2.59 20.15M-32.36 21.5A15 15 0 0 1 -7.64 21.5M-27.99 23.98A10 10 0 0 1 -12.01 23.98M-24.35 27.54A5 5 0 0 1 -15.65 27.54M2.59 20.15A20 20 0 0 1 37.41 20.15M7.64 21.5A15 15 0 0 1 32.36 21.5M12.01 23.98A10 10 0 0 1 27.99 23.98M15.65 27.54A5 5 0 0 1 24.35 27.54M42.59 20.15A20 20 0 0 1 77.41 20.15M47.64 21.5A15 15 0 0 1 72.36 21.5M52.01 23.98A10 10 0 0 1 67.99 23.98M55.65 27.54A5 5 0 0 1 64.35 27.54' fill='none' stroke='%23c9b095' stroke-width='0.7'/%3E%3C/svg%3E");
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 47.99rem) {
+  :root {
+    --header-h: 5.25rem;
+    --header-h-scrolled: 4rem;
+  }
+}
+
+/* Mobile et tablette en portrait : le mot-symbole occupe ~84 % de la largeur (sinon il paraît
+   perdu dans un écran haut). Paysage ≥ 48rem : proportion de la référence (10.2vw). */
+@media (max-width: 47.99rem), (max-width: 63.99rem) and (orientation: portrait) {
+  :root {
+    --fs-wordmark: 13.4vw;
+  }
+}
+
+/* Arabe : polices arabes après Manrope (les mots latins, chiffres et noms de marque restent en
+   Manrope), pas d'interlettrage (il casserait les ligatures), interligne plus généreux. */
+:root:lang(ar) {
+  --font-ui: 'Manrope Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-heading: 'Manrope Variable', 'Noto Kufi Arabic Variable', 'IBM Plex Sans Arabic', sans-serif;
+  --track-eyebrow: 0;
+  --track-tagline: 0;
+  --track-caps: 0;
+}

@@ -1,0 +1,35 @@
+---
+import { hasMenu } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import PageHero from '../components/PageHero.astro';
+import MenuRenderer from '../components/MenuRenderer.astro';
+import MenuPending from '../components/MenuPending.astro';
+import Visit from '../components/Visit.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+{/* Pas de surtitre : la signature « cuisine fusion asiatique » est déjà dans l'accroche. */}
+<PageHero title={t('menu.title')} lead={t('menu.lead')} />
+{
+  hasMenu ? (
+    <MenuRenderer lang={lang} />
+  ) : (
+    <section class="section menu-page-pending" aria-labelledby="menu-pending-title">
+      <div class="container">
+        <MenuPending lang={lang} titleId="menu-pending-title" size="page" />
+      </div>
+    </section>
+  )
+}
+<Visit lang={lang} />
+
+<style>
+  .menu-page-pending {
+    padding-block-start: clamp(1rem, 3vw, 2rem);
+  }
+</style>

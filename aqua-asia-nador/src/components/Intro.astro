@@ -1,0 +1,138 @@
+---
+/** L'expérience : arche (forme du logo Nador) + texte court et honnête. */
+import { images } from '../config/images';
+import { resolvePhoto, visible } from '../lib/data';
+import { pathFor, useT, type Lang } from '../i18n';
+import ArtPlaceholder from './ArtPlaceholder.astro';
+import Icon from './Icon.astro';
+import Photo from './Photo.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+const photo = resolvePhoto(images.intro.src);
+---
+
+<section id="intro" class="intro section" aria-labelledby="intro-title">
+  <div class="intro__grid container">
+    <figure class="intro__media" data-reveal>
+      <div class="intro__arch">
+        {
+          photo ? (
+            <Photo image={photo} alt={t(images.intro.altKey)} sizes="(min-width: 64rem) 40vw, 90vw" focal={images.intro.focal} />
+          ) : (
+            <ArtPlaceholder variant="arch" motif="sun" tone="brown" />
+          )
+        }
+      </div>
+    </figure>
+
+    <div class="intro__text">
+      <p class="eyebrow" data-reveal>{t('intro.eyebrow')}</p>
+      <h2 id="intro-title" class="h2" data-reveal style="--reveal-delay:.08s">{t('intro.title')}</h2>
+      <p class="lead" data-reveal style="--reveal-delay:.16s" set:html={t.html('intro.body', { name: visible.name })} />
+      <a class="link-line" href={pathFor('menu', lang)} data-reveal style="--reveal-delay:.24s">
+        {t('intro.cta')}
+        <Icon name="arrow" />
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .intro {
+    background:
+      linear-gradient(180deg, var(--ink-950) 0%, var(--espresso-900) 28%);
+  }
+
+  .intro__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: center;
+    gap: clamp(2.5rem, 6vw, 6rem) clamp(1rem, 2vw, 2rem);
+  }
+
+  .intro__media {
+    grid-column: 1 / span 5;
+    position: relative;
+  }
+
+  .intro__arch {
+    position: relative;
+    aspect-ratio: 4 / 5.2;
+    border-radius: 999px 999px 0.25rem 0.25rem;
+    overflow: hidden;
+    box-shadow: 0 2.5rem 5rem -2rem rgb(0 0 0 / 0.65);
+  }
+
+  .intro__arch :global(img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: transform 1.4s var(--ease-emph);
+  }
+
+  .intro__media:hover .intro__arch :global(img) {
+    transform: scale(1.04);
+  }
+
+  /* double cadre or décalé */
+  .intro__media::before {
+    content: '';
+    position: absolute;
+    inset: -0.9rem;
+    border: 1px solid var(--line-gold);
+    border-radius: 999px 999px 0.5rem 0.5rem;
+    pointer-events: none;
+  }
+
+  .intro__text {
+    grid-column: 7 / span 6;
+    display: grid;
+    justify-items: start;
+    gap: 1.75rem;
+  }
+
+  .intro__text .h2 {
+    max-inline-size: 13ch;
+  }
+
+  :lang(ar) .intro__text .h2 {
+    max-inline-size: 16ch;
+  }
+
+  .intro__text .lead {
+    max-inline-size: 31rem;
+  }
+
+  @media (max-width: 63.99rem) {
+    .intro__media {
+      grid-column: 1 / span 6;
+    }
+
+    .intro__text {
+      grid-column: 7 / span 6;
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .intro__media,
+    .intro__text {
+      grid-column: 1 / -1;
+    }
+
+    .intro__media {
+      inline-size: min(78%, 22rem);
+      margin-inline: auto;
+      margin-block-start: 1rem;
+    }
+
+    .intro__text {
+      order: -1;
+    }
+  }
+</style>

@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "lang": "en",
+    "nativeName": "English",
+    "ogLocale": "en_GB"
+  },
+  "seo": {
+    "home": {
+      "title": "Aqua Asia — Asian fusion dining in Nador",
+      "description": "Aqua Asia, an Asian fusion restaurant in Nador, Morocco. Asian at heart, fusion in spirit."
+    },
+    "menu": {
+      "title": "Menu — Aqua Asia, Nador",
+      "description": "The menu at Aqua Asia, an Asian fusion restaurant in Nador."
+    },
+    "gallery": {
+      "title": "Gallery — Aqua Asia, Nador",
+      "description": "The atmosphere at Aqua Asia, an Asian fusion restaurant in Nador."
+    },
+    "contact": {
+      "title": "Contact & reservations — Aqua Asia, Nador",
+      "description": "Book a table and find your way to Aqua Asia, an Asian fusion restaurant in Nador."
+    },
+    "contactNoPhone": {
+      "title": "Contact — Aqua Asia, Nador",
+      "description": "Get in touch with Aqua Asia, an Asian fusion restaurant in Nador."
+    },
+    "notFound": {
+      "title": "Page not found — Aqua Asia",
+      "description": "This page does not exist or has been moved."
+    }
+  },
+  "a11y": {
+    "skip": "Skip to content",
+    "mainNav": "Main navigation",
+    "logoHome": "Aqua Asia, back to the home page",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "menuDialog": "Navigation menu",
+    "changeLanguage": "Change language, current language: {language}",
+    "languages": "Languages",
+    "actionBar": "Quick actions",
+    "footerNav": "Site map",
+    "newTab": "(opens in a new tab)",
+    "scrollCue": "Scroll down to continue",
+    "menuCategories": "Menu categories",
+    "mapTitle": "Location map for Aqua Asia",
+    "lightbox": "Photo viewer",
+    "lightboxClose": "Close the photo viewer",
+    "lightboxPrev": "Previous photo",
+    "lightboxNext": "Next photo",
+    "lightboxCounter": "Photo {current} of {total}",
+    "openPhoto": "Enlarge photo: {alt}"
+  },
+  "nav": {
+    "home": "Home",
+    "menu": "Menu",
+    "gallery": "Gallery",
+    "contact": "Contact",
+    "reserve": "Book a table"
+  },
+  "hero": {
+    "heading": "Aqua Asia, Asian fusion dining in Nador",
+    "tagline": "Asian fusion dining",
+    "promise": "The flavours of Asia, reimagined in Nador.",
+    "ctaReserve": "Book a table",
+    "ctaMenu": "Explore the menu"
+  },
+  "intro": {
+    "eyebrow": "The experience",
+    "title": "Asian at heart, fusion in spirit.",
+    "body": "In Nador, {name} invites you to discover Asian fusion cuisine. A place to get together, take your time and share a moment around the table.",
+    "cta": "See the menu"
+  },
+  "menuTeaser": {
+    "eyebrow": "The menu",
+    "title": "A taste of the menu",
+    "cta": "See the full menu"
+  },
+  "menu": {
+    "title": "The menu",
+    "lead": "A fusion of Asian flavours, served in Nador.",
+    "pending": {
+      "eyebrow": "The menu",
+      "title": "Our online menu is coming soon",
+      "body": "We are getting it ready for this website. In the meantime, discover our dishes on Instagram or give us a call.",
+      "bodyNoPhone": "We are getting it ready for this website. In the meantime, discover our dishes on Instagram.",
+      "ctaInstagram": "See our dishes on Instagram",
+      "ctaCall": "Call Aqua Asia"
+    },
+    "price": "{amount} MAD",
+    "unavailable": "Temporarily unavailable",
+    "allergensLabel": "Allergens:",
+    "allergenNote": "Any allergies or dietary requirements? Please let us know when you order.",
+    "legend": "Key",
+    "tags": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "spicy1": "Mildly spicy",
+      "spicy2": "Spicy",
+      "spicy3": "Very spicy",
+      "containsNuts": "Contains nuts",
+      "glutenFree": "Gluten-free"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "crustaceans": "Crustaceans",
+      "eggs": "Eggs",
+      "fish": "Fish",
+      "peanuts": "Peanuts",
+      "soy": "Soya",
+      "milk": "Milk",
+      "nuts": "Tree nuts",
+      "celery": "Celery",
+      "mustard": "Mustard",
+      "sesame": "Sesame",
+      "sulphites": "Sulphites",
+      "lupin": "Lupin",
+      "molluscs": "Molluscs"
+    }
+  },
+  "gallery": {
+    "eyebrow": "Gallery",
+    "title": "Inside Aqua Asia",
+    "lead": "The dining room, the lighting and the dishes we serve.",
+    "pendingTitle": "Photos coming soon",
+    "pendingBody": "In the meantime, see the dining room and our dishes on Instagram.",
+    "cta": "View the gallery",
+    "ctaInstagram": "View our Instagram"
+  },
+  "visit": {
+    "eyebrow": "Visit us",
+    "title": "Join us at {name}",
+    "lead": "All the details for your visit.",
+    "address": "Address",
+    "hours": "Hours",
+    "phone": "Phone",
+    "instagram": "Instagram",
+    "directions": "Get directions",
+    "call": "Call",
+    "writeInstagram": "Message us on Instagram",
+    "country": "Morocco",
+    "postalLine": "{postalCode} {city}",
+    "city": "Nador"
+  },
+  "hours": {
+    "range": "{opens} – {closes}",
+    "days": {
+      "daily": "Every day",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    }
+  },
+  "list": {
+    "separator": ", "
+  },
+  "contact": {
+    "title": "Contact & reservations",
+    "titleNoPhone": "Contact",
+    "lead": "Whether you would like to book a table or have a question, we are here for you.",
+    "leadNoPhone": "For any question, write to us on Instagram.",
+    "reserveTitle": "Reservations",
+    "reserveBody": "Call us to book your table.",
+    "reserveCta": "Book a table by phone",
+    "messageTitle": "Have a question?",
+    "messageBody": "Send us a direct message on Instagram.",
+    "messageCta": "Message us on Instagram",
+    "findTitle": "Find us",
+    "hoursTitle": "Opening hours",
+    "followTitle": "Follow {name}",
+    "followCta": "View our Instagram profile"
+  },
+  "instagram": {
+    "eyebrow": "Instagram",
+    "title": "Follow us",
+    "body": "Our latest news, dishes and atmosphere, shared post by post.",
+    "follow": "Follow us on Instagram",
+    "message": "Send us a message"
+  },
+  "services": {
+    "title": "Services",
+    "privateDining": "Private dining room",
+    "veganDishes": "Vegan dishes"
+  },
+  "actionBar": {
+    "call": "Call",
+    "directions": "Directions",
+    "instagram": "Instagram",
+    "contact": "Contact"
+  },
+  "footer": {
+    "tagline": "Asian fusion dining in Nador.",
+    "explore": "Explore",
+    "find": "Find us",
+    "follow": "Follow",
+    "languages": "Languages",
+    "copyright": "© {year} {name}",
+    "credit": "Made by {agency}"
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or has been moved.",
+    "home": "Back to the home page",
+    "otherLanguages": "Other languages"
+  },
+  "images": {
+    "hero": "Aqua Asia, an Asian fusion restaurant in Nador",
+    "intro": "Aqua Asia in Nador",
+    "og": "Aqua Asia, Asian fusion dining in Nador",
+    "gallery": {
+      "g01": "Aqua Asia, photo 1",
+      "g02": "Aqua Asia, photo 2",
+      "g03": "Aqua Asia, photo 3",
+      "g04": "Aqua Asia, photo 4",
+      "g05": "Aqua Asia, photo 5",
+      "g06": "Aqua Asia, photo 6",
+      "g07": "Aqua Asia, photo 7",
+      "g08": "Aqua Asia, photo 8"
+    }
+  }
+}

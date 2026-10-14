@@ -1,0 +1,156 @@
+---
+/**
+ * État « La carte en ligne arrive bientôt » — tant que src/content/menu.ts est vide.
+ * Aucun faux plat, aucun PDF : Instagram (assiettes réellement publiées) et téléphone si affichable.
+ */
+import { visible, telHref } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import Emblem from './Emblem.astro';
+import Icon from './Icon.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+  /** Niveau du titre : h2 dans l'accueil, h2 aussi dans la page carte (le h1 est dans l'en-tête de page). */
+  titleId: string;
+  size?: 'teaser' | 'page';
+}
+const { lang, titleId, size = 'teaser' } = Astro.props;
+const t = useT(lang);
+---
+
+<div class:list={['pending', `pending--${size}`]} data-reveal>
+  <span class="pending__corner pending__corner--ss" aria-hidden="true"></span>
+  <span class="pending__corner pending__corner--se" aria-hidden="true"></span>
+  <span class="pending__corner pending__corner--es" aria-hidden="true"></span>
+  <span class="pending__corner pending__corner--ee" aria-hidden="true"></span>
+
+  {
+    size === 'teaser' && (
+      <>
+        {/* Sur la page Carte, l'en-tête de page montre déjà l'emblème : pas de répétition. */}
+        <Emblem class="pending__emblem" stroke={2.6} />
+        <p class="eyebrow eyebrow--center">{t('menu.pending.eyebrow')}</p>
+      </>
+    )
+  }
+  <h2 id={titleId} class="h2 pending__title">{t('menu.pending.title')}</h2>
+  <p class="pending__body">{visible.phone ? t('menu.pending.body') : t('menu.pending.bodyNoPhone')}</p>
+  <div class="pending__actions">
+    <a class="btn btn--line" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+      <Icon name="instagram" size={18} />
+      {t('menu.pending.ctaInstagram')}
+      <span class="sr-only">{t('a11y.newTab')}</span>
+    </a>
+    {
+      visible.phone && (
+        <a class="btn btn--amber" href={telHref(visible.phone)}>
+          <Icon name="phone" size={18} />
+          {t('menu.pending.ctaCall')}
+          <PhoneSr phone={visible.phone.display} />
+        </a>
+      )
+    }
+  </div>
+</div>
+
+<style>
+  .pending {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 1.5rem;
+    max-inline-size: 52rem;
+    margin-inline: auto;
+    padding: clamp(3rem, 7vw, 5.5rem) clamp(1.5rem, 6vw, 5rem);
+    text-align: center;
+    border: 1px solid var(--line-gold-soft);
+    background:
+      radial-gradient(80% 60% at 50% 0%, rgb(201 162 74 / 0.08), transparent 70%),
+      rgb(17 13 11 / 0.45);
+  }
+
+  .pending__corner {
+    position: absolute;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-color: var(--gold-500);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .pending__corner--ss {
+    inset-block-start: -1px;
+    inset-inline-start: -1px;
+    border-block-start-width: 1px;
+    border-inline-start-width: 1px;
+  }
+
+  .pending__corner--se {
+    inset-block-start: -1px;
+    inset-inline-end: -1px;
+    border-block-start-width: 1px;
+    border-inline-end-width: 1px;
+  }
+
+  .pending__corner--es {
+    inset-block-end: -1px;
+    inset-inline-start: -1px;
+    border-block-end-width: 1px;
+    border-inline-start-width: 1px;
+  }
+
+  .pending__corner--ee {
+    inset-block-end: -1px;
+    inset-inline-end: -1px;
+    border-block-end-width: 1px;
+    border-inline-end-width: 1px;
+  }
+
+  .pending :global(.pending__emblem) {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    color: var(--gold-500);
+    margin-block-end: 0.25rem;
+  }
+
+  .pending__title {
+    max-inline-size: 16ch;
+  }
+
+  .pending--teaser .pending__title {
+    font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3.25rem);
+  }
+
+  .pending__body {
+    max-inline-size: 34rem;
+    color: var(--sand-300);
+    text-wrap: pretty;
+  }
+
+  .pending__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-block-start: 0.75rem;
+  }
+
+  @media (max-width: 29.99rem) {
+    /* les libellés des boutons tiennent sur une ligne dès 360 px */
+    .pending {
+      padding-inline: 1rem;
+    }
+
+    .pending__actions {
+      flex-direction: column;
+      align-items: stretch;
+      inline-size: 100%;
+    }
+
+    .pending .btn {
+      padding-inline: 1.1rem;
+      font-size: 0.875rem;
+    }
+  }
+</style>

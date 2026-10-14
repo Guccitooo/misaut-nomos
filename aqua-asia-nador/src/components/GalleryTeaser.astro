@@ -1,0 +1,97 @@
+---
+/** Aperçu galerie (accueil #gallery) : 6 tuiles + lien vers la page Galerie. */
+import { hasGalleryPhotos, visible } from '../lib/data';
+import { pathFor, useT, type Lang } from '../i18n';
+import GalleryGrid from './GalleryGrid.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<section id="gallery" class="gteaser section" aria-labelledby="gallery-title">
+  <div class="container container--wide gteaser__inner">
+    <div class="gteaser__head">
+      <div class="gteaser__titles">
+        <p class="eyebrow" data-reveal>{t('gallery.eyebrow')}</p>
+        <h2 id="gallery-title" class="h2" data-reveal>{t('gallery.title')}</h2>
+      </div>
+      <div class="gteaser__aside" data-reveal>
+        {
+          hasGalleryPhotos ? (
+            <p class="muted">{t('gallery.lead')}</p>
+          ) : (
+            <>
+              <p class="gteaser__soon">{t('gallery.pendingTitle')}</p>
+              <p class="muted">{t('gallery.pendingBody')}</p>
+            </>
+          )
+        }
+        <div class="gteaser__links">
+          {
+            hasGalleryPhotos ? (
+              <a class="link-line" href={pathFor('gallery', lang)}>
+                {t('gallery.cta')}
+                <Icon name="arrow" />
+              </a>
+            ) : (
+              <a class="link-line" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+                {t('gallery.ctaInstagram')}
+                <Icon name="arrow" />
+                <span class="sr-only">{t('a11y.newTab')}</span>
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </div>
+
+    <GalleryGrid lang={lang} limit={6} />
+  </div>
+</section>
+
+<style>
+  .gteaser {
+    background: var(--espresso-900);
+  }
+
+  .gteaser__inner {
+    display: grid;
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  /* La grille est large (--container-wide) mais le titre reste sur l'axe commun à l'en-tête, à
+     l'intro, à la visite et au pied de page (--container). */
+  .gteaser__head {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 26rem);
+    align-items: end;
+    gap: 1.5rem 3rem;
+    inline-size: min(100%, var(--container));
+    margin-inline: auto;
+  }
+
+  .gteaser__titles {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .gteaser__aside {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .gteaser__soon {
+    color: var(--ivory-50);
+    font-weight: 500;
+  }
+
+  @media (max-width: 47.99rem) {
+    .gteaser__head {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,251 @@
+---
+/**
+ * Visuel d'attente « dirigé » (en attendant les originaux du propriétaire).
+ * Dégradés expresso, lumières chaudes, motif seigaiha, soleil en arche sur les vagues — jamais de
+ * photo de banque d'images, jamais de légende inventée. Toujours décoratif (aria-hidden).
+ */
+interface Props {
+  variant?: 'hero' | 'page' | 'arch' | 'tile' | 'panel';
+  motif?: 'arcs' | 'sun' | 'seigaiha' | 'waves' | 'circle';
+  tone?: 'espresso' | 'brown' | 'ink' | 'warm';
+  class?: string;
+}
+const { variant = 'tile', motif = 'arcs', tone = 'espresso', class: cls = '' } = Astro.props;
+
+const f = (n: number) => Math.round(n * 10) / 10;
+/** Arcs concentriques (soleil levant) centrés en (cx, cy). */
+const arcs = (cx: number, cy: number, radii: number[]) =>
+  radii.map((r, i) => ({
+    d: `M${cx - r} ${cy}A${r} ${r} 0 0 1 ${cx + r} ${cy}`,
+    o: f(0.26 - (i / radii.length) * 0.18),
+  }));
+const waveLine = (y: number, x0: number, x1: number, period: number, amp: number) => {
+  let d = `M${x0} ${y}`;
+  const half = period / 2;
+  d += `q${half / 2} ${-amp} ${half} 0`;
+  for (let x = x0 + half; x < x1; x += half) d += `t${half} 0`;
+  return d;
+};
+
+const heroArcs = arcs(800, 900, [150, 215, 290, 375, 470, 575, 690, 815, 950, 1095]);
+const heroWaves = [928, 950, 972, 994].map((y, i) => ({ d: waveLine(y, -40, 1640, 64, 5), o: f(0.2 - i * 0.04) }));
+const tileArcs = arcs(200, 300, [40, 70, 105, 145, 190, 240, 295]);
+const tileWaves = [210, 232, 254, 276, 298].map((y, i) => ({ d: waveLine(y, -10, 410, 28, 4), o: f(0.34 - i * 0.05) }));
+
+// Soleil sur les vagues (motif du logo, version ornementale)
+const sunRays = [198, 222, 246, 270, 294, 318, 342].map((deg) => {
+  const a = (deg * Math.PI) / 180;
+  return `M${f(200 + 58 * Math.cos(a))} ${f(200 + 58 * Math.sin(a))}L${f(200 + 84 * Math.cos(a))} ${f(200 + 84 * Math.sin(a))}`;
+});
+const sunWaves = [222, 244, 266, 288].map((y, i) => waveLine(y, 200 - (120 - i * 22), 200 + (120 - i * 22), 22, 5));
+---
+
+<div class:list={['art', `art--${variant}`, `art--${tone}`, `art--m-${motif}`, cls]} aria-hidden="true">
+  <div class="art__base"></div>
+
+  {
+    (variant === 'hero' || variant === 'page') && (
+      <>
+        <div class="art__lights" />
+        <svg class="art__svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMax slice" fill="none">
+          <defs>
+            <radialGradient id={`sun-${variant}`} cx="50%" cy="90%" r="38%">
+              <stop offset="0" stop-color="#e4a154" stop-opacity="0.22" />
+              <stop offset="1" stop-color="#e4a154" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <rect width="1600" height="1000" fill={`url(#sun-${variant})`} />
+          {heroArcs.map((a) => (
+            <path d={a.d} stroke="#c9a24a" stroke-opacity={a.o} stroke-width="1" vector-effect="non-scaling-stroke" />
+          ))}
+          <path d="M-40 900H1640" stroke="#c9a24a" stroke-opacity="0.22" stroke-width="1" vector-effect="non-scaling-stroke" />
+          {heroWaves.map((w) => (
+            <path d={w.d} stroke="#c9b095" stroke-opacity={w.o} stroke-width="1" vector-effect="non-scaling-stroke" />
+          ))}
+        </svg>
+        <div class="art__pattern" />
+        <div class="art__sweep" />
+      </>
+    )
+  }
+
+  {
+    (variant === 'tile' || variant === 'arch' || variant === 'panel') && (
+      <>
+        <div class="art__pattern" />
+        {/* Motifs centrés (soleil, cercle) : « meet », toujours entiers quelle que soit la forme de la
+            tuile. Arcs et vagues : « slice », ils remplissent la tuile. */}
+        <svg
+          class="art__svg"
+          viewBox="0 0 400 400"
+          preserveAspectRatio={motif === 'sun' || motif === 'circle' ? 'xMidYMid meet' : 'xMidYMid slice'}
+          fill="none"
+        >
+          {motif === 'arcs' &&
+            tileArcs.map((a) => <path d={a.d} stroke="#c9a24a" stroke-opacity={a.o + 0.08} stroke-width="1" vector-effect="non-scaling-stroke" />)}
+          {motif === 'waves' &&
+            tileWaves.map((w) => <path d={w.d} stroke="#c9b095" stroke-opacity={w.o} stroke-width="1" vector-effect="non-scaling-stroke" />)}
+          {motif === 'circle' && (
+            <>
+              <circle cx="200" cy="200" r="118" stroke="#c9a24a" stroke-opacity="0.34" stroke-width="1" vector-effect="non-scaling-stroke" />
+              <circle cx="200" cy="200" r="104" stroke="#c9a24a" stroke-opacity="0.16" stroke-width="1" vector-effect="non-scaling-stroke" />
+            </>
+          )}
+          {motif === 'sun' && (
+            <g stroke="#c9a24a" stroke-width="1.25" stroke-linecap="round">
+              <path d="M152 200A48 48 0 0 1 248 200" stroke-opacity="0.6" vector-effect="non-scaling-stroke" />
+              <path d="M174 200A26 26 0 0 1 226 200" stroke-opacity="0.45" vector-effect="non-scaling-stroke" />
+              <path d={sunRays.join('')} stroke-opacity="0.45" vector-effect="non-scaling-stroke" />
+              <path d="M90 200H310" stroke-opacity="0.4" vector-effect="non-scaling-stroke" />
+              {sunWaves.map((d, i) => (
+                <path d={d} stroke="#c9b095" stroke-opacity={f(0.45 - i * 0.08)} vector-effect="non-scaling-stroke" />
+              ))}
+            </g>
+          )}
+        </svg>
+        <div class="art__glow" />
+      </>
+    )
+  }
+  <div class="art__grain"></div>
+</div>
+
+<style>
+  .art {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--espresso-900);
+  }
+
+  .art > * {
+    position: absolute;
+    inset: 0;
+  }
+
+  .art__svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .art__grain {
+    background-image: var(--grain);
+    background-size: 160px 160px;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+  }
+
+  /* ---------- Hero & pages ---------- */
+  .art--hero .art__base,
+  .art--page .art__base {
+    background:
+      radial-gradient(120% 80% at 50% 30%, #3a2a20 0%, #241a15 38%, #140f0c 72%, #0c0907 100%);
+  }
+
+  .art__lights {
+    /* lumières chaudes suspendues, très floues — clin d'œil à la salle de la référence */
+    background:
+      radial-gradient(9vmax 9vmax at 16% 20%, rgb(236 179 111 / 0.2), transparent 70%),
+      radial-gradient(7vmax 7vmax at 29% 34%, rgb(236 179 111 / 0.12), transparent 70%),
+      radial-gradient(10vmax 10vmax at 74% 16%, rgb(236 179 111 / 0.16), transparent 70%),
+      radial-gradient(6vmax 6vmax at 88% 38%, rgb(236 179 111 / 0.12), transparent 70%),
+      radial-gradient(40vmax 22vmax at 50% 100%, rgb(74 47 40 / 0.55), transparent 70%);
+    animation: art-breathe 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes art-breathe {
+    to {
+      opacity: 0.72;
+    }
+  }
+
+  .art--hero .art__pattern,
+  .art--page .art__pattern {
+    background-image: var(--pattern-seigaiha);
+    background-size: 72px 36px;
+    opacity: 0.075;
+    -webkit-mask-image: radial-gradient(75% 65% at 50% 45%, transparent 35%, #000 100%);
+    mask-image: radial-gradient(75% 65% at 50% 45%, transparent 35%, #000 100%);
+  }
+
+  .art__sweep {
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgb(228 161 84 / 0.07) 47%,
+      rgb(246 240 231 / 0.05) 50%,
+      rgb(228 161 84 / 0.07) 53%,
+      transparent 65%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    animation: art-sweep 16s var(--ease-out) infinite;
+  }
+
+  @keyframes art-sweep {
+    0% {
+      background-position: 120% 0;
+    }
+    55%,
+    100% {
+      background-position: -20% 0;
+    }
+  }
+
+  .art--page .art__svg {
+    opacity: 0.85;
+  }
+
+  /* ---------- Tuiles, arche, panneau ---------- */
+  .art--tile .art__base,
+  .art--arch .art__base,
+  .art--panel .art__base {
+    background: linear-gradient(160deg, #2c211b 0%, #1a1310 100%);
+  }
+
+  .art--brown .art__base {
+    background: linear-gradient(155deg, #57382e 0%, #3e2a24 55%, #2a1c17 100%);
+  }
+
+  .art--ink .art__base {
+    background: radial-gradient(90% 90% at 80% 10%, #2a201b 0%, #120e0c 70%);
+  }
+
+  .art--warm .art__base {
+    background: radial-gradient(110% 90% at 20% 100%, #8a5a30 0%, #4a2f28 45%, #221915 100%);
+  }
+
+  .art--tile .art__pattern,
+  .art--arch .art__pattern,
+  .art--panel .art__pattern {
+    background-image: var(--pattern-seigaiha);
+    background-size: 48px 24px;
+    opacity: 0.06;
+  }
+
+  .art--m-seigaiha .art__pattern {
+    opacity: 0.1;
+  }
+
+  .art__glow {
+    background: radial-gradient(70% 60% at 50% 110%, rgb(228 161 84 / 0.22), transparent 70%);
+    mix-blend-mode: screen;
+  }
+
+  .art--ink .art__glow {
+    background: radial-gradient(60% 50% at 85% 0%, rgb(228 161 84 / 0.16), transparent 70%);
+  }
+
+  .art--arch .art__svg,
+  .art--panel .art__svg {
+    block-size: 100%;
+  }
+
+  /* Tuiles de galerie : le dessin s'arrête au filet or intérieur (cadre à 0.6rem, resserré au survol
+     via --art-clip : voir GalleryGrid). */
+  .art--tile .art__svg {
+    clip-path: inset(var(--art-clip, 0.6rem));
+    transition: clip-path var(--dur-2) var(--ease-emph);
+  }
+</style>

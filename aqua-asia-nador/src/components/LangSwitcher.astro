@@ -1,0 +1,202 @@
+---
+/**
+ * Sélecteur de langue.
+ * « العربية » sur les pages non arabes : police système (pas de téléchargement de la police arabe
+ * pour un seul mot) ; sur les pages arabes, la police du site (--font-ui) s'applique.
+ * - variant "menu" : liste déroulante compacte « FR ▾ » (en-tête desktop), <details> natif → marche sans JS.
+ * - variant "list" : liste en ligne (menu mobile, pied de page, 404).
+ * Chaque lien pointe vers la page équivalente ; le script ajoute la section courante (#hash) et
+ * mémorise le choix (localStorage).
+ */
+import { LANGS, alternatesFor, dictFor, nativeName, useT, type Lang, type PageKey } from '../i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageKey;
+  variant: 'menu' | 'list';
+  class?: string;
+  id?: string;
+}
+const { lang, page, variant, class: cls = '', id = 'lang' } = Astro.props;
+const t = useT(lang);
+const alts = alternatesFor(page);
+const code = (l: Lang) => dictFor(l).meta.lang.toUpperCase();
+---
+
+{
+  variant === 'menu' ? (
+    <details class:list={['lang-menu', cls]} data-lang-menu>
+      <summary class="lang-menu__toggle">
+        {/* Nom accessible = code visible (« FR ») puis l'explication : il commence par ce qui est
+            affiché (WCAG 2.5.3), donc « cliquer sur FR » fonctionne en commande vocale. */}
+        <Icon name="globe" class="lang-menu__globe" size={18} />
+        <span class="lang-menu__code">{code(lang)}</span>
+        <span class="sr-only">{' '}{t('a11y.changeLanguage', { language: nativeName(lang) })}</span>
+        <Icon name="chevron" class="lang-menu__chev" size={16} />
+      </summary>
+      <ul class="lang-menu__list" role="list" id={`${id}-list`}>
+        {LANGS.map((l) => (
+          <li>
+            <a
+              href={alts[l]}
+              hreflang={l}
+              data-lang-link={l}
+              aria-current={l === lang ? 'true' : undefined}
+            >
+              <span class="lang-menu__name" lang={l} dir={l === 'ar' ? 'rtl' : 'ltr'}>
+                {nativeName(l)}
+              </span>
+              <span class="lang-menu__abbr" aria-hidden="true" dir="ltr">
+                {code(l)}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  ) : (
+    <ul class:list={['lang-list', cls]} role="list">
+      {LANGS.map((l) => (
+        <li>
+          <a href={alts[l]} hreflang={l} data-lang-link={l} aria-current={l === lang ? 'true' : undefined}>
+            {/* lang/dir sur le nom (et non sur le lien) : l'alignement du lien suit le sens de la page */}
+            <span lang={l} dir={l === 'ar' ? 'rtl' : 'ltr'}>
+              {nativeName(l)}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .lang-menu {
+    position: relative;
+  }
+
+  .lang-menu__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-block-size: var(--tap);
+    padding-inline: 0.5rem;
+    list-style: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    border-radius: var(--radius-pill);
+    transition: color var(--dur-1);
+  }
+
+  .lang-menu__toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .lang-menu__toggle:hover,
+  .lang-menu[open] .lang-menu__toggle {
+    color: var(--gold-300);
+  }
+
+  .lang-menu :global(.lang-menu__globe) {
+    opacity: 0.8;
+  }
+
+  .lang-menu :global(.lang-menu__chev) {
+    transition: transform var(--dur-2) var(--ease-emph);
+  }
+
+  .lang-menu[open] :global(.lang-menu__chev) {
+    transform: rotate(180deg);
+  }
+
+  .lang-menu__list {
+    position: absolute;
+    inset-block-start: calc(100% + 0.75rem);
+    inset-inline-end: -0.5rem;
+    min-inline-size: 12.5rem;
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+    background: rgb(22 17 14 / 0.97);
+    border: 1px solid var(--line-gold-soft);
+    border-radius: 0.75rem;
+    box-shadow: 0 1.5rem 3rem -1rem rgb(0 0 0 / 0.6);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    animation: lang-in var(--dur-2) var(--ease-emph);
+  }
+
+  @keyframes lang-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+    }
+  }
+
+  .lang-menu__list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-block-size: var(--tap);
+    padding-inline: 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.9375rem;
+    color: var(--sand-300);
+    transition:
+      background-color var(--dur-1),
+      color var(--dur-1);
+  }
+
+  .lang-menu__list a:hover {
+    background: rgb(201 162 74 / 0.1);
+    color: var(--ivory-50);
+  }
+
+  .lang-menu__list a[aria-current='true'] {
+    color: var(--gold-300);
+  }
+
+  .lang-menu__abbr {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--sand-400);
+    font-family: var(--font-ui);
+  }
+
+  .lang-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lang-list a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--tap);
+    min-inline-size: var(--tap);
+    color: var(--sand-300);
+    transition: color var(--dur-1);
+  }
+
+  .lang-list a:hover {
+    color: var(--ivory-50);
+  }
+
+  .lang-list a[aria-current='true'] {
+    color: var(--gold-300);
+    text-decoration: underline;
+    text-decoration-color: var(--amber-500);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+  }
+</style>

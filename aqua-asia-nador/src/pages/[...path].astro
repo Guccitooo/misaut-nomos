@@ -1,0 +1,45 @@
+---
+/**
+ * Toutes les pages du site, générées depuis la table des slugs (src/i18n/routes.ts) :
+ * 5 langues × 4 pages. Le français est à la racine.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomeView from '../views/HomeView.astro';
+import MenuView from '../views/MenuView.astro';
+import GalleryView from '../views/GalleryView.astro';
+import ContactView from '../views/ContactView.astro';
+import { LANGS, PAGES, routeParam, useT, type Lang, type PageKey } from '../i18n';
+import { visible } from '../lib/data';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) =>
+    PAGES.map((page) => ({
+      params: { path: routeParam(page, lang) },
+      props: { lang, page },
+    })),
+  );
+}
+
+interface Props {
+  lang: Lang;
+  page: PageKey;
+}
+const { lang, page } = Astro.props;
+const t = useT(lang);
+// Sans téléphone affichable, la page contact ne promet pas de réservation (titre et description).
+const seoKey = page === 'contact' && !visible.phone ? 'contactNoPhone' : page;
+---
+
+<BaseLayout
+  lang={lang}
+  page={page}
+  title={t(`seo.${seoKey}.title`)}
+  description={t(`seo.${seoKey}.description`)}
+  preloadDisplay={page === 'home'}
+  jsonLd={page === 'home' || page === 'contact'}
+>
+  {page === 'home' && <HomeView lang={lang} />}
+  {page === 'menu' && <MenuView lang={lang} />}
+  {page === 'gallery' && <GalleryView lang={lang} />}
+  {page === 'contact' && <ContactView lang={lang} />}
+</BaseLayout>

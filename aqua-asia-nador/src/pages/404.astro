@@ -1,0 +1,83 @@
+---
+/** 404 : en français (langue par défaut) + le même message et le lien d'accueil dans chaque langue. */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import { LANGS, DEFAULT_LANG, nativeName, pathFor, useT, isRtl } from '../i18n';
+
+const lang = DEFAULT_LANG;
+const t = useT(lang);
+const others = LANGS.filter((l) => l !== lang);
+---
+
+<BaseLayout lang={lang} page="notFound" title={t('seo.notFound.title')} description={t('seo.notFound.description')}>
+  <PageHero eyebrow={t('notFound.eyebrow')} title={t('notFound.title')} lead={t('notFound.body')} />
+  <section class="section nf" aria-labelledby="nf-langs">
+    <div class="container nf__inner">
+      <a class="btn btn--amber" href={pathFor('home', lang)}>
+        {t('notFound.home')}
+      </a>
+      <h2 id="nf-langs" class="eyebrow eyebrow--center">{t('notFound.otherLanguages')}</h2>
+      <ul class="nf__list" role="list">
+        {
+          others.map((l) => {
+            const tl = useT(l);
+            return (
+              <li lang={l} dir={isRtl(l) ? 'rtl' : 'ltr'}>
+                <p class="nf__name">{nativeName(l)}</p>
+                <p class="nf__title">{tl('notFound.title')}</p>
+                <a class="link-line" href={pathFor('home', l)} hreflang={l} data-lang-link={l}>
+                  {tl('notFound.home')}
+                  <Icon name="arrow" />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Le bouton de retour suit directement le message (l'en-tête de page a déjà son espacement bas). */
+  .nf {
+    padding-block-start: 0;
+  }
+
+  .nf__inner {
+    display: grid;
+    justify-items: center;
+    gap: 2.5rem;
+  }
+
+  .nf__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 1rem;
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nf__list li {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line-gold-soft);
+    border-radius: var(--radius-sm);
+  }
+
+  .nf__name {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: var(--track-caps);
+    text-transform: uppercase;
+    color: var(--gold-500);
+  }
+
+  .nf__title {
+    font-size: 1.25rem;
+    color: var(--ivory-50);
+  }
+</style>

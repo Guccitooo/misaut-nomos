@@ -4,6 +4,8 @@ import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 
 export default [
+  // Projet autonome (Astro) avec ses propres outils : hors du lint de l'app racine.
+  { ignores: ["aqua-asia-nador/**"] },
   {
     files: [
       "src/components/**/*.{js,mjs,cjs,jsx}",

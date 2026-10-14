@@ -1,0 +1,58 @@
+---
+import { hasGalleryPhotos, visible } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import PageHero from '../components/PageHero.astro';
+import GalleryGrid from '../components/GalleryGrid.astro';
+import InstagramBand from '../components/InstagramBand.astro';
+import Icon from '../components/Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<PageHero
+  eyebrow={t('gallery.eyebrow')}
+  title={t('gallery.title')}
+  lead={hasGalleryPhotos ? t('gallery.lead') : undefined}
+/>
+{/* Avec photos : section sans nom (ce n'est pas un repère ; le hero porte déjà le titre de la page). */}
+<section class="section gallery-page" aria-labelledby={hasGalleryPhotos ? undefined : 'gallery-soon'}>
+  <div class="container container--wide gallery-page__inner">
+    {
+      !hasGalleryPhotos && (
+        <div class="gallery-page__soon" data-reveal>
+          <h2 id="gallery-soon" class="h3">{t('gallery.pendingTitle')}</h2>
+          <p class="muted">{t('gallery.pendingBody')}</p>
+          <a class="link-line" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+            {t('gallery.ctaInstagram')}
+            <Icon name="arrow" />
+            <span class="sr-only">{t('a11y.newTab')}</span>
+          </a>
+        </div>
+      )
+    }
+    <GalleryGrid lang={lang} lightbox />
+  </div>
+</section>
+<InstagramBand lang={lang} />
+
+<style>
+  .gallery-page {
+    padding-block-start: clamp(1rem, 3vw, 2rem);
+  }
+
+  .gallery-page__inner {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  .gallery-page__soon {
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    text-align: center;
+  }
+</style>

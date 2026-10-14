@@ -1,0 +1,137 @@
+---
+/** Aperçu de la carte (accueil #menu) : premières catégories si la carte existe, sinon l'état d'attente. */
+import { menu } from '../content/menu';
+import { hasMenu, formatAmount, localized } from '../lib/data';
+import { isRtl, pathFor, useT, type Lang } from '../i18n';
+import MenuPending from './MenuPending.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+/** Texte + attributs de langue quand le texte est un repli français (voir MenuRenderer). */
+const loc = (v?: Parameters<typeof localized>[0]) => {
+  const r = localized(v, lang);
+  if (!r) return { text: undefined, attrs: {} };
+  return {
+    text: r.text,
+    attrs: r.lang === lang ? {} : { lang: r.lang, dir: isRtl(r.lang) ? 'rtl' : 'ltr' },
+  };
+};
+const cats = menu.categories.filter((c) => c.items.length > 0).slice(0, 3);
+---
+
+<section id="menu" class="menu-teaser section" aria-labelledby="menu-title">
+  <div class="menu-teaser__bg" aria-hidden="true"></div>
+  <div class="container">
+    {
+      hasMenu ? (
+        <>
+          <div class="menu-teaser__head">
+            <p class="eyebrow" data-reveal>
+              {t('menuTeaser.eyebrow')}
+            </p>
+            <h2 id="menu-title" class="h2" data-reveal>
+              {t('menuTeaser.title')}
+            </h2>
+          </div>
+          <div class="menu-teaser__cols">
+            {cats.map((c, i) => (
+              <div class="menu-teaser__col" data-reveal style={`--reveal-delay:${i * 0.08}s`}>
+                <h3 class="h3" {...loc(c.name).attrs}>
+                  {loc(c.name).text}
+                </h3>
+                <ul role="list">
+                  {c.items.slice(0, 4).map((it) => (
+                    <li>
+                      <span {...loc(it.name).attrs}>{loc(it.name).text}</span>
+                      <span class="menu-teaser__leader" aria-hidden="true" />
+                      {typeof it.price === 'number' && (
+                        <span class="menu-teaser__price" set:html={t.html('menu.price', { amount: formatAmount(it.price, lang) })} />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <a class="link-line" href={pathFor('menu', lang)} data-reveal>
+            {t('menuTeaser.cta')}
+            <Icon name="arrow" />
+          </a>
+        </>
+      ) : (
+        <MenuPending lang={lang} titleId="menu-title" size="teaser" />
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .menu-teaser {
+    background: var(--espresso-850);
+    overflow: hidden;
+  }
+
+  .menu-teaser__bg {
+    position: absolute;
+    inset: 0;
+    background-image: var(--pattern-seigaiha);
+    background-size: 64px 32px;
+    opacity: 0.05;
+    -webkit-mask-image: radial-gradient(70% 70% at 50% 50%, transparent 30%, #000 100%);
+    mask-image: radial-gradient(70% 70% at 50% 50%, transparent 30%, #000 100%);
+  }
+
+  .menu-teaser .container {
+    position: relative;
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .menu-teaser__head {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .menu-teaser__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 2.5rem clamp(2rem, 4vw, 4rem);
+  }
+
+  .menu-teaser__col {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--line-gold);
+  }
+
+  .menu-teaser__col ul {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .menu-teaser__col li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    color: var(--sand-300);
+  }
+
+  .menu-teaser__leader {
+    flex: 1;
+    border-block-end: 1px dotted rgb(201 176 149 / 0.4);
+  }
+
+  .menu-teaser__price {
+    color: var(--gold-300);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+</style>

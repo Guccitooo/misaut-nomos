@@ -1,0 +1,13 @@
+---
+/**
+ * Numéro de téléphone lu APRÈS le libellé visible d'un bouton d'appel (« Réserver », « Appeler »…).
+ * Le nom accessible commence ainsi par les mots affichés (WCAG 2.5.3 « Label in Name ») et
+ * l'utilisateur de lecteur d'écran sait quel numéro sera composé. Numéro isolé en LTR.
+ */
+interface Props {
+  phone: string;
+}
+const { phone } = Astro.props;
+---
+
+<span class="sr-only">{' '}<bdi dir="ltr">{phone}</bdi></span>

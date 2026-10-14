@@ -1,0 +1,21 @@
+---
+import type { Lang } from '../i18n';
+import Hero from '../components/Hero.astro';
+import Intro from '../components/Intro.astro';
+import MenuTeaser from '../components/MenuTeaser.astro';
+import GalleryTeaser from '../components/GalleryTeaser.astro';
+import Visit from '../components/Visit.astro';
+import InstagramBand from '../components/InstagramBand.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+<Hero lang={lang} />
+<Intro lang={lang} />
+<MenuTeaser lang={lang} />
+<GalleryTeaser lang={lang} />
+<Visit lang={lang} />
+<InstagramBand lang={lang} />

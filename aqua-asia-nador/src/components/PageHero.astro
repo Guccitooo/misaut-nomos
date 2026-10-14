@@ -1,0 +1,129 @@
+---
+/** En-tête des pages intérieures : même langage que le hero (fond sombre, or, grotesque blanche). */
+import ArtPlaceholder from './ArtPlaceholder.astro';
+import Emblem from './Emblem.astro';
+
+interface Props {
+  /** Facultatif : seulement s'il apporte une information propre à la page (pas la signature répétée). */
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+  id?: string;
+}
+const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
+---
+
+<section class="phero" aria-labelledby={id}>
+  <ArtPlaceholder variant="page" />
+  <div class="phero__veil" aria-hidden="true"></div>
+  <div class="phero__content container">
+    <Emblem class="phero__emblem" stroke={2.6} />
+    {eyebrow && <p class="phero__eyebrow">{eyebrow}</p>}
+    <h1 id={id} class="phero__title">{title}</h1>
+    {lead && <p class="phero__lead">{lead}</p>}
+  </div>
+</section>
+
+<style>
+  .phero {
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-block-size: clamp(28rem, 68svh, 44rem);
+    padding-block: calc(var(--header-h) + 2rem) clamp(3rem, 7vw, 5.5rem);
+    overflow: hidden;
+    text-align: center;
+    color: var(--white);
+  }
+
+  .phero :global(.art) {
+    animation: phero-zoom 16s var(--ease-out) both;
+  }
+
+  @keyframes phero-zoom {
+    from {
+      transform: scale(1.06);
+    }
+  }
+
+  .phero__veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(12 9 7 / 0.3), transparent 40%, rgb(30 23 20 / 0.95) 100%);
+  }
+
+  .phero__content {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 1.5rem;
+  }
+
+  .phero :global(.phero__emblem) {
+    inline-size: 3rem;
+    block-size: 3rem;
+    color: var(--gold-500);
+    animation: phero-in 1.2s var(--ease-emph) both;
+  }
+
+  .phero__eyebrow {
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: var(--track-tagline);
+    margin-inline-end: calc(-1 * var(--track-tagline));
+    text-transform: uppercase;
+    color: var(--gold-500);
+    animation: phero-in 1.2s var(--ease-emph) 0.1s both;
+  }
+
+  :lang(ar) .phero__eyebrow {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .phero__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-page-title);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    animation: phero-in 1.4s var(--ease-emph) 0.15s both;
+  }
+
+  :lang(ar) .phero__title {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: 0;
+  }
+
+  .phero__lead {
+    max-inline-size: 36rem;
+    font-size: var(--fs-lead);
+    font-weight: 300;
+    color: var(--sand-300);
+    text-wrap: balance;
+    animation: phero-in 1.4s var(--ease-emph) 0.3s both;
+  }
+
+  @keyframes phero-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phero :global(.art),
+    .phero :global(.phero__emblem),
+    .phero__eyebrow,
+    .phero__title,
+    .phero__lead {
+      animation: none;
+    }
+  }
+</style>

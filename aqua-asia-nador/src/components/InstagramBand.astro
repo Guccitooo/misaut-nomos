@@ -1,0 +1,92 @@
+---
+/** Bandeau Instagram : liens vers le profil et la messagerie. Aucune reproduction d'interface Instagram. */
+import { visible } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<section id="instagram" class="ig section" aria-labelledby="instagram-title">
+  <div class="ig__bg" aria-hidden="true"></div>
+  <div class="ig__inner container">
+    <p class="eyebrow eyebrow--center" data-reveal>{t('instagram.eyebrow')}</p>
+    <h2 id="instagram-title" class="h2" data-reveal>{t('instagram.title')}</h2>
+    <p class="ig__handle" dir="ltr" data-reveal>@{visible.instagram.handle}</p>
+    <p class="ig__body" data-reveal>{t('instagram.body')}</p>
+    <div class="ig__actions" data-reveal>
+      <a class="btn btn--amber" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+        <Icon name="instagram" size={18} />
+        {t('instagram.follow')}
+        <span class="sr-only">{t('a11y.newTab')}</span>
+      </a>
+      <a class="btn btn--ghost" href={visible.instagram.dmUrl} target="_blank" rel="noopener noreferrer">
+        <Icon name="message" size={18} />
+        {t('instagram.message')}
+        <span class="sr-only">{t('a11y.newTab')}</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ig {
+    background:
+      radial-gradient(70% 90% at 50% 120%, rgb(228 161 84 / 0.18), transparent 70%),
+      linear-gradient(180deg, var(--brown-700), #3a251f);
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .ig__bg {
+    position: absolute;
+    inset: 0;
+    background-image: var(--pattern-seigaiha);
+    background-size: 56px 28px;
+    opacity: 0.09;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 40%, #000 60%, transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 40%, #000 60%, transparent);
+  }
+
+  .ig__inner {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 1.4rem;
+  }
+
+  .ig__handle {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 0.9rem + 2.4vw, 2.6rem);
+    letter-spacing: 0.04em;
+    color: var(--gold-300);
+    overflow-wrap: anywhere;
+  }
+
+  /* centré, 3 lignes au plus : lignes équilibrées, jamais un mot seul en dernière ligne */
+  .ig__body {
+    max-inline-size: 32rem;
+    color: var(--sand-300);
+    text-wrap: balance;
+  }
+
+  .ig__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-block-start: 0.5rem;
+  }
+
+  @media (max-width: 29.99rem) {
+    .ig__actions {
+      flex-direction: column;
+      align-items: stretch;
+      inline-size: 100%;
+    }
+  }
+</style>

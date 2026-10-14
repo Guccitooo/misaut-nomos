@@ -1,0 +1,382 @@
+---
+/**
+ * Hero de l'accueil — composition de la référence : photo plein cadre sous voile sombre, mot-symbole
+ * blanc géant « AQUA [emblème] ASIA » centré, signature or très espacée dessous.
+ * Ajouts Nador : promesse courte + « Réserver » / « Découvrir la carte » en bas du cadre.
+ * Média : image ou vidéo muette en boucle (config/images.ts) ; sinon visuel d'attente dirigé.
+ */
+import { images } from '../config/images';
+import { site } from '../config/site';
+import { resolvePhoto } from '../lib/data';
+import { reserveTarget } from '../lib/links';
+import { pathFor, useT, type Lang } from '../i18n';
+import ArtPlaceholder from './ArtPlaceholder.astro';
+import Emblem from './Emblem.astro';
+import Icon from './Icon.astro';
+import Photo from './Photo.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+const reserve = reserveTarget();
+const slot = images.hero;
+const photo = resolvePhoto(slot.src);
+const video = slot.type === 'video' && slot.video.mp4 ? slot.video : null;
+const [word1, ...rest] = site.name.value.toUpperCase().split(' ');
+const word2 = rest.join(' ');
+---
+
+<section class="hero" aria-labelledby="hero-title" data-hero>
+  <div class="hero__media">
+    {
+      video ? (
+        <>
+          {/* Image fixe optimisée (AVIF/WebP) derrière la vidéo : c'est elle qu'on voit avant la lecture,
+              en mouvement réduit et en mode économie de données. Pas d'attribut poster (il chargerait
+              le fichier original non optimisé). */}
+          {photo ? (
+            <Photo image={photo} alt="" sizes="100vw" focal={slot.focal} eager class="hero__img" />
+          ) : (
+            <ArtPlaceholder variant="hero" />
+          )}
+          {/* Ni autoplay ni src dans le HTML : rien n'est téléchargé tant que le script n'a pas vérifié
+              « prefers-reduced-motion » et l'économie de données (src/scripts/main.ts). */}
+          <video
+            class="hero__video"
+            muted
+            loop
+            playsinline
+            preload="none"
+            aria-hidden="true"
+            data-hero-video
+            style={`object-position:${slot.focal}`}
+          >
+            {video.webm && <source data-src={video.webm} type="video/webm" />}
+            <source data-src={video.mp4!} type="video/mp4" />
+          </video>
+        </>
+      ) : photo ? (
+        <Photo image={photo} alt={t(slot.altKey)} sizes="100vw" focal={slot.focal} eager class="hero__img" />
+      ) : (
+        <ArtPlaceholder variant="hero" />
+      )
+    }
+  </div>
+  <div class:list={['hero__veil', { 'hero__veil--photo': photo || video }]} aria-hidden="true"></div>
+
+  <div class="hero__content">
+    <div class="hero__brand">
+      <h1 id="hero-title" class="hero__title">
+        <span class="sr-only">{t('hero.heading')}</span>
+        <span class="wordmark" dir="ltr" aria-hidden="true">
+          <span class="wordmark__word">{word1}</span>
+          <Emblem class="wordmark__emblem" stroke={2.4} />
+          <span class="wordmark__word">{word2}</span>
+        </span>
+      </h1>
+      <p class="hero__tagline">{t('hero.tagline')}</p>
+    </div>
+
+    <div class="hero__foot">
+      <p class="hero__promise">{t('hero.promise')}</p>
+      <div class="hero__actions">
+        {
+          reserve && (
+            <a class="btn btn--amber" href={reserve.href}>
+              <Icon name="phone" size={18} />
+              {t('hero.ctaReserve')}
+              <PhoneSr phone={reserve.phone} />
+            </a>
+          )
+        }
+        {/* Sans téléphone affichable, « Découvrir la carte » devient l'action principale. */}
+        <a class:list={['btn', reserve ? 'btn--ghost' : 'btn--amber']} href={pathFor('menu', lang)}>
+          {t('hero.ctaMenu')}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <a class="hero__scroll" href="#intro">
+    <span class="sr-only">{t('a11y.scrollCue')}</span>
+    <span class="hero__scroll-line" aria-hidden="true"></span>
+  </a>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-block-size: 100vh;
+    min-block-size: 100svh;
+    display: grid;
+    color: var(--white);
+    background: var(--ink-950);
+    overflow: hidden;
+  }
+
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    animation: hero-zoom 18s var(--ease-out) both;
+  }
+
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.08);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .hero__media :global(img),
+  .hero__media :global(video),
+  .hero__media :global(picture) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .hero__video {
+    opacity: 0;
+    transition: opacity 1.2s var(--ease-out);
+  }
+
+  .hero__video.is-playing {
+    opacity: 1;
+  }
+
+  .hero__veil {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgb(12 9 7 / 0.35) 0%, transparent 30%, transparent 62%, rgb(12 9 7 / 0.75) 100%);
+  }
+
+  /* voile ≈ 55 % comme la référence quand une vraie photo est en place */
+  .hero__veil--photo {
+    background:
+      linear-gradient(180deg, rgb(12 9 7 / 0.62) 0%, rgb(12 9 7 / 0.5) 40%, rgb(12 9 7 / 0.55) 70%, rgb(12 9 7 / 0.82) 100%);
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: 1fr auto 1fr;
+    justify-items: center;
+    padding-block: var(--header-h);
+    padding-inline: var(--gutter);
+    text-align: center;
+  }
+
+  .hero__brand {
+    --brand-gap: clamp(1rem, 2vw, 2.5rem);
+    grid-row: 2;
+    display: grid;
+    justify-items: center;
+    gap: var(--brand-gap);
+    /* comme la référence : c'est le mot-symbole (pas le bloc) qui est centré verticalement */
+    translate: 0 calc((var(--brand-gap) + 1.35 * var(--fs-tagline)) / 2);
+  }
+
+  .hero__title {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .wordmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.11em;
+    font-family: var(--font-display);
+    font-size: var(--fs-wordmark);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--white);
+    white-space: nowrap;
+    animation: hero-rise 1.6s var(--ease-emph) 0.15s both;
+  }
+
+  .wordmark__word {
+    display: block;
+    /* centre optique des capitales (Arimo, hauteur de capitale ≈ 0,716 em) */
+    padding-block-start: 0.03em;
+  }
+
+  .wordmark :global(.wordmark__emblem) {
+    flex: none;
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    color: var(--gold-500);
+    animation: emblem-turn 2.4s var(--ease-emph) 0.35s both;
+  }
+
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.12em) scale(0.97);
+    }
+  }
+
+  @keyframes emblem-turn {
+    from {
+      opacity: 0;
+      transform: rotate(-35deg) scale(0.85);
+    }
+  }
+
+  .hero__tagline {
+    font-family: var(--font-ui);
+    font-size: var(--fs-tagline);
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: var(--track-tagline);
+    margin-inline-end: calc(-1 * var(--track-tagline));
+    text-transform: uppercase;
+    color: var(--gold-500);
+    text-wrap: balance;
+    animation: hero-fade 1.4s var(--ease-out) 0.7s both;
+  }
+
+  :lang(ar) .hero__tagline {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: calc(var(--fs-tagline) * 1.2);
+  }
+
+  @keyframes hero-fade {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  .hero__foot {
+    grid-row: 3;
+    align-self: end;
+    display: grid;
+    justify-items: center;
+    gap: 1.5rem;
+    padding-block-start: 2.5rem;
+    animation: hero-fade 1.4s var(--ease-out) 1s both;
+  }
+
+  .hero__promise {
+    font-size: var(--fs-md);
+    font-weight: 300;
+    color: var(--ivory-50);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 1rem;
+  }
+
+  .hero__scroll {
+    position: absolute;
+    z-index: 1;
+    inset-block-end: 0;
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    display: flex;
+    justify-content: center;
+    inline-size: var(--tap);
+    block-size: clamp(3rem, 8vh, 4.5rem);
+  }
+
+  /* :global() obligatoire : le dir="rtl" est sur <html>, hors de la portée du composant */
+  :global([dir='rtl']) .hero__scroll {
+    translate: 50% 0;
+  }
+
+  .hero__scroll-line {
+    position: relative;
+    inline-size: 1px;
+    block-size: 100%;
+    background: rgb(201 162 74 / 0.25);
+    overflow: hidden;
+  }
+
+  .hero__scroll-line::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    block-size: 45%;
+    background: var(--gold-400);
+    animation: scroll-cue 2.6s var(--ease-out) infinite;
+  }
+
+  @keyframes scroll-cue {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(240%);
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .hero__content {
+      padding-block-end: calc(var(--header-h) * 0.9);
+    }
+
+    .hero__promise {
+      font-size: 1.0625rem;
+      max-inline-size: 18rem;
+    }
+
+    .hero__actions {
+      flex-direction: column;
+      align-items: stretch;
+      inline-size: min(100%, 18rem);
+    }
+  }
+
+  @media (max-height: 34rem) and (orientation: landscape) {
+    .hero__content {
+      grid-template-rows: auto auto;
+      align-content: center;
+      gap: 2rem;
+    }
+
+    .hero__brand {
+      grid-row: 1;
+    }
+
+    .hero__foot {
+      grid-row: 2;
+      padding: 0;
+    }
+
+    .hero__scroll {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* vidéo : seulement l'image fixe (poster) */
+    .hero__video {
+      display: none;
+    }
+
+    .hero__media,
+    .wordmark,
+    .hero__tagline,
+    .hero__foot,
+    .wordmark :global(.wordmark__emblem) {
+      animation: none;
+    }
+  }
+</style>

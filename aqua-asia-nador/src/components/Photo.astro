@@ -1,0 +1,29 @@
+---
+/** Photo responsive (AVIF/WebP + srcset via le pipeline d'images d'Astro). */
+import { Picture } from 'astro:assets';
+
+interface Props {
+  image: ImageMetadata;
+  alt: string;
+  sizes: string;
+  focal?: string;
+  eager?: boolean;
+  class?: string;
+  widths?: number[];
+}
+const { image, alt, sizes, focal = '50% 50%', eager = false, class: cls = '', widths } = Astro.props;
+const w = widths ?? [480, 768, 1080, 1440, 1920, 2560].filter((x) => x <= image.width).concat(image.width < 480 ? [image.width] : []);
+---
+
+<Picture
+  src={image}
+  alt={alt}
+  formats={['avif', 'webp']}
+  widths={w}
+  sizes={sizes}
+  loading={eager ? 'eager' : 'lazy'}
+  fetchpriority={eager ? 'high' : 'auto'}
+  decoding="async"
+  class={cls}
+  style={`object-position:${focal}`}
+/>

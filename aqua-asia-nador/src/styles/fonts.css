@@ -1,0 +1,16 @@
+/*
+ * Polices auto-hébergées (@fontsource) — aucun CDN externe.
+ * Les variables (Manrope, Noto Kufi Arabic) portent des unicode-range : seuls les sous-ensembles
+ * réellement utilisés sont téléchargés. Les fichiers statiques n'en ont pas : on n'importe donc que
+ * le strict nécessaire.
+ *   - Arimo (mot-symbole, grands titres) : sous-ensemble latin seul (tout le texte Arimo du site est
+ *     en Latin-1 ; latin-ext ne servait qu'à télécharger 52 Ko de plus sur chaque page).
+ *   - IBM Plex Sans Arabic (texte courant arabe) : 400 et 600 seulement ; les graisses 300 et 500
+ *     demandées par le CSS se replient sur 400 (règles de correspondance CSS). Ces fichiers ne sont
+ *     chargés que sur les pages arabes : ailleurs, aucune pile de polices ne nomme Plex.
+ */
+@import '@fontsource-variable/manrope/wght.css';
+@import '@fontsource/arimo/latin-400.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-400.css';
+@import '@fontsource/ibm-plex-sans-arabic/arabic-600.css';
+@import '@fontsource-variable/noto-kufi-arabic/wght.css';

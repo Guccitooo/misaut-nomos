@@ -1,0 +1,71 @@
+---
+/**
+ * Emblème du mot-symbole.
+ * - `site.brand.emblemSrc` défini → fichier officiel fourni par le restaurant.
+ * - sinon → ORNEMENT PROVISOIRE : cercle or + soleil en arche + vagues, inspiré du logo de Nador.
+ *   Ce n'est pas le logo officiel ; il sera remplacé par le fichier fourni.
+ * Toujours décoratif (aria-hidden) : le nom « Aqua Asia » est donné en texte à côté.
+ */
+import { site } from '../config/site';
+
+interface Props {
+  class?: string;
+  /** Épaisseur du trait (unités du viewBox 120). */
+  stroke?: number;
+  rays?: boolean;
+  /**
+   * Version simplifiée pour les petites tailles (≲ 40 px) : cercle, soleil, horizon et deux vagues.
+   * Les rayons et quatre lignes de vagues s'y confondraient en une tache hachurée.
+   */
+  simple?: boolean;
+}
+const { class: cls = '', stroke = 2, rays = true, simple = false } = Astro.props;
+
+const cx = 60;
+const horizon = 63;
+const rayAngles = [198, 222, 246, 270, 294, 318, 342];
+const f = (n: number) => Math.round(n * 100) / 100;
+const rayPaths = rayAngles.map((deg) => {
+  const a = (deg * Math.PI) / 180;
+  const r1 = 21.5;
+  const r2 = deg === 270 ? 32 : 29.5;
+  return `M${f(cx + r1 * Math.cos(a))} ${f(horizon + r1 * Math.sin(a))}L${f(cx + r2 * Math.cos(a))} ${f(horizon + r2 * Math.sin(a))}`;
+});
+const wave = (y: number, half: number) => {
+  const step = 4;
+  const n = Math.round((half * 2) / step);
+  const x0 = cx - (n * step) / 2;
+  let d = `M${f(x0)} ${y}q${step / 2} -2.2 ${step} 0`;
+  for (let i = 1; i < n; i++) d += `t${step} 0`;
+  return d;
+};
+const waves = simple
+  ? [wave(76, 28), wave(88, 18)]
+  : [wave(73, 30), wave(81.5, 26), wave(90, 20), wave(98.5, 12)];
+---
+
+{
+  site.brand.emblemSrc ? (
+    <img class:list={['emblem', cls]} src={site.brand.emblemSrc} alt="" aria-hidden="true" />
+  ) : (
+    <svg
+      class:list={['emblem', cls]}
+      viewBox="0 0 120 120"
+      fill="none"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      data-provisional-ornament
+    >
+      <circle cx="60" cy="60" r="56" stroke-width={stroke} />
+      {!simple && <circle cx="60" cy="60" r="50.5" stroke-width={stroke * 0.4} opacity="0.55" />}
+      <path d={`M${cx - 16} ${horizon}A16 16 0 0 1 ${cx + 16} ${horizon}`} stroke-width={stroke} />
+      {!simple && <path d={`M${cx - 8.5} ${horizon}A8.5 8.5 0 0 1 ${cx + 8.5} ${horizon}`} stroke-width={stroke * 0.75} />}
+      {rays && !simple && <path d={rayPaths.join('')} stroke-width={stroke * 0.75} />}
+      <path d={`M${cx - 36} ${horizon}H${cx + 36}`} stroke-width={stroke * 0.75} />
+      <path d={waves.join('')} stroke-width={stroke * 0.75} />
+    </svg>
+  )
+}

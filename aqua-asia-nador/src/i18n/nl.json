@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "lang": "nl",
+    "nativeName": "Nederlands",
+    "ogLocale": "nl_NL"
+  },
+  "seo": {
+    "home": {
+      "title": "Aqua Asia — Aziatische fusionkeuken in Nador",
+      "description": "Aqua Asia, restaurant met Aziatische fusionkeuken in Nador, Marokko. Azië aan tafel, fusion als stijl."
+    },
+    "menu": {
+      "title": "Menukaart — Aqua Asia, Nador",
+      "description": "De menukaart van Aqua Asia, restaurant met Aziatische fusionkeuken in Nador."
+    },
+    "gallery": {
+      "title": "Galerij — Aqua Asia, Nador",
+      "description": "De sfeer van Aqua Asia, restaurant met Aziatische fusionkeuken in Nador."
+    },
+    "contact": {
+      "title": "Contact en reserveren — Aqua Asia, Nador",
+      "description": "Reserveer een tafel en kom langs bij Aqua Asia, restaurant met Aziatische fusionkeuken in Nador."
+    },
+    "contactNoPhone": {
+      "title": "Contact — Aqua Asia, Nador",
+      "description": "Neem contact op met Aqua Asia, restaurant met Aziatische fusionkeuken in Nador."
+    },
+    "notFound": {
+      "title": "Pagina niet gevonden — Aqua Asia",
+      "description": "Deze pagina bestaat niet of is verplaatst."
+    }
+  },
+  "a11y": {
+    "skip": "Direct naar de inhoud",
+    "mainNav": "Hoofdnavigatie",
+    "logoHome": "Aqua Asia, terug naar de homepage",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten",
+    "menuDialog": "Websitemenu",
+    "changeLanguage": "Taal wijzigen, huidige taal: {language}",
+    "languages": "Talen",
+    "actionBar": "Snelle acties",
+    "footerNav": "Sitemap",
+    "newTab": "opent in een nieuw tabblad",
+    "scrollCue": "Scroll naar beneden",
+    "menuCategories": "Categorieën op de menukaart",
+    "mapTitle": "Kaart met de locatie van Aqua Asia",
+    "lightbox": "Fotoviewer",
+    "lightboxClose": "Fotoviewer sluiten",
+    "lightboxPrev": "Vorige foto",
+    "lightboxNext": "Volgende foto",
+    "lightboxCounter": "Foto {current} van {total}",
+    "openPhoto": "Foto vergroten: {alt}"
+  },
+  "nav": {
+    "home": "Home",
+    "menu": "Menukaart",
+    "gallery": "Galerij",
+    "contact": "Contact",
+    "reserve": "Reserveren"
+  },
+  "hero": {
+    "heading": "Aqua Asia, Aziatische fusionkeuken in Nador",
+    "tagline": "Aziatische fusionkeuken",
+    "promise": "De smaken van Azië, in Nador opnieuw uitgevonden.",
+    "ctaReserve": "Reserveren",
+    "ctaMenu": "Ontdek de menukaart"
+  },
+  "intro": {
+    "eyebrow": "De beleving",
+    "title": "Azië aan tafel, fusion als stijl.",
+    "body": "{name} heet je welkom in Nador met een Aziatische fusionkeuken. Een plek om af te spreken, rustig de tijd te nemen en samen aan tafel te genieten.",
+    "cta": "Bekijk de menukaart"
+  },
+  "menuTeaser": {
+    "eyebrow": "Menukaart",
+    "title": "De smaken van onze kaart",
+    "cta": "Bekijk de hele menukaart"
+  },
+  "menu": {
+    "title": "Menukaart",
+    "lead": "Ontdek onze Aziatische fusionkeuken in Nador.",
+    "pending": {
+      "eyebrow": "Menukaart",
+      "title": "De kaart staat binnenkort online",
+      "body": "We werken aan de online versie. Tot die tijd vind je onze gerechten op Instagram, of bel ons gerust.",
+      "bodyNoPhone": "We werken aan de online versie. Tot die tijd vind je onze gerechten op Instagram.",
+      "ctaInstagram": "Onze gerechten op Instagram",
+      "ctaCall": "Bel het restaurant"
+    },
+    "price": "{amount} MAD",
+    "unavailable": "Tijdelijk niet beschikbaar",
+    "allergensLabel": "Allergenen:",
+    "allergenNote": "Een allergie of een speciaal dieet? Laat het ons weten bij het bestellen.",
+    "legend": "Legenda",
+    "tags": {
+      "vegetarian": "Vegetarisch",
+      "vegan": "Veganistisch",
+      "spicy1": "Licht pittig",
+      "spicy2": "Pittig",
+      "spicy3": "Extra pittig",
+      "containsNuts": "Bevat noten",
+      "glutenFree": "Glutenvrij"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "crustaceans": "Schaaldieren",
+      "eggs": "Eieren",
+      "fish": "Vis",
+      "peanuts": "Pinda’s",
+      "soy": "Soja",
+      "milk": "Melk",
+      "nuts": "Noten",
+      "celery": "Selderij",
+      "mustard": "Mosterd",
+      "sesame": "Sesamzaad",
+      "sulphites": "Sulfieten",
+      "lupin": "Lupine",
+      "molluscs": "Weekdieren"
+    }
+  },
+  "gallery": {
+    "eyebrow": "Galerij",
+    "title": "De sfeer van Aqua Asia",
+    "lead": "De zaal, het licht en onze gerechten.",
+    "pendingTitle": "De foto’s volgen binnenkort",
+    "pendingBody": "Tot die tijd kun je de zaal en onze gerechten ontdekken op Instagram.",
+    "cta": "Bekijk de galerij",
+    "ctaInstagram": "Naar Instagram"
+  },
+  "visit": {
+    "eyebrow": "Bezoek ons",
+    "title": "Kom langs bij {name}",
+    "lead": "Alle praktische informatie voor je bezoek.",
+    "address": "Adres",
+    "hours": "Openingstijden",
+    "phone": "Telefoon",
+    "instagram": "Instagram",
+    "directions": "Route plannen",
+    "call": "Bellen",
+    "writeInstagram": "Bericht via Instagram",
+    "country": "Marokko",
+    "postalLine": "{postalCode} {city}",
+    "city": "Nador"
+  },
+  "hours": {
+    "range": "{opens} – {closes}",
+    "days": {
+      "daily": "Dagelijks",
+      "mon": "Maandag",
+      "tue": "Dinsdag",
+      "wed": "Woensdag",
+      "thu": "Donderdag",
+      "fri": "Vrijdag",
+      "sat": "Zaterdag",
+      "sun": "Zondag"
+    }
+  },
+  "list": {
+    "separator": ", "
+  },
+  "contact": {
+    "title": "Contact & reserveren",
+    "titleNoPhone": "Contact",
+    "lead": "Wil je een tafel reserveren of heb je een vraag? We helpen je graag.",
+    "leadNoPhone": "Heb je een vraag? Stuur ons een bericht op Instagram.",
+    "reserveTitle": "Reserveer een tafel",
+    "reserveBody": "Bel ons om je tafel te reserveren.",
+    "reserveCta": "Telefonisch reserveren",
+    "messageTitle": "Heb je een vraag?",
+    "messageBody": "Stuur ons een privébericht op Instagram.",
+    "messageCta": "Bericht via Instagram",
+    "findTitle": "Hier vind je ons",
+    "hoursTitle": "Openingstijden",
+    "followTitle": "Volg {name}",
+    "followCta": "Bekijk het Instagramprofiel"
+  },
+  "instagram": {
+    "eyebrow": "Instagram",
+    "title": "Volg ons",
+    "body": "Nieuwtjes, onze gerechten en de sfeer in het restaurant, post na post.",
+    "follow": "Volg ons op Instagram",
+    "message": "Stuur een bericht"
+  },
+  "services": {
+    "title": "Voorzieningen",
+    "privateDining": "Privé-eetruimte",
+    "veganDishes": "Veganistische gerechten"
+  },
+  "actionBar": {
+    "call": "Bellen",
+    "directions": "Route",
+    "instagram": "Instagram",
+    "contact": "Contact"
+  },
+  "footer": {
+    "tagline": "Aziatische fusionkeuken in Nador.",
+    "explore": "Ontdek",
+    "find": "Bezoek ons",
+    "follow": "Volg ons",
+    "languages": "Talen",
+    "copyright": "© {year} {name}",
+    "credit": "Gemaakt door {agency}"
+  },
+  "notFound": {
+    "eyebrow": "Fout 404",
+    "title": "Pagina niet gevonden",
+    "body": "De pagina die je zoekt bestaat niet of is verplaatst.",
+    "home": "Naar de homepage",
+    "otherLanguages": "Andere talen"
+  },
+  "images": {
+    "hero": "Aqua Asia, restaurant met Aziatische fusionkeuken in Nador",
+    "intro": "Aqua Asia in Nador",
+    "og": "Aqua Asia, Aziatische fusionkeuken in Nador",
+    "gallery": {
+      "g01": "Aqua Asia, foto 1",
+      "g02": "Aqua Asia, foto 2",
+      "g03": "Aqua Asia, foto 3",
+      "g04": "Aqua Asia, foto 4",
+      "g05": "Aqua Asia, foto 5",
+      "g06": "Aqua Asia, foto 6",
+      "g07": "Aqua Asia, foto 7",
+      "g08": "Aqua Asia, foto 8"
+    }
+  }
+}

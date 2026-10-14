@@ -1,0 +1,115 @@
+---
+/**
+ * Gabarit commun : <html lang dir>, SEO par langue, polices, en-tête, menu mobile, barre d'actions,
+ * pied de page (crédit BayenDaba = dernier élément du <body>).
+ */
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import manropeLatin from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
+import arimoLatin from '@fontsource/arimo/files/arimo-latin-400-normal.woff2?url';
+import plexArabic from '@fontsource/ibm-plex-sans-arabic/files/ibm-plex-sans-arabic-arabic-400-normal.woff2?url';
+
+import { site } from '../config/site';
+import { getImage } from 'astro:assets';
+import { images } from '../config/images';
+import { isPreview, resolvePhoto } from '../lib/data';
+import { absolute, hreflangLinks, restaurantJsonLd } from '../lib/seo';
+import { LANGS, alternatesFor, dictFor, isRtl, pathFor, useT, type Lang, type PageKey } from '../i18n';
+import Header from '../components/Header.astro';
+import MobileMenu from '../components/MobileMenu.astro';
+import ActionBar from '../components/ActionBar.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | 'notFound';
+  title: string;
+  description: string;
+  /** Précharger la police du mot-symbole (accueil). */
+  preloadDisplay?: boolean;
+  jsonLd?: boolean;
+}
+const { lang, page, title, description, preloadDisplay = false, jsonLd = false } = Astro.props;
+const t = useT(lang);
+const dir = isRtl(lang) ? 'rtl' : 'ltr';
+const isNotFound = page === 'notFound';
+const canonical = isNotFound ? null : absolute(pathFor(page, lang));
+const alternates = isNotFound ? [] : hreflangLinks(page);
+// Image de partage : photo `images.og` si fournie (recadrée 1200×630), sinon la carte du site.
+const ogPhoto = resolvePhoto(images.og.src);
+const ogImage = absolute(
+  ogPhoto ? (await getImage({ src: ogPhoto, width: 1200, height: 630, fit: 'cover', format: 'jpg' })).src : '/og-image.jpg',
+);
+const ld = jsonLd ? restaurantJsonLd(pathFor('home', lang), ogImage) : null;
+// Pages équivalentes pour la redirection de langue mémorisée (sauf 404).
+const altPaths = isNotFound ? null : alternatesFor(page);
+const ogLocale = dictFor(lang).meta.ogLocale;
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {isPreview && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content="#110d0b" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name.value} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content={ogLocale} />
+    {LANGS.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={dictFor(l).meta.ogLocale} />)}
+    {canonical && <meta property="og:url" content={canonical} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:alt" content={t('images.og')} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+
+    <link rel="preload" href={manropeLatin} as="font" type="font/woff2" crossorigin />
+    {preloadDisplay && <link rel="preload" href={arimoLatin} as="font" type="font/woff2" crossorigin />}
+    {lang === 'ar' && <link rel="preload" href={plexArabic} as="font" type="font/woff2" crossorigin />}
+
+    <script is:inline define:vars={{ altPaths, lang }}>
+      // Classe "js" (les animations d'apparition n'existent qu'avec JS) + redirection vers la langue
+      // mémorisée, uniquement à l'ENTRÉE sur le site : pas de référent du même site, et navigation
+      // « fraîche » (jamais sur Précédent/Suivant ni rechargement, pour ne pas renvoyer le visiteur
+      // ailleurs que là où il a choisi d'aller). La chaîne de requête (?utm…) et le #hash sont conservés.
+      document.documentElement.classList.add('js');
+      (function () {
+        try {
+          var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          if (nav && nav.type !== 'navigate') return;
+          var pref = localStorage.getItem('aqua-lang');
+          var sameSite = false;
+          try {
+            sameSite = !!document.referrer && new URL(document.referrer).origin === location.origin;
+          } catch (e) {}
+          if (altPaths && pref && pref !== lang && altPaths[pref] && !sameSite) {
+            location.replace(altPaths[pref] + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
+      import '../scripts/main.ts';
+    </script>
+    {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t('a11y.skip')}</a>
+    <Header lang={lang} page={page} />
+    <MobileMenu lang={lang} page={page} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <ActionBar lang={lang} />
+    <Footer lang={lang} page={page} />
+  </body>
+</html>

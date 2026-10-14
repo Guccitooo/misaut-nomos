@@ -1,0 +1,114 @@
+---
+/**
+ * Barre d'actions mobile (≤ 47.99rem) : Appeler · Itinéraire · Instagram, selon les données affichables.
+ * Fixe en bas, respecte les zones sûres ; le pied de page réserve sa hauteur pour ne jamais couvrir
+ * le crédit. Placée AVANT le pied de page dans le DOM (le crédit reste le dernier élément).
+ */
+import { visible, telHref } from '../lib/data';
+import { pathFor, useT, type Lang } from '../i18n';
+import Icon from './Icon.astro';
+import PhoneSr from './PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+
+type Action = { href: string; label: string; icon: 'phone' | 'route' | 'instagram' | 'message'; ext?: boolean; phone?: string };
+const actions: Action[] = [];
+if (visible.phone)
+  actions.push({
+    href: telHref(visible.phone),
+    label: t('actionBar.call'),
+    icon: 'phone',
+    phone: visible.phone.display,
+  });
+if (visible.directionsUrl) actions.push({ href: visible.directionsUrl, label: t('actionBar.directions'), icon: 'route', ext: true });
+actions.push({ href: visible.instagram.profileUrl, label: t('actionBar.instagram'), icon: 'instagram', ext: true });
+if (actions.length < 3) actions.push({ href: pathFor('contact', lang), label: t('actionBar.contact'), icon: 'message' });
+---
+
+<nav class="abar" aria-label={t('a11y.actionBar')} data-actionbar>
+  <ul role="list" style={`--n:${actions.length}`}>
+    {
+      actions.map((a, i) => (
+        <li>
+          <a
+            href={a.href}
+            class:list={['abar__link', { 'abar__link--primary': i === 0 }]}
+            target={a.ext ? '_blank' : undefined}
+            rel={a.ext ? 'noopener noreferrer' : undefined}
+          >
+            <Icon name={a.icon} size={20} />
+            <span>{a.label}</span>
+            {a.phone && <PhoneSr phone={a.phone} />}
+            {a.ext && <span class="sr-only">{t('a11y.newTab')}</span>}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .abar {
+    display: none;
+  }
+
+  @media (max-width: 47.99rem) {
+    .abar {
+      display: block;
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 40;
+      padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
+      background: rgb(17 13 11 / 0.94);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border-block-start: 1px solid var(--line-gold-soft);
+      transition:
+        transform var(--dur-2) var(--ease-emph),
+        opacity var(--dur-2);
+    }
+
+    /* masquée sur le hero, apparaît au défilement (avec JS) */
+    :global(.js) .abar:not(.is-visible) {
+      transform: translateY(110%);
+      opacity: 0;
+    }
+
+    .abar ul {
+      display: grid;
+      grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    .abar__link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      min-block-size: 3rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--sand-300);
+      text-align: center;
+    }
+
+    .abar__link--primary {
+      background: var(--amber-500);
+      color: var(--on-amber);
+    }
+
+    .abar__link:not(.abar__link--primary):active {
+      background: rgb(201 162 74 / 0.12);
+    }
+  }
+</style>

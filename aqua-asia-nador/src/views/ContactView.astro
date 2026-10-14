@@ -1,0 +1,272 @@
+---
+/**
+ * Contact (& réservation quand un téléphone est affichable). Pas de formulaire, pas de widget de
+ * réservation, pas de WhatsApp : téléphone (si affichable), message privé Instagram, adresse +
+ * itinéraire, horaires. Sans téléphone, la page ne parle jamais de réservation (titre, accroche, SEO).
+ * Carte intégrée uniquement si site.map.embedUrl est renseigné.
+ */
+import { visible, telHref, hoursLines } from '../lib/data';
+import { useT, type Lang } from '../i18n';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import ArtPlaceholder from '../components/ArtPlaceholder.astro';
+import Services from '../components/Services.astro';
+import PhoneSr from '../components/PhoneSr.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useT(lang);
+const hours = visible.hours ? hoursLines(visible.hours, t) : null;
+const a = visible.address;
+const phone = visible.phone;
+---
+
+<PageHero
+  eyebrow={a ? t('visit.eyebrow') : undefined}
+  title={phone ? t('contact.title') : t('contact.titleNoPhone')}
+  lead={phone ? t('contact.lead') : t('contact.leadNoPhone')}
+/>
+
+{/* Section sans nom : ce n'est pas un repère (le hero de page porte déjà le titre). */}
+<section class="section contact">
+  <div class:list={['container contact__grid', { 'contact__grid--reserve': phone }]}>
+    {
+      phone && (
+        <article class="contact__reserve" aria-labelledby="c-reserve" data-reveal>
+          <ArtPlaceholder variant="panel" motif="arcs" tone="brown" />
+          <div class="contact__reserve-inner">
+            <p class="eyebrow">{t('visit.phone')}</p>
+            <h2 id="c-reserve" class="h2">
+              {t('contact.reserveTitle')}
+            </h2>
+            <p class="lead">{t('contact.reserveBody')}</p>
+            <a class="contact__phone" href={telHref(phone)}>
+              <bdi dir="ltr">{phone.display}</bdi>
+            </a>
+            <a class="btn btn--amber" href={telHref(phone)}>
+              <Icon name="phone" size={18} />
+              {t('contact.reserveCta')}
+              <PhoneSr phone={phone.display} />
+            </a>
+          </div>
+        </article>
+      )
+    }
+
+    <div class="contact__cards">
+      <article class="ccard ccard--message" aria-labelledby="c-message" data-reveal>
+        <Icon name="message" size={28} class="ccard__icon" />
+        <h2 id="c-message" class="h3">{t('contact.messageTitle')}</h2>
+        <p class="muted">{t('contact.messageBody')}</p>
+        <a class="btn btn--line" href={visible.instagram.dmUrl} target="_blank" rel="noopener noreferrer">
+          <Icon name="message" size={18} />
+          {t('contact.messageCta')}
+          <span class="sr-only">{t('a11y.newTab')}</span>
+        </a>
+      </article>
+
+      {
+        a && (
+          <article class="ccard" aria-labelledby="c-find" data-reveal>
+            <h2 id="c-find" class="h3">
+              {t('contact.findTitle')}
+            </h2>
+            <address class="ccard__address">
+              <span dir="ltr" class="ltr">{a.street}</span>
+              <br />
+              <span set:html={t.html('visit.postalLine', { postalCode: a.postalCode, city: t('visit.city') })} />
+              <br />
+              {t('visit.country')}
+            </address>
+            <Services lang={lang} />
+            {visible.directionsUrl && (
+              <a class="btn btn--line" href={visible.directionsUrl} target="_blank" rel="noopener noreferrer">
+                <Icon name="route" size={18} />
+                {t('visit.directions')}
+                <span class="sr-only">{t('a11y.newTab')}</span>
+              </a>
+            )}
+          </article>
+        )
+      }
+
+      {
+        hours && (
+          <article class="ccard" aria-labelledby="c-hours" data-reveal>
+            <h2 id="c-hours" class="h3">
+              {t('contact.hoursTitle')}
+            </h2>
+            {hours.map((h) => (
+              <p class="ccard__hours">
+                <span class="muted">{h.days}</span>
+                <span set:html={t.html('hours.range', { opens: h.opens, closes: h.closes })} />
+              </p>
+            ))}
+          </article>
+        )
+      }
+
+      <article class="ccard" aria-labelledby="c-follow" data-reveal>
+        <h2 id="c-follow" class="h3" set:html={t.html('contact.followTitle', { name: visible.name })} />
+        <p class="ccard__handle" dir="ltr">@{visible.instagram.handle}</p>
+        <a class="link-line" href={visible.instagram.profileUrl} target="_blank" rel="noopener noreferrer">
+          {t('contact.followCta')}
+          <Icon name="arrow" />
+          <span class="sr-only">{t('a11y.newTab')}</span>
+        </a>
+      </article>
+    </div>
+
+    {
+      visible.mapEmbedUrl && (
+        <div class="contact__map" data-reveal>
+          <iframe src={visible.mapEmbedUrl} title={t('a11y.mapTitle')} loading="lazy" referrerpolicy="no-referrer-when-downgrade" />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .contact {
+    padding-block-start: clamp(1rem, 3vw, 2rem);
+  }
+
+  .contact__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 1.5rem);
+    align-items: stretch;
+  }
+
+  .contact__reserve {
+    grid-column: span 2;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    min-block-size: 30rem;
+    display: grid;
+    align-items: end;
+  }
+
+  .contact__reserve-inner {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 1.25rem;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    background: linear-gradient(0deg, rgb(17 13 11 / 0.75), transparent);
+  }
+
+  .contact__phone {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 1rem + 2.6vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    color: var(--white);
+    padding-block: 0.25rem;
+    transition: color var(--dur-1);
+  }
+
+  .contact__phone:hover {
+    color: var(--gold-300);
+  }
+
+  /* les cartes deviennent des cellules de la grille principale (3 colonnes) */
+  .contact__cards {
+    display: contents;
+  }
+
+  /* Colonne flexible : le bouton / lien de chaque carte est poussé en bas (margin-block-start: auto),
+     donc les actions d'une même rangée sont alignées sur une ligne commune. */
+  .ccard {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 1px solid var(--line-gold-soft);
+    border-radius: var(--radius-sm);
+    background: rgb(17 13 11 / 0.35);
+    transition: border-color var(--dur-2);
+  }
+
+  .ccard:hover {
+    border-color: var(--line-gold);
+  }
+
+  .ccard .btn,
+  .ccard .link-line {
+    margin-block-start: auto;
+  }
+
+  .ccard :global(.ccard__icon) {
+    color: var(--gold-400);
+    display: none;
+  }
+
+  /* Carte « Une question ? » à côté du grand bloc Réserver (même hauteur) : contenu calé en bas comme
+     celui du bloc voisin, l'icône en haut occupe le vide comme respiration. */
+  @media (min-width: 64rem) {
+    .contact__grid--reserve .ccard--message :global(.ccard__icon) {
+      display: block;
+      margin-block-end: auto;
+    }
+
+    .contact__grid--reserve .ccard--message .btn {
+      margin-block-start: 0;
+    }
+  }
+
+  .ccard__address {
+    font-style: normal;
+    color: var(--ivory-50);
+  }
+
+  .ccard__hours {
+    display: grid;
+    color: var(--ivory-50);
+  }
+
+  .ccard__handle {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--gold-300);
+    overflow-wrap: anywhere;
+  }
+
+  .contact__map {
+    grid-column: 1 / -1;
+    aspect-ratio: 16 / 7;
+    border: 1px solid var(--line-gold-soft);
+  }
+
+  .contact__map iframe {
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    filter: grayscale(0.4) contrast(1.05);
+  }
+
+  @media (max-width: 63.99rem) {
+    .contact__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .contact__reserve {
+      grid-column: 1 / -1;
+      min-block-size: 24rem;
+    }
+  }
+
+  @media (max-width: 39.99rem) {
+    .contact__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
