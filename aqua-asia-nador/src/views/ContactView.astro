@@ -21,6 +21,10 @@ const t = useT(lang);
 const hours = visible.hours ? hoursLines(visible.hours, t) : null;
 const a = visible.address;
 const phone = visible.phone;
+// Colonnes desktop : 3 avec le bloc « Réserver » (2 + 1, puis les cartes) ; sans lui (mode launch tant
+// que le téléphone n'est pas confirmé), autant de colonnes que de cartes (2 à 4) : jamais une colonne vide.
+const cardCount = 2 + (a ? 1 : 0) + (hours ? 1 : 0);
+const cols = phone ? 3 : cardCount;
 ---
 
 <PageHero
@@ -31,7 +35,7 @@ const phone = visible.phone;
 
 {/* Section sans nom : ce n'est pas un repère (le hero de page porte déjà le titre). */}
 <section class="section contact">
-  <div class:list={['container contact__grid', { 'contact__grid--reserve': phone }]}>
+  <div class:list={['container contact__grid', { 'contact__grid--reserve': phone }]} style={`--cols:${cols}`}>
     {
       phone && (
         <article class="contact__reserve" aria-labelledby="c-reserve" data-reveal>
@@ -136,7 +140,7 @@ const phone = visible.phone;
 
   .contact__grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
     gap: clamp(1rem, 2vw, 1.5rem);
     align-items: stretch;
   }
@@ -261,6 +265,11 @@ const phone = visible.phone;
     .contact__reserve {
       grid-column: 1 / -1;
       min-block-size: 24rem;
+    }
+
+    /* nombre impair de cartes sur 2 colonnes : la dernière prend toute la ligne (pas de trou) */
+    .ccard:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
     }
   }
 

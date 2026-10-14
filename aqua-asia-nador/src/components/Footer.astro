@@ -27,13 +27,15 @@ const pages: Array<{ key: PageKey; label: string }> = [
 const agency = site.credit.url
   ? `<a href="${site.credit.url}" target="_blank" rel="noopener">${site.credit.name}</a>`
   : site.credit.name;
+// « Nous trouver » n'existe que s'il y a une information pratique affichable (mode launch : peut-être aucune).
+const hasFind = !!(visible.address || visible.hours || visible.phone);
 const creditHtml = t
   .html('footer.credit', { agency: '%%AGENCY%%' }, { isolate: true })
   .replace('%%AGENCY%%', agency);
 ---
 
 <footer class="site-footer">
-  <div class="site-footer__top container">
+  <div class="site-footer__top container" style={`--cols:${hasFind ? 3 : 2}`}>
     <div class="site-footer__brand">
       <a href={pathFor('home', lang)} class="site-footer__mark" aria-label={t('a11y.logoHome')}>
         {/* espaces entre les mots : le texte (masqué) se lit « AQUA ASIA », contenu dans le nom accessible */}
@@ -62,7 +64,7 @@ const creditHtml = t
     </nav>
 
     {
-      (visible.address || visible.hours || visible.phone) && (
+      hasFind && (
         <div class="site-footer__col">
           <h2 class="site-footer__title">{t('footer.find')}</h2>
           <VisitDetails lang={lang} compact show={['address', 'hours', 'phone']} />
@@ -102,7 +104,8 @@ const creditHtml = t
 
   .site-footer__top {
     display: grid;
-    grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+    /* colonnes = celles réellement rendues (jamais de colonne vide en mode launch) */
+    grid-template-columns: 1.4fr repeat(var(--cols, 3), minmax(0, 1fr));
     gap: 3rem clamp(2rem, 4vw, 4rem);
     padding-block-end: clamp(3rem, 6vw, 5rem);
   }
@@ -156,7 +159,7 @@ const creditHtml = t
     color: var(--gold-500);
   }
 
-  :lang(ar) .site-footer__title {
+  :global(:lang(ar)) .site-footer__title {
     font-size: 0.875rem;
   }
 
@@ -227,7 +230,7 @@ const creditHtml = t
 
   @media (max-width: 63.99rem) {
     .site-footer__top {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
     }
 
     .site-footer__brand {

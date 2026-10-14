@@ -11,6 +11,8 @@ interface Props {
   id?: string;
 }
 const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
+/** Contenu facultatif sous l'accroche (ex. bouton de la 404) : il fait partie du message, pas d'une section à part. */
+const hasActions = Astro.slots.has('default');
 ---
 
 <section class="phero" aria-labelledby={id}>
@@ -21,6 +23,13 @@ const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
     {eyebrow && <p class="phero__eyebrow">{eyebrow}</p>}
     <h1 id={id} class="phero__title">{title}</h1>
     {lead && <p class="phero__lead">{lead}</p>}
+    {
+      hasActions && (
+        <div class="phero__actions">
+          <slot />
+        </div>
+      )
+    }
   </div>
 </section>
 
@@ -76,7 +85,7 @@ const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
     animation: phero-in 1.2s var(--ease-emph) 0.1s both;
   }
 
-  :lang(ar) .phero__eyebrow {
+  :global(:lang(ar)) .phero__eyebrow {
     font-size: 1rem;
     font-weight: 700;
   }
@@ -94,7 +103,7 @@ const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
     animation: phero-in 1.4s var(--ease-emph) 0.15s both;
   }
 
-  :lang(ar) .phero__title {
+  :global(:lang(ar)) .phero__title {
     font-family: var(--font-heading);
     font-weight: 500;
     line-height: 1.35;
@@ -110,6 +119,15 @@ const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
     animation: phero-in 1.4s var(--ease-emph) 0.3s both;
   }
 
+  .phero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-block-start: 0.5rem;
+    animation: phero-in 1.4s var(--ease-emph) 0.4s both;
+  }
+
   @keyframes phero-in {
     from {
       opacity: 0;
@@ -122,7 +140,8 @@ const { eyebrow, title, lead, id = 'page-title' } = Astro.props;
     .phero :global(.phero__emblem),
     .phero__eyebrow,
     .phero__title,
-    .phero__lead {
+    .phero__lead,
+    .phero__actions {
       animation: none;
     }
   }

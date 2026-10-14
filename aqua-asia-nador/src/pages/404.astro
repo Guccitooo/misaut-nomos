@@ -11,12 +11,15 @@ const others = LANGS.filter((l) => l !== lang);
 ---
 
 <BaseLayout lang={lang} page="notFound" title={t('seo.notFound.title')} description={t('seo.notFound.description')}>
-  <PageHero eyebrow={t('notFound.eyebrow')} title={t('notFound.title')} lead={t('notFound.body')} />
+  {/* Le bouton de retour est dans l'en-tête de page, juste sous le message : c'est la réponse à
+      « Page introuvable », pas un bloc séparé. */}
+  <PageHero eyebrow={t('notFound.eyebrow')} title={t('notFound.title')} lead={t('notFound.body')}>
+    <a class="btn btn--amber" href={pathFor('home', lang)}>
+      {t('notFound.home')}
+    </a>
+  </PageHero>
   <section class="section nf" aria-labelledby="nf-langs">
     <div class="container nf__inner">
-      <a class="btn btn--amber" href={pathFor('home', lang)}>
-        {t('notFound.home')}
-      </a>
       <h2 id="nf-langs" class="eyebrow eyebrow--center">{t('notFound.otherLanguages')}</h2>
       <ul class="nf__list" role="list">
         {
@@ -40,7 +43,7 @@ const others = LANGS.filter((l) => l !== lang);
 </BaseLayout>
 
 <style>
-  /* Le bouton de retour suit directement le message (l'en-tête de page a déjà son espacement bas). */
+  /* Les autres langues suivent directement l'en-tête de page (qui a déjà son espacement bas). */
   .nf {
     padding-block-start: 0;
   }

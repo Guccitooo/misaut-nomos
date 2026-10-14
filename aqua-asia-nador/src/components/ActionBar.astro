@@ -5,14 +5,15 @@
  * le crédit. Placée AVANT le pied de page dans le DOM (le crédit reste le dernier élément).
  */
 import { visible, telHref } from '../lib/data';
-import { pathFor, useT, type Lang } from '../i18n';
+import { pathFor, useT, type Lang, type PageKey } from '../i18n';
 import Icon from './Icon.astro';
 import PhoneSr from './PhoneSr.astro';
 
 interface Props {
   lang: Lang;
+  page: PageKey | 'notFound';
 }
-const { lang } = Astro.props;
+const { lang, page } = Astro.props;
 const t = useT(lang);
 
 type Action = { href: string; label: string; icon: 'phone' | 'route' | 'instagram' | 'message'; ext?: boolean; phone?: string };
@@ -26,7 +27,10 @@ if (visible.phone)
   });
 if (visible.directionsUrl) actions.push({ href: visible.directionsUrl, label: t('actionBar.directions'), icon: 'route', ext: true });
 actions.push({ href: visible.instagram.profileUrl, label: t('actionBar.instagram'), icon: 'instagram', ext: true });
-if (actions.length < 3) actions.push({ href: pathFor('contact', lang), label: t('actionBar.contact'), icon: 'message' });
+// Complément « Contact » quand il manque des actions — jamais sur la page Contact elle-même
+// (un bouton qui renvoie à la page où l'on est déjà n'est pas une action).
+if (actions.length < 3 && page !== 'contact')
+  actions.push({ href: pathFor('contact', lang), label: t('actionBar.contact'), icon: 'message' });
 ---
 
 <nav class="abar" aria-label={t('a11y.actionBar')} data-actionbar>

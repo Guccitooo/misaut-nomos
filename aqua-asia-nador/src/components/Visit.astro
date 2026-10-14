@@ -136,7 +136,7 @@ const hasVisitInfo = !!(visible.address || visible.hours || visible.phone);
   }
 
   /* Arabe : police arabe du site, aucun interlettrage (il casserait les liaisons). */
-  :lang(ar) .visit__city {
+  :global(:lang(ar)) .visit__city {
     font-family: var(--font-heading);
     letter-spacing: 0;
     margin-inline-end: 0;

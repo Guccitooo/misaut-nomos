@@ -125,7 +125,7 @@ const a = visible.address;
     color: var(--gold-500);
   }
 
-  :lang(ar) dt {
+  :global(:lang(ar)) dt {
     font-size: 0.9375rem;
   }
 
@@ -190,8 +190,10 @@ const a = visible.address;
     letter-spacing: var(--track-caps);
   }
 
-  /* Arabe (pied de page) : 13 px, lisible, toujours sous les titres de colonne (14 px). */
-  :lang(ar) .vd--compact dt {
+  /* Arabe (pied de page) : 13 px, lisible, toujours sous les titres de colonne (14 px).
+     :global() obligatoire : sans lui, Astro exige un ANCÊTRE de .vd--compact portant l'attribut du
+     composant — or .vd--compact en est la racine, la règle ne s'appliquait jamais (11 px). */
+  :global(:lang(ar)) .vd--compact dt {
     font-size: 0.8125rem;
   }
 

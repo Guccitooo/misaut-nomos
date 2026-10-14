@@ -18,7 +18,7 @@ npm run dev          # développement : http://localhost:4321
 npm run build        # génère le site final dans dist/
 npm run preview      # sert dist/ localement pour vérifier
 npm run check:i18n   # vérifie que les 5 fichiers de traduction ont exactement les mêmes clés
-npm run check:css    # vérifie le CSS compilé (aucun sélecteur RTL « mort »)
+npm run check:css    # vérifie le CSS compilé (aucun sélecteur RTL / arabe « mort » ou fragile)
 npm run check        # build + vérifications i18n et CSS (à lancer avant toute livraison)
 ```
 
@@ -32,7 +32,7 @@ aqua-asia-nador/
 ├─ astro.config.ts            configuration + rapport des données non confirmées au build
 ├─ public/                    fichiers servis tels quels (favicon, image de partage og-image.jpg)
 ├─ scripts/check-i18n.mjs     contrôle de parité des traductions
-├─ scripts/check-css.mjs      contrôle du CSS compilé (sélecteurs [dir=rtl] dans les composants)
+├─ scripts/check-css.mjs      contrôle du CSS compilé ([dir=rtl] et :lang(ar) dans les composants : écrire :global(…))
 └─ src/
    ├─ config/site.ts          DONNÉES de l'établissement (+ confirmed/source), mode preview/launch, domaine, crédit
    ├─ config/images.ts        emplacements photo/vidéo (hero, intro, galerie, partage)

@@ -246,7 +246,7 @@ const word2 = rest.join(' ');
     animation: hero-fade 1.4s var(--ease-out) 0.7s both;
   }
 
-  :lang(ar) .hero__tagline {
+  :global(:lang(ar)) .hero__tagline {
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: calc(var(--fs-tagline) * 1.2);
