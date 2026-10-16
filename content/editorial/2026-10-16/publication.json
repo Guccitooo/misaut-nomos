@@ -1,0 +1,47 @@
+{
+  "published_at": "2026-10-16 17:43:53.714974+00",
+  "articles": [
+    {
+      "id": "5faab9ce-6756-52b6-bbc0-c42910624492",
+      "slug": "ia-autonomos-que-tareas-automatizar-como-empezar",
+      "status": "published",
+      "publish_date": "2026-10-16 17:43:53.714974+00",
+      "content_md5": "12bc7af9026a7bad3a3541237fc1e410",
+      "url": "https://misautonomos.es/blog/ia-autonomos-que-tareas-automatizar-como-empezar"
+    },
+    {
+      "id": "44d6eea8-f18a-5651-bff1-aaad624199fc",
+      "slug": "precio-clases-particulares-2026",
+      "status": "published",
+      "publish_date": "2026-10-16 17:43:53.714974+00",
+      "content_md5": "2b2f8c6dacb066d98ab4aa80bd0ae1ca",
+      "url": "https://misautonomos.es/blog/precio-clases-particulares-2026"
+    },
+    {
+      "id": "2b2f9dea-2346-5551-ad9a-cea9f97e0b70",
+      "slug": "software-talleres-mecanicos-como-elegir-organizar-trabajo",
+      "status": "published",
+      "publish_date": "2026-10-16 17:43:53.714974+00",
+      "content_md5": "5d06b24623c31675d5b37b8ea51add18",
+      "url": "https://misautonomos.es/blog/software-talleres-mecanicos-como-elegir-organizar-trabajo"
+    },
+    {
+      "id": "083aa407-5a3b-53d8-8299-8b8a585ccf2a",
+      "slug": "transporte-black-friday-navidad-2026",
+      "status": "published",
+      "publish_date": "2026-10-16 17:43:53.714974+00",
+      "content_md5": "60be596be2998c446b7d44741846e9e4",
+      "url": "https://misautonomos.es/blog/transporte-black-friday-navidad-2026"
+    },
+    {
+      "id": "5f042b4d-a4c2-5fbe-a200-a2fd3f96227b",
+      "slug": "verifactu-factura-electronica-autonomos-fechas-diferencias",
+      "status": "published",
+      "publish_date": "2026-10-16 17:43:53.714974+00",
+      "content_md5": "fc682875d644a65b1cf966c3f3843743",
+      "url": "https://misautonomos.es/blog/verifactu-factura-electronica-autonomos-fechas-diferencias"
+    }
+  ],
+  "existing_posts_preserved": 25,
+  "expected_total_published": 30
+}

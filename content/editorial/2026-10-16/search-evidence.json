@@ -1,0 +1,104 @@
+{
+  "checked_at": "2026-10-16",
+  "market": "España",
+  "language": "es",
+  "source": "Google Autocomplete, client=firefox, hl=es, gl=es",
+  "scope": "Sugerencias observadas, no volumen mensual, dificultad SEO ni evolución temporal. Pueden incluir consultas de otros países.",
+  "queries": [
+    {
+      "query": "verifactu autonomos",
+      "status": 200,
+      "suggestions": [
+        "verifactu autónomos",
+        "verifactu autonomos 2027",
+        "verifactu autónomos cuando entra en vigor",
+        "verifactu autonomos modulos",
+        "verifactu autonomos cuando",
+        "verifactu autonomos exentos",
+        "verifactu autonomos 2026",
+        "verifactu autonomos obligatorio",
+        "verifactu autonomos gratis",
+        "verifactu autonomos excel"
+      ]
+    },
+    {
+      "query": "ia para autonomos",
+      "status": 200,
+      "suggestions": [
+        "ia para autonomos",
+        "curso ia para autonomos",
+        "curso ia para autonomos gratis",
+        "formacion ia para autonomos",
+        "mejor ia para autonomos",
+        "cursos ia subvencionados para autonomos"
+      ]
+    },
+    {
+      "query": "software taller mecanico",
+      "status": 200,
+      "suggestions": [
+        "software taller mecanico",
+        "software taller mecanico gratis",
+        "software taller mecanico full",
+        "software gestion taller mecanico",
+        "software para taller mecanico automotriz gratis",
+        "software para taller mecanico automotriz",
+        "software gestion taller mecanico gratis",
+        "software facturacion taller mecanico",
+        "software para taller mecanico peru",
+        "software para taller mecanico de motos"
+      ]
+    },
+    {
+      "query": "precio clases particulares",
+      "status": 200,
+      "suggestions": [
+        "precio clases particulares",
+        "precio clases particulares eso a domicilio",
+        "precio clases particulares primaria",
+        "precio clases particulares ingles",
+        "precio clases particulares matemáticas",
+        "precio clases particulares eso",
+        "precio clases particulares a domicilio",
+        "precio clases particulares universidad",
+        "precio clases particulares bachillerato",
+        "precio clases particulares primaria a domicilio"
+      ]
+    },
+    {
+      "query": "transporte black friday",
+      "status": 200,
+      "suggestions": [
+        "transporte black friday",
+        "transporte gratis madrid black friday",
+        "transporte publico madrid black friday"
+      ]
+    },
+    {
+      "query": "envios black friday",
+      "status": 200,
+      "suggestions": [
+        "black friday envios",
+        "envios zara black friday",
+        "wallapop envios black friday",
+        "envíos gratis vinted black friday",
+        "envios gratis wallapop black friday"
+      ]
+    },
+    {
+      "query": "logistica black friday",
+      "status": 200,
+      "suggestions": [
+        "logistica black friday",
+        "logística na black friday"
+      ]
+    }
+  ],
+  "trends": {
+    "source": "https://trends.google.com/trending/rss?geo=ES",
+    "result": "RSS consultado: los temas recientes no encajaban con la actividad. No se forzó su uso. Explore histórico no recuperado; respuesta 429 sin reintento.",
+    "historical_series_verified": false
+  },
+  "monthly_search_volumes": null,
+  "keyword_difficulty": null
+}
