@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconArrowRight, IconCheck, IconWhatsApp } from '@/components/Icons';
-import { BAYENDABA_WHATSAPP, WEB_PLANS } from '@/lib/bayendaba';
+import { BAYENDABA_WHATSAPP, PROJECT_STARTING_PRICE } from '@/lib/bayendaba';
 
 export default function HomeWebOffer() {
   const { t } = useTranslation();
-  const price = WEB_PLANS.essential;
+  const price = PROJECT_STARTING_PRICE;
   const message = t('landing.webOffer.whatsappMessage', { price });
   const whatsappUrl = `https://wa.me/${BAYENDABA_WHATSAPP}?text=${encodeURIComponent(message)}`;
   const features = [
@@ -31,6 +31,9 @@ export default function HomeWebOffer() {
             </h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
               {t('landing.webOffer.body')}
+            </p>
+            <p className="mt-4 text-lg font-semibold text-brand-gold">
+              {t('landing.webOffer.startingPrice', { price })}
             </p>
           </div>
 
