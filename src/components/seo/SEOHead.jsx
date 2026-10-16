@@ -108,8 +108,10 @@ export default function SEOHead({
     updateMetaTag('og:url', canonicalUrl, true);
     updateMetaTag('og:type', type, true);
     updateMetaTag('og:locale', language === 'es' ? 'es_ES' : 'en_US', true);
-    if (publishedTime) updateMetaTag('article:published_time', publishedTime, true);
-    if (modifiedTime) updateMetaTag('article:modified_time', modifiedTime, true);
+    for (const [name, value] of [['article:published_time', publishedTime], ['article:modified_time', modifiedTime]]) {
+      if (value) updateMetaTag(name, value, true);
+      else document.head.querySelectorAll(`meta[property="${name}"]`).forEach((tag) => tag.remove());
+    }
     
     // Twitter Card tags
     updateMetaTag('twitter:card', 'summary_large_image');

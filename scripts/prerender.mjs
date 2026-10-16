@@ -132,18 +132,18 @@ function renderTemplate(tpl, cfg) {
   const ogType = cfg.ogType || 'website';
 
   // <title>
-  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`);
+  html = html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${escapeHtml(title)}</title>`);
 
   // <meta name="description">
   html = html.replace(
     /<meta\s+name="description"[^>]*>/i,
-    `<meta name="description" content="${escapeHtml(desc)}" />`,
+    () => `<meta name="description" content="${escapeHtml(desc)}" />`,
   );
 
   // <link rel="canonical">
   html = html.replace(
     /<link\s+rel="canonical"[^>]*>/i,
-    `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
+    () => `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
   );
 
   // OG / Twitter — sustitución por nombre de property
@@ -161,8 +161,8 @@ function renderTemplate(tpl, cfg) {
     const attr = prop.startsWith('twitter:') ? 'name' : 'property';
     const re = new RegExp(`<meta\\s+${attr}="${prop}"[^>]*>`, 'i');
     const tag = `<meta ${attr}="${prop}" content="${escapeHtml(val)}" />`;
-    if (re.test(html)) html = html.replace(re, tag);
-    else html = html.replace(/<\/head>/, `${tag}\n  </head>`);
+    if (re.test(html)) html = html.replace(re, () => tag);
+    else html = html.replace(/<\/head>/, () => `${tag}\n  </head>`);
   }
 
   // robots noindex
@@ -183,7 +183,7 @@ function renderTemplate(tpl, cfg) {
   // JSON-LD
   if (cfg.jsonLd) {
     const ld = `<script id="structured-data-custom" type="application/ld+json">${jsonForHtml(cfg.jsonLd)}</script>`;
-    html = html.replace(/<\/head>/, `${ld}\n  </head>`);
+    html = html.replace(/<\/head>/, () => `${ld}\n  </head>`);
   }
 
   // Contenido server-rendered dentro de #root: H1 + intro + listing.
