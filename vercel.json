@@ -7,7 +7,12 @@
   "redirects": [
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "www.misautonomos.es" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "www.misautonomos.es"
+        }
+      ],
       "destination": "https://misautonomos.es/",
       "permanent": true
     },
@@ -139,107 +144,107 @@
     },
     {
       "source": "/login",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/registro",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/registro-cliente",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/confirma-email",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/configuracion-cookies",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/favoritos",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/mi-perfil",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/mi-perfil/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/soporte",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/soporte/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/notificaciones",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/valorar/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/dashboard",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/dashboard/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/mis-valoraciones",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/perfil",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/perfil/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/completar-perfil",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/admin",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/admin/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/newsletter/unsubscribe",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/baja-newsletter",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/NewsletterUnsubscribe",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/autonomo/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/categoria/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     },
     {
       "source": "/blog/(.*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     }
   ],
   "headers": [
@@ -307,6 +312,15 @@
     },
     {
       "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/app.html",
       "headers": [
         {
           "key": "Cache-Control",

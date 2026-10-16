@@ -18,7 +18,7 @@
 // App.jsx tenía esta misma lógica escrita a mano alrededor de cada lazy();
 // esto la concentra en un sitio y la hace igual en las 82 rutas.
 
-import { lazy } from 'react';
+import { createElement, forwardRef, lazy, useEffect } from 'react';
 import { ensureAppLocale } from '@/i18n';
 
 const RELOAD_FLAG = 'ma.chunk-reloaded';
@@ -43,9 +43,21 @@ function isChunkLoadError(err) {
 }
 
 export function lazyWithRetry(factory) {
-  return lazy(async () => {
+  let pending;
+  let loaded;
+  let markMounted;
+  const mounted = new Promise((resolve) => { markMounted = resolve; });
+  const load = () => pending || (pending = (async () => {
     try {
-      return await factory();
+      const module = await factory();
+      const TrackedComponent = forwardRef(function TrackedLazy(props, ref) {
+        // A root effect can run while a descendant Suspense boundary is
+        // still dehydrated. This effect belongs to that actual boundary.
+        useEffect(() => { markMounted(); }, []);
+        return createElement(module.default, ref ? { ...props, ref } : props);
+      });
+      loaded = { ...module, default: TrackedComponent };
+      return loaded;
     } catch (err) {
       if (!isChunkLoadError(err)) throw err;
       const alreadyReloaded = typeof sessionStorage !== 'undefined'
@@ -61,7 +73,14 @@ export function lazyWithRetry(factory) {
       // (evita un flash del ErrorBoundary).
       return new Promise(() => {});
     }
-  });
+  })());
+  const component = lazy(() => loaded ? { then(resolve) { resolve(loaded); } } : load());
+  // React.lazy normally observes even a resolved Promise asynchronously.
+  // A synchronous thenable after preload lets the first hydration traverse
+  // these boundaries without suspending while auth/language effects start.
+  component.preload = load;
+  component.whenMounted = () => mounted;
+  return component;
 }
 
 // Página que además necesita el bundle de traducciones de aplicación
@@ -88,6 +107,8 @@ export function lazyApp(factory) {
 // Limpieza del flag al arrancar bien: si estamos aquí, el reload anterior
 // funcionó → reseteamos para que un futuro redespliegue vuelva a poder
 // disparar el mecanismo.
-if (typeof sessionStorage !== 'undefined') {
-  try { sessionStorage.removeItem(RELOAD_FLAG); } catch { /* ignorar */ }
+export function clearLazyReloadFlag() {
+  if (typeof sessionStorage !== 'undefined') {
+    try { sessionStorage.removeItem(RELOAD_FLAG); } catch { /* ignorar */ }
+  }
 }

@@ -33,6 +33,7 @@ import { initReactI18next } from 'react-i18next';
 
 import es from './locales/es.json';
 import { LANGS, DEFAULT_LANG, PREFIXED, RTL_CODES } from './langs.js';
+import { getPublicPageData } from '@/lib/publicPageData';
 
 export const ALL_CODES = LANGS.map((l) => l.code);
 
@@ -162,6 +163,13 @@ export function ensureAppLocale(code = i18n.language) {
   return p;
 }
 
+const hydrationPreference = (() => {
+  if (typeof window === 'undefined' || !getPublicPageData().language) return null;
+  let preferred = PATH_LANG || new URLSearchParams(window.location.search).get('lang');
+  try { preferred ||= localStorage.getItem('misautonomos.lang'); } catch { /* optional preference */ }
+  return preferred;
+})();
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -175,7 +183,7 @@ i18n
     nonExplicitSupportedLngs: true, // "es-ES" → "es"
     interpolation: { escapeValue: false },
     // Si la URL lleva prefijo de idioma, MANDA: ni detección ni localStorage.
-    lng: PATH_LANG || undefined,
+    lng: getPublicPageData().language || PATH_LANG || undefined,
     detection: {
       order: ['querystring', 'localStorage'],
       lookupQuerystring: 'lang',
@@ -231,6 +239,7 @@ i18n.changeLanguage = async (code, ...rest) => {
 // página, pero esta base garantiza un primer render correcto (sin flash LTR
 // al cargar en árabe).
 function syncHtmlLang(lng) {
+  if (typeof document === 'undefined') return;
   const short = (lng || DEFAULT_LANG).split('-')[0];
   if (document.documentElement.lang !== short) document.documentElement.lang = short;
   const dir = isRTL(short) ? 'rtl' : 'ltr';
@@ -238,5 +247,17 @@ function syncHtmlLang(lng) {
 }
 syncHtmlLang(i18n.language);
 i18n.on('languageChanged', syncHtmlLang);
+
+// Called after the actual public Suspense boundaries have mounted, not just
+// the root commit. i18next is mutable external state: changing it earlier
+// makes a still-dehydrated boundary read EN against server-rendered ES.
+let hydrationPreferenceApplied = false;
+export function applyPreferredLanguage() {
+  if (typeof window === 'undefined' || !getPublicPageData().language) return;
+  if (hydrationPreferenceApplied) return;
+  hydrationPreferenceApplied = true;
+  const preferred = hydrationPreference;
+  if (preferred && ALL_CODES.includes(preferred) && preferred !== i18n.language) i18n.changeLanguage(preferred);
+}
 
 export default i18n;

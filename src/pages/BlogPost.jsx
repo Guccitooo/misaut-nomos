@@ -7,49 +7,66 @@ import { IconClock, IconArrowLeft, IconTwitter, IconLinkedin, IconCopy, IconChec
 import { EmptyState, SkeletonLine, SkeletonBlock } from '@/components/ListStates';
 import { CategoryBadge } from './BlogList';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import { getPublicPageData } from '@/lib/publicPageData';
+
+function getInitialPostData(slug) {
+  const pageData = getPublicPageData();
+  const post = pageData?.blogPost?.slug === slug ? pageData.blogPost : null;
+  const posts = Array.isArray(pageData?.blogPosts) ? pageData.blogPosts : [];
+  const related = !post ? [] : post.related_articles?.length
+    ? post.related_articles.map(id => posts.find(candidate => candidate.id === id)).filter(Boolean)
+    : posts.filter(candidate => candidate.id !== post.id && candidate.category === post.category).slice(0, 3);
+  return { post, related };
+}
 
 export default function BlogPostPage() {
   const { slug } = useParams();
   const { t } = useTranslation();
-  const [post, setPost] = useState(null);
-  const [related, setRelated] = useState([]);
+  const [post, setPost] = useState(() => getInitialPostData(slug).post);
+  const [related, setRelated] = useState(() => getInitialPostData(slug).related);
   const [toc, setToc] = useState([]);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setPost(null);
+    let active = true;
+    const initialData = getInitialPostData(slug);
+    setPost(initialData.post);
     setToc([]);
-    setRelated([]);
-    load();
+    setRelated(initialData.related);
+
+    const load = async () => {
+      const found = await base44.entities.BlogPost.filter({ slug, status: 'published' }, '-publish_date', 1);
+      if (!active) return;
+      if (!found[0]) { setPost(false); return; }
+      const p = found[0];
+      setPost(p);
+      base44.entities.BlogPost.update(p.id, { views: (p.views || 0) + 1 }).catch(() => {});
+
+      // Related articles
+      if (p.related_articles?.length) {
+        const rel = await Promise.all(p.related_articles.map(id => base44.entities.BlogPost.get(id).catch(() => null)));
+        if (active) setRelated(rel.filter(Boolean).filter(r => r.status === 'published'));
+      } else {
+        const rel = await base44.entities.BlogPost.filter({ category: p.category, status: 'published' }, '-publish_date', 4);
+        if (active) setRelated(rel.filter(r => r.id !== p.id).slice(0, 3));
+      }
+    };
+
+    // Keep any prerendered content visible if the background refresh fails.
+    load().catch(() => {});
+    return () => { active = false; };
   }, [slug]);
 
-  const load = async () => {
-    const found = await base44.entities.BlogPost.filter({ slug, status: 'published' }, '-publish_date', 1);
-    if (!found[0]) { setPost(false); return; }
-    const p = found[0];
-    setPost(p);
-    base44.entities.BlogPost.update(p.id, { views: (p.views || 0) + 1 }).catch(() => {});
-
-    // Related articles
-    if (p.related_articles?.length) {
-      const rel = await Promise.all(p.related_articles.map(id => base44.entities.BlogPost.get(id).catch(() => null)));
-      setRelated(rel.filter(Boolean).filter(r => r.status === 'published'));
-    } else {
-      const rel = await base44.entities.BlogPost.filter({ category: p.category, status: 'published' }, '-publish_date', 4);
-      setRelated(rel.filter(r => r.id !== p.id).slice(0, 3));
-    }
-
-    // Table of contents
-    setTimeout(() => {
-      const headings = document.querySelectorAll('.blog-content h2, .blog-content h3');
-      const items = Array.from(headings).map((h, i) => {
-        const id = h.id || `heading-${i}`;
-        h.id = id;
-        return { id, text: h.textContent, level: h.tagName === 'H2' ? 2 : 3 };
-      });
-      setToc(items);
-    }, 150);
-  };
+  useEffect(() => {
+    if (!post || post.slug !== slug) return;
+    const headings = document.querySelectorAll('.blog-content h2, .blog-content h3');
+    const items = Array.from(headings).map((heading, index) => {
+      const id = heading.id || `heading-${index}`;
+      heading.id = id;
+      return { id, text: heading.textContent, level: heading.tagName === 'H2' ? 2 : 3 };
+    });
+    setToc(items);
+  }, [post, slug]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -60,7 +77,7 @@ export default function BlogPostPage() {
   const canonicalPath = `/blog/${post?.slug || slug}`;
   const url = `https://misautonomos.es${canonicalPath}`;
 
-  if (post === null) return (
+  if (post === null || (post && post.slug !== slug)) return (
     <div className="min-h-screen bg-canvas">
       <div className="container-page max-w-3xl py-10 space-y-5">
         <SkeletonLine width="30%" height={20} />
@@ -136,7 +153,7 @@ export default function BlogPostPage() {
         </Link>
       </div>
 
-      <article className="container-page max-w-3xl py-10">
+      <article data-prerender="article" className="container-page max-w-3xl py-10">
         <CategoryBadge category={post.category} />
         <h1
           className="font-semibold mt-4 tracking-tight"
@@ -162,7 +179,7 @@ export default function BlogPostPage() {
           </div>
           <span className="text-gray-300">·</span>
           {post.publish_date && (
-            <span>{new Date(post.publish_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span>{new Date(post.publish_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid' })}</span>
           )}
           <span className="text-gray-300">·</span>
           <span className="flex items-center gap-1"><IconClock className="w-3.5 h-3.5" />{t('blog.post.readTime', { minutes: post.read_time_minutes })}</span>
@@ -186,6 +203,7 @@ export default function BlogPostPage() {
 
             {/* Content */}
             <div
+              data-prerender="article-body"
               className="blog-content prose prose-slate max-w-none prose-headings:font-semibold prose-h2:text-[26px] prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3 prose-p:text-slate-700 prose-p:leading-[1.75] prose-a:no-underline hover:prose-a:underline prose-a:underline-offset-2 prose-strong:text-slate-900 prose-ul:my-4 prose-li:my-1 prose-img:rounded-2xl"
               style={{ '--tw-prose-links': '#00255C' }}
               dangerouslySetInnerHTML={{ __html: post.content_es }}

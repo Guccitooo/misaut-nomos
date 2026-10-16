@@ -1,5 +1,5 @@
 import './App.css'
-import { lazyWithRetry, lazyApp } from '@/lib/lazyWithRetry';
+import { lazyWithRetry, lazyApp, clearLazyReloadFlag } from '@/lib/lazyWithRetry';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -12,8 +12,11 @@ import { routerBasename } from '@/i18n';
 import ScrollToTop from '@/lib/ScrollToTop';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AnalyticsGate from '@/components/AnalyticsGate';
-import { Suspense, React, Component, useEffect } from 'react';
+import { Suspense, Component, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getPublicPageData, isPublicPath } from '@/lib/publicPageData';
+import { applyPreferredLanguage } from '@/i18n';
+import { preloadPublicLayout, whenPublicLayoutMounted } from '@/Layout';
 
 // Reload SEGURO ante fallos de import dinámico:
 //  - Solo se recarga UNA vez por sesión, usando un flag en sessionStorage que
@@ -37,6 +40,8 @@ function isChunkLoadError(error) {
 // (importado arriba) registra la instancia global al cargarse.
 function ErrorFallback({ error, onLogout }) {
   const { t } = useTranslation();
+  // The failed server tree has been removed before this fallback commits.
+  useEffect(() => { applyPreferredLanguage(); }, []);
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-soft">
       <div className="max-w-lg w-full bg-surface rounded-2xl border border-red-100 p-6 shadow-lg">
@@ -155,6 +160,25 @@ const PageLoader = () => null;
 
 const { Pages, Layout } = pagesConfig;
 
+function publicPageForPath(pathname) {
+  pathname = pathname.replace(/\/+$/, '') || '/';
+  const routes = {
+    '/': Landing, '/buscar': Pages.Search, '/blog': BlogList,
+    '/preguntas-frecuentes': Pages.FAQ, '/ayuda': Pages.HelpCenter,
+    '/para-autonomos': ParaAutonomos, '/tu-web': TuWeb, '/contacto': Contacto,
+    '/privacidad': Pages.PrivacyPolicy, '/terminos': Pages.TermsConditions,
+    '/cookies': Pages.CookiePolicy, '/aviso-legal': Pages.LegalNotice,
+  };
+  return routes[pathname] || (/^\/autonomo\/[^/]+(?:\/[^/]+)?$/.test(pathname) ? Pages.Autonomo
+    : /^\/categoria\/[^/]+(?:\/[^/]+)?$/.test(pathname) ? Pages.Categoria
+    : /^\/blog\/[^/]+$/.test(pathname) ? BlogPost : null);
+}
+
+export function preloadPublicRoute(pathname) {
+  const page = publicPageForPath(pathname);
+  return Promise.all([preloadPublicLayout(), page?.preload?.()]);
+}
+
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
@@ -249,10 +273,30 @@ const LegacyRedirect = () => {
 const AuthenticatedApp = () => {
   const location = useLocation();
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  const waitingForPrivateAuth = (isLoadingPublicSettings || isLoadingAuth) && !isPublicPath(pathname);
+  const replacesLayout = pathname === '/login' || waitingForPrivateAuth
+    || authError?.type === 'user_not_registered' || authError?.type === 'auth_required';
+
+  useEffect(() => {
+    if (!getPublicPageData().language) return;
+    // An early navigation cancels the previous route's wait. If it replaces
+    // the public layout (login/auth/error), that SSR tree is already gone.
+    if (replacesLayout) {
+      applyPreferredLanguage();
+      return;
+    }
+    let current = true;
+    const page = publicPageForPath(pathname);
+    Promise.all([whenPublicLayoutMounted(pathname), page?.whenMounted?.()]).then(() => {
+      if (current) applyPreferredLanguage();
+    });
+    return () => { current = false; };
+  }, [pathname, replacesLayout]);
 
   // /login se renderiza fullscreen, sin Layout, y sin esperar a que termine
   // la carga de auth (la pantalla de login NO debe depender de auth).
-  if (location.pathname === '/login') {
+  if (pathname === '/login') {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -262,7 +306,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (waitingForPrivateAuth) {
     return null;
   }
 
@@ -365,30 +409,32 @@ const AuthenticatedApp = () => {
 };
 
 
-function App() {
+function App({ RouterComponent = Router, routerProps = {}, queryClient = queryClientInstance }) {
   // Si la app montó correctamente, asumimos que los chunks cargaron bien.
   // Limpiamos el flag tras un pequeño margen para que un fallo posterior
   // (p.ej. al navegar a otra ruta lazy) pueda volver a recargar UNA vez.
   useEffect(() => {
     const t = setTimeout(() => {
       try { sessionStorage.removeItem(CHUNK_RELOAD_FLAG); } catch (_e) { /* noop */ }
+      clearLazyReloadFlag();
     }, 4000);
     return () => clearTimeout(t);
   }, []);
 
   return (
+    <div data-prerender="content">
     <ErrorBoundary>
       <AuthProvider>
         <AppProvider>
-          <QueryClientProvider client={queryClientInstance}>
+          <QueryClientProvider client={queryClient}>
             {/* basename: si la URL lleva prefijo de idioma (/ar/…), React
                 Router lo quita de useLocation() y lo pone en cada <Link>.
                 Ninguna página tiene que saber que existe. */}
-            <Router basename={routerBasename()}>
+            <RouterComponent basename={routerBasename()} {...routerProps}>
               <ScrollToTop />
               <NavigationTracker />
               <AuthenticatedApp />
-            </Router>
+            </RouterComponent>
             {/* Vercel RUM: Core Web Vitals reales (LCP/CLS/INP) por ruta.
                 El componente carga el script de forma diferida, no afecta al
                 LCP, y solo envía métricas en producción (en dev es no-op). */}
@@ -397,6 +443,7 @@ function App() {
         </AppProvider>
       </AuthProvider>
     </ErrorBoundary>
+    </div>
   )
 }
 

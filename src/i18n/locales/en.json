@@ -77,6 +77,18 @@
       "browseAllHint": "Rather browse yourself? See every pro in your area",
       "trustWhatsapp": "Direct contact on WhatsApp"
     },
+    "webOffer": {
+      "eyebrow": "BayenDaba · For your business",
+      "title": "Your website from €{{price}}",
+      "body": "Showcase your services and your work with a professional website you can share with your customers.",
+      "featurePage": "One page with up to 5 sections",
+      "featureMobile": "Designed for mobile and desktop",
+      "featureContact": "Direct contact through WhatsApp",
+      "cta": "Talk to BayenDaba",
+      "details": "See what's included",
+      "note": "Website creation price. Domain, hosting and applicable taxes are quoted separately.",
+      "whatsappMessage": "Hello BayenDaba! I saw your Essential website from €{{price}} on MisAutónomos. I'd like to find out more and request a quote for my business."
+    },
     "howItWorks": {
       "title": "Three steps. No catch.",
       "client": {
@@ -191,6 +203,10 @@
     "carpenter": "Carpenter"
   },
   "search": {
+    "directory": {
+      "title": "Explore by service and city",
+      "localGuides": "Local guides and professionals"
+    },
     "verified_tag": "Verified · Direct contact · No fees",
     "load_more": "Load more professionals ({{count}} remaining)",
     "filters_advanced": "Advanced filters",

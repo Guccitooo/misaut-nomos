@@ -136,6 +136,10 @@ function checkPage(url, html) {
     if (!articles.some((article) => hasAncestor(article, 'body') && visibleText(article))) {
       fail(url, 'falta <article data-prerender="article"> con texto visible; renderiza el cuerpo publicado, no solo el extracto.');
     }
+    const bodies = nodes.filter((node) => (node.attrs.class || '').split(/\s+/).includes('blog-content') && hasAncestor(node, 'article'));
+    if (!bodies.some((body) => visibleText(body))) {
+      fail(url, 'el cuerpo .blog-content está vacío o no está dentro del artículo; un título o extracto no sustituye al contenido publicado.');
+    }
   }
 
   const baseHref = nodes.find((node) => node.tag === 'base' && node.attrs.href)?.attrs.href;
