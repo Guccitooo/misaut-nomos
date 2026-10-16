@@ -169,9 +169,9 @@ function publicPageForPath(pathname) {
     '/privacidad': Pages.PrivacyPolicy, '/terminos': Pages.TermsConditions,
     '/cookies': Pages.CookiePolicy, '/aviso-legal': Pages.LegalNotice,
   };
-  return routes[pathname] || (pathname.startsWith('/autonomo/') ? Pages.Autonomo
-    : pathname.startsWith('/categoria/') ? Pages.Categoria
-    : pathname.startsWith('/blog/') ? BlogPost : null);
+  return routes[pathname] || (/^\/autonomo\/[^/]+(?:\/[^/]+)?$/.test(pathname) ? Pages.Autonomo
+    : /^\/categoria\/[^/]+(?:\/[^/]+)?$/.test(pathname) ? Pages.Categoria
+    : /^\/blog\/[^/]+$/.test(pathname) ? BlogPost : null);
 }
 
 export function preloadPublicRoute(pathname) {
@@ -296,7 +296,7 @@ const AuthenticatedApp = () => {
 
   // /login se renderiza fullscreen, sin Layout, y sin esperar a que termine
   // la carga de auth (la pantalla de login NO debe depender de auth).
-  if (location.pathname === '/login') {
+  if (pathname === '/login') {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -306,7 +306,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if ((isLoadingPublicSettings || isLoadingAuth) && !isPublicPath(location.pathname)) {
+  if (waitingForPrivateAuth) {
     return null;
   }
 
