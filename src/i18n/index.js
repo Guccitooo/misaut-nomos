@@ -248,10 +248,14 @@ function syncHtmlLang(lng) {
 syncHtmlLang(i18n.language);
 i18n.on('languageChanged', syncHtmlLang);
 
-// The first hydration must use the language written into the HTML. Apply
-// an explicit preference after that commit, without replacing the page.
+// Called after the actual public Suspense boundaries have mounted, not just
+// the root commit. i18next is mutable external state: changing it earlier
+// makes a still-dehydrated boundary read EN against server-rendered ES.
+let hydrationPreferenceApplied = false;
 export function applyPreferredLanguage() {
   if (typeof window === 'undefined' || !getPublicPageData().language) return;
+  if (hydrationPreferenceApplied) return;
+  hydrationPreferenceApplied = true;
   const preferred = hydrationPreference;
   if (preferred && ALL_CODES.includes(preferred) && preferred !== i18n.language) i18n.changeLanguage(preferred);
 }

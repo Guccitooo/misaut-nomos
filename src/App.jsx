@@ -14,9 +14,9 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AnalyticsGate from '@/components/AnalyticsGate';
 import { Suspense, Component, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isPublicPath } from '@/lib/publicPageData';
+import { getPublicPageData, isPublicPath } from '@/lib/publicPageData';
 import { applyPreferredLanguage } from '@/i18n';
-import { preloadPublicLayout } from '@/Layout';
+import { preloadPublicLayout, whenPublicLayoutMounted } from '@/Layout';
 
 // Reload SEGURO ante fallos de import dinámico:
 //  - Solo se recarga UNA vez por sesión, usando un flag en sessionStorage que
@@ -40,6 +40,8 @@ function isChunkLoadError(error) {
 // (importado arriba) registra la instancia global al cargarse.
 function ErrorFallback({ error, onLogout }) {
   const { t } = useTranslation();
+  // The failed server tree has been removed before this fallback commits.
+  useEffect(() => { applyPreferredLanguage(); }, []);
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-soft">
       <div className="max-w-lg w-full bg-surface rounded-2xl border border-red-100 p-6 shadow-lg">
@@ -158,7 +160,8 @@ const PageLoader = () => null;
 
 const { Pages, Layout } = pagesConfig;
 
-export function preloadPublicRoute(pathname) {
+function publicPageForPath(pathname) {
+  pathname = pathname.replace(/\/+$/, '') || '/';
   const routes = {
     '/': Landing, '/buscar': Pages.Search, '/blog': BlogList,
     '/preguntas-frecuentes': Pages.FAQ, '/ayuda': Pages.HelpCenter,
@@ -166,9 +169,13 @@ export function preloadPublicRoute(pathname) {
     '/privacidad': Pages.PrivacyPolicy, '/terminos': Pages.TermsConditions,
     '/cookies': Pages.CookiePolicy, '/aviso-legal': Pages.LegalNotice,
   };
-  const page = routes[pathname] || (pathname.startsWith('/autonomo/') ? Pages.Autonomo
+  return routes[pathname] || (pathname.startsWith('/autonomo/') ? Pages.Autonomo
     : pathname.startsWith('/categoria/') ? Pages.Categoria
     : pathname.startsWith('/blog/') ? BlogPost : null);
+}
+
+export function preloadPublicRoute(pathname) {
+  const page = publicPageForPath(pathname);
   return Promise.all([preloadPublicLayout(), page?.preload?.()]);
 }
 
@@ -266,6 +273,26 @@ const LegacyRedirect = () => {
 const AuthenticatedApp = () => {
   const location = useLocation();
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const pathname = location.pathname.replace(/\/+$/, '') || '/';
+  const waitingForPrivateAuth = (isLoadingPublicSettings || isLoadingAuth) && !isPublicPath(pathname);
+  const replacesLayout = pathname === '/login' || waitingForPrivateAuth
+    || authError?.type === 'user_not_registered' || authError?.type === 'auth_required';
+
+  useEffect(() => {
+    if (!getPublicPageData().language) return;
+    // An early navigation cancels the previous route's wait. If it replaces
+    // the public layout (login/auth/error), that SSR tree is already gone.
+    if (replacesLayout) {
+      applyPreferredLanguage();
+      return;
+    }
+    let current = true;
+    const page = publicPageForPath(pathname);
+    Promise.all([whenPublicLayoutMounted(pathname), page?.whenMounted?.()]).then(() => {
+      if (current) applyPreferredLanguage();
+    });
+    return () => { current = false; };
+  }, [pathname, replacesLayout]);
 
   // /login se renderiza fullscreen, sin Layout, y sin esperar a que termine
   // la carga de auth (la pantalla de login NO debe depender de auth).
@@ -387,7 +414,6 @@ function App({ RouterComponent = Router, routerProps = {}, queryClient = queryCl
   // Limpiamos el flag tras un pequeño margen para que un fallo posterior
   // (p.ej. al navegar a otra ruta lazy) pueda volver a recargar UNA vez.
   useEffect(() => {
-    applyPreferredLanguage();
     const t = setTimeout(() => {
       try { sessionStorage.removeItem(CHUNK_RELOAD_FLAG); } catch (_e) { /* noop */ }
       clearLazyReloadFlag();

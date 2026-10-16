@@ -18,7 +18,7 @@
 // App.jsx tenía esta misma lógica escrita a mano alrededor de cada lazy();
 // esto la concentra en un sitio y la hace igual en las 82 rutas.
 
-import { lazy } from 'react';
+import { createElement, forwardRef, lazy, useEffect } from 'react';
 import { ensureAppLocale } from '@/i18n';
 
 const RELOAD_FLAG = 'ma.chunk-reloaded';
@@ -45,9 +45,18 @@ function isChunkLoadError(err) {
 export function lazyWithRetry(factory) {
   let pending;
   let loaded;
+  let markMounted;
+  const mounted = new Promise((resolve) => { markMounted = resolve; });
   const load = () => pending || (pending = (async () => {
     try {
-      loaded = await factory();
+      const module = await factory();
+      const TrackedComponent = forwardRef(function TrackedLazy(props, ref) {
+        // A root effect can run while a descendant Suspense boundary is
+        // still dehydrated. This effect belongs to that actual boundary.
+        useEffect(() => { markMounted(); }, []);
+        return createElement(module.default, ref ? { ...props, ref } : props);
+      });
+      loaded = { ...module, default: TrackedComponent };
       return loaded;
     } catch (err) {
       if (!isChunkLoadError(err)) throw err;
@@ -70,6 +79,7 @@ export function lazyWithRetry(factory) {
   // A synchronous thenable after preload lets the first hydration traverse
   // these boundaries without suspending while auth/language effects start.
   component.preload = load;
+  component.whenMounted = () => mounted;
   return component;
 }
 

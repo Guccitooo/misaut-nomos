@@ -31,6 +31,12 @@ const WebsiteSchema = lazyWithRetry(() => import("@/components/seo/WebsiteSchema
 export function preloadPublicLayout() {
   return Promise.all([Footer.preload(), CookieBanner.preload(), WebsiteSchema.preload()]);
 }
+
+export function whenPublicLayoutMounted(pathname) {
+  const components = [CookieBanner, WebsiteSchema];
+  if (!pathname.startsWith('/soporte') && !pathname.startsWith('/admin')) components.push(Footer);
+  return Promise.all(components.map((component) => component.whenMounted()));
+}
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import { LanguageProvider } from "@/components/LanguageSwitcher";
