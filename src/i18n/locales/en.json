@@ -78,16 +78,17 @@
       "trustWhatsapp": "Direct contact on WhatsApp"
     },
     "webOffer": {
-      "eyebrow": "BayenDaba · For your business",
-      "title": "Your website from €{{price}}",
-      "body": "Showcase your services and your work with a professional website you can share with your customers.",
-      "featurePage": "One page with up to 5 sections",
-      "featureMobile": "Designed for mobile and desktop",
-      "featureContact": "Direct contact through WhatsApp",
-      "cta": "Talk to BayenDaba",
-      "details": "See what's included",
-      "note": "Website creation price. Domain, hosting and applicable taxes are quoted separately.",
-      "whatsappMessage": "Hello BayenDaba! I saw your Essential website from €{{price}} on MisAutónomos. I'd like to find out more and request a quote for my business."
+      "eyebrow": "BayenDaba · Your digital team",
+      "title": "Custom websites, apps and software",
+      "body": "From a website that helps you find customers to an app or a system to manage your business. Tell us your idea and we’ll help shape it.",
+      "startingPrice": "Projects from €{{price}}",
+      "featurePage": "Websites, online shops and bookings",
+      "featureMobile": "Mobile apps and business software",
+      "featureContact": "Automation and artificial intelligence",
+      "cta": "Get a no-obligation quote",
+      "details": "Explore what we can build",
+      "note": "We handle the whole project: design, development, integrations and launch.",
+      "whatsappMessage": "Hi BayenDaba! I saw on MisAutónomos that you build custom websites, apps and software, with projects starting from €{{price}}. I’d like to tell you about my idea and request a personalised, no-obligation quote."
     },
     "howItWorks": {
       "title": "Three steps. No catch.",
@@ -1976,168 +1977,173 @@
     }
   },
   "tuWeb": {
-    "nav": "Your website",
+    "nav": "Websites & apps",
     "seo": {
-      "title": "Your website from €200 with BayenDaba | MisAutónomos",
-      "description": "A website for your business from €200. Explore the scope, design examples and optional BayenDaba maintenance. Request a quote with no obligation."
+      "title": "Websites, apps & software from €200 | MisAutónomos",
+      "description": "BayenDaba builds custom websites, apps, business software and automations. Projects from €200 with a personalised quote and no obligation."
     },
     "card": {
-      "label": "Optional BayenDaba service",
-      "eyebrow": "For your business · BayenDaba",
-      "title": "Your own website from €200",
-      "body": "Show your work, explain your services and make it easy for customers to reach you on WhatsApp.",
-      "note": "Optional service. Taxes and publishing costs quoted separately. Your listing stays free.",
-      "cta": "See what's included"
+      "label": "BayenDaba digital services",
+      "eyebrow": "Your project · BayenDaba",
+      "title": "Custom websites, apps and software",
+      "body": "A website for your business, an app or a tool to manage your work. We can take care of the whole project.",
+      "note": "Projects from €200, depending on scope. No-obligation quote. Your listing stays free.",
+      "cta": "Tell us your idea"
     },
     "hero": {
-      "eyebrow": "BayenDaba for MisAutónomos professionals",
-      "title": "Your craft. Your name.",
-      "highlight": "Your own website.",
-      "body": "An address you can share with pride. Your services, your work and a simple way to get in touch, on every screen.",
-      "from": "From",
-      "once": "one-time payment",
-      "priceNote": "Website creation price. Applicable taxes, domain and hosting are extra and itemised in your quote before you commit.",
-      "cta": "Explore plans and inclusions",
-      "contact": "Let's discuss my project",
-      "provider": "Design and development by"
+      "eyebrow": "Design, development and strategy · BayenDaba",
+      "title": "Your digital project.",
+      "highlight": "From idea to launch.",
+      "body": "We create custom websites, apps and software. We can manage the entire project, giving you a team that understands your business and brings your idea to life.",
+      "from": "Projects from",
+      "indicative": "indicative starting price",
+      "priceNote": "Your quote reflects the features and scope of your project. Let’s discuss it with no obligation.",
+      "cta": "Tell us your idea on WhatsApp",
+      "explore": "What we can create",
+      "provider": "One team for the whole project:"
     },
     "examples": {
-      "label": "Website style examples",
-      "caption": "Illustrative design examples. These are demos, not client websites or projects included in the price.",
-      "contact": "Let's talk",
-      "work": "Our work",
-      "about": "About us",
-      "services": {
-        "tab": "Services",
+      "label": "Examples of digital projects",
+      "caption": "Design demonstrations for inspiration. Your project is tailored to you.",
+      "web": {
+        "tab": "Website",
+        "address": "yourbusiness.com",
+        "name": "YOUR GARAGE",
+        "tag": "Car care · Trust · Personal service",
+        "title": "Your car, in good hands.",
+        "body": "Introduce your garage, showcase your services and make booking easy.",
+        "action": "Book a service",
+        "footer": "Services · Our garage · Contact"
+      },
+      "apps": {
+        "tab": "App",
+        "address": "Your business, on mobile",
+        "name": "YOUR APP",
+        "tag": "An experience built for your customers",
+        "title": "Their next booking, a tap away.",
+        "body": "Services, bookings and updates in one app.",
+        "first": "Choose a service",
+        "second": "Check availability",
+        "third": "View my bookings",
+        "footer": "An app built around you"
+      },
+      "software": {
+        "tab": "Software",
+        "address": "Your management dashboard",
         "name": "YOUR BUSINESS",
-        "tag": "Electrical · Repairs",
-        "title": "Solutions for peace of mind.",
-        "body": "A local professional for the small and big projects around your home."
-      },
-      "craft": {
-        "tab": "Craft",
-        "name": "YOUR WORKSHOP",
-        "tag": "Woodwork · Made to measure",
-        "title": "Spaces that feel like you.",
-        "body": "Carefully chosen materials and attention to detail. Tell us what you have in mind."
-      },
-      "studio": {
-        "tab": "Studio",
-        "name": "YOUR STUDIO",
-        "tag": "Design · Creativity",
-        "title": "Good ideas, beautifully told.",
-        "body": "We shape your next project with a personal, thoughtful approach."
+        "tag": "Fewer scattered tasks. More clarity.",
+        "title": "Everything in one place.",
+        "body": "A dashboard designed around the way your team works.",
+        "first": "Customers and follow-ups",
+        "second": "Quotes and repairs",
+        "third": "Schedule and stock",
+        "footer": "Management connected to your business"
       }
     },
     "trust": {
-      "mobile": "Mobile friendly",
-      "ownership": "Domain in your name",
-      "direct": "Direct contact with BayenDaba"
+      "custom": "Built for your business",
+      "complete": "From design to launch",
+      "direct": "Direct contact with the team"
     },
-    "plans": {
-      "eyebrow": "Choose your starting point",
-      "title": "A website that fits your business.",
-      "body": "Two clearly defined options. We confirm your requirements and the total price in writing before starting.",
-      "essential": {
-        "label": "Get started",
-        "title": "Essential website",
-        "body": "All your key information on one page that is easy to share.",
-        "features": [
-          "One page with up to 5 sections",
-          "Design for mobile and desktop",
-          "Services, gallery and contact links",
-          "WhatsApp button and email link",
-          "One language and one revision round",
-          "Basic search title and description"
-        ],
-        "cta": "I'm interested in Essential"
+    "services": {
+      "eyebrow": "What your business needs",
+      "title": "One idea. Many ways to bring it to life.",
+      "body": "From a first website to a tool that connects your whole business. We design the solution with you.",
+      "web": {
+        "title": "Websites and online stores",
+        "body": "Professional websites, catalogues and online stores to showcase your services, sell and receive enquiries."
       },
-      "complete": {
-        "label": "Tell your full story",
-        "title": "Complete website",
-        "body": "More space to explain your services and showcase your work.",
-        "features": [
-          "Up to 5 pages for your business",
-          "Everything in the Essential website",
-          "Separate pages for your services",
-          "Gallery and content organisation",
-          "One language and two revision rounds",
-          "Titles and descriptions for each page"
-        ],
-        "cta": "I'm interested in Complete"
+      "apps": {
+        "title": "Mobile apps",
+        "body": "Apps for your customers or team: services, tracking, communication and experiences designed for mobile."
+      },
+      "software": {
+        "title": "Business software and CRM",
+        "body": "Customers, repairs, quotes, stock and tasks in a system designed around the way your company works."
+      },
+      "bookings": {
+        "title": "Bookings and quotes",
+        "body": "Schedules, appointments and quote requests for garages, professionals and service businesses."
+      },
+      "automation": {
+        "title": "Process automation",
+        "body": "We connect your tools to reduce repetitive work: notifications, documents, follow-ups and data updates."
+      },
+      "ai": {
+        "title": "Useful AI for your business",
+        "body": "Assistants, information retrieval and support for your team’s tasks, integrated where they serve a real purpose."
       }
     },
-    "maintenance": {
-      "eyebrow": "Optional · No requirement to subscribe",
-      "title": "A helping hand when your website needs a change.",
-      "body": "Basic hosting, technical follow-up and up to 20 minutes of content changes per month. Domain fees are not included. Renewal and cancellation conditions are detailed in your quote.",
-      "month": "/month"
-    },
-    "conditions": {
-      "title": "Know the full price before you decide",
-      "items": [
-        "€200 and €450 cover website creation; €29/month is for optional maintenance. Any applicable taxes are itemised in your quote.",
-        "Your domain and its renewals are quoted separately and registered in your name. Hosting is purchased separately or included in optional maintenance.",
-        "We start with your text, logo and photos. We can only reuse material from your listing with your confirmation. Writing content from scratch and paid images are quoted separately.",
-        "Online stores, payments, advanced bookings, additional languages and custom features are not included in these plans. If needed, we will prepare a separate proposal."
-      ]
+    "complete": {
+      "eyebrow": "The whole project, with one team",
+      "title": "We make everything work together.",
+      "body": "We can manage strategy, design, content, development and launch. We can also support maintenance and future development, depending on what you need.",
+      "cta": "Let’s discuss your project"
     },
     "process": {
-      "eyebrow": "From a first message to your own address",
-      "title": "We talk. We design. We publish.",
+      "eyebrow": "How we work with you",
+      "title": "A conversation. A proposal. Your project.",
       "brief": {
-        "title": "Tell us about your business",
-        "body": "We confirm the scope, total cost and delivery date in a written quote. You decide whether to go ahead."
+        "title": "We understand your idea",
+        "body": "Tell us what you do, what you want to improve and where you want to go. We help you shape the solution."
       },
       "design": {
-        "title": "Review before going live",
-        "body": "We work with the agreed materials. You review the design and approve it before anything is published."
+        "title": "We define and build",
+        "body": "You receive a proposal with scope, pricing and timelines. We design and develop with you, reviewing progress along the way."
       },
-      "publish": {
-        "title": "The website is in your hands",
-        "body": "We connect your domain and hand over the agreed access. Maintenance is an option, not a requirement."
+      "launch": {
+        "title": "We bring it to life",
+        "body": "We test the project, prepare its launch and help you start using it. Together, we agree on the support you need."
       }
     },
     "form": {
-      "eyebrow": "Tell us what you have in mind",
-      "title": "Your next step starts with a conversation.",
-      "body": "Prepare an enquiry for BayenDaba. You can read it and choose whether to send it via WhatsApp or email.",
-      "noCommitment": "No payment or purchase on this page. The final quote must be accepted before any work starts.",
-      "freeDirectory": "Just want your free listing?",
+      "eyebrow": "A quote with no obligation",
+      "title": "Tell us what you want to create.",
+      "body": "An initial idea is enough to get started. Message us directly or prepare your enquiry using the form.",
+      "direct": "Chat on WhatsApp",
+      "noCommitment": "We suggest a solution and a quote before work starts. You decide the next step.",
+      "freeDirectory": "Looking for your free MisAutónomos listing?",
+      "formTitle": "Prepare your enquiry",
+      "optional": "Every field is optional. Share whatever you already know.",
       "business": "Your business name",
-      "businessPlaceholder": "E.g. García Electrical",
-      "useProfile": "Use my listing's business name",
+      "businessPlaceholder": "E.g. García Garage",
+      "useProfile": "Use my listing’s business name",
       "activity": "What do you do?",
-      "activityPlaceholder": "E.g. Electrician in Valencia",
-      "plan": "Which website interests you?",
-      "details": "What would you like to show? (optional)",
-      "detailsPlaceholder": "Your services, project photos, a website you like…",
-      "maintenance": "I'd also like information about optional maintenance at {{price}}/month.",
-      "privacy": "What you type stays on this page until you open WhatsApp or your email app. It will be included in a draft addressed to BayenDaba; you decide whether to send it. You will not be added to any mailing list.",
+      "activityPlaceholder": "E.g. Car repairs, electrical services, teaching…",
+      "projectType": "What do you have in mind?",
+      "projectPlaceholder": "Let’s work it out together",
+      "types": {
+        "web": "Website or online store",
+        "apps": "Mobile app",
+        "software": "Business software / CRM",
+        "bookings": "Bookings and quotes",
+        "automation": "Process automation",
+        "ai": "AI solutions",
+        "other": "Another project or advice"
+      },
+      "details": "Tell us your idea",
+      "detailsPlaceholder": "What you need, what you would like to improve or which tasks you want to simplify…",
+      "privacy": "Preparing your enquiry does not send or save any data. The message opens in WhatsApp or your email app so you can review it and decide whether to send it.",
       "prepare": "Prepare my enquiry",
       "ready": "Your enquiry is ready",
-      "review": "Nothing has been sent yet. Open your preferred channel and review the message before sending.",
+      "review": "Choose WhatsApp or email and review the message before sending.",
       "preview": "Read the prepared message",
       "whatsapp": "Open WhatsApp",
-      "email": "I'd rather use email"
+      "email": "I’d rather use email"
     },
     "faq": {
-      "title": "Before you decide",
-      "free": {
-        "q": "Will my MisAutónomos listing remain free?",
-        "a": "Yes. The website is an optional, separate service from BayenDaba. Buying it does not change your search position or give you advantages in the directory's reviews."
+      "title": "Your first questions, answered",
+      "price": {
+        "q": "What does “from €200” mean?",
+        "a": "It is an indicative starting price. Each website, app or software project has different needs: we define features, design and timelines in a personalised quote. We also detail taxes and, where relevant, domain, hosting, licences and maintenance."
       },
-      "domain": {
-        "q": "Will I own the domain and website?",
-        "a": "The domain is registered in your name. Your quote defines website handover and access, hosting and renewals. You can arrange your own hosting or request optional maintenance."
+      "complete": {
+        "q": "Can you manage the whole project?",
+        "a": "Yes. We can work from the initial idea and strategy through design, content, development and launch, or join a project you already have. Together, we define the work and support you need."
       },
-      "material": {
-        "q": "What do I need to get started?",
-        "a": "Your services, contact details and any text, photos and logo you want to use. With your confirmation, BayenDaba can start from material already on your listing. The delivery date is agreed once the scope and materials are ready."
-      },
-      "results": {
-        "q": "Does it include advertising or guarantee customers?",
-        "a": "No. It includes building your website and basic search presentation settings. Advertising, campaign management and ongoing SEO are separate services. No Google position or number of customers is guaranteed."
+      "start": {
+        "q": "Do I need everything planned before getting in touch?",
+        "a": "No. Start by telling us about your business and what you want to achieve. We help you shape the idea and prepare a proposal with no obligation. Your free MisAutónomos listing remains independent of these services."
       }
     }
   }

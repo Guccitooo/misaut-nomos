@@ -291,10 +291,10 @@ async function renderApplicationRoutes(cats, profiles, posts) {
 const STATIC_ROUTES = [
   {
     path: '/tu-web',
-    title: 'Tu web desde 200 € con BayenDaba | MisAutónomos',
-    description: 'Una página web para tu negocio desde 200 €. Descubre qué incluye, los ejemplos de diseño y el mantenimiento opcional de BayenDaba. Solicita un presupuesto sin compromiso.',
-    h1: 'Tu oficio. Tu nombre. Tu propia web.',
-    intro: '<p>BayenDaba crea páginas web para profesionales de MisAutónomos. Web esencial: 200 €, una página con hasta 5 secciones, un idioma y una revisión. Web completa: 450 €, hasta 5 páginas, un idioma y dos revisiones. Mantenimiento opcional: 29 €/mes con alojamiento básico y hasta 20 minutos de cambios de contenido.</p><p>Impuestos aplicables, dominio y renovaciones se detallan en el presupuesto antes de contratar. El alojamiento se contrata aparte o dentro del mantenimiento opcional. Partimos de tus textos y fotos. Tiendas, pagos y reservas avanzadas requieren otro presupuesto. Tu ficha en MisAutónomos sigue siendo gratuita.</p><p><a href="https://bayendaba.com/es?utm_source=misautonomos&amp;utm_medium=referral&amp;utm_campaign=tu_web">Conoce BayenDaba</a> o escribe a <a href="mailto:contact@bayendaba.com">contact@bayendaba.com</a> para solicitar información sin compromiso.</p>',
+    title: 'Webs, apps y software desde 200 € | MisAutónomos',
+    description: 'BayenDaba desarrolla páginas web, aplicaciones, software empresarial y automatizaciones a medida. Proyectos desde 200 € con presupuesto personalizado sin compromiso.',
+    h1: 'Webs, apps y software a medida para tu negocio',
+    intro: '<p>BayenDaba desarrolla páginas web, aplicaciones, software empresarial y automatizaciones a medida para tu negocio. Nos ocupamos del proyecto completo, desde la idea y el diseño hasta el desarrollo y la puesta en marcha.</p><p>Proyectos desde 200 €. Cuéntanos lo que necesitas y recibe un presupuesto personalizado sin compromiso, con el alcance y el precio del proyecto definidos contigo.</p><p><a href="https://bayendaba.com/es?utm_source=misautonomos&amp;utm_medium=referral&amp;utm_campaign=tu_web">Conoce BayenDaba</a> o escribe a <a href="mailto:contact@bayendaba.com">contact@bayendaba.com</a> para hablar de tu proyecto.</p>',
   },
   {
     path: '/',
