@@ -6,6 +6,12 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.misautonomos.es" }],
+      "destination": "https://misautonomos.es/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {

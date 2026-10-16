@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { base44 } from '@/api/base44Client';
-import { Helmet } from 'react-helmet-async';
+import SEOHead from '@/components/seo/SEOHead';
 import { IconClock, IconArrowLeft, IconTwitter, IconLinkedin, IconCopy, IconCheck, IconWhatsApp } from '@/components/Icons';
 import { EmptyState, SkeletonLine, SkeletonBlock } from '@/components/ListStates';
 import { CategoryBadge } from './BlogList';
@@ -57,7 +57,8 @@ export default function BlogPostPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const url = typeof window !== 'undefined' ? window.location.href : '';
+  const canonicalPath = `/blog/${post?.slug || slug}`;
+  const url = `https://misautonomos.es${canonicalPath}`;
 
   if (post === null) return (
     <div className="min-h-screen bg-canvas">
@@ -72,6 +73,7 @@ export default function BlogPostPage() {
 
   if (post === false) return (
     <div className="min-h-screen bg-canvas flex items-center justify-center px-4 py-10">
+      <SEOHead title={t('blog.post.notFound')} canonicalPath={canonicalPath} noindex />
       <EmptyState
         className="max-w-md w-full"
         title={t('blog.post.notFound')}
@@ -83,7 +85,7 @@ export default function BlogPostPage() {
 
   const metaTitle = post.meta_title_es || t('blog.post.metaTitle', { title: post.title_es });
   const metaDesc = post.meta_description_es || post.excerpt_es || '';
-  const ogImage = post.og_image || post.featured_image || '';
+  const ogImage = post.og_image || post.featured_image || 'https://misautonomos.es/og-image.png';
   const shareText = post.title_es;
 
   const jsonLd = {
@@ -104,24 +106,16 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <Helmet>
-        <title>{metaTitle}</title>
-        <meta name="description" content={metaDesc} />
-        <link rel="canonical" href={url} />
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content={metaTitle} />
-        <meta property="og:description" content={metaDesc} />
-        {ogImage && <meta property="og:image" content={ogImage} />}
-        <meta property="og:url" content={url} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={metaTitle} />
-        <meta name="twitter:description" content={metaDesc} />
-        {ogImage && <meta name="twitter:image" content={ogImage} />}
-        {post.publish_date && <meta property="article:published_time" content={post.publish_date} />}
-        {post.author_name && <meta property="article:author" content={post.author_name} />}
-        {post.tags?.map(tag => <meta key={tag} property="article:tag" content={tag} />)}
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      <SEOHead
+        title={metaTitle}
+        description={metaDesc}
+        canonicalPath={canonicalPath}
+        image={ogImage}
+        type="article"
+        author={post.author_name || 'MisAutónomos'}
+        publishedTime={post.publish_date}
+        structuredData={jsonLd}
+      />
 
       {/* Hero image — full width, above everything */}
       {post.featured_image && (

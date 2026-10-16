@@ -174,9 +174,9 @@ export default function AutonomoPage() {
       }
       
       // 2. Buscar por slug limpio (sin tildes/guiones dobles/espacios)
-      found = allProfiles.find(p => p.slug_publico === cleanedInputSlug);
+      found = allProfiles.find(p => p.slug_publico && slugify(p.slug_publico) === cleanedInputSlug);
       if (found) {
-        return { profile: found, redirect: found.slug_publico };
+        return { profile: found, redirect: slugify(found.slug_publico) };
       }
       
       // 3. Buscar por slug generado del nombre actual
@@ -456,8 +456,8 @@ export default function AutonomoPage() {
   const displayProfile = translatedProfile || profile;
   
   // SEO optimizado — usar slug limpio
-  const canonicalSlug = profile.slug_publico || generateSlug(profile.business_name);
-  const canonicalUrl = `https://misautonomos.es/autonomo/${canonicalSlug}`;
+  const canonicalPath = getProfileSeoUrl(profile);
+  const canonicalUrl = `https://misautonomos.es${canonicalPath}`;
 
   // Título SEO optimizado (máx 60 caracteres ideal)
   const categoryName = profile.categories?.[0] || t('search.profile.seo.defaultCategory');
@@ -507,6 +507,7 @@ export default function AutonomoPage() {
       <SEOHead 
         title={seoTitle}
         description={seoDescription}
+        canonicalPath={canonicalPath}
         keywords={seoKeywords}
         type="profile"
         image={professionalUser?.profile_picture || profile.imagen_principal || profile.photos?.[0]}

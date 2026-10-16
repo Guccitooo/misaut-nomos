@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:i18n && node scripts/i18n-orphans.mjs --strict && node scripts/check-routes.mjs --strict && node scripts/check-vercel-routes.mjs --strict && vite build && npm run prerender && npm run check:sitemap:local",
+    "build": "npm run check:i18n && node scripts/i18n-orphans.mjs --strict && node scripts/check-routes.mjs --strict && node scripts/check-vercel-routes.mjs --strict && vite build && npm run prerender && npm run check:sitemap:local && npm run check:seo:html",
+    "check:seo:html": "node scripts/check-seo-html.mjs",
     "prerender": "node scripts/prerender.mjs",
     "build:nossr": "vite build",
     "check:i18n": "node scripts/check-i18n.mjs",
@@ -78,6 +79,7 @@
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
     "postcss": "^8.5.3",
+    "sanitize-html": "2.18.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3",
     "vite": "^6.1.0"
