@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import ProfessionalCard from "@/components/ProfessionalCard";
 import { toast } from "@/lib/toast";
 import SEOHead from "../components/seo/SEOHead";
 import { useTranslation } from "react-i18next";
 import { slugify, getProfileSeoUrl } from "@/lib/seoUrl";
 import { ordenarFichas } from "@/lib/ordenFichas";
+import { getPublicPageData } from '@/lib/publicPageData';
 
 const CIUDADES_PRINCIPALES = [
   "Madrid", "Barcelona", "Valencia", "Sevilla", "Málaga", "Zaragoza", "Bilbao",
@@ -43,10 +44,11 @@ function resolveCategoryBySlug(categories, slug) {
 export default function CategoriaPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
 
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(location.search);
 
   // TRES FORMAS DE URL LLEGAN AQUÍ, y hasta hoy sólo se entendían dos:
   //
@@ -229,7 +231,7 @@ export default function CategoriaPage() {
   // Se carga con `import()` dinámico y no con un import normal: son 24 kB de
   // texto que sólo necesitan 8 páginas de las 25 de categoría. Vite lo saca a
   // su propio trozo y el resto de categorías no lo descarga nunca.
-  const [guia, setGuia] = useState(null);
+  const [guia, setGuia] = useState(() => getPublicPageData().path === location.pathname ? getPublicPageData().guide || null : null);
   useEffect(() => {
     let vivo = true;
     if (!categorySlug || !ciudadSlug) { setGuia(null); return; }
@@ -299,7 +301,7 @@ export default function CategoriaPage() {
                 } : {})
               }
             }))
-          })
+          }).replace(/</g, '\\u003c')
         }} />
       )}
 
@@ -449,7 +451,7 @@ export default function CategoriaPage() {
                     name: f.q,
                     acceptedAnswer: { '@type': 'Answer', text: f.a },
                   })),
-                }),
+                }).replace(/</g, '\\u003c'),
               }} />
             </section>
           )}

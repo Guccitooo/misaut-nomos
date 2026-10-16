@@ -77,6 +77,18 @@
       "browseAllHint": "¿Prefieres mirar tú? Ve todos los autónomos de tu zona",
       "trustWhatsapp": "Contacto directo por WhatsApp"
     },
+    "webOffer": {
+      "eyebrow": "BayenDaba · Para tu negocio",
+      "title": "Tu página web desde {{price}} €",
+      "body": "Presenta tus servicios y tus trabajos con una web profesional que puedas compartir con tus clientes.",
+      "featurePage": "Una página con hasta 5 secciones",
+      "featureMobile": "Adaptada al móvil y al ordenador",
+      "featureContact": "Contacto directo por WhatsApp",
+      "cta": "Hablar con BayenDaba",
+      "details": "Ver qué incluye",
+      "note": "Precio de creación. Dominio, alojamiento e impuestos aplicables aparte, según presupuesto.",
+      "whatsappMessage": "¡Hola BayenDaba! He visto en MisAutónomos vuestra web esencial desde {{price}} €. Me gustaría saber más y pedir un presupuesto para mi negocio."
+    },
     "howItWorks": {
       "title": "Tres pasos. Sin trampa.",
       "client": {
@@ -191,6 +203,10 @@
     "carpenter": "Carpintero"
   },
   "search": {
+    "directory": {
+      "title": "Explora por servicio y ciudad",
+      "localGuides": "Guías y profesionales por ciudad"
+    },
     "verified_tag": "Verificados · Contacto directo · Sin comisiones",
     "load_more": "Cargar más profesionales ({{count}} restantes)",
     "filters_advanced": "Filtros avanzados",

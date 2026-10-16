@@ -14,46 +14,12 @@ if (typeof window !== 'undefined' && !window.requestIdleCallback) {
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { HelmetProvider } from 'react-helmet-async'
 import App from '@/App.jsx'
+import { getPublicPageData, seedPublicQueries } from '@/lib/publicPageData'
+import { queryClientInstance } from '@/lib/query-client'
 
-// Self-host Inter — woff2 cacheado, un solo round-trip.
-// IMPORTANTE: NO importamos @fontsource/inter/*.css porque usa
-// `font-display: swap`, que provoca reflow visible al cambiar de la fuente
-// de sistema (fallback) a Inter. Lo declaramos abajo con `font-display: optional`
-// (si Inter no está lista en ~100 ms, el navegador deja la fallback fija
-// para esta sesión → CERO swap, CERO reflow). Inter se cachea y aplica en
-// visitas posteriores.
-import inter400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url'
-import inter500 from '@fontsource/inter/files/inter-latin-500-normal.woff2?url'
-import inter600 from '@fontsource/inter/files/inter-latin-600-normal.woff2?url'
-import inter700 from '@fontsource/inter/files/inter-latin-700-normal.woff2?url'
-
-if (typeof document !== 'undefined') {
-  // 1) Preload de los pesos críticos para que la descarga empiece YA y entre
-  //    dentro de la ventana ~100 ms de `font-display: optional`.
-  ;[inter400, inter600, inter700].forEach((href) => {
-    const link = document.createElement('link')
-    link.rel = 'preload'
-    link.as = 'font'
-    link.type = 'font/woff2'
-    link.crossOrigin = 'anonymous'
-    link.href = href
-    document.head.appendChild(link)
-  })
-
-  // 2) @font-face con font-display: optional — antirreflow real.
-  const fontFaceCSS = `
-@font-face{font-family:'Inter';font-style:normal;font-display:optional;font-weight:400;src:url(${inter400}) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-display:optional;font-weight:500;src:url(${inter500}) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-display:optional;font-weight:600;src:url(${inter600}) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-display:optional;font-weight:700;src:url(${inter700}) format('woff2')}
-`.trim()
-  const style = document.createElement('style')
-  style.setAttribute('data-inter-override', 'true')
-  style.textContent = fontFaceCSS
-  document.head.appendChild(style)
-}
+// Fonts and styles arrive in the HTML stylesheet before its first paint.
+import './fonts.css'
 
 import './globals.css'
 import '@/index.css'
@@ -134,13 +100,19 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  // <React.StrictMode>
-  <HelmetProvider>
-    <App />
-  </HelmetProvider>
-  // </React.StrictMode>,
-)
+const root = document.getElementById('root');
+const publicData = getPublicPageData();
+const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+const hasMatchingSSR = publicData.path === pathname && root.dataset.ssr === 'true';
+if (hasMatchingSSR) seedPublicQueries(queryClientInstance, publicData);
+const application = <App />;
+if (hasMatchingSSR) {
+  ReactDOM.hydrateRoot(root, application, {
+    onRecoverableError(error) { console.error('[hydration]', error); },
+  });
+} else {
+  ReactDOM.createRoot(root).render(application);
+}
 
 if (import.meta.hot) {
   import.meta.hot.on('vite:beforeUpdate', () => {

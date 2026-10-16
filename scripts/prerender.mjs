@@ -25,11 +25,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { slugify } from '../src/lib/slugify.js';
 import sanitizeHtml from 'sanitize-html';
+import { createServer } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
+const renderedFiles = new Map();
+
+// This allowlist is deliberately separate from authenticated entity queries.
+// Never serialize a user row, financial details or verification documents.
+const PUBLIC_PROFILE_FIELDS = ['id', 'user_id', 'slug_publico', 'business_name', 'descripcion_corta', 'description', 'ciudad', 'provincia', 'categories', 'average_rating', 'total_reviews', 'imagen_principal', 'photos', 'telefono_contacto', 'metodos_contacto', 'identity_verified', 'years_experience', 'tarifa_base', 'skills', 'certifications', 'faq_items', 'portfolio_items', 'services_offered', 'website', 'social_links', 'disponibilidad_tipo', 'horario_apertura', 'horario_cierre', 'estado_perfil', 'onboarding_completed', 'visible_en_busqueda'];
+const PUBLIC_POST_FIELDS = ['id', 'slug', 'title_es', 'excerpt_es', 'content_es', 'meta_title_es', 'meta_description_es', 'publish_date', 'updated_date', 'featured_image', 'og_image', 'author_name', 'author_avatar', 'author_bio', 'category', 'tags', 'featured', 'read_time_minutes', 'related_articles', 'status'];
 
 // Cargar .env.local si existe (Node no lo hace solo).
 // En Vercel las vars vienen ya en process.env, así que este bloque solo
@@ -108,7 +115,7 @@ function normalizeSlug(raw) {
 // ──────────────────────────────────────────────────────────────────────────
 
 function loadTemplate() {
-  const tplPath = path.join(DIST, 'index.html');
+  const tplPath = path.join(DIST, fs.existsSync(path.join(DIST, 'app.html')) ? 'app.html' : 'index.html');
   if (!fs.existsSync(tplPath)) {
     console.error('[prerender] No existe dist/index.html — ¿ejecutaste vite build?');
     process.exit(1);
@@ -186,27 +193,8 @@ function renderTemplate(tpl, cfg) {
     html = html.replace(/<\/head>/, () => `${ld}\n  </head>`);
   }
 
-  // Contenido server-rendered dentro de #root: H1 + intro + listing.
-  // React (createRoot.render) reemplazará este contenido al hidratar, pero
-  // Googlebot y herramientas de IA leen el HTML inicial.
-  const initial = [
-    cfg.h1 ? `<h1>${escapeHtml(cfg.h1)}</h1>` : '',
-    cfg.intro ? `<div data-prerender="intro">${cfg.intro}</div>` : '',
-    cfg.listingHtml ? `<div data-prerender="listing">${cfg.listingHtml}</div>` : '',
-  ].filter(Boolean).join('\n      ');
-
-  if (initial) {
-    // The same useful content is visible to people without JavaScript and
-    // crawlers. React replaces it when the interactive application mounts.
-    const navigation = '<nav aria-label="Navegación principal"><a href="/">MisAutónomos</a> · <a href="/buscar">Buscar profesionales</a> · <a href="/blog">Blog</a> · <a href="/para-autonomos">Para autónomos</a> · <a href="/tu-web">Tu web</a></nav>';
-    const footer = '<footer><a href="/preguntas-frecuentes">Preguntas frecuentes</a> · <a href="/ayuda">Ayuda</a> · <a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos</a> · <a href="/cookies">Cookies</a> · <a href="/aviso-legal">Aviso legal</a></footer>';
-    html = html.replace('</head>', `<style id="prerender-style">.prerender-shell{max-width:1080px;margin:auto;padding:32px 24px;line-height:1.7;color:#172b4d}.prerender-shell nav,.prerender-shell footer{padding:20px 0}.prerender-shell a{color:#0057b8;text-decoration:underline}.prerender-shell h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;margin:28px 0}.prerender-shell h2{font-size:1.5rem;margin:28px 0 12px}.prerender-shell ul{padding-left:24px;list-style:disc}.prerender-shell p{margin:12px 0}.prerender-shell article{max-width:760px}.prerender-shell img{max-width:100%;height:auto}</style></head>`);
-    html = html.replace(/<div id="root">[\s\S]*?<\/div>/, () =>
-      `<div id="root"><div data-prerender="content" class="prerender-shell">
-      ${navigation}<main>${initial}</main>${footer}
-    </div></div>`,
-    );
-  }
+  // Actual markup is rendered from App after the public data is fetched.
+  // The template keeps a slot, never a second hand-written layout.
 
   return html;
 }
@@ -218,6 +206,82 @@ function writeRoute(routePath, html) {
   const out = path.join(DIST, rel);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, html, 'utf8');
+  renderedFiles.set(routePath, out);
+}
+
+function pick(object, fields) {
+  return Object.fromEntries(fields.filter((key) => object[key] !== undefined).map((key) => [key, object[key]]));
+}
+
+function publicProfile(profile) {
+  const safe = pick(profile, PUBLIC_PROFILE_FIELDS);
+  if (!safe.metodos_contacto?.some((method) => method === 'telefono' || method === 'whatsapp')) delete safe.telefono_contacto;
+  if (safe.social_links) safe.social_links = pick(safe.social_links, ['facebook', 'instagram', 'linkedin', 'tiktok']);
+  if (safe.faq_items) safe.faq_items = safe.faq_items.map((item) => pick(item, ['id', 'question', 'answer']));
+  if (safe.portfolio_items) safe.portfolio_items = safe.portfolio_items.map((item) => pick(item, ['id', 'title', 'description', 'images', 'date', 'category']));
+  if (safe.services_offered) safe.services_offered = safe.services_offered.map((item) => pick(item, ['id', 'name', 'description', 'price', 'duration', 'unit']));
+  return safe;
+}
+
+const routeModules = {
+  '/': 'Landing', '/buscar': 'Search', '/blog': 'BlogList', '/preguntas-frecuentes': 'FAQ',
+  '/ayuda': 'HelpCenter', '/para-autonomos': 'ParaAutonomos', '/tu-web': 'TuWeb', '/contacto': 'Contacto',
+  '/privacidad': 'PrivacyPolicy', '/terminos': 'TermsConditions', '/cookies': 'CookiePolicy', '/aviso-legal': 'LegalNotice',
+};
+
+function routeAssetTags(routePath, manifest) {
+  const name = routeModules[routePath] || (routePath.startsWith('/autonomo/') ? 'Autonomo' : routePath.startsWith('/categoria/') ? 'Categoria' : routePath.startsWith('/blog/') ? 'BlogPost' : null);
+  const seen = new Set();
+  const tags = [];
+  function add(key) {
+    if (seen.has(key)) return;
+    seen.add(key);
+    const entry = manifest[key];
+    if (!entry) return;
+    for (const css of entry.css || []) tags.push(`<link rel="stylesheet" href="/${escapeHtml(css)}" />`);
+    if (entry.file?.endsWith('.js')) tags.push(`<link rel="modulepreload" href="/${escapeHtml(entry.file)}" />`);
+    for (const imported of entry.imports || []) add(imported);
+  }
+  if (name) add(`src/pages/${name}.jsx`);
+  return [...new Set(tags)].join('\n');
+}
+
+async function renderApplicationRoutes(cats, profiles, posts) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(DIST, '.vite/manifest.json'), 'utf8'));
+  const categories = cats.map((cat) => pick(cat, ['id', 'slug', 'name', 'description', 'icon']));
+  const safeProfiles = profiles.map(publicProfile);
+  const safePosts = posts.map((post) => ({ ...pick(post, PUBLIC_POST_FIELDS), content_es: safeContent(post.content_es) }));
+  const postSummaries = safePosts.map(({ content_es, ...post }) => post).sort((a, b) => String(b.publish_date || '').localeCompare(String(a.publish_date || '')));
+  const server = await createServer({ root: ROOT, configFile: path.join(ROOT, 'vite.config.js'), server: { middlewareMode: true }, optimizeDeps: { noDiscovery: true, include: [] }, ssr: { noExternal: ['react-router-dom', 'react-router'], resolve: { conditions: ['module-sync', 'module', 'node'] } }, appType: 'custom', logLevel: 'error' });
+  try {
+    const { renderPublicPage } = await server.ssrLoadModule('/src/entry-server.jsx');
+    const localLinks = [...renderedFiles.keys()].filter((route) => /^\/categoria\/[^/]+\/[^/]+$/.test(route)).map((href) => {
+      const [, , category, city] = href.split('/');
+      const label = `${categories.find((cat) => cat.slug === category)?.name || category} en ${city.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')}`;
+      return { href, label };
+    });
+    for (const [routePath, file] of renderedFiles) {
+      const data = { path: routePath, language: 'es', generatedAt: Date.now(), categories, localLinks };
+      if (routePath === '/buscar') data.profiles = safeProfiles;
+      if (routePath.startsWith('/autonomo/')) data.profile = safeProfiles.find((profile) => profileUrl(profile).replace(SITE, '') === routePath);
+      if (routePath.startsWith('/categoria/')) {
+        const [, , categorySlug, citySlug] = routePath.split('/');
+        const category = categories.find((cat) => cat.slug === categorySlug);
+        data.categoryProfiles = safeProfiles.filter((profile) => profile.categories?.includes(category?.name) && (!citySlug || slugify(profile.ciudad) === citySlug || slugify(profile.provincia) === citySlug));
+        data.guide = EDITORIAL_GUIDES.find((guide) => guide.catSlug === categorySlug && guide.ciudadSlug === citySlug) || null;
+      }
+      if (routePath === '/blog' || routePath.startsWith('/blog/')) data.blogPosts = postSummaries;
+      if (routePath.startsWith('/blog/')) data.blogPost = safePosts.find((post) => `/blog/${post.slug}` === routePath) || null;
+      const markup = await renderPublicPage(routePath, data);
+      if (!markup.includes('data-prerender="content"')) throw new Error(`SSR returned no application content: ${routePath}`);
+      const bootstrap = `<script id="public-page-data" type="application/json">${jsonForHtml(data)}</script>`;
+      let html = fs.readFileSync(file, 'utf8');
+      html = html.replace('<div id="root"><!--app-html--></div>', () => `<div id="root" data-ssr="true">${markup}</div>`);
+      html = html.replace('</head>', () => `${routeAssetTags(routePath, manifest)}\n${bootstrap}\n</head>`);
+      fs.writeFileSync(file, html, 'utf8');
+    }
+    console.log(`[prerender] React SSR + hydration data: ${renderedFiles.size} routes`);
+  } finally { await server.close(); }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -544,6 +608,7 @@ function build404(tpl) {
   });
   const out = path.join(DIST, '404.html');
   fs.writeFileSync(out, html, 'utf8');
+  renderedFiles.set('/404', out);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -552,18 +617,20 @@ function build404(tpl) {
 
 async function main() {
   const tpl = loadTemplate();
+  // Private/unknown routes use the clean SPA shell, never a home-page snapshot.
+  fs.writeFileSync(path.join(DIST, 'app.html'), tpl, 'utf8');
 
   console.log('[prerender] Fetching data from Supabase…');
   const [catsRes, profsRes, postsRes] = await Promise.all([
-    supabase.from('service_categories').select('slug, name, description').order('name'),
+    supabase.from('service_categories').select('id, slug, name, description, icon').order('name'),
     supabase
       .from('professional_profiles')
-      .select('slug_publico, business_name, descripcion_corta, description, ciudad, municipio, provincia, categories, average_rating, total_reviews, imagen_principal, slug_publico_aliases, estado_perfil, onboarding_completed')
+      .select(PUBLIC_PROFILE_FIELDS.join(','))
       .eq('visible_en_busqueda', true)
       .eq('onboarding_completed', true),
     supabase
       .from('blog_posts')
-      .select('slug, title_es, excerpt_es, content_es, meta_title_es, meta_description_es, publish_date, updated_date, featured_image, og_image, author_name')
+      .select(PUBLIC_POST_FIELDS.join(','))
       .eq('status', 'published'),
   ]);
 
@@ -711,6 +778,7 @@ async function main() {
 
   // ── 6) 404
   build404(tpl);
+  await renderApplicationRoutes(cats, profs, posts);
 
   // ── 7) Volcar redirecciones de slugs sucios a un JSON que vercel.json
   //       referenciará (lo aplicaremos como redirects 301 en build).

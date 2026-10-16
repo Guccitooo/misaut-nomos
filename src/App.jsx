@@ -12,8 +12,10 @@ import { routerBasename } from '@/i18n';
 import ScrollToTop from '@/lib/ScrollToTop';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AnalyticsGate from '@/components/AnalyticsGate';
-import { Suspense, React, Component, useEffect } from 'react';
+import { Suspense, Component, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isPublicPath } from '@/lib/publicPageData';
+import { applyPreferredLanguage } from '@/i18n';
 
 // Reload SEGURO ante fallos de import dinámico:
 //  - Solo se recarga UNA vez por sesión, usando un flag en sessionStorage que
@@ -262,7 +264,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if ((isLoadingPublicSettings || isLoadingAuth) && !isPublicPath(location.pathname)) {
     return null;
   }
 
@@ -365,11 +367,12 @@ const AuthenticatedApp = () => {
 };
 
 
-function App() {
+function App({ RouterComponent = Router, routerProps = {}, queryClient = queryClientInstance }) {
   // Si la app montó correctamente, asumimos que los chunks cargaron bien.
   // Limpiamos el flag tras un pequeño margen para que un fallo posterior
   // (p.ej. al navegar a otra ruta lazy) pueda volver a recargar UNA vez.
   useEffect(() => {
+    applyPreferredLanguage();
     const t = setTimeout(() => {
       try { sessionStorage.removeItem(CHUNK_RELOAD_FLAG); } catch (_e) { /* noop */ }
     }, 4000);
@@ -377,18 +380,19 @@ function App() {
   }, []);
 
   return (
+    <div data-prerender="content">
     <ErrorBoundary>
       <AuthProvider>
         <AppProvider>
-          <QueryClientProvider client={queryClientInstance}>
+          <QueryClientProvider client={queryClient}>
             {/* basename: si la URL lleva prefijo de idioma (/ar/…), React
                 Router lo quita de useLocation() y lo pone en cada <Link>.
                 Ninguna página tiene que saber que existe. */}
-            <Router basename={routerBasename()}>
+            <RouterComponent basename={routerBasename()} {...routerProps}>
               <ScrollToTop />
               <NavigationTracker />
               <AuthenticatedApp />
-            </Router>
+            </RouterComponent>
             {/* Vercel RUM: Core Web Vitals reales (LCP/CLS/INP) por ruta.
                 El componente carga el script de forma diferida, no afecta al
                 LCP, y solo envía métricas en producción (en dev es no-op). */}
@@ -397,6 +401,7 @@ function App() {
         </AppProvider>
       </AuthProvider>
     </ErrorBoundary>
+    </div>
   )
 }
 

@@ -2,7 +2,7 @@
 // Coteja los `rewrites` de vercel.json con las rutas que App.jsx declara.
 //
 // Los rewrites de una SPA existen para que una recarga en /mi-perfil sirva
-// index.html en vez de dar 404 en el CDN. Si la ruta desaparece del router y
+// app.html en vez de dar 404 en el CDN. Si la ruta desaparece del router y
 // el rewrite se queda, Vercel sigue sirviendo la app y el usuario acaba en la
 // pantalla de 404 del cliente: no rompe nada, pero es configuración que dice
 // que existe algo que no existe, y la siguiente persona que la lea se lo cree.
@@ -28,10 +28,10 @@ for (const m of app.matchAll(/<Route\s+path="([^"]+)"/g)) {
   routes.add('/' + p.split('/').filter(Boolean)[0]);
 }
 
-// Rewrites que apuntan a index.html, normalizados igual.
+// Rewrites al shell SPA, separados de la portada prerenderizada.
 const rewrites = [];
 for (const r of vercel.rewrites || []) {
-  if (r.destination !== '/index.html') continue;
+  if (!['/index.html', '/app.html'].includes(r.destination)) continue;
   const base = '/' + r.source.split('/').filter(Boolean)[0].replace(/\(.*/, '');
   rewrites.push({ source: r.source, base });
 }
@@ -63,7 +63,7 @@ const prerendered = (() => {
 })();
 const uncovered = [...routes].filter((p) => !covered.has(p) && !prerendered.has(p)).sort();
 
-console.log(`rutas en App.jsx: ${routes.size} · rewrites a index.html: ${rewrites.length}`);
+console.log(`rutas en App.jsx: ${routes.size} · rewrites al shell SPA: ${rewrites.length}`);
 
 let bad = false;
 if (dead.length) {

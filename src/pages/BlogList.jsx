@@ -6,6 +6,7 @@ import { IconClock, IconSearch, IconSparkles, IconArrowRight } from '@/component
 import { EmptyState } from '@/components/ListStates';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import SEOHead from '@/components/seo/SEOHead';
+import { getPublicPageData } from '@/lib/publicPageData';
 
 const NAVY = '#00255C';
 const GOLD = '#F5C13D';
@@ -39,7 +40,7 @@ export function CategoryBadge({ category }) {
 
 function formatDate(dateStr, opts = { day: 'numeric', month: 'long', year: 'numeric' }) {
   if (!dateStr) return '';
-  try { return new Date(dateStr).toLocaleDateString('es-ES', opts); } catch { return ''; }
+  try { return new Date(dateStr).toLocaleDateString('es-ES', { ...opts, timeZone: 'Europe/Madrid' }); } catch { return ''; }
 }
 
 function PostCard({ post }) {
@@ -86,10 +87,13 @@ function PostCard({ post }) {
 
 export default function BlogListPage() {
   const { t } = useTranslation();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(() => {
+    const initialPosts = getPublicPageData()?.blogPosts;
+    return Array.isArray(initialPosts) ? initialPosts : [];
+  });
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !Array.isArray(getPublicPageData()?.blogPosts));
 
   useEffect(() => {
     base44.entities.BlogPost.filter({ status: 'published' }, '-publish_date', 100)

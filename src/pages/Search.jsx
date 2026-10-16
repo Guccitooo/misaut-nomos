@@ -40,12 +40,49 @@ import { trackSearchAppearance } from '@/lib/trackMetric';
 import ProfessionalCard from "@/components/ProfessionalCard";
 import HeroSearch, { useServiceCategories } from "@/components/home/HeroSearch";
 import useBodyScrollLock from "@/hooks/useBodyScrollLock";
+import { getPublicPageData, useHydrationReady } from '@/lib/publicPageData';
 
 const EMPTY_FILTERS = { category: "all", provincia: "all", ciudad: "all", minRating: 0, availability: "all" };
+
+function SearchDirectory({ categories }) {
+  const { t } = useTranslation();
+  const localLinks = getPublicPageData().localLinks || [];
+
+  return (
+    <nav className="container-page border-t border-c-border py-8" aria-labelledby="search-directory-title">
+      <h2 id="search-directory-title" className="text-lg font-semibold text-brand-navy">
+        {t('search.directory.title')}
+      </h2>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <Link key={category.slug} to={`/categoria/${category.slug}`} className="chip">
+            {category.name}
+          </Link>
+        ))}
+      </div>
+      {localLinks.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-ink">{t('search.directory.localGuides')}</h3>
+          <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {localLinks.map(({ href, label }) => (
+              <li key={href}>
+                <Link to={href} className="text-c-muted underline decoration-c-border underline-offset-4 transition-colors hover:text-brand-navy">
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </nav>
+  );
+}
 
 export default function SearchPage() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
+  const hydrationReady = useHydrationReady();
+  const effectiveParams = hydrationReady ? params : new URLSearchParams();
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -55,12 +92,12 @@ export default function SearchPage() {
   // compartir, y el botón «atrás» deshace el último filtro en vez de sacarte
   // de la página.
   const filters = useMemo(() => ({
-    category: params.get('categoria') || 'all',
-    provincia: params.get('provincia') || 'all',
-    ciudad: params.get('ciudad') || 'all',
-    minRating: Number(params.get('nota')) || 0,
-    availability: params.get('disponibilidad') || 'all',
-  }), [params]);
+    category: effectiveParams.get('categoria') || 'all',
+    provincia: effectiveParams.get('provincia') || 'all',
+    ciudad: effectiveParams.get('ciudad') || 'all',
+    minRating: Number(effectiveParams.get('nota')) || 0,
+    availability: effectiveParams.get('disponibilidad') || 'all',
+  }), [effectiveParams.toString()]);
 
   const setFilters = (next) => {
     const value = typeof next === 'function' ? next(filters) : next;
@@ -136,7 +173,7 @@ export default function SearchPage() {
   // La lógica está en `@/lib/ordenFichas` porque `Categoria.jsx` enseña el
   // mismo catálogo y tenía otro orden distinto; con una pieza compartida no
   // pueden volver a separarse.
-  const shuffledProfiles = useMemo(() => ordenarFichas(profiles), [profiles]);
+  const shuffledProfiles = useMemo(() => ordenarFichas(profiles, hydrationReady ? undefined : 1), [profiles, hydrationReady]);
 
   const filteredProfiles = useMemo(() => shuffledProfiles.filter((profile) => {
     const matchesCategory = filters.category === "all" || profile.categories?.includes(filters.category);
@@ -408,6 +445,8 @@ export default function SearchPage() {
           </div>
         </div>
       </section>
+
+      <SearchDirectory categories={dbCategories} />
 
       {/* Hoja de filtros en móvil. El botón de cerrar va PEGADO ABAJO: en una
           lista larga se iba bajo la línea de flotación y había que desplazarse

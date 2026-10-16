@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   IconGlobe,
@@ -92,6 +92,7 @@ function cleanOldSlug(slug) {
 export default function AutonomoPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -135,7 +136,7 @@ export default function AutonomoPage() {
 
   // Leer slug de path param (:slug) o fallback a query param (?slug=xxx)
   // cityCategory es el segmento "categoria-en-ciudad" de la ruta SEO (puede ser undefined en ruta legacy)
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(location.search);
   const slug = params.slug || urlParams.get("slug");
 
   // Redirigir a búsqueda si no hay slug

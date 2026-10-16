@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
   <head>
+    <script>try { document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (_) {}</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
@@ -149,11 +150,7 @@
     </style>
   </head>
   <body>
-    <div id="root">
-      <!-- H1 estático para crawlers / Lighthouse / IA que no ejecutan JS.
-           React lo sustituye al montar (createRoot reemplaza el contenido). -->
-      <h1 style="position:absolute;left:-9999px;top:0;">MisAutónomos — Encuentra autónomos y profesionales verificados cerca de ti</h1>
-    </div>
+    <div id="root"><!--app-html--></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
