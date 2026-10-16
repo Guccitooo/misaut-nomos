@@ -245,9 +245,9 @@ export default function CategoriaPage() {
   // El canonical TIENE que ser el que está en el sitemap. Antes apuntaba a la
   // forma de una pieza, que devuelve 404: una canónica que no existe le dice a
   // Google que la página buena no es ésta y que la buena no está.
-  const canonicalUrl = ciudadSlug
-    ? `https://misautonomos.es/categoria/${categorySlug}/${ciudadSlug}`
-    : `https://misautonomos.es/categoria/${categorySlug}`;
+  const canonicalPath = ciudadSlug
+    ? `/categoria/${categorySlug}/${ciudadSlug}`
+    : `/categoria/${categorySlug}`;
 
   const seoTitle = ciudadName
     ? t('category.seo.titleCity', { category: displayName, city: ciudadName })
@@ -262,9 +262,9 @@ export default function CategoriaPage() {
       <SEOHead
         title={seoTitle}
         description={seoDescription}
+        canonicalPath={canonicalPath}
         keywords={`${displayName?.toLowerCase()}, ${ciudadName?.toLowerCase() || 'españa'}, autónomo, profesional, presupuesto`}
       />
-      <link rel="canonical" href={canonicalUrl} />
 
       {profiles.length > 0 && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{

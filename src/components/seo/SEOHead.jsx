@@ -13,6 +13,7 @@ export default function SEOHead({
   modifiedTime,
   noindex = false,
   structuredData = null,
+  canonicalPath,
   rating = null,
   reviewCount = null
 }) {
@@ -55,9 +56,11 @@ export default function SEOHead({
   const isPrivatePage = NOINDEX_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const shouldNoindex = noindex || isPrivatePage;
 
-  // "/" es alias de "/buscar" — canónica apunta siempre a /buscar
-  const rawPath = location.pathname === '/' ? '/buscar' : location.pathname;
-  const canonicalUrl = baseUrl + rawPath;
+  // Keep the public route consistent with the sitemap, without tracking
+  // parameters, fragments or preview hostnames. Home and search are distinct.
+  const rawPath = (canonicalPath || location.pathname).split(/[?#]/)[0];
+  const cleanPath = rawPath === '/' ? '/' : rawPath.replace(/\/+$/, '');
+  const canonicalUrl = baseUrl + cleanPath;
 
   useEffect(() => {
     // Title
@@ -68,7 +71,9 @@ export default function SEOHead({
       if (!content) return;
       
       const attribute = isHttpEquiv ? 'http-equiv' : (isProperty ? 'property' : 'name');
-      let meta = document.querySelector(`meta[${attribute}="${name}"]`);
+      const matches = document.head.querySelectorAll(`meta[${attribute}="${name}"]`);
+      let meta = matches[0];
+      matches.forEach((tag, index) => { if (index > 0) tag.remove(); });
       if (!meta) {
         meta = document.createElement('meta');
         meta.setAttribute(attribute, name);
@@ -126,7 +131,9 @@ export default function SEOHead({
     }
     
     // Canonical URL - limpiar parámetros de query para evitar duplicados
-    let canonical = document.querySelector('link[rel="canonical"]');
+    const canonicals = document.querySelectorAll('link[rel="canonical"]');
+    let canonical = Array.from(canonicals).find((tag) => tag.parentNode === document.head);
+    canonicals.forEach((tag) => { if (tag !== canonical) tag.remove(); });
     if (!canonical) {
       canonical = document.createElement('link');
       canonical.setAttribute('rel', 'canonical');
@@ -154,12 +161,6 @@ export default function SEOHead({
     hreflangEs.setAttribute('hreflang', 'es');
     hreflangEs.setAttribute('href', cleanUrl);
     document.head.appendChild(hreflangEs);
-
-    const hreflangEn = document.createElement('link');
-    hreflangEn.setAttribute('rel', 'alternate');
-    hreflangEn.setAttribute('hreflang', 'en');
-    hreflangEn.setAttribute('href', cleanUrl);
-    document.head.appendChild(hreflangEn);
 
     const hreflangXDefault = document.createElement('link');
     hreflangXDefault.setAttribute('rel', 'alternate');

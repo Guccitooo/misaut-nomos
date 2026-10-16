@@ -15,7 +15,7 @@ export { slugify };
  */
 export function getProfileSeoUrl(profile) {
   if (!profile) return '/';
-  const nameSlug = profile.slug_publico || slugify(profile.business_name || '');
+  const nameSlug = slugify(profile.slug_publico || profile.business_name || '');
   if (!nameSlug) return '/autonomo';
 
   const categoria = profile.categories?.[0];

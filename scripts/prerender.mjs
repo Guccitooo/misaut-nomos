@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { slugify } from '../src/lib/slugify.js';
+import sanitizeHtml from 'sanitize-html';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,6 +82,19 @@ const truncate = (s, n) => {
   if (t.length <= n) return t;
   return t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
 };
+
+const safeContent = (html) => sanitizeHtml(html || '', {
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
+  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'width', 'height', 'loading'] },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  transformTags: { h1: 'h2' },
+});
+
+const jsonForHtml = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
+
+function linkList(items) {
+  return `<ul>${items.map(({ href, label }) => `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></li>`).join('')}</ul>`;
+}
 
 // Limpia un slug heredado que pueda tener caracteres no-ASCII o guiones colgantes.
 // Si el slug normalizado difiere del original, devolvemos ambos para crear 301.
@@ -168,7 +182,7 @@ function renderTemplate(tpl, cfg) {
 
   // JSON-LD
   if (cfg.jsonLd) {
-    const ld = `<script type="application/ld+json">${JSON.stringify(cfg.jsonLd)}</script>`;
+    const ld = `<script id="structured-data-custom" type="application/ld+json">${jsonForHtml(cfg.jsonLd)}</script>`;
     html = html.replace(/<\/head>/, `${ld}\n  </head>`);
   }
 
@@ -182,12 +196,14 @@ function renderTemplate(tpl, cfg) {
   ].filter(Boolean).join('\n      ');
 
   if (initial) {
-    // Quitamos el h1 oculto que añadimos antes en index.html (solo home), si
-    // existe, y dejamos el contenido propio de la ruta. El estilo "sr-only"
-    // lo aplicamos para que no se vea durante el split de hidratación.
+    // The same useful content is visible to people without JavaScript and
+    // crawlers. React replaces it when the interactive application mounts.
+    const navigation = '<nav aria-label="Navegación principal"><a href="/">MisAutónomos</a> · <a href="/buscar">Buscar profesionales</a> · <a href="/blog">Blog</a> · <a href="/para-autonomos">Para autónomos</a> · <a href="/tu-web">Tu web</a></nav>';
+    const footer = '<footer><a href="/preguntas-frecuentes">Preguntas frecuentes</a> · <a href="/ayuda">Ayuda</a> · <a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos</a> · <a href="/cookies">Cookies</a> · <a href="/aviso-legal">Aviso legal</a></footer>';
+    html = html.replace('</head>', `<style id="prerender-style">.prerender-shell{max-width:1080px;margin:auto;padding:32px 24px;line-height:1.7;color:#172b4d}.prerender-shell nav,.prerender-shell footer{padding:20px 0}.prerender-shell a{color:#0057b8;text-decoration:underline}.prerender-shell h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;margin:28px 0}.prerender-shell h2{font-size:1.5rem;margin:28px 0 12px}.prerender-shell ul{padding-left:24px;list-style:disc}.prerender-shell p{margin:12px 0}.prerender-shell article{max-width:760px}.prerender-shell img{max-width:100%;height:auto}</style></head>`);
     html = html.replace(/<div id="root">[\s\S]*?<\/div>/, () =>
-      `<div id="root"><div data-prerender="content" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;">
-      ${initial}
+      `<div id="root"><div data-prerender="content" class="prerender-shell">
+      ${navigation}<main>${initial}</main>${footer}
     </div></div>`,
     );
   }
@@ -283,6 +299,7 @@ function buildStatic(tpl, route) {
     image: OG_IMAGE,
     h1: route.h1,
     intro: route.intro,
+    listingHtml: route.listingHtml,
   });
   writeRoute(route.path, html);
 }
@@ -304,8 +321,7 @@ function buildCategoryIntro(cat, prosCount) {
 
 function buildCategoryListingHtml(profs) {
   if (!profs.length) return '<p>No hay profesionales publicados en esta categoría todavía.</p>';
-  const items = profs.slice(0, 12).map((p) => {
-    const slug = (p.slug_publico || slugify(p.business_name || '')).replace(/-+$/, '');
+  const items = profs.map((p) => {
     const url = profileUrl(p);
     return `<li><a href="${escapeHtml(url)}">${escapeHtml(p.business_name || 'Profesional')}</a>${p.ciudad ? ` · ${escapeHtml(p.ciudad)}` : ''}</li>`;
   }).join('\n        ');
@@ -314,14 +330,14 @@ function buildCategoryListingHtml(profs) {
 
 function profileUrl(p) {
   const cat = Array.isArray(p.categories) ? p.categories[0] : null;
-  const nameSlug = (p.slug_publico || slugify(p.business_name || '')).replace(/-+$/, '');
+  const nameSlug = slugify(p.slug_publico || p.business_name || '');
   if (cat && p.ciudad) {
     return `${SITE}/autonomo/${slugify(cat)}-en-${slugify(p.ciudad)}/${nameSlug}`;
   }
   return `${SITE}/autonomo/${nameSlug}`;
 }
 
-function buildCategory(tpl, cat, profs) {
+function buildCategory(tpl, cat, profs, localLinks = []) {
   const title = `${cat.name} cerca de ti · Profesionales verificados | ${SITE_NAME}`;
   const description = truncate(
     `${cat.name}: directorio de autónomos verificados en España. ${cat.description || ''} Contacto directo, sin comisiones.`,
@@ -329,7 +345,7 @@ function buildCategory(tpl, cat, profs) {
   );
   const canonical = `${SITE}/categoria/${cat.slug}`;
   const intro = buildCategoryIntro(cat, profs.length);
-  const listingHtml = buildCategoryListingHtml(profs);
+  const listingHtml = buildCategoryListingHtml(profs) + (localLinks.length ? `<h2>Guías y profesionales por ciudad</h2>${linkList(localLinks)}` : '');
 
   const html = renderTemplate(tpl, {
     title,
@@ -437,7 +453,7 @@ function buildEditorialGuide(tpl, guide, cat, profs) {
   writeRoute(`/categoria/${cat.slug}/${guide.ciudadSlug}`, html);
 }
 
-function buildProfile(tpl, p) {
+function buildProfile(tpl, p, cats) {
   const url = profileUrl(p);
   const path = url.replace(SITE, '');
   const title = `${p.business_name}${p.ciudad ? ` en ${p.ciudad}` : ''} | ${SITE_NAME}`;
@@ -469,6 +485,7 @@ function buildProfile(tpl, p) {
 
   const intro = `
     <p>${escapeHtml(description)}</p>
+    ${p.description && stripHtml(p.description) !== stripHtml(description) ? `<div>${safeContent(p.description)}</div>` : ''}
     ${p.ciudad ? `<p><strong>Zona:</strong> ${escapeHtml(p.ciudad)}${p.provincia && p.ciudad !== p.provincia ? `, ${escapeHtml(p.provincia)}` : ''}</p>` : ''}
     ${Array.isArray(p.categories) && p.categories[0] ? `<p><strong>Servicios:</strong> ${p.categories.map((c) => escapeHtml(c)).join(', ')}</p>` : ''}
     ${p.total_reviews > 0 ? `<p><strong>Valoración:</strong> ${Number(p.average_rating).toFixed(1)} / 5 (${p.total_reviews} reseñas)</p>` : ''}
@@ -483,30 +500,31 @@ function buildProfile(tpl, p) {
     jsonLd,
     h1: p.business_name,
     intro,
+    listingHtml: linkList(cats.filter((cat) => p.categories?.includes(cat.name)).map((cat) => ({ href: `/categoria/${cat.slug}`, label: cat.name }))),
   });
   writeRoute(path, html);
 }
 
 function buildBlogPost(tpl, post) {
-  const title = `${post.title_es || 'Artículo'} | ${SITE_NAME} Blog`;
-  const description = truncate(post.excerpt_es || post.meta_description_es || '', 160);
+  const title = post.meta_title_es || `${post.title_es || 'Artículo'} | ${SITE_NAME} Blog`;
+  const description = truncate(post.meta_description_es || post.excerpt_es || '', 160);
   const canonical = `${SITE}/blog/${post.slug}`;
-  const intro = `<p>${escapeHtml(description)}</p>`;
+  const intro = `<p>${escapeHtml(post.excerpt_es || description)}</p><article data-prerender="article">${safeContent(post.content_es)}</article>`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title_es,
     description,
     datePublished: post.publish_date || post.updated_date,
-    author: { '@type': 'Organization', name: SITE_NAME },
-    image: post.featured_image || OG_IMAGE,
+    author: post.author_name ? { '@type': 'Person', name: post.author_name } : { '@type': 'Organization', name: SITE_NAME },
+    image: post.og_image || post.featured_image || OG_IMAGE,
     mainEntityOfPage: canonical,
   };
   const html = renderTemplate(tpl, {
     title,
     description,
     canonical,
-    image: post.featured_image || OG_IMAGE,
+    image: post.og_image || post.featured_image || OG_IMAGE,
     ogType: 'article',
     jsonLd,
     h1: post.title_es,
@@ -545,12 +563,13 @@ async function main() {
       .eq('onboarding_completed', true),
     supabase
       .from('blog_posts')
-      .select('slug, title_es, excerpt_es, meta_description_es, publish_date, updated_date, featured_image')
+      .select('slug, title_es, excerpt_es, content_es, meta_title_es, meta_description_es, publish_date, updated_date, featured_image, og_image, author_name')
       .eq('status', 'published'),
   ]);
 
   if (catsRes.error) throw catsRes.error;
   if (profsRes.error) throw profsRes.error;
+  if (postsRes.error) throw postsRes.error;
 
   const cats = catsRes.data || [];
   // Excluir perfiles no-indexables (inactivo/suspendido/pendiente). estado_perfil
@@ -559,14 +578,21 @@ async function main() {
     if (!p.business_name) return false;
     return p.estado_perfil == null || p.estado_perfil === 'activo';
   });
-  const posts = postsRes.error ? [] : (postsRes.data || []);
+  const posts = postsRes.data || [];
 
   console.log(`[prerender] Data: ${cats.length} categorías · ${profs.length} pros visibles · ${posts.length} blog posts`);
 
   // ── 1) Rutas estáticas
+  const categoryLinks = cats.map((cat) => ({ href: `/categoria/${cat.slug}`, label: cat.name }));
+  const blogLinks = posts.filter((post) => post.slug).map((post) => ({ href: `/blog/${post.slug}`, label: post.title_es }));
   let staticCount = 0;
   for (const r of STATIC_ROUTES) {
-    buildStatic(tpl, r);
+    let listingHtml = '';
+    if (r.path === '/' || r.path === '/buscar') listingHtml += `<h2>Profesionales por servicio</h2>${linkList(categoryLinks)}`;
+    if (r.path === '/buscar') listingHtml += `<h2>Profesionales publicados</h2>${buildCategoryListingHtml(profs)}`;
+    if (r.path === '/blog') listingHtml += `<h2>Artículos publicados</h2>${linkList(blogLinks)}`;
+    if (r.path === '/') listingHtml += `<h2>Del blog</h2>${linkList(blogLinks.slice(-5))}`;
+    buildStatic(tpl, { ...r, listingHtml });
     staticCount++;
   }
 
@@ -588,7 +614,20 @@ async function main() {
   let categoryCount = 0;
   for (const cat of cats) {
     const list = profsByCatName.get(cat.name) || [];
-    buildCategory(tpl, cat, list);
+    const localLinks = EDITORIAL_GUIDES.filter((guide) => guide.catSlug === cat.slug).map((guide) => ({ href: `/categoria/${cat.slug}/${guide.ciudadSlug}`, label: `${cat.name} en ${guide.ciudad}` }));
+    const cities = new Map();
+    for (const p of list) {
+      if (!p.ciudad) continue;
+      const citySlug = slugify(p.ciudad);
+      const bucket = cities.get(citySlug) || { name: p.ciudad, count: 0 };
+      bucket.count++;
+      cities.set(citySlug, bucket);
+    }
+    for (const [citySlug, city] of cities) {
+      const href = `/categoria/${cat.slug}/${citySlug}`;
+      if (city.count >= MIN_PROS_POR_CIUDAD_CATEGORIA && !localLinks.some((link) => link.href === href)) localLinks.push({ href, label: `${cat.name} en ${city.name}` });
+    }
+    buildCategory(tpl, cat, list, localLinks);
     categoryCount++;
   }
 
@@ -602,11 +641,11 @@ async function main() {
     const rawSlug = p.slug_publico || slugify(p.business_name);
     const cleanSlug = slugify(rawSlug).replace(/-+$/, '');
     if (cleanSlug !== rawSlug) {
-      const dirtyUrl = profileUrl({ ...p, slug_publico: rawSlug }).replace(SITE, '');
       const cleanUrl = profileUrl({ ...p, slug_publico: cleanSlug }).replace(SITE, '');
+      const dirtyUrl = cleanUrl.slice(0, cleanUrl.lastIndexOf('/') + 1) + rawSlug;
       if (dirtyUrl !== cleanUrl) slugRedirects.push({ from: dirtyUrl, to: cleanUrl });
     }
-    buildProfile(tpl, { ...p, slug_publico: cleanSlug });
+    buildProfile(tpl, { ...p, slug_publico: cleanSlug }, cats);
     profileCount++;
   }
 

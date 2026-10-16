@@ -49,7 +49,8 @@ const uniqueDeadBases = [...new Set(dead.map((r) => r.base))].sort();
 // motivo se deja de leer.
 const covered = new Set(rewrites.map((r) => r.base));
 for (const r of vercel.redirects || []) {
-  covered.add('/' + r.source.split('/').filter(Boolean)[0].replace(/[:(].*/, ''));
+  const firstSegment = r.source.split('/').filter(Boolean)[0];
+  if (firstSegment) covered.add('/' + firstSegment.replace(/[:(].*/, ''));
 }
 const prerendered = (() => {
   try {
