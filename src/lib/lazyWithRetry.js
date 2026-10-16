@@ -43,9 +43,12 @@ function isChunkLoadError(err) {
 }
 
 export function lazyWithRetry(factory) {
-  return lazy(async () => {
+  let pending;
+  let loaded;
+  const load = () => pending || (pending = (async () => {
     try {
-      return await factory();
+      loaded = await factory();
+      return loaded;
     } catch (err) {
       if (!isChunkLoadError(err)) throw err;
       const alreadyReloaded = typeof sessionStorage !== 'undefined'
@@ -61,7 +64,13 @@ export function lazyWithRetry(factory) {
       // (evita un flash del ErrorBoundary).
       return new Promise(() => {});
     }
-  });
+  })());
+  const component = lazy(() => loaded ? { then(resolve) { resolve(loaded); } } : load());
+  // React.lazy normally observes even a resolved Promise asynchronously.
+  // A synchronous thenable after preload lets the first hydration traverse
+  // these boundaries without suspending while auth/language effects start.
+  component.preload = load;
+  return component;
 }
 
 // Página que además necesita el bundle de traducciones de aplicación
@@ -88,6 +97,8 @@ export function lazyApp(factory) {
 // Limpieza del flag al arrancar bien: si estamos aquí, el reload anterior
 // funcionó → reseteamos para que un futuro redespliegue vuelva a poder
 // disparar el mecanismo.
-if (typeof sessionStorage !== 'undefined') {
-  try { sessionStorage.removeItem(RELOAD_FLAG); } catch { /* ignorar */ }
+export function clearLazyReloadFlag() {
+  if (typeof sessionStorage !== 'undefined') {
+    try { sessionStorage.removeItem(RELOAD_FLAG); } catch { /* ignorar */ }
+  }
 }

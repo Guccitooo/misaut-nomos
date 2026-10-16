@@ -1,5 +1,5 @@
 import './App.css'
-import { lazyWithRetry, lazyApp } from '@/lib/lazyWithRetry';
+import { lazyWithRetry, lazyApp, clearLazyReloadFlag } from '@/lib/lazyWithRetry';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -16,6 +16,7 @@ import { Suspense, Component, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isPublicPath } from '@/lib/publicPageData';
 import { applyPreferredLanguage } from '@/i18n';
+import { preloadPublicLayout } from '@/Layout';
 
 // Reload SEGURO ante fallos de import dinámico:
 //  - Solo se recarga UNA vez por sesión, usando un flag en sessionStorage que
@@ -156,6 +157,20 @@ const Contacto = lazyWithRetry(() => import('./pages/Contacto'));
 const PageLoader = () => null;
 
 const { Pages, Layout } = pagesConfig;
+
+export function preloadPublicRoute(pathname) {
+  const routes = {
+    '/': Landing, '/buscar': Pages.Search, '/blog': BlogList,
+    '/preguntas-frecuentes': Pages.FAQ, '/ayuda': Pages.HelpCenter,
+    '/para-autonomos': ParaAutonomos, '/tu-web': TuWeb, '/contacto': Contacto,
+    '/privacidad': Pages.PrivacyPolicy, '/terminos': Pages.TermsConditions,
+    '/cookies': Pages.CookiePolicy, '/aviso-legal': Pages.LegalNotice,
+  };
+  const page = routes[pathname] || (pathname.startsWith('/autonomo/') ? Pages.Autonomo
+    : pathname.startsWith('/categoria/') ? Pages.Categoria
+    : pathname.startsWith('/blog/') ? BlogPost : null);
+  return Promise.all([preloadPublicLayout(), page?.preload?.()]);
+}
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
@@ -375,6 +390,7 @@ function App({ RouterComponent = Router, routerProps = {}, queryClient = queryCl
     applyPreferredLanguage();
     const t = setTimeout(() => {
       try { sessionStorage.removeItem(CHUNK_RELOAD_FLAG); } catch (_e) { /* noop */ }
+      clearLazyReloadFlag();
     }, 4000);
     return () => clearTimeout(t);
   }, []);

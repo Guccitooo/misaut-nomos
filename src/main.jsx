@@ -14,9 +14,10 @@ if (typeof window !== 'undefined' && !window.requestIdleCallback) {
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from '@/App.jsx'
+import App, { preloadPublicRoute } from '@/App.jsx'
 import { getPublicPageData, seedPublicQueries } from '@/lib/publicPageData'
 import { queryClientInstance } from '@/lib/query-client'
+import { clearLazyReloadFlag } from '@/lib/lazyWithRetry'
 
 // Fonts and styles arrive in the HTML stylesheet before its first paint.
 import './fonts.css'
@@ -107,8 +108,18 @@ const hasMatchingSSR = publicData.path === pathname && root.dataset.ssr === 'tru
 if (hasMatchingSSR) seedPublicQueries(queryClientInstance, publicData);
 const application = <App />;
 if (hasMatchingSSR) {
-  ReactDOM.hydrateRoot(root, application, {
-    onRecoverableError(error) { console.error('[hydration]', error); },
+  // Keep the real server-rendered page intact while its own interactive
+  // modules load. No alternate layout, overlay or artificial waiting period.
+  preloadPublicRoute(pathname).then(() => {
+    clearLazyReloadFlag();
+    ReactDOM.hydrateRoot(root, application, {
+      onRecoverableError(error) { console.error('[hydration]', error); },
+    });
+  }).catch((error) => {
+    // A second failed chunk load reaches the existing error boundary with
+    // working reload/home controls, instead of leaving inert SSR indefinitely.
+    console.error('[bootstrap]', error);
+    ReactDOM.createRoot(root).render(application);
   });
 } else {
   ReactDOM.createRoot(root).render(application);

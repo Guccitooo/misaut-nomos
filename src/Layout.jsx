@@ -20,12 +20,17 @@ import {
 
 // Lazy load componentes no críticos
 import Header from "@/components/Header";
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-const Footer = lazy(() => import("@/components/Footer").catch(() => ({ default: () => null })));
-const CookieBanner = lazy(() => import("@/components/CookieBanner").catch(() => ({ default: () => null })));
+const Footer = lazyWithRetry(() => import("@/components/Footer"));
+const CookieBanner = lazyWithRetry(() => import("@/components/CookieBanner"));
 const NotificationCenter = lazy(() => import("@/components/notifications/NotificationCenter").catch(() => ({ default: () => null })));
 const NotificationPermissionBanner = lazy(() => import("@/components/notifications/NotificationPermissionBanner").catch(() => ({ default: () => null })));
-const WebsiteSchema = lazy(() => import("@/components/seo/WebsiteSchema").catch(() => ({ default: () => null })));
+const WebsiteSchema = lazyWithRetry(() => import("@/components/seo/WebsiteSchema"));
+
+export function preloadPublicLayout() {
+  return Promise.all([Footer.preload(), CookieBanner.preload(), WebsiteSchema.preload()]);
+}
 import { setUserId, setUserTags, onesignalLogout } from "@/services/onesignalService";
 
 import { LanguageProvider } from "@/components/LanguageSwitcher";
